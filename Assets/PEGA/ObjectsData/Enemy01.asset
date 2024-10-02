@@ -23,8 +23,8 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   movementParameterName: Movement
-  speed: 8
-  rotationSpeed: 15
+  speed: 3
+  rotationSpeed: 10
   gravityModifier: 2
   jumpHeight: 2
   jumpSpeed: 5

@@ -1,16 +1,22 @@
 ﻿using PEGA.ObjectSystems.Interfaces;
+using PEGA.ObjectSystems.ObjectsScriptables;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace PEGA.ObjectSystems
 {
     [RequireComponent(typeof(CharacterController))]
-    public class ObjectMovement : MonoBehaviour, IObjectAction
+    public class ObjectMovement : MonoBehaviour
     {
-        protected Vector2 InputVector = Vector2.zero;
+        protected internal Vector2 InputVector = Vector2.zero;
         private Camera _mainCamera;
-        private CharacterController _characterController;
-
         private ObjectMaster _objectMaster;
+        private IMovementStrategy _movementStrategy;
+        
+        internal CharacterController CharacterController;
+        internal ObjectDataScriptable ObjectData;
+        internal NavMeshAgent NavMeshAgent;
+        internal Transform Target;
 
         #region Unity Methods
         protected virtual void Awake()
@@ -20,38 +26,25 @@ namespace PEGA.ObjectSystems
 
         protected virtual void FixedUpdate()
         {
-            ApplyGravity();
-            RotatePlayer();
-            ExecuteAction();
+            _movementStrategy.Gravity(this);
+            _movementStrategy.Rotate(this);
+            _movementStrategy.Move(this);
         }
         #endregion
 
         protected virtual void SetInitialReferences()
         {
             _objectMaster = GetComponent<ObjectMaster>();
-            _characterController = GetComponent<CharacterController>();
+            ObjectData = _objectMaster.objectData;
             _mainCamera = Camera.main;
         }
 
-        protected virtual void ApplyGravity()
+        protected void SetMovementStrategy(IMovementStrategy strategy)
         {
-            if (_characterController.isGrounded) return;
-
-            var gravityVector = new Vector3(0, Physics.gravity.y * _objectMaster.objectData.gravityModifier * Time.deltaTime, 0);
-            _characterController.Move(gravityVector);
+            _movementStrategy = strategy;
         }
 
-        protected virtual void RotatePlayer()
-        {
-            if (InputVector == Vector2.zero) return;
-
-            var desiredDirection = new Vector3(InputVector.x, 0f, InputVector.y);
-            var targetRotation = Quaternion.LookRotation(desiredDirection, Vector3.up);
-
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _objectMaster.objectData.rotationSpeed * Time.fixedDeltaTime);
-        }
-
-        private Vector3 CalculateMovement()
+        internal Vector3 CalculateMovement()
         {
             var forward = _mainCamera.transform.forward;
             var right = _mainCamera.transform.right;
@@ -65,11 +58,5 @@ namespace PEGA.ObjectSystems
             return forward * InputVector.y + right * InputVector.x;
         }
 
-        public virtual void ExecuteAction()
-        {
-            // Calcula o movimento com o CharacterController
-            var movement = CalculateMovement();
-            _characterController.Move(movement * (_objectMaster.objectData.speed * Time.deltaTime));
-        }
     }
 }
