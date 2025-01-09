@@ -20,21 +20,29 @@ public class PlayerController : MonoBehaviour
     [SerializeField] LayerMask interactableLayer; // Camadas de objetos interativos
     [SerializeField] Transform backpackTransform = null;
 
-    private PlayerInputs playerAction; // Input Action
+    InputActionAsset inputAsset;
+    InputActionMap player;
+    InputAction move;
+    InputAction action;
 
     Transform currentObjectInBackpack = null;
     bool onAction = false;
 
     private void Awake()
     {
-        playerAction = new PlayerInputs();
-        playerAction.Enable();
-        playerAction.Controller.Move.performed += ctx => OnMovePerformed(ctx.ReadValue<Vector2>());
-        playerAction.Controller.Move.canceled += ctx => OnMoveCanceled();
-        playerAction.Controller.Action.performed += ctx => OnActionPerformed();
+        inputAsset = this.GetComponent<PlayerInput>().actions;
+        player = inputAsset.FindActionMap("Player");
+        move = player.FindAction("Move");
+        action = player.FindAction("Action");
+
+        player.Enable();
+
+        move.performed += ctx => OnMovePerformed(ctx.ReadValue<Vector2>());
+        move.canceled += ctx => OnMoveCanceled();
+        action.performed += ctx => OnActionPerformed();
     }
 
-    private void OnMovePerformed(Vector2 input)
+    public void OnMovePerformed(Vector2 input)
     {
         if (onAction) return;
 
