@@ -5,6 +5,7 @@ namespace PEGA.ObjectSystems.Strategies.Movement
 {
     public class NavMeshMovement :IMovementStrategy
     {
+        // Com esse tpo de movimento o Nevmash controla a gravidade e velocidade,
         public void Gravity(ObjectMovement context)
         {
             //throw new System.NotImplementedException();

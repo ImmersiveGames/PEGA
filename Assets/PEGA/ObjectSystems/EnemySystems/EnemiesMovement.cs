@@ -18,11 +18,10 @@ namespace PEGA.ObjectSystems.EnemySystems
             base.SetInitialReferences();
             CharacterController = GetComponent<CharacterController>();
             NavMeshAgent = GetComponent<NavMeshAgent>();
-            NavMeshAgent.updateRotation = true; // Desativa o controle automático da rotação
-            NavMeshAgent.updatePosition = true; // Desativa a movimentação automática completa, mas você pode manter ativado
-
-            //TODO: Mudar para uma localização de player melhor
-            Target = GameObject.FindGameObjectWithTag("Player").transform; // Assume que o inimigo segue o jogador
+            NavMeshAgent.updateRotation = true; // Des/Ativa o controle automático da rotação
+            NavMeshAgent.updatePosition = true; // Des/Ativa a movimentação automática completa, mas você pode manter ativado
         }
+
+        
     }
 }

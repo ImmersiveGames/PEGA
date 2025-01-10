@@ -5,6 +5,8 @@ namespace PEGA.ObjectSystems.Strategies.Movement
 {
     public class CustomMovement : IMovementStrategy
     {
+        // Com esse tpo de movimento o Navmesh não se aplica no objeto,
+        // Ou seja gravidade, velocidade do navmesh são ignoradas e usado a do Scriptable
 
         public void Gravity(ObjectMovement context)
         {
