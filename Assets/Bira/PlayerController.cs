@@ -135,8 +135,8 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Chamei a função de ação");
 
         Vector3 boxCenter = transform.position + transform.forward * interactionBoxSize.z;
-        boxCenter.y = interactionBoxSize.y / 2;
-                
+        boxCenter.y = transform.position.y + interactionBoxSize.y / 2;
+
         Collider[] objects = Physics.OverlapBox(boxCenter, interactionBoxSize / 2, transform.rotation, interactableLayer);
         
         if (objects.Length == 0) return;
@@ -156,7 +156,9 @@ public class PlayerController : MonoBehaviour
             {
                 if (currentObjectInBackpack != null) 
                 {
-                    float yPlace = item.transform.localScale.y + (currentObjectInBackpack.localScale.y / 2);
+                    float yPlace = item.transform.position.y + 
+                                   ((item.transform.localScale.y / 2) +
+                                   (currentObjectInBackpack.localScale.y / 2));
                     Vector3 placePosition = new Vector3(item.transform.position.x, yPlace, item.transform.position.z);
                     currentObjectInBackpack.transform.position = placePosition;
                     currentObjectInBackpack.SetParent(item.transform);
@@ -170,7 +172,7 @@ public class PlayerController : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Vector3 boxCenter = transform.position + transform.forward * interactionBoxSize.z;
-        boxCenter.y = interactionBoxSize.y / 2;
+        boxCenter.y = transform.position.y + interactionBoxSize.y / 2;
         Gizmos.DrawWireCube(boxCenter, interactionBoxSize); // Desenha a caixa de detecção no editor
     }
 }
