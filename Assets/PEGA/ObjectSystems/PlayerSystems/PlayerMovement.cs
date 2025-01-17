@@ -1,5 +1,6 @@
 ﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.InputSystems;
+using PEGA.ObjectSystems.Strategies.Movement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,13 @@ namespace PEGA.ObjectSystems.PlayerSystems
     public class PlayerMovement : ObjectMovement
     {
         private PlayerMaster _playerMaster;
+        
+        protected override void Awake()
+        {
+            base.Awake();
+            SetMovementStrategy(new CustomMovement());
+        }
+
         private void Start()
         {
             InitializeInput();
@@ -17,6 +25,7 @@ namespace PEGA.ObjectSystems.PlayerSystems
         {
             base.SetInitialReferences();
             _playerMaster = GetComponent<PlayerMaster>();
+            CharacterController = GetComponent<CharacterController>();
         }
 
         private void InitializeInput()
