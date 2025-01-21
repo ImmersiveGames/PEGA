@@ -21,7 +21,7 @@ namespace PEGA.ObjectSystems.Strategies.Movement
         {
             if (context.CharacterController == null) return;
             var movement = context.CalculateMovement();
-            context.CharacterController.Move(movement * (context.ObjectData.speed * Time.deltaTime));
+            context.CharacterController.Move(movement * context.ObjectData.speed * Time.deltaTime);
         }
 
         public void Rotate(ObjectMovement context)
@@ -32,6 +32,8 @@ namespace PEGA.ObjectSystems.Strategies.Movement
             var targetRotation = Quaternion.LookRotation(desiredDirection, Vector3.up);
 
             context.transform.rotation = Quaternion.Slerp(context.transform.rotation, targetRotation, context.ObjectData.rotationSpeed * Time.fixedDeltaTime);
+            
         }
+        
     }
 }

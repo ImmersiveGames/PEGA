@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Cinemachine;
@@ -61,12 +62,20 @@ public class PlayerController : MonoBehaviour
         // Aplicar gravidade
         ApplyGravity();
         // Rotacionar o jogador para a direção de movimento
-        RotatePlayer();
+        if (!isParalyzed) // Só rotaciona normalmente se não estiver paralisado
+            RotatePlayer();
         // Movimentar o jogador
         MovePlayer();
         // Atualizar a animação do jogador
         UpdateAnimation();
+
+        // Efeito visual de paralisia (giro no eixo Y)
+        if (isParalyzed)
+        {
+            RotateWhileParalyzed();
+        }
     }
+
 
     public void ToogleOnAction(bool value) 
     {
@@ -173,4 +182,38 @@ public class PlayerController : MonoBehaviour
         boxCenter.y = interactionBoxSize.y / 2;
         Gizmos.DrawWireCube(boxCenter, interactionBoxSize); // Desenha a caixa de detecção no editor
     }
+    
+    private Coroutine paralysisCoroutine;
+    [Header("Visual Effects")]
+    [SerializeField] private float paralysisRotationSpeed = 720f; // Velocidade de rotação durante a paralisação
+    private bool isParalyzed = false; // Flag para saber se o jogador está paralisado
+    public void ParalyzePlayer(float duration)
+    {
+        if (paralysisCoroutine != null)
+        {
+            StopCoroutine(paralysisCoroutine); // Evita múltiplas paralisações simultâneas
+        }
+
+        paralysisCoroutine = StartCoroutine(ParalysisRoutine(duration));
+    }
+
+    private IEnumerator ParalysisRoutine(float duration)
+    {
+        Debug.Log("Jogador paralisado.");
+        ToogleOnAction(true); // Impede a movimentação
+        isParalyzed = true;   // Ativa o estado de paralisia (e efeito visual)
+    
+        yield return new WaitForSeconds(duration);
+    
+        ToogleOnAction(false); // Permite a movimentação novamente
+        isParalyzed = false;   // Desativa o estado de paralisia (e efeito visual)
+        Debug.Log("Jogador recuperou o controle.");
+    }
+
+    private void RotateWhileParalyzed()
+    {
+        transform.Rotate(Vector3.up, paralysisRotationSpeed * Time.fixedDeltaTime, Space.Self);
+    }
+
+
 }

@@ -57,6 +57,7 @@ namespace PEGA.ObjectSystems
 
             return forward * InputVector.y + right * InputVector.x;
         }
+        
 
     }
 }

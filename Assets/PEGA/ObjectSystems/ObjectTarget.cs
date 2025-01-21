@@ -9,6 +9,8 @@ namespace PEGA.ObjectSystems
         public Transform chaseObject;
         public Transform myTarget;
 
+        private bool inDestiny;
+
         private NavMeshAgent _agent;
         #region Unity Methods
 
@@ -16,6 +18,7 @@ namespace PEGA.ObjectSystems
         {
             SetInitialReferences();
             _agent = GetComponent<NavMeshAgent>();
+            inDestiny = false;
         }
 
         protected virtual void Update()
@@ -30,15 +33,17 @@ namespace PEGA.ObjectSystems
 
         #endregion
         
-        private void SetInitialReferences()
+        protected virtual void SetInitialReferences()
         {
-            SetTarget();
+            //SetTarget();
         }
 
         protected virtual void SetTarget()
         {
             //TODO: Mudar para uma localização de player melhor
-            myTarget = chaseObject == null ? GameObject.FindGameObjectWithTag("Player").transform : // Assume que o inimigo segue o jogador
+            var hasPlayer = GameObject.FindGameObjectWithTag("Player").transform;
+            inDestiny = false;
+            myTarget = chaseObject == null ? hasPlayer : // Assume que o inimigo segue o jogador
                 chaseObject;
         }
 
@@ -46,7 +51,7 @@ namespace PEGA.ObjectSystems
         {
             // Verifica se o agente chegou ao destino
             if (_agent.pathPending || !(_agent.remainingDistance <= _agent.stoppingDistance)) return;
-            if (!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+            if (!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f && inDestiny == false)
             {
                 OnDestinationReached();
             }
@@ -54,6 +59,7 @@ namespace PEGA.ObjectSystems
         
         protected virtual void OnDestinationReached()
         {
+            inDestiny = true;
             // Ação ao alcançar o ponto final
             Debug.Log("Destino alcançado!");
         }
