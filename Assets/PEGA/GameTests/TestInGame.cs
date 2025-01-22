@@ -1,6 +1,6 @@
-﻿using System;
-using ImmersiveGames.DebugSystems;
+﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.InputSystems;
+using ImmersiveGames.PlayersSystems;
 using PEGA.ObjectSystems;
 using PEGA.ObjectSystems.PlayerSystems;
 using UnityEngine;
@@ -14,12 +14,12 @@ namespace PEGA.GameTests
             //Aqui vão todos os Scripts que devem ter seus debugs ativos
 
             //PlayerManager
-            DebugManager.SetScriptDebugLevel<PlayerManager>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<PlayersManager>(DebugManager.DebugLevels.All);
             
             //Actions
-            DebugManager.SetScriptDebugLevel<ActionManager>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<ActionManager>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<ObjectJump>(DebugManager.DebugLevels.All);
-            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.None);
             
         }
     }

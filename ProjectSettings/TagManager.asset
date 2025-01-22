@@ -10,18 +10,18 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Players
+  - Enemies
   - Water
   - UI
   - Navmash
   - Block Cenario
   - Collectables
-  - Enemies
   - 
   - 
-  - 
-  - 
-  - 
+  - Player1
+  - Player2
+  - Player3
+  - Player4
   - 
   - 
   - 

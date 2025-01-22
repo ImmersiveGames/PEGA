@@ -34,7 +34,7 @@ namespace PEGA.ObjectSystems
 
         protected virtual void AttemptJump()
         {
-            DebugManager.Log<ObjectJump>("JUMP");
+            DebugManager.Log<ObjectJump>($"JUMP");
         }
     }
 }

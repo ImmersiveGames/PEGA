@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using ImmersiveGames.PoolingSystems;
 using ImmersiveGames.Utils;
@@ -11,28 +12,53 @@ namespace ImmersiveGames.NotificationsSystems
     {
         [Header("Configurações")]
         public GameObject notificationPanelPrefab;
-        public float notificationDisplayTime = 5f; // Tempo que cada notificação ficará visível
+        public float notificationDisplayTime = 5f;
 
         private readonly Queue<NotificationData> _notificationQueue = new Queue<NotificationData>();
-        private NotificationPanel _currentPanel;
+        private NotificationPanel _currentGlobalPanel;
         private GenericObjectPool<NotificationPanel> _panelPool;
         private GameObject _initiallySelectedObject;
 
-        // Eventos para notificar outros scripts sobre notificações
-        public event EventHandler<NotificationEventArgs> EventNotificationAdded;
-        public event EventHandler<NotificationEventArgs> EventNotificationAccepted;
-        public event EventHandler<NotificationEventArgs> EventNotificationClosed;
+        // Painéis individuais por jogador
+        private readonly Dictionary<int, NotificationPanel> _playerPanels = new Dictionary<int, NotificationPanel>();
 
         private void Start()
         {
             _panelPool = new GenericObjectPool<NotificationPanel>(notificationPanelPrefab.GetComponentInChildren<NotificationPanel>(), transform, 5);
         }
 
+        public void RegisterPlayerPanel(int playerId, NotificationPanel panel)
+        {
+            if (!_playerPanels.ContainsKey(playerId))
+            {
+                _playerPanels[playerId] = panel;
+            }
+        }
+
+        public void UnregisterPlayerPanel(int playerId)
+        {
+            if (_playerPanels.ContainsKey(playerId))
+            {
+                _playerPanels.Remove(playerId);
+            }
+        }
+
         public void AddNotification(NotificationData notificationData)
         {
             _notificationQueue.Enqueue(notificationData);
-            EventNotificationAdded?.Invoke(this, new NotificationEventArgs(notificationData));
             TryShowNextNotification();
+        }
+
+        public void AddNotificationForPlayer(int playerId, string message, Action onClose = null, Action onConfirm = null)
+        {
+            if (_playerPanels.TryGetValue(playerId, out var playerPanel))
+            {
+                playerPanel.Show(message, onClose, onConfirm);
+            }
+            else
+            {
+                Debug.LogWarning($"Player {playerId} não tem um painel registrado.");
+            }
         }
 
         private void TryShowNextNotification()
@@ -45,15 +71,14 @@ namespace ImmersiveGames.NotificationsSystems
 
             var nextNotification = _notificationQueue.Dequeue();
             InstantiateNotificationPanel(nextNotification);
-            _currentPanel.Show(nextNotification.message, () => CloseNotification(nextNotification));
+            _currentGlobalPanel.Show(nextNotification.message, () => CloseNotification(nextNotification));
 
-            // Fechar automaticamente após o tempo especificado
-            StartCoroutine(AutoCloseNotification(_currentPanel, notificationDisplayTime));
+            StartCoroutine(AutoCloseNotification(_currentGlobalPanel, notificationDisplayTime));
         }
 
         private bool CanShowNotification()
         {
-            return _currentPanel == null && _notificationQueue.Count > 0;
+            return _currentGlobalPanel == null && _notificationQueue.Count > 0;
         }
 
         private void InstantiateNotificationPanel(NotificationData nextNotification)
@@ -62,37 +87,26 @@ namespace ImmersiveGames.NotificationsSystems
             {
                 nextNotification.panelPrefab = notificationPanelPrefab;
             }
-            _currentPanel = _panelPool.GetObject();
-            _currentPanel.transform.SetParent(transform, false);
+            _currentGlobalPanel = _panelPool.GetObject();
+            _currentGlobalPanel.transform.SetParent(transform, false);
         }
 
         private void CloseNotification(NotificationData notification)
         {
-            EventNotificationClosed?.Invoke(this, new NotificationEventArgs(notification));
-            _currentPanel.ClosePanel(); // Inicia o processo de fechamento com animação
-            _currentPanel = null;
+            _currentGlobalPanel.ClosePanel();
+            _currentGlobalPanel = null;
             if (_notificationQueue.Count == 0)
             {
                 RestoreInitialFocus();
             }
         }
 
-        public void OnPanelClosed(NotificationPanel panel)
-        {
-            if (panel == _currentPanel)
-            {
-                _panelPool.ReleaseObject(panel);
-                _currentPanel = null;
-                TryShowNextNotification();
-            }
-        }
-
-        private System.Collections.IEnumerator AutoCloseNotification(NotificationPanel panel, float delay)
+        private IEnumerator AutoCloseNotification(NotificationPanel panel, float delay)
         {
             yield return new WaitForSeconds(delay);
-            if (panel == _currentPanel)
+            if (panel == _currentGlobalPanel)
             {
-                panel.ClosePanel(); // Fecha o painel automaticamente após o tempo definido
+                panel.ClosePanel();
             }
         }
 
@@ -107,21 +121,6 @@ namespace ImmersiveGames.NotificationsSystems
             {
                 EventSystem.current.SetSelectedGameObject(_initiallySelectedObject);
             }
-        }
-
-        private void OnEventNotificationAccepted(NotificationEventArgs e)
-        {
-            EventNotificationAccepted?.Invoke(this, e);
-        }
-    }
-
-    public class NotificationEventArgs : EventArgs
-    {
-        public NotificationData NotificationData;
-
-        public NotificationEventArgs(NotificationData notificationData)
-        {
-            NotificationData = notificationData;
         }
     }
 }

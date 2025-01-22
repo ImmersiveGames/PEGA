@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.InputSystems;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.InputSystems;
 using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.PlayerSystems
@@ -6,6 +7,7 @@ namespace PEGA.ObjectSystems.PlayerSystems
     public class PlayerJump : ObjectJump
     {
         private PlayerInputHandler _playerInputHandler;
+        private PlayerMaster _playerMaster;
 
         #region Unity Methods
 
@@ -17,6 +19,7 @@ namespace PEGA.ObjectSystems.PlayerSystems
         protected override void OnEnable()
         {
             base.OnEnable();
+            _playerMaster = GetComponent<PlayerMaster>();
 
             // Registro da ação "Jump" no ActionManager
             _playerInputHandler.ActionManager.RegisterAction("Jump_Performed", AttemptJump);
@@ -37,6 +40,7 @@ namespace PEGA.ObjectSystems.PlayerSystems
         {
             // Tentativa de pulo via input
             AttemptJump();
+            DebugManager.Log<ObjectJump>($"JUMP {_playerMaster.playerIndex}");
         }
     }
 }

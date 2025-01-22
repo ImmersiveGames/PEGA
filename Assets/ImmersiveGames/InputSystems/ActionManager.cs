@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using ImmersiveGames.DebugSystems;
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems
@@ -43,7 +42,8 @@ namespace ImmersiveGames.InputSystems
             if (!_actionListeners.ContainsKey(actionName))
                 _actionListeners[actionName] = new List<Action<InputAction.CallbackContext>>();
 
-            _actionListeners[actionName].Add(callback);
+            if (!_actionListeners[actionName].Contains(callback))
+                _actionListeners[actionName].Add(callback);
         }
 
         public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
@@ -56,9 +56,6 @@ namespace ImmersiveGames.InputSystems
 
         #region Public API - Local Action Map Management
 
-        /// <summary>
-        /// Ativa o mapa de ação local para este jogador.
-        /// </summary>
         public void ActivateLocalActionMap(GameActionMaps actionMapName)
         {
             if (_currentActionMap == actionMapName) return;
@@ -70,17 +67,11 @@ namespace ImmersiveGames.InputSystems
             DebugManager.Log<ActionManager>($"[Local ActionMap] '{actionMapName}' ativado para o jogador.");
         }
 
-        /// <summary>
-        /// Restaura o último mapa de ação local deste jogador.
-        /// </summary>
         public void RestoreLocalActionMap()
         {
             ActivateLocalActionMap(_previousActionMap);
         }
 
-        /// <summary>
-        /// Verifica se o mapa de ação especificado está ativo.
-        /// </summary>
         public bool IsLocalActionMapActive(GameActionMaps actionMapName)
         {
             return _currentActionMap == actionMapName;

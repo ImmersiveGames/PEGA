@@ -37,7 +37,7 @@ public class PlayerManager : MonoBehaviour
 
         //need to use the parent due to the structure of the prefab
         
-        Transform playerParent = player.transform.parent;
+        var playerParent = player.transform.parent;
         player.GetComponentInChildren<CharacterController>().enabled = false;
         playerParent.position = startingPoints[players.Count - 1].position;
         player.GetComponentInChildren<CharacterController>().enabled = true;
@@ -45,7 +45,7 @@ public class PlayerManager : MonoBehaviour
 
 
         //convert layer mask (bit) to an integer 
-        int layerToAdd = (int)Mathf.Log(playerLayers[players.Count - 1].value, 2);
+        var layerToAdd = (int)Mathf.Log(playerLayers[players.Count - 1].value, 2);
 
         //set the layer
         playerParent.GetComponentInChildren<CinemachineVirtualCamera>().gameObject.layer = layerToAdd;

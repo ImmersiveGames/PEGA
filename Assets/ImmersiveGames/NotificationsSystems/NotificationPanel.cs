@@ -1,9 +1,17 @@
 ﻿using System;
 using ImmersiveGames.InputSystems;
-using ImmersiveGames.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
+/*
+ *
+ * TODO: Melhorar essa parte de mensagens e testar. só fiz para não ficar dando erro
+ * var playerInputHandler = player.GetComponent<PlayerInputHandler>();
+ * var notificationPanel = Instantiate(notificationPanelPrefab, player.transform);
+ * notificationPanel.Initialize(playerInputHandler);
+ * notificationPanel.Show("Mensagem de teste", OnCloseCallback, OnConfirmCallback);
+ */
 
 namespace ImmersiveGames.NotificationsSystems
 {
@@ -12,13 +20,20 @@ namespace ImmersiveGames.NotificationsSystems
         public TMP_Text messageText;
         public Button confirmButton;
 
-        public float openTimeDuration;
-        public float closeTimeDuration;
+        public float openTimeDuration = 0.3f;
+        public float closeTimeDuration = 0.3f;
 
         private Animator _animator;
         private AudioSource _audioSource;
 
-        private static readonly int NotificationTrigger = Animator.StringToHash("Notification");
+        private static readonly int OpenTrigger = Animator.StringToHash("OpenNotification");
+        private static readonly int CloseTrigger = Animator.StringToHash("CloseNotification");
+
+        private Action _onCloseCallback;
+        private Action _onConfirmCallback;
+
+        // Referência ao PlayerInputHandler do jogador associado
+        private PlayerInputHandler _playerInputHandler;
 
         private void Awake()
         {
@@ -26,29 +41,25 @@ namespace ImmersiveGames.NotificationsSystems
             _audioSource = GetComponent<AudioSource>();
         }
 
-        private void Start()
+        public void Initialize(PlayerInputHandler playerInputHandler)
         {
-            if (confirmButton != null)
-            {
-               // PlayerInputHandler.RegisterAction("ConfirmNotification", ButtonConfirm);
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (confirmButton != null)
-            {
-                //PlayerInputHandler.UnregisterAction("ConfirmNotification", ButtonConfirm);
-            }
-            //PlayerInputHandler.ActionManager.RestoreActionMap();
+            _playerInputHandler = playerInputHandler;
         }
 
         public void Show(string message, Action onClose, Action onConfirm = null)
         {
+            _onCloseCallback = onClose;
+            _onConfirmCallback = onConfirm;
+
             PlayNotificationSound();
             SetMessageText(message);
-            ConfigureButtons(onClose, onConfirm);
+            ConfigureButtons();
             OpenPanel();
+
+            if (_onConfirmCallback != null && _playerInputHandler != null)
+            {
+                _playerInputHandler.ActionManager.RegisterAction("ConfirmNotification", ConfirmActionHandler);
+            }
         }
 
         private void PlayNotificationSound()
@@ -58,19 +69,23 @@ namespace ImmersiveGames.NotificationsSystems
 
         private void SetMessageText(string message)
         {
-            messageText.text = message;
+            if (messageText != null)
+            {
+                messageText.text = message;
+            }
         }
 
-        private void ConfigureButtons(Action onClose, Action onConfirm)
+        private void ConfigureButtons()
         {
             if (confirmButton == null) return;
-            confirmButton.gameObject.SetActive(onConfirm != null);
-            if (onConfirm == null) return;
+
+            confirmButton.gameObject.SetActive(_onConfirmCallback != null);
+
+            if (_onConfirmCallback == null) return;
             confirmButton.onClick.RemoveAllListeners();
             confirmButton.onClick.AddListener(() =>
             {
-                onConfirm.Invoke();
-                onClose?.Invoke();
+                _onConfirmCallback.Invoke();
                 ClosePanel();
             });
         }
@@ -79,38 +94,43 @@ namespace ImmersiveGames.NotificationsSystems
         {
             if (_animator != null)
             {
-                _animator.SetTrigger(NotificationTrigger);
+                _animator.SetTrigger(OpenTrigger);
             }
             else
             {
-                StartCoroutine(PanelsHelper.TogglePanel(gameObject, openTimeDuration, closeTimeDuration, true));
+                gameObject.SetActive(true);
             }
         }
 
         public void ClosePanel()
         {
+            if (_onConfirmCallback != null && _playerInputHandler != null)
+            {
+                _playerInputHandler.ActionManager.UnregisterAction("ConfirmNotification", ConfirmActionHandler);
+            }
+
             if (_animator != null)
             {
-                _animator.SetTrigger(NotificationTrigger);
-                var animationDuration = _animator.GetCurrentAnimatorStateInfo(0).length;
-                StartCoroutine(DelayedClose(animationDuration));
+                _animator.SetTrigger(CloseTrigger);
+                StartCoroutine(DelayedClose(_animator.GetCurrentAnimatorStateInfo(0).length));
             }
             else
             {
-                StartCoroutine(DelayedClose(closeTimeDuration));
+                gameObject.SetActive(false);
+                _onCloseCallback?.Invoke();
             }
+        }
+
+        private void ConfirmActionHandler(UnityEngine.InputSystem.InputAction.CallbackContext context)
+        {
+            confirmButton?.onClick?.Invoke();
         }
 
         private System.Collections.IEnumerator DelayedClose(float delay)
         {
             yield return new WaitForSeconds(delay);
             gameObject.SetActive(false);
-            NotificationManager.instance.OnPanelClosed(this);
-        }
-
-        private void ButtonConfirm(UnityEngine.InputSystem.InputAction.CallbackContext context)
-        {
-            confirmButton?.onClick?.Invoke();
+            _onCloseCallback?.Invoke();
         }
     }
 }
