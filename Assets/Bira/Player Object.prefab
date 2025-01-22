@@ -122,6 +122,7 @@ GameObject:
   - component: {fileID: 2228212362573436016}
   - component: {fileID: 5467162401446051891}
   - component: {fileID: 2060864760193031971}
+  - component: {fileID: 8974247089779897597}
   m_Layer: 0
   m_Name: Player Camera
   m_TagString: MainCamera
@@ -183,7 +184,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 247
+    m_Bits: 4351
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -281,6 +282,24 @@ MonoBehaviour:
   m_CameraActivatedEvent:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8974247089779897597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3841649013465563114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bdae7ef3f0e41747bb1a0328a0cac1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 2560040599052564005}
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 4096
+  fadeDuration: 0.5
+  transparentAlpha: 0.15
 --- !u!1 &4209860389874975146
 GameObject:
   m_ObjectHideFlags: 0
@@ -1837,7 +1856,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterController: {fileID: 2633955850392099803}
   animator: {fileID: 2063536811367806880}
-  speed: 12
+  speed: 18
   rotationSpeed: 15
   movementParameterName: Movement
   gravityModifier: 5
