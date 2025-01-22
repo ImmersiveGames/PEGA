@@ -6,6 +6,7 @@ namespace PEGA.ObjectSystems.PlayerSystems
     public sealed class PlayerMaster : ObjectMaster
     {
 
+        public int playerIndex;
         internal readonly PlayerData PlayerData;
         #region Delegates
         public PlayerMaster(PlayerData objectData) : base(objectData)

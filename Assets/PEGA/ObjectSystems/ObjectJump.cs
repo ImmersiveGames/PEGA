@@ -1,4 +1,5 @@
-﻿using PEGA.ObjectSystems.Interfaces;
+﻿using ImmersiveGames.DebugSystems;
+using PEGA.ObjectSystems.Interfaces;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems
@@ -33,7 +34,7 @@ namespace PEGA.ObjectSystems
 
         protected virtual void AttemptJump()
         {
-            Debug.Log("JUMP");
+            DebugManager.Log<ObjectJump>("JUMP");
         }
     }
 }

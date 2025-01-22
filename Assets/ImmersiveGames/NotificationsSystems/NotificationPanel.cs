@@ -30,7 +30,7 @@ namespace ImmersiveGames.NotificationsSystems
         {
             if (confirmButton != null)
             {
-                InputGameManager.RegisterAction("ConfirmNotification", ButtonConfirm);
+               // PlayerInputHandler.RegisterAction("ConfirmNotification", ButtonConfirm);
             }
         }
 
@@ -38,9 +38,9 @@ namespace ImmersiveGames.NotificationsSystems
         {
             if (confirmButton != null)
             {
-                InputGameManager.UnregisterAction("ConfirmNotification", ButtonConfirm);
+                //PlayerInputHandler.UnregisterAction("ConfirmNotification", ButtonConfirm);
             }
-            InputGameManager.ActionManager.RestoreActionMap();
+            //PlayerInputHandler.ActionManager.RestoreActionMap();
         }
 
         public void Show(string message, Action onClose, Action onConfirm = null)

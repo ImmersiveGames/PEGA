@@ -1,45 +1,42 @@
-﻿using System;
-using ImmersiveGames.InputSystems;
-using PEGA.ObjectSystems.Interfaces;
-using UnityEngine;
+﻿using ImmersiveGames.InputSystems;
 using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.PlayerSystems
 {
     public class PlayerJump : ObjectJump
     {
+        private PlayerInputHandler _playerInputHandler;
 
-        #region UNity Methods
+        #region Unity Methods
+
+        private void Awake()
+        {
+            _playerInputHandler = GetComponent<PlayerInputHandler>();
+        }
+
         protected override void OnEnable()
         {
             base.OnEnable();
-            InputGameManager.RegisterAction("Jump", AttemptJump);
+
+            // Registro da ação "Jump" no ActionManager
+            _playerInputHandler.ActionManager.RegisterAction("Jump_Performed", AttemptJump);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            InputGameManager.UnregisterAction("Jump", AttemptJump);
+
+            // Cancelamento do registro da ação "Jump"
+            _playerInputHandler.ActionManager.UnregisterAction("Jump_Performed", AttemptJump);
         }
 
         #endregion
         
-        
-        protected override void SetInitialReferences()
-        {
-            base.SetInitialReferences();
-        }
 
         private void AttemptJump(InputAction.CallbackContext obj)
         {
-            //Tentativa de Pulo via Input
+            // Tentativa de pulo via input
             AttemptJump();
         }
-
-        protected override void AttemptJump()
-        {
-            base.AttemptJump();
-        }
     }
-    
 }

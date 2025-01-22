@@ -2,215 +2,163 @@
 using System.Collections.Generic;
 using System.Linq;
 using ImmersiveGames.DebugSystems;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems
 {
     public sealed class ActionManager
     {
-        #region Events and Actions Handling
-        
-        internal event Action<string, InputAction.CallbackContext> EventOnActionTriggered;
-        internal event Action EventOnActionComplete;
-        
-        private static readonly Dictionary<string, List<Action<InputAction.CallbackContext>>> ActionListeners =
-                    new Dictionary<string, List<Action<InputAction.CallbackContext>>>();
-        internal void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
-        {
-            if (!ActionListeners.TryGetValue(actionName, out var listener))
-            {
-                listener = new List<Action<InputAction.CallbackContext>>();
-                ActionListeners[actionName] = listener;
-            }
+        #region Events
 
-            listener.Add(callback);
+        public event Action<string, InputAction.CallbackContext> OnActionTriggered;
+        public event Action OnActionComplete;
+
+        #endregion
+
+        #region Fields
+
+        private readonly Dictionary<string, List<Action<InputAction.CallbackContext>>> _actionListeners = new();
+        private readonly PlayerInput _playerInput;
+
+        private GameActionMaps _currentActionMap;
+        private GameActionMaps _previousActionMap;
+
+        #endregion
+
+        #region Constructor
+
+        public ActionManager(PlayerInput playerInput)
+        {
+            _playerInput = playerInput ?? throw new ArgumentNullException(nameof(playerInput));
+            RegisterAllActions();
+        }
+
+        #endregion
+
+        #region Public API - Registration
+
+        public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
+        {
+            if (!_actionListeners.ContainsKey(actionName))
+                _actionListeners[actionName] = new List<Action<InputAction.CallbackContext>>();
+
+            _actionListeners[actionName].Add(callback);
         }
 
         public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
-            if (ActionListeners.TryGetValue(actionName, out var listener))
-            {
-                listener.Remove(callback);
-            }
+            if (_actionListeners.TryGetValue(actionName, out var actionListener))
+                actionListener.Remove(callback);
         }
 
-        private void NotifyObservers(string actionName, InputAction.CallbackContext context)
-        {
-            // Notifique todos os observadores globais
-            EventOnActionTriggered?.Invoke(actionName, context);
-
-            // Notifique observadores específicos para a ação
-            if (!ActionListeners.TryGetValue(actionName, out var listeners)) return;
-            foreach (var listener in listeners)
-            {
-                listener?.Invoke(context);
-            }
-        }
         #endregion
-        
-        #region Action Map Management
-        
-        private const GameActionMaps DefaultGameActionMaps = GameActionMaps.UiControls;
-        private GameActionMaps _lastGameActionMaps;
-        private GameActionMaps _currentGameActionMaps;
-        public void RestoreActionMap()
+
+        #region Public API - Local Action Map Management
+
+        /// <summary>
+        /// Ativa o mapa de ação local para este jogador.
+        /// </summary>
+        public void ActivateLocalActionMap(GameActionMaps actionMapName)
         {
-            ActivateActionMap(_lastGameActionMaps);
+            if (_currentActionMap == actionMapName) return;
+
+            _previousActionMap = _currentActionMap;
+            _currentActionMap = actionMapName;
+
+            SwitchActionMap(actionMapName);
+            DebugManager.Log<ActionManager>($"[Local ActionMap] '{actionMapName}' ativado para o jogador.");
         }
 
-        public bool IsActiveActionMap(GameActionMaps actionMapName)
+        /// <summary>
+        /// Restaura o último mapa de ação local deste jogador.
+        /// </summary>
+        public void RestoreLocalActionMap()
         {
-            return _currentGameActionMaps == actionMapName;
+            ActivateLocalActionMap(_previousActionMap);
         }
 
-        public void ActivateActionMap(GameActionMaps actionMapName)
+        /// <summary>
+        /// Verifica se o mapa de ação especificado está ativo.
+        /// </summary>
+        public bool IsLocalActionMapActive(GameActionMaps actionMapName)
         {
-            // Check if the requested action map is already active
-            if (_currentGameActionMaps == actionMapName)
-            {
-                DebugManager.Log<ActionManager>($"[Action Map] '{actionMapName}' is already active.");
-                return;
-            }
-
-            _lastGameActionMaps = _currentGameActionMaps;
-
-            // Disable all action maps
-            foreach (var actionMap in _inputActions.asset.actionMaps)
-            {
-                actionMap.Disable();
-            }
-
-            // Activate the requested action map
-            var mapToActivate = _inputActions.asset.FindActionMap(actionMapName.ToString());
-            if (mapToActivate != null)
-            {
-                mapToActivate.Enable();
-                _currentGameActionMaps = actionMapName;
-            }
-            else
-            {
-                DebugManager.LogWarning<ActionManager>($"Action Map '{actionMapName}' not found.");
-            }
-
-            DebugManager.Log<ActionManager>($"[Action Map] '{actionMapName}' activated.");
+            return _currentActionMap == actionMapName;
         }
-        
+
         #endregion
-        
-        #region Initialization and All Registration
 
-        // Utiliza a instância de PlayersInputActions do initializer
-        private readonly PegaInputActions _inputActions;
-        internal ActionManager(PegaInputActions inputActions)
-        {
-            _inputActions = inputActions;
-            RegisterAllActions();
-        }
+        #region Internal Logic
 
         private void RegisterAllActions()
         {
-            var actionMaps = _inputActions.asset.actionMaps;
-            foreach (var action in actionMaps.Select(actionMap => actionMap.actions).SelectMany(actions => actions))
+            var actionMaps = _playerInput.actions.actionMaps;
+
+            foreach (var action in actionMaps.SelectMany(map => map.actions))
             {
-                if (IsSpecialAction(action))
-                {
-                    action.started += (context) => HandleActions(action, context);
-                }
-                else
-                if (IsHoldAction(action))
-                {
-                    action.started += (context) => HandleActions(action, context);
-                    action.canceled += (context) => HandleActions(action, context);
-                }
-                else
-                if (IsAxisAction(action))
-                {
-                    action.performed += (context) => HandleActions(action, context);
-                    action.canceled += (context) => HandleActions(action, context);
-                }
-                else
-                {
-                    action.performed += (context) => NotifyObservers(action.name, context);
-                }
-            }
-
-            // Adicione um método para ativar/desativar Action Maps
-            ActivateActionMap(DefaultGameActionMaps); // Troque "DefaultMap" pelo nome do seu Action Map padrão
-        }
-        
-        #endregion
-
-        #region Special Actions Handling
-
-        /*private void HandleSpecialAction(InputAction action, InputAction.CallbackContext context)
-        {
-            // Lógica específica para ação especial;
-            DebugManager.Log<ActionManager>($"Special Action {action.name} Performed in context {context}");
-        }*/
-
-        private static bool IsSpecialAction(InputAction action)
-        {
-            // Adicione aqui a lógica para determinar se uma ação é especial ou não
-            return action.name.StartsWith("Special");
-        }
-        private void HandleActions(InputAction action, InputAction.CallbackContext context)
-        {
-            var completeName = action.name;
-
-            if (context.performed)
-            {
-                completeName += "_Performed";
-                //DebugManager.Log<ActionManager>($"Action {completeName} Performed in Performed");
-            }
-            else if (context.started)
-            {
-                completeName += "_Start";
-                //DebugManager.Log<ActionManager>($"Action {completeName} Performed in Started");
-            }
-            else if (context.canceled)
-            {
-                completeName += "_Cancel";
-                //DebugManager.Log<ActionManager>($"Action {completeName} Performed in Cancel");
-            }
-
-            if (!ActionListeners.TryGetValue(completeName, out var listener)) return;
-            foreach (var activeAction in listener)
-            {
-                activeAction?.Invoke(context);
+                RegisterCallbacks(action, "_Start", "_Performed", "_Cancel");
             }
         }
 
-        private bool IsHoldAction(InputAction action)
+        private void RegisterCallbacks(InputAction action, params string[] suffixes)
         {
-            // Adicione aqui a lógica para determinar se uma ação é especial ou não
-            return action.name.StartsWith("Hold_");
+            foreach (var suffix in suffixes)
+            {
+                switch (suffix)
+                {
+                    case "_Start":
+                        action.started += context => NotifyListeners(action.name + suffix, context);
+                        break;
+                    case "_Performed":
+                        action.performed += context => NotifyListeners(action.name + suffix, context);
+                        break;
+                    case "_Cancel":
+                        action.canceled += context => NotifyListeners(action.name + suffix, context);
+                        break;
+                }
+            }
         }
-        private bool IsAxisAction(InputAction action)
+
+        private void NotifyListeners(string actionName, InputAction.CallbackContext context)
         {
-            // Adicione aqui a lógica para determinar se uma ação é de eixo ou não
-            return action.name.StartsWith("Axis_");
+            OnActionTriggered?.Invoke(actionName, context);
+
+            if (!_actionListeners.TryGetValue(actionName, out var listeners)) return;
+            foreach (var listener in listeners)
+                listener?.Invoke(context);
+        }
+
+        private void SwitchActionMap(GameActionMaps actionMapName)
+        {
+            var actionMap = _playerInput.actions.FindActionMap(actionMapName.ToString());
+            if (actionMap == null)
+            {
+                DebugManager.LogWarning<ActionManager>($"[ActionManager] ActionMap '{actionMapName}' não encontrado.");
+                return;
+            }
+
+            _playerInput.SwitchCurrentActionMap(actionMapName.ToString());
         }
 
         #endregion
 
-        #region Axis Input Handling
+        #region Enums
 
-        /*private void HandleAxisAction(InputAction action, InputAction.CallbackContext context)
-        {
-            // Lógica específica para ação especial;
-            DebugManager.Log<ActionManager>($"Axis Action {action.name} Performed in context {context}");
-        }*/
-
-        #endregion
         public enum GameActionMaps
         {
-            Player, UiControls, BriefingRoom, Notifications, Shopping, HubControl
+            Player,
+            UiControls,
+            BriefingRoom,
+            Notifications,
+            Shopping,
+            HubControl
         }
 
-        public void OnEventOnActionComplete()
+        #endregion
+
+        private void OnOnActionComplete()
         {
-            EventOnActionComplete?.Invoke();
+            OnActionComplete?.Invoke();
         }
     }
-    
 }
