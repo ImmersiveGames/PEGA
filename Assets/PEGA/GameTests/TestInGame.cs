@@ -19,7 +19,7 @@ namespace PEGA.GameTests
             //Actions
             DebugManager.SetScriptDebugLevel<ActionManager>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<ObjectJump>(DebugManager.DebugLevels.All);
-            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.All);
             
         }
     }
