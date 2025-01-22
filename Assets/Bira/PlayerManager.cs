@@ -12,7 +12,9 @@ public class PlayerManager : MonoBehaviour
     [SerializeField]
     private List<LayerMask> playerLayers;
     [SerializeField]
-    private Image frame = null;
+    private Image verticalFrame = null;
+    [SerializeField]
+    private Image horizontalFrame = null;
 
     private PlayerInputManager playerInputManager;
 
@@ -42,8 +44,6 @@ public class PlayerManager : MonoBehaviour
         playerParent.position = startingPoints[players.Count - 1].position;
         player.GetComponentInChildren<CharacterController>().enabled = true;
 
-
-
         //convert layer mask (bit) to an integer 
         var layerToAdd = (int)Mathf.Log(playerLayers[players.Count - 1].value, 2);
 
@@ -53,14 +53,22 @@ public class PlayerManager : MonoBehaviour
         playerParent.GetComponentInChildren<Camera>().cullingMask |= 1 << layerToAdd;
         //set the action in the custom cinemachine Input Handler
         //playerParent.GetComponentInChildren<InputHandler>().horizontal = player.actions.FindAction("Look");
+        player.GetComponentInChildren<PlayersIndicators>().SetPlayerColor(player.playerIndex);
 
         if (players.Count == 2) 
         {
-            frame.enabled = true;
+            verticalFrame.enabled = true;
+            horizontalFrame.enabled = false;
+        }
+        else if (players.Count > 2) 
+        {
+            verticalFrame.enabled = true;
+            horizontalFrame.enabled = true;
         }
         else 
         {
-            frame.enabled = false;
+            verticalFrame.enabled = false;
+            horizontalFrame.enabled = false;
         }
 
     }

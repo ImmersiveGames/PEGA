@@ -13,9 +13,13 @@ TagManager:
   - Enemies
   - Water
   - UI
-  - Navmash
-  - Block Cenario
-  - Collectables
+  - Collectable
+  - Collectable_Base
+  - Player1 Camera
+  - Player2 Camera
+  - Player3 Camera
+  - Player4 Camera
+  - FadeObject
   - 
   - 
   - Player1

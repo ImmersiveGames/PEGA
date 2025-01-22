@@ -474,13 +474,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3e3e38272ab43bdae2189ba5d71cdc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chaseObject: {fileID: 0}
   forTestsObject: {fileID: 0}
+  enemyBase: {fileID: 0}
   backpackTransform: {fileID: 5003993148438413880}
-  interactableLayer:
+  collectablesLayer:
     serializedVersion: 2
-    m_Bits: 256
-  detectionRadius: 1
+    m_Bits: 64
+  baseLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  detectionBoxSize: {x: 1, y: 1, z: 1}
+  detectionDistance: 1
+  collectablesPool: []
+  chaseObject: {fileID: 0}
 --- !u!114 &5154215564502916706
 MonoBehaviour:
   m_ObjectHideFlags: 0

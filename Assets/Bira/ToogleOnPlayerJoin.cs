@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 public class ToggleOnPlayerJoin : MonoBehaviour
 {
     [SerializeField] bool shouldActivate = false;
+    [SerializeField] Rect viewportAdjustFor3Players;
 
     private PlayerInputManager playerInputManager;
 
@@ -16,6 +17,7 @@ public class ToggleOnPlayerJoin : MonoBehaviour
     private void OnEnable()
     {
         playerInputManager.onPlayerJoined += ToggleThis;
+   
     }
 
     private void OnDisable()
@@ -26,10 +28,19 @@ public class ToggleOnPlayerJoin : MonoBehaviour
     void Start()
     {
         
-    }
+    }   
 
     private void ToggleThis(PlayerInput player)
     {
-        this.gameObject.SetActive(shouldActivate);
+        GetComponent<Camera>().enabled = shouldActivate;
+
+        Debug.Log(playerInputManager.playerCount);
+
+        if (playerInputManager.playerCount == 3)
+        {
+            GetComponent<Camera>().enabled = true;
+            GetComponent<Camera>().rect = viewportAdjustFor3Players;
+        }
+
     }
 }
