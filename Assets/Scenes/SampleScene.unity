@@ -376,7 +376,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 9.071068, z: -7.071068}
+  m_LocalPosition: {x: 0, y: 12.606602, z: -10.606602}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -919,7 +919,7 @@ GameObject:
   - component: {fileID: 891984358}
   - component: {fileID: 891984357}
   - component: {fileID: 891984361}
-  m_Layer: 6
+  m_Layer: 13
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1137,13 +1137,13 @@ MonoBehaviour:
   spawnPoints: []
   playerLayers:
   - serializedVersion: 2
+    m_Bits: 256
+  - serializedVersion: 2
+    m_Bits: 512
+  - serializedVersion: 2
+    m_Bits: 1024
+  - serializedVersion: 2
     m_Bits: 2048
-  - serializedVersion: 2
-    m_Bits: 4096
-  - serializedVersion: 2
-    m_Bits: 8192
-  - serializedVersion: 2
-    m_Bits: 16384
 --- !u!1 &1032915778
 GameObject:
   m_ObjectHideFlags: 0
@@ -1182,7 +1182,8 @@ MonoBehaviour:
     m_Bits: 64
   - serializedVersion: 2
     m_Bits: 128
-  frame: {fileID: 1631924702}
+  verticalFrame: {fileID: 0}
+  horizontalFrame: {fileID: 0}
 --- !u!114 &1032915780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1493,6 +1494,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: EnemyMaster
+      objectReference: {fileID: 0}
+    - target: {fileID: 9101660603232806172, guid: 4320c2bf3f359a042bc41f059ec9f599,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

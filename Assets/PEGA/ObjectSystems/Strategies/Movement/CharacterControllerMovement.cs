@@ -1,4 +1,5 @@
 ﻿using PEGA.ObjectSystems.Interfaces;
+using PEGA.ObjectSystems.Modifications;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.Strategies.Movement
@@ -10,30 +11,70 @@ namespace PEGA.ObjectSystems.Strategies.Movement
 
         public void Gravity(ObjectMovement context)
         {
-            if (context.CharacterController == null) return;
-            if (context.CharacterController.isGrounded) return;
+            if (!context.CharacterController.isGrounded)
+            {
+                // Obtemos o modificador de gravidade
+                float gravityModifier = context.ModifierController.GetModifierValue("Gravity");
 
-            var gravityVector = new Vector3(0, Physics.gravity.y * context.ObjectData.gravityModifier * Time.deltaTime, 0);
-            context.CharacterController.Move(gravityVector);
+                // Calcula a gravidade final
+                float finalGravity = context.gravityBase + gravityModifier;
+
+                // Aplica a gravidade
+                context.VerticalMovement.y -= finalGravity * Time.deltaTime;
+            }
+            else if (context.VerticalMovement.y < 0)
+            {
+                // Zera o movimento vertical ao tocar o chão
+                context.VerticalMovement.y = 0;
+            }
         }
+
 
         public void Move(ObjectMovement context)
         {
             if (context.CharacterController == null) return;
-            var movement = context.CalculateMovement();
-            context.CharacterController.Move(movement * (context.ObjectData.speed * Time.deltaTime));
+
+            // Calcula a velocidade final com modificadores
+            float speedModifier = context.ModifierController.GetModifierValue("Speed");
+            float finalMoveSpeed = context.moveSpeedBase + speedModifier;
+
+            // Calcula o movimento com base na direção da câmera
+            Vector3 horizontalMovement = context.CalculateMovement() * (finalMoveSpeed * Time.deltaTime);
+
+            // Soma o movimento vertical (gravidade) com o horizontal
+            Vector3 totalMovement = horizontalMovement + context.VerticalMovement;
+
+            // Move o CharacterController
+            CollisionFlags collisionFlags = context.CharacterController.Move(totalMovement);
+
+            // Atualiza estado de "no chão"
+            context.IsGrounded = context.CharacterController.isGrounded;
+
+            // Se está no chão, zera o movimento vertical
+            if (context.IsGrounded && context.VerticalMovement.y < 0)
+            {
+                context.VerticalMovement.y = 0;
+            }
         }
+
 
         public void Rotate(ObjectMovement context)
         {
-            if (context.InputVector == Vector2.zero) return;
+            // Calcula a direção de movimento apenas se houver input significativo
+            var movementDirection = context.CalculateMovement();
 
-            var desiredDirection = new Vector3(context.InputVector.x, 0f, context.InputVector.y);
-            var targetRotation = Quaternion.LookRotation(desiredDirection, Vector3.up);
-
-            context.transform.rotation = Quaternion.Slerp(context.transform.rotation, targetRotation, context.ObjectData.rotationSpeed * Time.fixedDeltaTime);
-            
+            if (movementDirection.sqrMagnitude > 0.01f) // Pequenos inputs são ignorados
+            {
+                var targetRotation = Quaternion.LookRotation(movementDirection, Vector3.up);
+                context.transform.rotation = Quaternion.Slerp(
+                    context.transform.rotation,
+                    targetRotation,
+                    context.ObjectData.rotationSpeed * Time.fixedDeltaTime
+                );
+            }
         }
+
+
         
     }
 }

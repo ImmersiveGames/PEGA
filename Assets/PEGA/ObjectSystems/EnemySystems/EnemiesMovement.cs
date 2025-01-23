@@ -16,7 +16,6 @@ namespace PEGA.ObjectSystems.EnemySystems
         protected override void SetInitialReferences()
         {
             base.SetInitialReferences();
-            CharacterController = GetComponent<CharacterController>();
             NavMeshAgent = GetComponent<NavMeshAgent>();
             NavMeshAgent.updateRotation = true; // Des/Ativa o controle automático da rotação
             NavMeshAgent.updatePosition = true; // Des/Ativa a movimentação automática completa, mas você pode manter ativado

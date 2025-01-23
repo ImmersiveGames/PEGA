@@ -14,12 +14,12 @@ namespace PEGA.GameTests
             //Aqui vão todos os Scripts que devem ter seus debugs ativos
 
             //PlayerManager
-            DebugManager.SetScriptDebugLevel<PlayersManager>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<PlayersManager>(DebugManager.DebugLevels.None);
             
             //Actions
             DebugManager.SetScriptDebugLevel<ActionManager>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<ObjectJump>(DebugManager.DebugLevels.All);
-            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<PlayerMovement>(DebugManager.DebugLevels.None);
             
         }
     }

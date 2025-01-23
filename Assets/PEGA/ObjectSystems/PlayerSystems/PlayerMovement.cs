@@ -46,7 +46,6 @@ namespace PEGA.ObjectSystems.PlayerSystems
         {
             base.SetInitialReferences();
             _playerMaster = GetComponent<PlayerMaster>();
-            CharacterController = GetComponent<CharacterController>();
         }
 
         private void InitializeInput()

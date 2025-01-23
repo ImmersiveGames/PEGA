@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.DebugSystems;
+﻿using System;
+using ImmersiveGames.DebugSystems;
 using PEGA.ObjectSystems.Interfaces;
 using UnityEngine;
 
@@ -8,24 +9,29 @@ namespace PEGA.ObjectSystems
     public abstract class ObjectJump : MonoBehaviour, IObjectAction
     {
         protected ObjectMaster ObjectMaster;
-        protected CharacterController CharacterController;
+        private CharacterController _characterController;
         
         #region UNity Methods
-        protected virtual void OnEnable()
+
+        private void Awake()
         {
             SetInitialReferences();
         }
-
-        protected virtual void OnDisable()
-        {
-     
-        }
+        
 
         #endregion
         protected virtual void SetInitialReferences()
         {
             ObjectMaster = GetComponent<ObjectMaster>();
-            CharacterController = GetComponent<CharacterController>();
+            _characterController = GetComponent<CharacterController>();
+            if (_characterController == null)
+            {
+                Debug.LogError($"CharacterController NÃO encontrado no GameObject '{gameObject.name}'.");
+            }
+            else
+            {
+                Debug.Log($"CharacterController encontrado no GameObject '{gameObject.name}'.");
+            }
         }
         public void ExecuteAction()
         {
