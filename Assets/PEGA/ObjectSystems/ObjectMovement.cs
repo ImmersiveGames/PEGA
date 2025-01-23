@@ -7,20 +7,18 @@ using UnityEngine.AI;
 namespace PEGA.ObjectSystems
 {
     [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(ObjectGravity))]
     public class ObjectMovement : MonoBehaviour
     {
         [Header("Configurações Base")]
         [SerializeField] protected internal float moveSpeedBase = 5.0f; // Velocidade base de movimento
-        [SerializeField] protected internal float gravityBase = 9.8f; // Gravidade base
-        
-        protected internal Vector3 VerticalMovement = Vector3.zero; // Movimento vertical (gravidade)
-        protected internal bool IsGrounded = false;
         
         protected internal Vector2 InputVector = Vector2.zero;
         private Camera _mainCamera;
         private ObjectMaster _objectMaster;
         private IMovementStrategy _movementStrategy;
         
+        internal ObjectGravity ObjectGravity;
         internal CharacterController CharacterController;
         internal ModifierController ModifierController;
         internal ObjectDataScriptable ObjectData;
@@ -36,16 +34,11 @@ namespace PEGA.ObjectSystems
         protected virtual void FixedUpdate()
         {
             if (_movementStrategy == null) return;
-
-            _movementStrategy.Gravity(this);
+            // Executa rotação e movimento
             _movementStrategy.Rotate(this);
             _movementStrategy.Move(this);
-
-            if (ModifierController != null && ModifierController.HasActiveModifiers())
-            {
-                ModifierController.UpdateModifiers(Time.deltaTime);
-            }
         }
+
 
         #endregion
 
@@ -55,6 +48,7 @@ namespace PEGA.ObjectSystems
             ObjectData = _objectMaster.objectData;
             CharacterController = GetComponent<CharacterController>();
             ModifierController = GetComponent<ModifierController>();
+            ObjectGravity = GetComponent<ObjectGravity>();
             _mainCamera = Camera.main;
         }
 

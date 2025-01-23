@@ -15,4 +15,4 @@ MonoBehaviour:
   movementParameterName: Movement
   height: 6
   radius: 0.6
-  center: {x: 0, y: 2.8, z: 0}
+  center: {x: 0, y: 3, z: 0}

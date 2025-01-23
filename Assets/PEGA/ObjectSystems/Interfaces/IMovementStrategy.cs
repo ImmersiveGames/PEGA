@@ -2,7 +2,7 @@
 {
     public interface IMovementStrategy
     {
-        void Gravity(ObjectMovement context);
+        //void Gravity(ObjectMovement context);
         void Move(ObjectMovement context);
         void Rotate(ObjectMovement context);
     }

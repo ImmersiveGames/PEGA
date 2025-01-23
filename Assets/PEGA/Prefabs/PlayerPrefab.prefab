@@ -411,6 +411,8 @@ GameObject:
   - component: {fileID: 5493887458088416022}
   - component: {fileID: 8260366065765662248}
   - component: {fileID: 5272752039940584962}
+  - component: {fileID: 2313026586389050340}
+  - component: {fileID: 414764102236558401}
   m_Layer: 0
   m_Name: PlayerMaster
   m_TagString: Player
@@ -485,13 +487,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 168691bc818d48a89c8ea80df7693692, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jumpHeight: 200
-  gravity: 20
-  terminalVelocity: -50
-  groundCheckDistance: 0.2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8192
+  maxJumpHeight: 8
+  maxJumpTime: 0.75
 --- !u!114 &8894946811432877404
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -504,8 +501,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37ee43f4b92f4693aadcea0df4389fc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeedBase: 5
-  gravityBase: 9.8
+  moveSpeedBase: 10
 --- !u!114 &8027580832593864665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -576,3 +572,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 227405c9e13a4419baf78771676c7474, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2313026586389050340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c220c7182c94455492b8a449a5c2f85e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &414764102236558401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cd7590214a7472fb31d24acf787b043, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gravityBase: -9.8
+  groundedGravity: -2
+  fallMultiplayer: 2
+  maxFallSpeed: -50

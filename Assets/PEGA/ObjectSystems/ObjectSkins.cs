@@ -1,10 +1,8 @@
-﻿using System;
-using ImmersiveGames.DebugSystems;
+﻿using ImmersiveGames.DebugSystems;
 using PEGA.ObjectSystems.Interfaces;
 using PEGA.ObjectSystems.ObjectsScriptables;
 using PEGA.ObjectSystems.Tags;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PEGA.ObjectSystems
 {
@@ -13,7 +11,7 @@ namespace PEGA.ObjectSystems
         public int forceSkinIndex = -1;
         public bool randomSkin;
         public SkinCollections defaultSkinList;
-        protected ObjectMaster ObjectMaster;
+        private ObjectMaster _objectMaster;
         
         private GameObject _skin;
         #region Unity Methods
@@ -26,14 +24,14 @@ namespace PEGA.ObjectSystems
         protected void OnEnable()
         {
             SetInitialReferences();
-            
+            _objectMaster.OnCreateSkin();
         }
 
         #endregion
         
         protected virtual void SetInitialReferences()
         {
-            ObjectMaster = GetComponent<ObjectMaster>();
+            _objectMaster = GetComponent<ObjectMaster>();
         }
         private void CreateSkin(SkinCollections skinCollections)
         {
@@ -41,6 +39,7 @@ namespace PEGA.ObjectSystems
             _skin = Instantiate(skin, transform);
             ApplySettings(_skin.GetComponent<SkinAttach>().skinSettings);
             _skin.transform.SetAsFirstSibling();
+            
         }
 
         private void RemoveAllSkins()
