@@ -26,6 +26,7 @@ namespace PEGA.ObjectSystems.ObjectsScriptables
         
         [Header("Skins Settings")]
         public SkinCollections skinDefaultCollection;
+
         public string GetName()
         {
             return localizeName.IsEmpty ? name : localizeName.GetLocalizedString();

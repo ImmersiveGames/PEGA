@@ -5,13 +5,14 @@ namespace PEGA.ObjectSystems.PlayerSystems
 {
     public sealed class PlayerMaster : ObjectMaster
     {
-
         public int playerIndex;
+        public AttributesBaseData attributesBaseData;
         internal readonly PlayerData PlayerData;
         #region Delegates
-        public PlayerMaster(PlayerData objectData) : base(objectData)
+        public PlayerMaster(PlayerData objectData, AttributesBaseData attributesBaseData) : base(objectData)
         {
             PlayerData = objectData;
+            this.attributesBaseData = attributesBaseData;
         }
         //Input System
         public delegate void AxisEventHandler(Vector2 dir);
