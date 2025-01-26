@@ -6,5 +6,6 @@ namespace PEGA.ObjectSystems.ObjectsScriptables
     public class PlayerData : ObjectDataScriptable
     {
         public SkinCollections skinPurchaseCollection;
+        
     }
 }

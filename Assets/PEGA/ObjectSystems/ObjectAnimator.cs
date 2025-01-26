@@ -35,15 +35,19 @@ namespace PEGA.ObjectSystems
 
         #region Animations Calls
 
-        public void JumpAnimation()
+        public void WalkAnimation(string blandName, float moveMagnitude)
         {
-            if (_animator)
-                _animator.SetTrigger(_jump);
+            _animator.SetFloat(blandName, moveMagnitude);
         }
-        public void JumpEndAnimation()
+        public void JumpStartAnimation(bool active)
         {
             if (_animator)
-                _animator.SetTrigger(_jumpEnd);
+                _animator.SetBool(_jump, active);
+        }
+        public void JumpEndAnimation(bool active)
+        {
+            if (_animator)
+                _animator.SetBool(_jumpEnd, active);
         }
         public void IdleAnimation()
         {
