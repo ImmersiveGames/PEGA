@@ -35,6 +35,8 @@ namespace PEGA.ObjectSystems.MovementSystems
         private ModifierController _modifierController;
         private AnimationHandler _animationHandler;
 
+        private GravityHandler _gravityHandler;
+
         #region Unity Methods
 
         private void Awake()
@@ -57,7 +59,13 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             _characterController.Move(_appliedMovement * Time.deltaTime);
 
-            HandleGravity(); // Aplicar a gravidade por último
+            _gravityHandler.CalculateGravity(
+                ref _actualMovement,
+                ref _appliedMovement,
+                _actualGravity,
+                _characterController.isGrounded,
+                _actualMovement.y <= 0.0f || !_controller.IsJumpPressed
+            );
             HandleJump(); // Chamar o pulo antes da gravidade
         }
 
@@ -68,34 +76,15 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         #endregion
 
-        private void HandleGravity()
-        {
-            var isFalling = _actualMovement.y <= 0.0f || !_controller.IsJumpPressed;
-
-            if (_characterController.isGrounded)
-            {
-                _actualMovement.y = movementSettings.gravityGround;
-            }
-            else if (isFalling)
-            {
-                _animationHandler.SetJumpState(false);
-                var previousYVelocity = _actualMovement.y;
-                _actualMovement.y += _actualGravity * movementSettings.fallMultiplier * Time.deltaTime;
-                _appliedMovement.y = Mathf.Max(previousYVelocity + _actualMovement.y, movementSettings.maxFallVelocity);
-            }
-            else
-            {
-                var previousYVelocity = _actualMovement.y;
-                _actualMovement.y += _actualGravity * Time.deltaTime;
-                _appliedMovement.y = previousYVelocity + _actualMovement.y;
-            }
-        }
-
         private void HandleJump()
         {
             //Debug.Log($"CAido: {_characterController.isGrounded}, Pulando: {_isJumping}, Apertou: `{_controller.IsJumpPressed}");
             // Verifica se o personagem está no chão
             if (!_characterController.isGrounded) return;
+            if (_actualMovement.y <= 0.0f || !_controller.IsJumpPressed)
+            {
+                _animationHandler.SetJumpState(false);
+            }
             // Só permite pular se o botão foi pressionado novamente
             if (!_isJumping && _controller.IsJumpPressed)
             {
@@ -109,7 +98,6 @@ namespace PEGA.ObjectSystems.MovementSystems
                 _isJumping = false;
             }
         }
-
 
         private void HandleRotate()
         {
@@ -154,6 +142,8 @@ namespace PEGA.ObjectSystems.MovementSystems
             _animationHandler = new AnimationHandler(GetComponent<ObjectAnimator>(), movementParameterName);
             _controller = new InputMovementController(GetComponent<PlayerInputHandler>());
             _controller.InitializeInput();
+
+            _gravityHandler = new GravityHandler(movementSettings);
         }
 
         private void InitializeAttributes()
