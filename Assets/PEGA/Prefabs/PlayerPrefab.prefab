@@ -569,9 +569,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementParameterName: Movement
-  baseSpeed: 10
-  gravity: -9.8
-  gravityGround: -0.5
-  initialJumpVelocity: 0
-  maxJumpHeight: 2
-  maxJumpTime: 0.75
+  movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}

@@ -4,16 +4,14 @@ using PEGA.ObjectSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PEGA.ObjectSystems.Strategies.Controller
+namespace PEGA.ObjectSystems.MovementSystems.Strategies
 {
     public class InputMovementController : IMovementController
     {
         private readonly PlayerInputHandler _playerInputHandler;
-        private Vector2 _inputVector;
 
-        public Vector3 MoveVector => new(_inputVector.x, 0f, _inputVector.y);
-        public Vector2 InputVector => _inputVector;
-        
+        public Vector2 InputVector { get; private set; }
+
         public bool IsJumpPressed { get; private set; }
 
         public InputMovementController(PlayerInputHandler inputHandler)
@@ -49,20 +47,19 @@ namespace PEGA.ObjectSystems.Strategies.Controller
 
         private void InputAxisStart(InputAction.CallbackContext context)
         {
-            _inputVector = context.ReadValue<Vector2>();
+            InputVector = context.ReadValue<Vector2>();
         }
         private void InputAxisCanceled(InputAction.CallbackContext context)
         {
-            _inputVector = context.ReadValue<Vector2>();
+            InputVector = context.ReadValue<Vector2>();
         }
         private void InputAxisPerformed(InputAction.CallbackContext context)
         {
-            _inputVector = context.ReadValue<Vector2>().normalized;
+            InputVector = context.ReadValue<Vector2>().normalized;
         }
         private void OnJumpInput(InputAction.CallbackContext context)
         {
             IsJumpPressed = context.ReadValueAsButton();
-            Debug.Log($"Botão de pulo pressionado: {IsJumpPressed}");
         }
     }
 }

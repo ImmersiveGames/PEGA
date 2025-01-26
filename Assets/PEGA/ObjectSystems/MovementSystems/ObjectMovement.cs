@@ -1,30 +1,22 @@
 ﻿using ImmersiveGames.InputSystems;
+using ImmersiveGames.Utils;
+using PEGA.ObjectSystems.AnimatorSystem;
 using PEGA.ObjectSystems.Interfaces;
 using PEGA.ObjectSystems.Modifications;
+using PEGA.ObjectSystems.MovementSystems.Strategies;
 using PEGA.ObjectSystems.ObjectsScriptables;
 using PEGA.ObjectSystems.PlayerSystems;
-using PEGA.ObjectSystems.Strategies.Controller;
 using UnityEngine;
 
-namespace PEGA.ObjectSystems
+namespace PEGA.ObjectSystems.MovementSystems
 {
-    public class MovementHandler : MonoBehaviour
+    public class ObjectMovement : MonoBehaviour
     {
         [Header("Movement Settings")] [SerializeField]
         protected string movementParameterName;
 
-        [SerializeField] protected float baseSpeed = 10f;
-        [SerializeField] protected float gravity = -9.8f;
-        [SerializeField] protected float gravityGround = -0.5f;
-
-        [Header("Jump Settings")] [SerializeField]
-        protected float initialJumpVelocity;
-
-        [SerializeField] protected float maxJumpHeight = 1.0f;
-        [SerializeField] protected float maxJumpTime = 0.5f;
-        [SerializeField] protected float fallMultiplier = 2f;
-        [SerializeField] protected float maxFallVelocity = -30f;
-
+        [SerializeField] private MovementSettings movementSettings;
+        
         private float _actualSpeed;
         private float _rotationPerFrame;
         private float _actualGravity;
@@ -32,6 +24,7 @@ namespace PEGA.ObjectSystems
         private Vector3 _appliedMovement;
 
         private bool _isJumping;
+        private float _initialJumpVelocity;
 
         private IMovementController
             _controller; //Controla os input de como vai ser manipulado o objeto podendo ser Input ou AI
@@ -40,7 +33,7 @@ namespace PEGA.ObjectSystems
         private PlayerMaster _playerMaster;
         private AttributesBaseData _attributesBaseData;
         private ModifierController _modifierController;
-        private ObjectAnimator _objectAnimator;
+        private AnimationHandler _animationHandler;
 
         #region Unity Methods
 
@@ -59,7 +52,7 @@ namespace PEGA.ObjectSystems
         private void Update()
         {
             HandleRotate();
-            HandleAnimations();
+            UpdateAnimations();
             HandleAcceleration();
 
             _characterController.Move(_appliedMovement * Time.deltaTime);
@@ -81,35 +74,35 @@ namespace PEGA.ObjectSystems
 
             if (_characterController.isGrounded)
             {
-                _actualMovement.y = gravityGround;
+                _actualMovement.y = movementSettings.gravityGround;
             }
             else if (isFalling)
             {
-                _objectAnimator.JumpStartAnimation(false);
+                _animationHandler.SetJumpState(false);
                 var previousYVelocity = _actualMovement.y;
-                _actualMovement.y += gravity * fallMultiplier * Time.deltaTime;
-                _appliedMovement.y = Mathf.Max(previousYVelocity + _actualMovement.y, maxFallVelocity);
+                _actualMovement.y += _actualGravity * movementSettings.fallMultiplier * Time.deltaTime;
+                _appliedMovement.y = Mathf.Max(previousYVelocity + _actualMovement.y, movementSettings.maxFallVelocity);
             }
             else
             {
                 var previousYVelocity = _actualMovement.y;
-                _actualMovement.y += gravity * Time.deltaTime;
+                _actualMovement.y += _actualGravity * Time.deltaTime;
                 _appliedMovement.y = previousYVelocity + _actualMovement.y;
             }
         }
 
         private void HandleJump()
         {
-            Debug.Log($"CAido: {_characterController.isGrounded}, Pulando: {_isJumping}, Apertou: `{_controller.IsJumpPressed}");
+            //Debug.Log($"CAido: {_characterController.isGrounded}, Pulando: {_isJumping}, Apertou: `{_controller.IsJumpPressed}");
             // Verifica se o personagem está no chão
             if (!_characterController.isGrounded) return;
             // Só permite pular se o botão foi pressionado novamente
             if (!_isJumping && _controller.IsJumpPressed)
             {
-                _objectAnimator.JumpStartAnimation(true);
                 _isJumping = true;
-                _actualMovement.y = initialJumpVelocity;
-                _appliedMovement.y = initialJumpVelocity;
+                _animationHandler.SetJumpState(true);
+                _actualMovement.y = _initialJumpVelocity;
+                _appliedMovement.y = _initialJumpVelocity;
             }
             else if (!_controller.IsJumpPressed) // Reseta o estado do pulo se o botão foi liberado
             {
@@ -144,12 +137,9 @@ namespace PEGA.ObjectSystems
 
         #region Animation Handlers
 
-        private void HandleAnimations()
+        private void UpdateAnimations()
         {
-            var moveMagnitude = _controller.InputVector.magnitude;
-            if (_objectAnimator)
-                _objectAnimator.WalkAnimation(movementParameterName,
-                    moveMagnitude); // Define o parâmetro do Blend Tree de movimento
+            _animationHandler.HandleMovementAnimation(_controller.InputVector);
         }
 
         #endregion
@@ -161,7 +151,7 @@ namespace PEGA.ObjectSystems
             _playerMaster = GetComponent<PlayerMaster>();
             _modifierController = GetComponent<ModifierController>();
             _characterController = GetComponent<CharacterController>();
-            _objectAnimator = GetComponent<ObjectAnimator>();
+            _animationHandler = new AnimationHandler(GetComponent<ObjectAnimator>(), movementParameterName);
             _controller = new InputMovementController(GetComponent<PlayerInputHandler>());
             _controller.InitializeInput();
         }
@@ -169,15 +159,19 @@ namespace PEGA.ObjectSystems
         private void InitializeAttributes()
         {
             var attributes = _playerMaster.attributesBaseData;
-            _actualSpeed = baseSpeed + attributes.attAgility;
-            _rotationPerFrame = baseSpeed + attributes.attAgility + attributes.attBase;
+
+            _actualSpeed = movementSettings.baseSpeed + attributes.attAgility;
+            _rotationPerFrame = movementSettings.baseSpeed + attributes.attAgility + attributes.attBase;
+            _actualGravity = movementSettings.gravity;
         }
 
         private void CalculateJumpVariables()
         {
-            float timeToApex = maxJumpTime / 2;
-            gravity = (-2 * maxJumpHeight) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = (2 * maxJumpHeight) / timeToApex;
+            
+            JumpHelper.CalculateJumpVariables(
+                movementSettings.maxJumpHeight, 
+                movementSettings.maxJumpTime, 
+                out _actualGravity, out _initialJumpVelocity);
         }
 
         #endregion
