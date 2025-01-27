@@ -1,10 +1,8 @@
-﻿using System;
-using ImmersiveGames.Utils;
-using PEGA.ObjectSystems.AnimatorSystem;
+﻿using ImmersiveGames.Utils;
 using PEGA.ObjectSystems.Modifications;
 using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems
+namespace PEGA.ObjectSystems.MovementSystems.Handlers
 {
     public class JumpHandler
     {
@@ -17,7 +15,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         public float Gravity => _gravity; // Expor valor calculado
 
-        public JumpHandler(MovementSettings movementSettings, ModifierController modifierController, VerticalMovementState verticalMovementState, AnimationHandler animationHandler)
+        public JumpHandler(MovementSettings movementSettings, ModifierController modifierController, VerticalMovementState verticalMovementState)
         {
             _movementSettings = movementSettings;
             _modifierController = modifierController;

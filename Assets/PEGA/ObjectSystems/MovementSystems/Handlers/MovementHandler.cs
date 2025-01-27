@@ -3,7 +3,7 @@ using PEGA.ObjectSystems.Modifications;
 using PEGA.ObjectSystems.ObjectsScriptables;
 using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems
+namespace PEGA.ObjectSystems.MovementSystems.Handlers
 {
     public class MovementHandler
     {

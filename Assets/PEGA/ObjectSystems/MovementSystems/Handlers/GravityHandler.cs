@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems
+namespace PEGA.ObjectSystems.MovementSystems.Handlers
 {
     public class GravityHandler
     {

@@ -5,28 +5,33 @@ namespace PEGA.ObjectSystems.AnimatorSystem
     public class AnimationHandler
     {
         private readonly ObjectAnimator _objectAnimator;
-        private readonly string _movementParameterName;
+        
+        private const string MovementParameter = "Movement";
+        private const string JumpParameter = "Jump";
+        private const string IdleParameter = "Idle";
 
-        public AnimationHandler(ObjectAnimator objectAnimator, string movementParameterName)
+        public AnimationHandler(ObjectAnimator objectAnimator)
         {
             _objectAnimator = objectAnimator;
-            _movementParameterName = movementParameterName;
         }
 
+        // Animação de Movimento (Andando/Parado/Correndo)
         public void HandleMovementAnimation(Vector2 inputVector)
         {
             var moveMagnitude = inputVector.magnitude;
-            _objectAnimator.WalkAnimation(_movementParameterName, moveMagnitude);
+            _objectAnimator.SetFloat(MovementParameter, moveMagnitude);
         }
 
-        public void SetJumpState(bool isJumping)
+        // Animação de Pulo
+        public void SetJumping(bool isJumping)
         {
-            _objectAnimator.JumpStartAnimation(isJumping);
+            _objectAnimator.SetBool(JumpParameter, isJumping);
         }
 
+        // Animação de Idle
         public void SetIdle()
         {
-            _objectAnimator.IdleAnimation();
+            _objectAnimator.SetTrigger(IdleParameter);
         }
     }
 }

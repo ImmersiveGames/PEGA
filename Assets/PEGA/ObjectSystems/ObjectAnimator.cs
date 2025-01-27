@@ -7,9 +7,6 @@ namespace PEGA.ObjectSystems
     {
         private Animator _animator;
         private ObjectMaster _objectMaster;
-        private static readonly int _jump = Animator.StringToHash("Jump");
-        private static readonly int _jumpEnd = Animator.StringToHash("Jump_End");
-        private static readonly int _idle = Animator.StringToHash("Idle");
 
         #region Unity Methods
 
@@ -33,26 +30,21 @@ namespace PEGA.ObjectSystems
             _animator = skin.GetComponentInChildren<Animator>();
         }
 
-        #region Animations Calls
+        #region Animator Proxy
 
-        public void WalkAnimation(string blandName, float moveMagnitude)
+        public void SetFloat(string parameterName, float value)
         {
-            _animator.SetFloat(blandName, moveMagnitude);
+            _animator?.SetFloat(parameterName, value);
         }
-        public void JumpStartAnimation(bool active)
+
+        public void SetBool(string parameterName, bool value)
         {
-            if (_animator)
-                _animator.SetBool(_jump, active);
+            _animator?.SetBool(parameterName, value);
         }
-        public void JumpEndAnimation(bool active)
+
+        public void SetTrigger(string parameterName)
         {
-            if (_animator)
-                _animator.SetBool(_jumpEnd, active);
-        }
-        public void IdleAnimation()
-        {
-            if (_animator)
-                _animator.SetTrigger(_idle);
+            _animator?.SetTrigger(parameterName);
         }
 
         #endregion
