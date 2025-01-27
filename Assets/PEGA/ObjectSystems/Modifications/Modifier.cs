@@ -1,4 +1,5 @@
 ﻿using PEGA.ObjectSystems.Interfaces;
+using UnityEngine;
 
 namespace PEGA.ObjectSystems.Modifications
 {
@@ -27,6 +28,7 @@ namespace PEGA.ObjectSystems.Modifications
             if (Duration > 0)
             {
                 _remainingTime -= deltaTime;
+                Debug.Log($"Modifier {Type} remaining duration: {Duration}");
             }
         }
 

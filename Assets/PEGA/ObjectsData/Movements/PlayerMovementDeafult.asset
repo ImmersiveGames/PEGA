@@ -15,7 +15,7 @@ MonoBehaviour:
   baseSpeed: 10
   gravity: -9.8
   gravityGround: -0.5
-  maxJumpHeight: 1
-  maxJumpTime: 0.5
+  maxJumpHeight: 3
+  maxJumpTime: 0.8
   fallMultiplier: 2
   maxFallVelocity: -30

@@ -411,6 +411,7 @@ GameObject:
   - component: {fileID: 5272752039940584962}
   - component: {fileID: 2313026586389050340}
   - component: {fileID: 4133797421230446710}
+  - component: {fileID: 944452991807837042}
   m_Layer: 0
   m_Name: PlayerMaster
   m_TagString: Player
@@ -570,3 +571,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementParameterName: Movement
   movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}
+--- !u!114 &944452991807837042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a5608e27514042960f968fed711114, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

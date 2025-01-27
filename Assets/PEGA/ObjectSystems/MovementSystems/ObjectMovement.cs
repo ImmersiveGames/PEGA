@@ -1,5 +1,5 @@
-﻿using ImmersiveGames.InputSystems;
-using ImmersiveGames.Utils;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.AnimatorSystem;
 using PEGA.ObjectSystems.Interfaces;
 using PEGA.ObjectSystems.Modifications;
@@ -23,11 +23,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         private Vector3 _actualMovement;
         private Vector3 _appliedMovement;
 
-        private bool _isJumping;
-        private float _initialJumpVelocity;
-
-        private IMovementController
-            _controller; //Controla os input de como vai ser manipulado o objeto podendo ser Input ou AI
+        private IMovementController _controller; //Controla os input de como vai ser manipulado o objeto podendo ser Input ou AI
 
         private CharacterController _characterController;
         private PlayerMaster _playerMaster;
@@ -36,6 +32,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         private AnimationHandler _animationHandler;
 
         private GravityHandler _gravityHandler;
+        private MovementState _movementState;
+        private JumpHandler _jumpHandler;
+        private bool _isJumping;
 
         #region Unity Methods
 
@@ -43,7 +42,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             InitializeComponents();
             InitializeAttributes();
-            CalculateJumpVariables();
+            _actualGravity = _jumpHandler.Gravity;
         }
 
         private void OnEnable()
@@ -53,20 +52,27 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         private void Update()
         {
+            _modifierController.UpdateModifiers(Time.deltaTime);
+            
             HandleRotate();
             UpdateAnimations();
             HandleAcceleration();
 
+            // Move o personagem
             _characterController.Move(_appliedMovement * Time.deltaTime);
 
-            _gravityHandler.CalculateGravity(
-                ref _actualMovement,
-                ref _appliedMovement,
-                _actualGravity,
-                _characterController.isGrounded,
-                _actualMovement.y <= 0.0f || !_controller.IsJumpPressed
-            );
-            HandleJump(); // Chamar o pulo antes da gravidade
+            UpdateStates();
+
+            // Calcula a gravidade com base no estado atual
+            _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _movementState);
+
+            // Lida com a lógica de pulo via JumpHandler
+            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _controller.IsJumpPressed, ref _isJumping);
+
+            // Atualiza animações com base no estado de movimento
+            UpdateAnimations();
+
+            DebugManager.Log<ObjectMovement>($"Current Movement State: {_movementState.CurrentState}");
         }
 
         private void OnDisable()
@@ -76,29 +82,23 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         #endregion
 
-        private void HandleJump()
+        private void UpdateStates()
         {
-            //Debug.Log($"CAido: {_characterController.isGrounded}, Pulando: {_isJumping}, Apertou: `{_controller.IsJumpPressed}");
-            // Verifica se o personagem está no chão
-            if (!_characterController.isGrounded) return;
-            if (_actualMovement.y <= 0.0f || !_controller.IsJumpPressed)
+            // Atualiza o estado de movimento com base no chão e no movimento vertical
+            if (_characterController.isGrounded)
             {
-                _animationHandler.SetJumpState(false);
+                _movementState.CurrentState = MovementStateType.Grounded;
             }
-            // Só permite pular se o botão foi pressionado novamente
-            if (!_isJumping && _controller.IsJumpPressed)
+            else if (_movementState.CurrentState == MovementStateType.Jumping && _actualMovement.y <= 0.0f)
             {
-                _isJumping = true;
-                _animationHandler.SetJumpState(true);
-                _actualMovement.y = _initialJumpVelocity;
-                _appliedMovement.y = _initialJumpVelocity;
+                _movementState.CurrentState = MovementStateType.FallingFromJump;
             }
-            else if (!_controller.IsJumpPressed) // Reseta o estado do pulo se o botão foi liberado
+            else if (_movementState.CurrentState != MovementStateType.Jumping && _actualMovement.y <= 0.0f)
             {
-                _isJumping = false;
+                _movementState.CurrentState = MovementStateType.FallingFree;
             }
         }
-
+        
         private void HandleRotate()
         {
             Vector3 positionToLookAt;
@@ -144,6 +144,8 @@ namespace PEGA.ObjectSystems.MovementSystems
             _controller.InitializeInput();
 
             _gravityHandler = new GravityHandler(movementSettings);
+            _movementState = new MovementState();
+            _jumpHandler = new JumpHandler(movementSettings, _modifierController, _movementState, _animationHandler);
         }
 
         private void InitializeAttributes()
@@ -153,15 +155,6 @@ namespace PEGA.ObjectSystems.MovementSystems
             _actualSpeed = movementSettings.baseSpeed + attributes.attAgility;
             _rotationPerFrame = movementSettings.baseSpeed + attributes.attAgility + attributes.attBase;
             _actualGravity = movementSettings.gravity;
-        }
-
-        private void CalculateJumpVariables()
-        {
-            
-            JumpHelper.CalculateJumpVariables(
-                movementSettings.maxJumpHeight, 
-                movementSettings.maxJumpTime, 
-                out _actualGravity, out _initialJumpVelocity);
         }
 
         #endregion
