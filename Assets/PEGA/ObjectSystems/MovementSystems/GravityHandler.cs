@@ -15,21 +15,21 @@ namespace PEGA.ObjectSystems.MovementSystems
             ref Vector3 actualMovement,
             ref Vector3 appliedMovement,
             float actualGravity,
-            MovementState state) // Retorna se está caindo
+            VerticalMovementState state) // Retorna se está caindo
         {
             switch (state.CurrentState)
             {
-                case MovementStateType.Grounded:
+                case VerticalMovementStateType.Grounded:
                     actualMovement.y = _movementSettings.gravityGround;
                     break;
-                case MovementStateType.FallingFromJump or MovementStateType.FallingFree:
+                case VerticalMovementStateType.FallingFromJump or VerticalMovementStateType.FallingFree:
                 {
                     var previousYVelocity = actualMovement.y;
                     actualMovement.y += actualGravity * _movementSettings.fallMultiplier * Time.deltaTime;
                     appliedMovement.y = Mathf.Max(previousYVelocity + actualMovement.y, _movementSettings.maxFallVelocity);
                     break;
                 }
-                case MovementStateType.Jumping:
+                case VerticalMovementStateType.Jumping:
                 {
                     var previousYVelocity = actualMovement.y;
                     actualMovement.y += actualGravity * Time.deltaTime;

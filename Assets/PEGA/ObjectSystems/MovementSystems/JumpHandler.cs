@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.Utils;
+﻿using System;
+using ImmersiveGames.Utils;
 using PEGA.ObjectSystems.AnimatorSystem;
 using PEGA.ObjectSystems.Modifications;
 using UnityEngine;
@@ -7,59 +8,38 @@ namespace PEGA.ObjectSystems.MovementSystems
 {
     public class JumpHandler
     {
-        private AnimationHandler _animationHandler;
         private readonly MovementSettings _movementSettings;
         private readonly ModifierController _modifierController;
-        private readonly MovementState _movementState;
+        private readonly VerticalMovementState _verticalMovementState;
 
         private float _initialJumpVelocity;
         private float _gravity;
 
         public float Gravity => _gravity; // Expor valor calculado
 
-        public JumpHandler(MovementSettings movementSettings, ModifierController modifierController, MovementState movementState, AnimationHandler animationHandler)
+        public JumpHandler(MovementSettings movementSettings, ModifierController modifierController, VerticalMovementState verticalMovementState, AnimationHandler animationHandler)
         {
             _movementSettings = movementSettings;
             _modifierController = modifierController;
-            _movementState = movementState;
-            _animationHandler = animationHandler;
-
+            _verticalMovementState = verticalMovementState;
             // Calcula os valores iniciais do pulo
             CalculateJumpVariables();
-            
         }
 
         public void HandleJump(ref Vector3 actualMovement, ref Vector3 appliedMovement, bool isJumpPressed, ref bool isJumping)
         {
-            if (_movementState.CurrentState == MovementStateType.Grounded)
+            // Permite pular apenas se estiver no chão e não pulando
+            if (_verticalMovementState.CurrentState == VerticalMovementStateType.Grounded && isJumpPressed && !isJumping)
             {
-                if (actualMovement.y <= 0.0f)
-                {
-                    _movementState.CurrentState = MovementStateType.Grounded;
-                }
+                isJumping = true;
 
-                if (!isJumping && isJumpPressed)
-                {
-                    _animationHandler.SetJumpState(true);
-                    isJumping = true;
-                    _movementState.CurrentState = MovementStateType.Jumping;
-
-                    var jumpBoost = _modifierController.GetModifierValue("JumpBoost");
-                    actualMovement.y = _initialJumpVelocity + jumpBoost;
-                    appliedMovement.y = _initialJumpVelocity + jumpBoost;
-                }
-                else if (!isJumpPressed)
-                {
-                    isJumping = false;
-                }
+                var jumpBoost = _modifierController.GetModifierValue(ModifierKeys.JumpBoost);
+                actualMovement.y = _initialJumpVelocity + jumpBoost;
+                appliedMovement.y = _initialJumpVelocity + jumpBoost;
             }
-            else if (_movementState.CurrentState == MovementStateType.Jumping)
+            else if (!isJumpPressed)
             {
-                if (actualMovement.y <= 0.0f || !isJumpPressed)
-                {
-                    _animationHandler.SetJumpState(false);
-                    _movementState.CurrentState = MovementStateType.FallingFromJump;
-                }
+                isJumping = false; // Permite um novo pulo após liberar o botão
             }
         }
 

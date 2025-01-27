@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.DebugSystems;
+﻿using System;
+using ImmersiveGames.DebugSystems;
 using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.AnimatorSystem;
 using PEGA.ObjectSystems.Interfaces;
@@ -12,37 +13,37 @@ namespace PEGA.ObjectSystems.MovementSystems
 {
     public class ObjectMovement : MonoBehaviour
     {
-        [Header("Movement Settings")] [SerializeField]
-        protected string movementParameterName;
+        [Header("Movement Settings")] 
+        [SerializeField] private string movementParameterName;
 
-        [SerializeField] private MovementSettings movementSettings;
-        
-        private float _actualSpeed;
-        private float _rotationPerFrame;
+        [SerializeField] private MovementSettings movementSettings; // Movimento configurado no inspector
+
         private float _actualGravity;
         private Vector3 _actualMovement;
         private Vector3 _appliedMovement;
-
-        private IMovementController _controller; //Controla os input de como vai ser manipulado o objeto podendo ser Input ou AI
-
-        private CharacterController _characterController;
-        private PlayerMaster _playerMaster;
-        private AttributesBaseData _attributesBaseData;
-        private ModifierController _modifierController;
-        private AnimationHandler _animationHandler;
-
-        private GravityHandler _gravityHandler;
-        private MovementState _movementState;
-        private JumpHandler _jumpHandler;
         private bool _isJumping;
+        
+        private VerticalMovementState _verticalMovementState;
+        private HorizontalMovementState _horizontalMovementState;
+
+        private IMovementController _controller; // Controlador de input
+        private CharacterController _characterController;
+        private ModifierController _modifierController;
+
+        private AnimationHandler _animationHandler;
+        private GravityHandler _gravityHandler;
+        private JumpHandler _jumpHandler;
+        private MovementHandler _movementHandler;
+        
+        public event Action<VerticalMovementStateType> OnVerticalStateChanged;
+        public event Action<HorizontalMovementType> OnHorizontalStateChanged;
 
         #region Unity Methods
 
         private void Awake()
         {
+            // Configura os componentes do sistema
             InitializeComponents();
-            InitializeAttributes();
-            _actualGravity = _jumpHandler.Gravity;
         }
 
         private void OnEnable()
@@ -53,26 +54,30 @@ namespace PEGA.ObjectSystems.MovementSystems
         private void Update()
         {
             _modifierController.UpdateModifiers(Time.deltaTime);
-            
-            HandleRotate();
-            UpdateAnimations();
-            HandleAcceleration();
 
-            // Move o personagem
-            _characterController.Move(_appliedMovement * Time.deltaTime);
+            // Atualiza gravidade
+            _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _verticalMovementState);
 
-            UpdateStates();
-
-            // Calcula a gravidade com base no estado atual
-            _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _movementState);
-
-            // Lida com a lógica de pulo via JumpHandler
+            // Gerencia o pulo
             _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _controller.IsJumpPressed, ref _isJumping);
 
-            // Atualiza animações com base no estado de movimento
+            // Atualiza o estado do movimento
+            UpdateVerticalState();
+            UpdateHorizontalState();
+
+            // Atualiza movimentação horizontal
+            _movementHandler.UpdateMovement(ref _actualMovement, ref _appliedMovement);
+
+            // Aplica o movimento calculado
+            MovementHandler.ApplyMovement(_appliedMovement, _characterController);
+
+            // Atualiza animações
             UpdateAnimations();
 
-            DebugManager.Log<ObjectMovement>($"Current Movement State: {_movementState.CurrentState}");
+            // Debug opcional
+#if UNITY_EDITOR
+            DebugManager.Log<ObjectMovement>($"Current Movement State: {_verticalMovementState.CurrentState}");
+#endif
         }
 
         private void OnDisable()
@@ -82,46 +87,65 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         #endregion
 
-        private void UpdateStates()
-        {
-            // Atualiza o estado de movimento com base no chão e no movimento vertical
-            if (_characterController.isGrounded)
-            {
-                _movementState.CurrentState = MovementStateType.Grounded;
-            }
-            else if (_movementState.CurrentState == MovementStateType.Jumping && _actualMovement.y <= 0.0f)
-            {
-                _movementState.CurrentState = MovementStateType.FallingFromJump;
-            }
-            else if (_movementState.CurrentState != MovementStateType.Jumping && _actualMovement.y <= 0.0f)
-            {
-                _movementState.CurrentState = MovementStateType.FallingFree;
-            }
-        }
-        
-        private void HandleRotate()
-        {
-            Vector3 positionToLookAt;
-            positionToLookAt.x = _actualMovement.x;
-            positionToLookAt.y = 0.0f;
-            positionToLookAt.z = _actualMovement.z;
+        #region Initialization
 
-            var currentRotation = transform.rotation;
-            if (_controller.InputVector == Vector2.zero) return;
-            var targetRotation = Quaternion.LookRotation(positionToLookAt);
-            transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, _rotationPerFrame * Time.deltaTime);
+        public void Initialize(IMovementController controller, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
+        {
+            // Permite a inicialização via injeção de dependências
+            _controller = controller;
+            _modifierController = modifierController;
+            movementSettings = settings;
+
+            // Criação dos componentes necessários
+            _animationHandler = new AnimationHandler(GetComponent<ObjectAnimator>(), movementParameterName);
+            _gravityHandler = new GravityHandler(movementSettings);
+            _verticalMovementState = new VerticalMovementState();
+            _horizontalMovementState = new HorizontalMovementState(movementSettings.walkThreshold);
+            _jumpHandler = new JumpHandler(movementSettings, _modifierController, _verticalMovementState, _animationHandler);
+            _movementHandler = new MovementHandler(transform, _controller, movementSettings, attributes, _modifierController);
+
+            // Configura gravidade inicial
+            _actualGravity = _jumpHandler.Gravity;
         }
 
-        private void HandleAcceleration()
+        private void InitializeComponents()
         {
-            //Debug.Log($"Gravity = {_actualMovement.y}");
-            var speedModifier = _modifierController.GetModifierValue("Speed");
-            _actualMovement.z = _controller.InputVector.y * _actualSpeed + speedModifier;
-            _actualMovement.x = _controller.InputVector.x * _actualSpeed + speedModifier;
+            // Inicializa automaticamente se não usar injeção de dependência
+            var playerMaster = GetComponent<PlayerMaster>();
+            Initialize(
+                new InputMovementController(GetComponent<PlayerInputHandler>()),
+                GetComponent<ModifierController>(),
+                movementSettings,
+                playerMaster.attributesBaseData
+            );
 
-            _appliedMovement.x = _actualMovement.x;
-            _appliedMovement.z = _actualMovement.z;
+            _characterController = GetComponent<CharacterController>();
         }
+
+        #endregion
+        #region State Updates
+
+        private void UpdateVerticalState()
+        {
+            var previousState = _verticalMovementState.CurrentState;
+            _verticalMovementState.UpdateState(_actualMovement, _isJumping, _characterController.isGrounded);
+
+            if (_verticalMovementState.CurrentState == previousState) return;
+            OnVerticalStateChanged?.Invoke(_verticalMovementState.CurrentState);
+            Debug.Log($"Vertical State Changed: {_verticalMovementState.CurrentState}");
+        }
+
+        private void UpdateHorizontalState()
+        {
+            var previousState = _horizontalMovementState.CurrentState;
+            _horizontalMovementState.UpdateState(_actualMovement);
+
+            if (_horizontalMovementState.CurrentState == previousState) return;
+            OnHorizontalStateChanged?.Invoke(_horizontalMovementState.CurrentState);
+            Debug.Log($"Horizontal State Changed: {_horizontalMovementState.CurrentState}");
+        }
+
+        #endregion
 
         #region Animation Handlers
 
@@ -131,33 +155,5 @@ namespace PEGA.ObjectSystems.MovementSystems
         }
 
         #endregion
-
-        #region Initialization
-
-        private void InitializeComponents()
-        {
-            _playerMaster = GetComponent<PlayerMaster>();
-            _modifierController = GetComponent<ModifierController>();
-            _characterController = GetComponent<CharacterController>();
-            _animationHandler = new AnimationHandler(GetComponent<ObjectAnimator>(), movementParameterName);
-            _controller = new InputMovementController(GetComponent<PlayerInputHandler>());
-            _controller.InitializeInput();
-
-            _gravityHandler = new GravityHandler(movementSettings);
-            _movementState = new MovementState();
-            _jumpHandler = new JumpHandler(movementSettings, _modifierController, _movementState, _animationHandler);
-        }
-
-        private void InitializeAttributes()
-        {
-            var attributes = _playerMaster.attributesBaseData;
-
-            _actualSpeed = movementSettings.baseSpeed + attributes.attAgility;
-            _rotationPerFrame = movementSettings.baseSpeed + attributes.attAgility + attributes.attBase;
-            _actualGravity = movementSettings.gravity;
-        }
-
-        #endregion
-        
     }
 }
