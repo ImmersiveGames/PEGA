@@ -141,8 +141,6 @@ public class PlayerController : MonoBehaviour
     private void OnActionPerformed() 
     {
 
-        Debug.Log("Chamei a função de ação");
-
         Vector3 boxCenter = transform.position + transform.forward * interactionBoxSize.z;
         boxCenter.y = transform.position.y + interactionBoxSize.y / 2;
 

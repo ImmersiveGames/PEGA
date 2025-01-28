@@ -14,5 +14,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float maxJumpTime = 0.5f;
         public float fallMultiplier = 2f;
         public float maxFallVelocity = -30f;
+        [Header("Dash Settings")]
+        public float dashSpeed = 20f;
+        public float dashDuration = 0.5f;
+        public float dashCooldown = 1f;
     }
 }

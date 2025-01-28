@@ -13,6 +13,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Strategies
         public Vector2 InputVector { get; private set; }
 
         public bool IsJumpPressed { get; private set; }
+        public bool IsDashPressed { get; private set; }
 
         public InputMovementController(PlayerInputHandler inputHandler)
         {
@@ -31,6 +32,8 @@ namespace PEGA.ObjectSystems.MovementSystems.Strategies
             
             _playerInputHandler.ActionManager.RegisterAction("Jump_Start", OnJumpInput);
             _playerInputHandler.ActionManager.RegisterAction("Jump_Cancel", OnJumpInput);
+            _playerInputHandler.ActionManager.RegisterAction("Dash_Start", OnDashInput);
+            _playerInputHandler.ActionManager.RegisterAction("Dash_Cancel", OnDashInput);
 
             DebugManager.Log<InputMovementController>($"Mapa de ação atual: {_playerInputHandler.ActionManager.IsLocalActionMapActive(ActionManager.GameActionMaps.Player)}");
         }
@@ -60,6 +63,10 @@ namespace PEGA.ObjectSystems.MovementSystems.Strategies
         private void OnJumpInput(InputAction.CallbackContext context)
         {
             IsJumpPressed = context.ReadValueAsButton();
+        }
+        private void OnDashInput(InputAction.CallbackContext context)
+        {
+            IsDashPressed = context.ReadValueAsButton();
         }
     }
 }

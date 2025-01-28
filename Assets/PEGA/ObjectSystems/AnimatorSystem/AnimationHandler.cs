@@ -8,6 +8,7 @@ namespace PEGA.ObjectSystems.AnimatorSystem
         
         private const string MovementParameter = "Movement";
         private const string JumpParameter = "Jump";
+        private const string DashParameter = "Dash";
         private const string IdleParameter = "Idle";
 
         public AnimationHandler(ObjectAnimator objectAnimator)
@@ -26,6 +27,11 @@ namespace PEGA.ObjectSystems.AnimatorSystem
         public void SetJumping(bool isJumping)
         {
             _objectAnimator.SetBool(JumpParameter, isJumping);
+        }
+        // Animação de Pulo
+        public void SetDashing(bool isDashing)
+        {
+            _objectAnimator.SetBool(DashParameter, isDashing);
         }
 
         // Animação de Idle

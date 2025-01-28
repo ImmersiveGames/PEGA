@@ -23,6 +23,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         private Vector3 _actualMovement;
         private Vector3 _appliedMovement;
         private bool _isJumping;
+        private bool _isDashing;
         
         private VerticalMovementState _verticalMovementState;
         private HorizontalMovementState _horizontalMovementState;
@@ -69,6 +70,9 @@ namespace PEGA.ObjectSystems.MovementSystems
             // Atualiza movimentação horizontal
             _movementHandler.UpdateMovement(ref _actualMovement, ref _appliedMovement);
 
+            // Sobrescreve o movimento no dash
+            DashHandler();
+            
             // Aplica o movimento calculado
             MovementHandler.ApplyMovement(_appliedMovement, _characterController);
 
@@ -122,8 +126,33 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             _characterController = GetComponent<CharacterController>();
         }
-
         #endregion
+
+        private void DashHandler()
+        {
+            if (_controller.IsDashPressed && !_isDashing)
+            {
+                _isDashing = true;
+
+                // Calcula o multiplicador e aplica ao movimento diretamente
+                _appliedMovement.x *= 4;
+                _appliedMovement.z *= 4;
+                _actualMovement.x *= 4;
+                _actualMovement.z *= 4;
+
+                _animationHandler.SetDashing(true);
+                Debug.Log("Dash iniciado!");
+            }
+            else if (!_controller.IsDashPressed && _isDashing)
+            {
+                _isDashing = false;
+
+                _animationHandler.SetDashing(false);
+                Debug.Log("Dash finalizado!");
+            }
+        }
+        
+        
         #region State Updates
 
         private void UpdateVerticalState()
@@ -133,17 +162,18 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             if (_verticalMovementState.CurrentState == previousState) return;
             OnVerticalStateChanged?.Invoke(_verticalMovementState.CurrentState);
-            Debug.Log($"Vertical State Changed: {_verticalMovementState.CurrentState}");
+            DebugManager.Log<ObjectMovement>($"Vertical State Changed: {_verticalMovementState.CurrentState}");
         }
 
         private void UpdateHorizontalState()
         {
             var previousState = _horizontalMovementState.CurrentState;
-            _horizontalMovementState.UpdateState(_actualMovement);
-
+            
+            _horizontalMovementState.UpdateState(_actualMovement,_isDashing);
+            Debug.Log($"Previous: {previousState}, Atual : {_horizontalMovementState.CurrentState}");
             if (_horizontalMovementState.CurrentState == previousState) return;
             OnHorizontalStateChanged?.Invoke(_horizontalMovementState.CurrentState);
-            Debug.Log($"Horizontal State Changed: {_horizontalMovementState.CurrentState}");
+            DebugManager.Log<ObjectMovement>($"Horizontal State Changed: {_horizontalMovementState.CurrentState}");
         }
 
         #endregion
@@ -156,16 +186,17 @@ namespace PEGA.ObjectSystems.MovementSystems
             switch (_horizontalMovementState.CurrentState)
             {
                 case HorizontalMovementType.Idle:
-                    _animationHandler.SetIdle();
+                    //_animationHandler.SetIdle();
                     break;
 
                 case HorizontalMovementType.Walking:
                 case HorizontalMovementType.Running:
                     _animationHandler.HandleMovementAnimation(_controller.InputVector);
                     break;
-                default:
-                    _animationHandler.SetIdle();
+                case HorizontalMovementType.Dashing:
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             // Atualiza animação com base no estado vertical
@@ -179,9 +210,6 @@ namespace PEGA.ObjectSystems.MovementSystems
                     break;
 
                 case VerticalMovementStateType.Grounded:
-                    _animationHandler.SetJumping(false);
-                    break;
-                default:
                     _animationHandler.SetJumping(false);
                     break;
             }

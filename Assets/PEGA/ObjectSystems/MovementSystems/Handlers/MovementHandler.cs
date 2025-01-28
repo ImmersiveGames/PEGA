@@ -30,10 +30,11 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
 
         private void HandleMovement(ref Vector3 actualMovement, ref Vector3 appliedMovement)
         {
-            var speedModifier = _modifierController.GetModifierValue(ModifierKeys.Speed);
+            var speedModifier = _modifierController.GetModifierValue(ModifierKeys.SpeedMultiplay);
+            speedModifier = (speedModifier == 0) ? 1f : speedModifier;
 
-            actualMovement.x = _controller.InputVector.x * (_actualSpeed + speedModifier);
-            actualMovement.z = _controller.InputVector.y * (_actualSpeed + speedModifier);
+            actualMovement.x = _controller.InputVector.x * (_actualSpeed * speedModifier);
+            actualMovement.z = _controller.InputVector.y * (_actualSpeed * speedModifier);
 
             appliedMovement.x = actualMovement.x;
             appliedMovement.z = actualMovement.z;

@@ -43,7 +43,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
 
         private void CalculateJumpVariables()
         {
-            JumpHelper.CalculateJumpVariables(
+            CalculateMovementHelper.CalculateJumpVariables(
                 _movementSettings.maxJumpHeight,
                 _movementSettings.maxJumpTime,
                 out _gravity, // Armazena gravidade calculada
