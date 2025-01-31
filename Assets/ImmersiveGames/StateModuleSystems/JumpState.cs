@@ -8,7 +8,6 @@ namespace ImmersiveGames.StateModuleSystems
         {
             Debug.Log("[JUMP] Entrou");
             blackboard.isJumping = true;
-            InputHandler.OnJumpReleased += HandleJumpReleased;
 
             // Mantém o movimento ativo (se estiver ocorrendo)
             if (blackboard.moveInput != Vector2.zero)
@@ -21,7 +20,6 @@ namespace ImmersiveGames.StateModuleSystems
         {
             Debug.Log("[JUMP] Saiu");
             blackboard.isJumping = false;
-            InputHandler.OnJumpReleased -= HandleJumpReleased;
         }
 
         public override void UpdateState()

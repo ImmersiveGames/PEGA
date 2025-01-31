@@ -1,31 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ImmersiveGames.DebugSystems;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems
 {
     public sealed class ActionManager
     {
-        #region Events
-
         public event Action<string, InputAction.CallbackContext> OnActionTriggered;
         public event Action OnActionComplete;
 
-        #endregion
-
-        #region Fields
-
         private readonly Dictionary<string, List<Action<InputAction.CallbackContext>>> _actionListeners = new();
         private readonly PlayerInput _playerInput;
-
-        private GameActionMaps _currentActionMap;
-        private GameActionMaps _previousActionMap;
-
-        #endregion
-
-        #region Constructor
 
         public ActionManager(PlayerInput playerInput)
         {
@@ -33,58 +19,26 @@ namespace ImmersiveGames.InputSystems
             RegisterAllActions();
         }
 
-        #endregion
-
-        #region Public API - Registration
-
         public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
             if (!_actionListeners.ContainsKey(actionName))
                 _actionListeners[actionName] = new List<Action<InputAction.CallbackContext>>();
 
-            if (!_actionListeners[actionName].Contains(callback))
-                _actionListeners[actionName].Add(callback);
+            _actionListeners[actionName].Add(callback);
         }
 
         public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
-            if (_actionListeners.TryGetValue(actionName, out var actionListener))
-                actionListener.Remove(callback);
+            if (!_actionListeners.ContainsKey(actionName)) return;
+            
+            _actionListeners[actionName].Remove(callback);
+            if (_actionListeners[actionName].Count == 0)
+                _actionListeners.Remove(actionName);
         }
-
-        #endregion
-
-        #region Public API - Local Action Map Management
-
-        public void ActivateLocalActionMap(GameActionMaps actionMapName)
-        {
-            if (_currentActionMap == actionMapName) return;
-
-            _previousActionMap = _currentActionMap;
-            _currentActionMap = actionMapName;
-
-            SwitchActionMap(actionMapName);
-            DebugManager.Log<ActionManager>($"[Local ActionMap] '{actionMapName}' ativado para o jogador.");
-        }
-
-        public void RestoreLocalActionMap()
-        {
-            ActivateLocalActionMap(_previousActionMap);
-        }
-
-        public bool IsLocalActionMapActive(GameActionMaps actionMapName)
-        {
-            return _currentActionMap == actionMapName;
-        }
-
-        #endregion
-
-        #region Internal Logic
 
         private void RegisterAllActions()
         {
             var actionMaps = _playerInput.actions.actionMaps;
-
             foreach (var action in actionMaps.SelectMany(map => map.actions))
             {
                 RegisterCallbacks(action, "_Start", "_Performed", "_Cancel");
@@ -113,43 +67,13 @@ namespace ImmersiveGames.InputSystems
         private void NotifyListeners(string actionName, InputAction.CallbackContext context)
         {
             OnActionTriggered?.Invoke(actionName, context);
-
-            if (!_actionListeners.TryGetValue(actionName, out var listeners)) return;
-            foreach (var listener in listeners)
-                listener?.Invoke(context);
-        }
-
-        private void SwitchActionMap(GameActionMaps actionMapName)
-        {
-            var actionMap = _playerInput.actions.FindActionMap(actionMapName.ToString());
-            if (actionMap == null)
+            if (_actionListeners.TryGetValue(actionName, out var listeners))
             {
-                DebugManager.LogWarning<ActionManager>($"[ActionManager] ActionMap '{actionMapName}' não encontrado.");
-                return;
+                foreach (var listener in listeners)
+                {
+                    listener?.Invoke(context);
+                }
             }
-
-            _playerInput.SwitchCurrentActionMap(actionMapName.ToString());
-        }
-
-        #endregion
-
-        #region Enums
-
-        public enum GameActionMaps
-        {
-            Player,
-            UiControls,
-            BriefingRoom,
-            Notifications,
-            Shopping,
-            HubControl
-        }
-
-        #endregion
-
-        private void OnOnActionComplete()
-        {
-            OnActionComplete?.Invoke();
         }
     }
 }
