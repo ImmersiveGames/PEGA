@@ -254,7 +254,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3785033303422246666}
   m_Layer: 0
-  m_Name: PlayerPrefab
+  m_Name: PlayerPrefab 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -409,8 +409,9 @@ GameObject:
   - component: {fileID: 8260366065765662248}
   - component: {fileID: 5272752039940584962}
   - component: {fileID: 2313026586389050340}
-  - component: {fileID: 737668538414677444}
-  - component: {fileID: 3097938912641828902}
+  - component: {fileID: 4133797421230446710}
+  - component: {fileID: 944452991807837042}
+  - component: {fileID: 3117744773489781110}
   m_Layer: 0
   m_Name: PlayerMaster
   m_TagString: Player
@@ -544,7 +545,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c220c7182c94455492b8a449a5c2f85e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &737668538414677444
+--- !u!114 &4133797421230446710
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -553,17 +554,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 5202670250957630496}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 910c52add1d84e7cbc8dcbf9eea9e909, type: 3}
+  m_Script: {fileID: 11500000, guid: 7e5d4c5852e34e83a616c146e66432f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterController: {fileID: 0}
-  movement: {x: 0, y: 0, z: 0}
-  isGrounded: 0
-  isWalking: 0
-  isJumping: 0
-  isFalling: 0
-  isDashing: 0
---- !u!114 &3097938912641828902
+  movementParameterName: Movement
+  movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}
+--- !u!114 &944452991807837042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a5608e27514042960f968fed711114, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3117744773489781110
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

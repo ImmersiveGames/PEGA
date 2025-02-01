@@ -1,58 +1,49 @@
 ﻿using System;
-using ImmersiveGames.InputSystems.Interface;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems
 {
-    public class CharacterInputHandler : MonoBehaviour, IControllerInput
+    public class CharacterInputHandler
     {
-        private PlayerInput _playerInput;
-        private ActionMapManager _actionMapManager;
-
+        private readonly PlayerInput _playerInput;
+        private readonly ActionMapManager _actionMapManager;
         public ActionManager ActionManager { get; private set; }
+
         public event Action<string, InputAction.CallbackContext> OnInputReceived;
 
-        private void Awake()
+        public CharacterInputHandler(PlayerInput playerInput)
         {
-            _playerInput = GetComponent<PlayerInput>();
-            if (_playerInput == null)
-            {
-                Debug.LogError("[CharacterInputHandler] PlayerInput não encontrado!");
-                return;
-            }
-
-            ActionManager = new ActionManager(_playerInput);
+            _playerInput = playerInput ?? throw new ArgumentNullException(nameof(playerInput));
             _actionMapManager = new ActionMapManager(_playerInput);
+            ActionManager = new ActionManager(_playerInput);
+
+            // Disparar eventos de input
             ActionManager.OnActionTriggered += (action, context) => OnInputReceived?.Invoke(action, context);
         }
 
-        public void ActivateActionMap(ActionMapKey actionMapName)
+        public void ActivateActionMap(ActionMapKey actionMap) => _actionMapManager.ActivateActionMap(actionMap);
+        public void DeactivateCurrentActionMap() => _actionMapManager.RestorePreviousActionMap();
+
+        public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
-            if (_actionMapManager.IsActionMapActive(actionMapName)) return; // Já está ativo, não faz nada
-            _actionMapManager.ActivateActionMap(actionMapName);
+            ActionManager.RegisterAction(actionName, callback);
         }
 
+        public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
+        {
+            ActionManager.UnregisterAction(actionName, callback);
+        }
+        
 
-        public void DeactivateCurrentActionMap()
-        {
-            _actionMapManager.RestorePreviousActionMap();
-        }
-        
-        private T GetActionValue<T>(string actionName) where T : struct
-        {
-            if (_playerInput == null || _playerInput.actions == null) return default;
-    
-            var action = _playerInput.actions[actionName];
-            return action?.ReadValue<T>() ?? default;
-        }
-        
         public Vector2 GetMovementDirection() => GetActionValue<Vector2>("Axis_Move");
         public bool IsActionPressed(string actionName) => GetActionValue<float>(actionName) > 0.5f;
 
-        public void SetEnabled(bool state)
+        private T GetActionValue<T>(string actionName) where T : struct
         {
-            _playerInput.enabled = state;
+            if (_playerInput == null || _playerInput.actions == null) return default;
+            var action = _playerInput.actions[actionName];
+            return action?.ReadValue<T>() ?? default;
         }
     }
 }

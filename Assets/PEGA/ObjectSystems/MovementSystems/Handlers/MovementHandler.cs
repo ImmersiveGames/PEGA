@@ -7,16 +7,17 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
 {
     public class MovementHandler
     {
-        private readonly CharacterInputHandler _characterInput;
+        private readonly MovementControllerComponent _movementController;
         private readonly ModifierController _modifierController;
         private readonly float _actualSpeed;
         private readonly float _rotationPerFrame;
         private readonly Transform _objectMovement;
 
-        public MovementHandler(Transform mainObject, CharacterInputHandler characterInput, MovementSettings movementSettings, AttributesBaseData attributesBaseData, ModifierController modifierController)
+        public MovementHandler(Transform mainObject, MovementControllerComponent movementController, MovementSettings movementSettings, AttributesBaseData attributesBaseData, ModifierController modifierController)
         {
             _objectMovement = mainObject;
-            _characterInput = characterInput;
+            _movementController = movementController;
+            
             _modifierController = modifierController;
             _actualSpeed = movementSettings.baseSpeed + attributesBaseData.attAgility;
             _rotationPerFrame = movementSettings.baseSpeed + attributesBaseData.attAgility + attributesBaseData.attBase;
@@ -33,8 +34,8 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             var speedModifier = _modifierController.GetModifierValue(ModifierKeys.SpeedMultiplay);
             speedModifier = (speedModifier == 0) ? 1f : speedModifier;
 
-            actualMovement.x = _characterInput.GetMovementDirection().x * (_actualSpeed * speedModifier);
-            actualMovement.z = _characterInput.GetMovementDirection().y * (_actualSpeed * speedModifier);
+            actualMovement.x = _movementController.GetMovementInput().x * (_actualSpeed * speedModifier);
+            actualMovement.z = _movementController.GetMovementInput().y * (_actualSpeed * speedModifier);
 
             appliedMovement.x = actualMovement.x;
             appliedMovement.z = actualMovement.z;
@@ -48,7 +49,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             positionToLookAt.z = actualMovement.z;
 
             var currentRotation = tObject.rotation;
-            if (_characterInput.GetMovementDirection() == Vector2.zero) return;
+            if (_movementController.GetMovementInput() == Vector2.zero) return;
             var targetRotation = Quaternion.LookRotation(positionToLookAt);
             tObject.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationPerFrame * Time.deltaTime);
         }

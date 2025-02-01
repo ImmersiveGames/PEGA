@@ -27,8 +27,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         private VerticalMovementState _verticalMovementState;
         private HorizontalMovementState _horizontalMovementState;
 
-        private MovementControllerSwitcher _movementSwitcher;
-        private CharacterInputHandler _characterInput;
+        private MovementControllerComponent _movementController;
 
         private CharacterController _characterController;
         private ModifierController _modifierController;
@@ -49,11 +48,6 @@ namespace PEGA.ObjectSystems.MovementSystems
             InitializeComponents();
         }
 
-        private void OnEnable()
-        {
-            _characterInput.ActivateActionMap(ActionMapKey.Player);
-        }
-
         private void Update()
         {
             _modifierController.UpdateModifiers(Time.deltaTime);
@@ -62,7 +56,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _verticalMovementState);
 
             // Gerencia o pulo
-            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _characterInput.IsActionPressed("Jump"), isJumping: ref _isJumping);
+            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _movementController.IsJumping(), isJumping: ref _isJumping);
 
             // Atualiza o estado do movimento
             UpdateVerticalState();
@@ -86,20 +80,15 @@ namespace PEGA.ObjectSystems.MovementSystems
 #endif
         }
 
-        private void OnDisable()
-        {
-            _characterInput.DeactivateCurrentActionMap();
-        }
-
         #endregion
 
         #region Initialization
 
-        private void Initialize(CharacterInputHandler characterInputHandler, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
+        private void Initialize(MovementControllerComponent movementController, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
         {
             // Permite a inicialização via injeção de dependências
-            _movementSwitcher.SetDriver(new PlayerMovementDriver(characterInputHandler));
-            _characterInput = characterInputHandler;
+            _movementController = movementController;
+            
             _modifierController = modifierController;
             movementSettings = settings;
 
@@ -109,7 +98,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _verticalMovementState = new VerticalMovementState();
             _horizontalMovementState = new HorizontalMovementState(movementSettings.walkThreshold);
             _jumpHandler = new JumpHandler(movementSettings, _modifierController, _verticalMovementState);
-            _movementHandler = new MovementHandler(transform, _characterInput, movementSettings, attributes, _modifierController);
+            _movementHandler = new MovementHandler(transform, _movementController, movementSettings, attributes, _modifierController);
 
             // Configura gravidade inicial
             _actualGravity = _jumpHandler.Gravity;
@@ -120,12 +109,8 @@ namespace PEGA.ObjectSystems.MovementSystems
             // Inicializa automaticamente se não usar injeção de dependência
             var playerMaster = GetComponent<PlayerMaster>();
             
-            _movementSwitcher = new MovementControllerSwitcher();
-            var characterInput = GetComponent<CharacterInputHandler>();
-            _movementSwitcher.SetDriver(new PlayerMovementDriver(characterInput));
-            
             Initialize(
-                GetComponent<CharacterInputHandler>(),
+                GetComponent<MovementControllerComponent>(),
                 GetComponent<ModifierController>(),
                 movementSettings,
                 playerMaster.attributesBaseData
@@ -137,7 +122,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         private void DashHandler()
         {
-            if (_characterInput.IsActionPressed("Dash") && !_isDashing)
+            if (_movementController.IsDashing() && !_isDashing)
             {
                 _isDashing = true;
 
@@ -150,7 +135,7 @@ namespace PEGA.ObjectSystems.MovementSystems
                 _animationHandler.SetDashing(true);
                 Debug.Log("Dash iniciado!");
             }
-            else if (!_characterInput.IsActionPressed("Dash") && _isDashing)
+            else if (!_movementController.IsDashing() && _isDashing)
             {
                 _isDashing = false;
 
@@ -198,7 +183,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
                 case HorizontalMovementType.Walking:
                 case HorizontalMovementType.Running:
-                    _animationHandler.HandleMovementAnimation(_characterInput.GetMovementDirection());
+                    _animationHandler.HandleMovementAnimation(_movementController.GetMovementInput());
                     break;
                 case HorizontalMovementType.Dashing:
                     break;

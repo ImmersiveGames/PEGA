@@ -8,7 +8,10 @@ namespace PEGA.ObjectSystems.MovementSystems.Drivers
     {
         private readonly CharacterInputHandler _inputHandler;
 
-        public PlayerMovementDriver(CharacterInputHandler inputHandler) => _inputHandler = inputHandler;
+        public PlayerMovementDriver(CharacterInputHandler inputHandler)
+        {
+            _inputHandler = inputHandler;
+        }
 
         public Vector2 GetMovementInput() => _inputHandler.GetMovementDirection();
         public bool IsJumping() => _inputHandler.IsActionPressed("Jump");
