@@ -1,11 +1,13 @@
-﻿using ImmersiveGames.StateMachine.States;
+﻿using ImmersiveGames.HierarchicalStateMachine.States;
 using UnityEngine;
 
-namespace ImmersiveGames.StateMachine
+namespace ImmersiveGames.HierarchicalStateMachine
 {
     public class ContextStates : MonoBehaviour
     {
         private StateFactory _states;
+        
+        //TODO: Separar em Scriptables objects.
 
         public CharacterController characterController;
         

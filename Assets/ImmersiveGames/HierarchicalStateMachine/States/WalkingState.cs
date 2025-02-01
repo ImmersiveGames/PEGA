@@ -1,14 +1,16 @@
 ﻿using UnityEngine;
 
-namespace ImmersiveGames.StateMachine.States
+namespace ImmersiveGames.HierarchicalStateMachine.States
 {
     public class WalkingState : BaseState
     {
+        protected override StatesNames StateName => StatesNames.Walk;
         public WalkingState(ContextStates currentContext, StateFactory factory): base(currentContext,factory)
         {
         }
         public override void EnterState()
         {
+            base.EnterState();
             Ctx.isWalking = true;
             //aqui ele aplica a logica de animação
             Debug.Log($"[WalkingState] Enter State");
@@ -23,6 +25,7 @@ namespace ImmersiveGames.StateMachine.States
 
         protected override void ExitState()
         {
+            base.ExitState();
             Ctx.isWalking = false;
             Debug.Log($"[WalkingState] ExitState");
         }
@@ -31,7 +34,7 @@ namespace ImmersiveGames.StateMachine.States
         {
             if (Ctx.movement == Vector3.zero)
             {
-                Factory.Idle(); 
+                SwitchState(Factory.Idle()); 
             }
             Debug.Log($"[WalkingState] CheckSwitchState");
         }

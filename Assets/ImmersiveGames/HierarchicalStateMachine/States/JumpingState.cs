@@ -1,16 +1,18 @@
-﻿using ImmersiveGames.StateMachine.Interface;
+﻿using ImmersiveGames.HierarchicalStateMachine.Interface;
 using UnityEngine;
 
-namespace ImmersiveGames.StateMachine.States
+namespace ImmersiveGames.HierarchicalStateMachine.States
 {
     public class JumpingState:BaseState, IRootState
     {
+        protected override StatesNames StateName => StatesNames.Jump;
         public JumpingState(ContextStates currentContext, StateFactory factory): base(currentContext,factory)
         {
             IsRootState = true;
         }
         public override void EnterState()
         {
+            base.EnterState();
             InitializeSubState();
             Ctx.isJumping = true;
             Debug.Log($"[JumpingState] Enter State");
@@ -25,6 +27,7 @@ namespace ImmersiveGames.StateMachine.States
 
         protected override void ExitState()
         {
+            base.ExitState();
             Debug.Log($"[JumpingState] ExitState");
             Ctx.isJumping = false;
         }

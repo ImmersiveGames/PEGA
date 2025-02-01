@@ -1,10 +1,11 @@
-﻿using ImmersiveGames.StateMachine.Interface;
+﻿using ImmersiveGames.HierarchicalStateMachine.Interface;
 using UnityEngine;
 
-namespace ImmersiveGames.StateMachine.States
+namespace ImmersiveGames.HierarchicalStateMachine.States
 {
     public class FallingState : BaseState, IRootState
     {
+        protected override StatesNames StateName => StatesNames.Fall;
         public FallingState(ContextStates currentContext, StateFactory factory) : base(currentContext, factory)
         {
             IsRootState = true;
@@ -13,6 +14,7 @@ namespace ImmersiveGames.StateMachine.States
 
         public override void EnterState()
         {
+            base.EnterState();
             InitializeSubState();
             Debug.Log($"[FallingState] EnterState");
         }
@@ -26,6 +28,7 @@ namespace ImmersiveGames.StateMachine.States
 
         protected override void ExitState()
         {
+            base.ExitState();
             Debug.Log($"[FallingState] ExitState");
         }
 

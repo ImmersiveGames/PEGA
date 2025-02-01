@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using ImmersiveGames.StateMachine.States;
+using ImmersiveGames.HierarchicalStateMachine.States;
 
-namespace ImmersiveGames.StateMachine
+namespace ImmersiveGames.HierarchicalStateMachine
 {
     public class StateFactory
     {
@@ -42,7 +42,7 @@ namespace ImmersiveGames.StateMachine
         
     }
 
-    internal enum StatesNames
+    public enum StatesNames
     {
         Idle,Grounded,Jump,Walk,Fall
     }

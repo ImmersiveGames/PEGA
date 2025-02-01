@@ -1,14 +1,17 @@
-﻿using UnityEngine;
+﻿using ImmersiveGames.HierarchicalStateMachine.Interface;
+using UnityEngine;
 
-namespace ImmersiveGames.StateMachine.States
+namespace ImmersiveGames.HierarchicalStateMachine.States
 {
-    public class IdleState: BaseState
+    public class IdleState: BaseState, ISubState
     {
+        protected override StatesNames StateName => StatesNames.Idle;
         public IdleState(ContextStates currentContext, StateFactory factory) : base(currentContext,factory)
         {
         }
         public override void EnterState()
         {
+            base.EnterState();
             //aqui ele zerou o apply movement
             Debug.Log($"[IdleState] EnterState");
         }
@@ -21,6 +24,7 @@ namespace ImmersiveGames.StateMachine.States
 
         protected override void ExitState()
         {
+            base.ExitState();
             Debug.Log($"[IdleState] ExitState");
         }
 
@@ -28,7 +32,7 @@ namespace ImmersiveGames.StateMachine.States
         {
             if (Ctx.movement != Vector3.zero)
             {
-                Factory.Walk(); 
+                SwitchState(Factory.Walk()); 
             }
             
             Debug.Log($"[IdleState] CheckSwitchState");
@@ -39,5 +43,9 @@ namespace ImmersiveGames.StateMachine.States
             Debug.Log($"[IdleState] InitializeSubState");
         }
 
+        public bool IsValidSuperState(BaseState superState)
+        {
+            return superState is GroundedState;
+        }
     }
 }

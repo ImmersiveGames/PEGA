@@ -1,10 +1,11 @@
-﻿using ImmersiveGames.StateMachine.Interface;
+﻿using ImmersiveGames.HierarchicalStateMachine.Interface;
 using UnityEngine;
 
-namespace ImmersiveGames.StateMachine.States
+namespace ImmersiveGames.HierarchicalStateMachine.States
 {
     public class GroundedState: BaseState, IRootState
     {
+        protected override StatesNames StateName => StatesNames.Grounded;
         public GroundedState(ContextStates currentContext, StateFactory factory): base(currentContext,factory)
         {
             IsRootState = true;
@@ -12,6 +13,7 @@ namespace ImmersiveGames.StateMachine.States
         }
         public override void EnterState()
         {
+            base.EnterState();
             InitializeSubState();
             Ctx.isGrounded = true;
             HandleGravity();
@@ -26,6 +28,7 @@ namespace ImmersiveGames.StateMachine.States
 
         protected override void ExitState()
         {
+            base.ExitState();
             Ctx.isGrounded = false;
             Debug.Log($"[GroundedState] ExitState");
         }
