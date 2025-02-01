@@ -8,7 +8,6 @@ namespace ImmersiveGames.InputSystems
     public sealed class ActionManager
     {
         public event Action<string, InputAction.CallbackContext> OnActionTriggered;
-        public event Action OnActionComplete;
 
         private readonly Dictionary<string, List<Action<InputAction.CallbackContext>>> _actionListeners = new();
         private readonly PlayerInput _playerInput;
@@ -29,9 +28,9 @@ namespace ImmersiveGames.InputSystems
 
         public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
-            if (!_actionListeners.ContainsKey(actionName)) return;
+            if (!_actionListeners.TryGetValue(actionName, out var actionListener)) return;
             
-            _actionListeners[actionName].Remove(callback);
+            actionListener.Remove(callback);
             if (_actionListeners[actionName].Count == 0)
                 _actionListeners.Remove(actionName);
         }
@@ -67,12 +66,10 @@ namespace ImmersiveGames.InputSystems
         private void NotifyListeners(string actionName, InputAction.CallbackContext context)
         {
             OnActionTriggered?.Invoke(actionName, context);
-            if (_actionListeners.TryGetValue(actionName, out var listeners))
+            if (!_actionListeners.TryGetValue(actionName, out var listeners)) return;
+            foreach (var listener in listeners)
             {
-                foreach (var listener in listeners)
-                {
-                    listener?.Invoke(context);
-                }
+                listener?.Invoke(context);
             }
         }
     }
