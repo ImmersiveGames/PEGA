@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
-    public class MovementControllerComponent : MonoBehaviour
+    public class MovementController : MonoBehaviour
     {
         private MovementControllerSwitcher _movementSwitcher;
         private CharacterInputHandler _characterInput;
@@ -43,9 +43,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         }
 
         // 🔥 ÚNICO lugar onde os inputs são expostos!
-        public Vector2 GetMovementInput() => _currentDriver?.GetMovementInput() ?? Vector2.zero;
-        public bool IsJumping() => _currentDriver?.IsJumping() ?? false;
-        public bool IsDashing() => _currentDriver?.IsDashing() ?? false;
+        public Vector2 GetMovementPressing() => _currentDriver?.GetMovementPressing() ?? Vector2.zero;
+        public bool IsJumpPressing() => _currentDriver?.IsJumpPressing() ?? false;
+        public bool IsDashPressing() => _currentDriver?.IsDashPressing() ?? false;
 
         // 🔥 Expondo métodos para registrar e remover ações dinamicamente
         public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
@@ -57,6 +57,8 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             _characterInput?.UnregisterAction(actionName, callback);
         }
-  
+
+        public IMovementDriver GetCurrentDriver => _movementSwitcher.GetCurrentDriver();
+
     }
 }

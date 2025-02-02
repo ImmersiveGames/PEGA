@@ -1,4 +1,5 @@
 ﻿using System;
+using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -36,13 +37,13 @@ namespace ImmersiveGames.InputSystems
         }
         
 
-        public Vector2 GetMovementDirection() => GetActionValue<Vector2>("Axis_Move");
-        public bool IsActionPressed(string actionName) => GetActionValue<float>(actionName) > 0.5f;
+        public Vector2 GetMovementDirection() => GetActionValue<Vector2>(ActionsNames.AxisMove);
+        public bool IsActionPressed(ActionsNames actionName) => GetActionValue<float>(actionName) > 0.5f;
 
-        private T GetActionValue<T>(string actionName) where T : struct
+        private T GetActionValue<T>(ActionsNames actionName) where T : struct
         {
             if (_playerInput == null || _playerInput.actions == null) return default;
-            var action = _playerInput.actions[actionName];
+            var action = _playerInput.actions[actionName.ToString()];
             return action?.ReadValue<T>() ?? default;
         }
     }

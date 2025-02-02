@@ -7,13 +7,13 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
 {
     public class MovementHandler
     {
-        private readonly MovementControllerComponent _movementController;
+        private readonly MovementController _movementController;
         private readonly ModifierController _modifierController;
         private readonly float _actualSpeed;
         private readonly float _rotationPerFrame;
         private readonly Transform _objectMovement;
 
-        public MovementHandler(Transform mainObject, MovementControllerComponent movementController, MovementSettings movementSettings, AttributesBaseData attributesBaseData, ModifierController modifierController)
+        public MovementHandler(Transform mainObject, MovementController movementController, MovementSettings movementSettings, AttributesBaseData attributesBaseData, ModifierController modifierController)
         {
             _objectMovement = mainObject;
             _movementController = movementController;
@@ -34,8 +34,8 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             var speedModifier = _modifierController.GetModifierValue(ModifierKeys.SpeedMultiplay);
             speedModifier = (speedModifier == 0) ? 1f : speedModifier;
 
-            actualMovement.x = _movementController.GetMovementInput().x * (_actualSpeed * speedModifier);
-            actualMovement.z = _movementController.GetMovementInput().y * (_actualSpeed * speedModifier);
+            actualMovement.x = _movementController.GetMovementPressing().x * (_actualSpeed * speedModifier);
+            actualMovement.z = _movementController.GetMovementPressing().y * (_actualSpeed * speedModifier);
 
             appliedMovement.x = actualMovement.x;
             appliedMovement.z = actualMovement.z;
@@ -49,7 +49,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             positionToLookAt.z = actualMovement.z;
 
             var currentRotation = tObject.rotation;
-            if (_movementController.GetMovementInput() == Vector2.zero) return;
+            if (_movementController.GetMovementPressing() == Vector2.zero) return;
             var targetRotation = Quaternion.LookRotation(positionToLookAt);
             tObject.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationPerFrame * Time.deltaTime);
         }

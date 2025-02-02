@@ -1,5 +1,4 @@
 ﻿using System;
-using ImmersiveGames.HierarchicalStateMachine.Interface;
 using UnityEngine;
 
 namespace ImmersiveGames.HierarchicalStateMachine.States
@@ -10,15 +9,15 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
         public event Action<StatesNames> OnStateExited;
         
         protected bool IsRootState = false;
-        protected readonly ContextStates Ctx;
+        protected readonly StateMachineContext Ctx;
         protected readonly StateFactory Factory;
         private BaseState _currentSuperstate;
         private BaseState _currentSubState;
 
         protected abstract StatesNames StateName { get; }
-        protected BaseState(ContextStates currentContext, StateFactory factory)
+        protected BaseState(StateMachineContext currentStateMachineContext, StateFactory factory)
         {
-            Ctx = currentContext;
+            Ctx = currentStateMachineContext;
             Factory = factory;
         }
         public void UpdateStates()
@@ -26,14 +25,20 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
             UpdateState();
             _currentSubState?.UpdateStates();
         }
+        public void EnterStates()
+        {
+            EnterState();
+            _currentSubState?.EnterStates();
+        }
         public void ExitStates()
         {
             ExitState();
             _currentSubState?.ExitStates();
         }
-        public virtual void EnterState()
+        protected internal virtual void EnterState()
         {
             OnStateEntered?.Invoke(StateName);
+            Debug.Log($"[{StateName}] Enter");
         }
         
         protected abstract void UpdateState();
@@ -41,6 +46,7 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
         protected virtual void ExitState()
         {
             OnStateExited?.Invoke(StateName);
+            Debug.Log($"[{StateName}] Exit");
         }
         public abstract void CheckSwitchState();
         public abstract void InitializeSubState();
@@ -66,10 +72,6 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
 
         protected void SetSubState(BaseState newSubState)
         {
-            if (newSubState is ISubState sub && !sub.IsValidSuperState(this)) {
-                Debug.LogError("Superestado inválido para este subestado!");
-                return;
-            }
             _currentSubState = newSubState; //define um sub state para ele
             newSubState.SetSuperState(this);//ao mesmo tempo que torna este superstate do próximo.
         }

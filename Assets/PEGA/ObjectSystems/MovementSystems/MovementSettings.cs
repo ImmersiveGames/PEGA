@@ -8,6 +8,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         [Header("Movement Settings")]
         public float baseSpeed = 10f;
         public float gravityGround = -0.5f;
+        public float gravity = -9.8f;
         public float walkThreshold = 15.0f;
         [Header("Jump Settings")]
         public float maxJumpHeight = 1.0f;

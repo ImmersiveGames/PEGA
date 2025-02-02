@@ -6,49 +6,64 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
     public class JumpingState:BaseState, IRootState
     {
         protected override StatesNames StateName => StatesNames.Jump;
-        public JumpingState(ContextStates currentContext, StateFactory factory): base(currentContext,factory)
+        public JumpingState(StateMachineContext currentStateMachineContext, StateFactory factory): base(currentStateMachineContext,factory)
         {
             IsRootState = true;
         }
-        public override void EnterState()
+        protected internal override void EnterState()
         {
+            CalculateJumpVariables();
             base.EnterState();
+            HandleJump();
             InitializeSubState();
-            Ctx.isJumping = true;
-            Debug.Log($"[JumpingState] Enter State");
         }
 
         protected override void UpdateState()
         {
             HandleGravity();
-            CheckSwitchState();//Manter por ultimo
-            Debug.Log($"[JumpingState] UpdateState");
+            CheckSwitchState();//Manter por último
         }
 
         protected override void ExitState()
         {
-            base.ExitState();
-            Debug.Log($"[JumpingState] ExitState");
             Ctx.isJumping = false;
+            base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.isGrounded)
+            if (!Ctx.jumpPressed || Ctx.movement.y <= 0.0f)
             {
-                SwitchState(Factory.Grounded());
+                SwitchState(Factory.Fall());
             }
             Debug.Log($"[JumpingState] CheckSwitchState");
         }
 
         public sealed override void InitializeSubState()
         {
-            Debug.Log($"[JumpingState] InitializeSubState");
+            SetSubState(Ctx.movement is { x: 0, z: 0 } ? Factory.Idle() : Factory.Walk());
+            //Debug.Log($"[JumpingState] InitializeSubState");
         }
 
         public void HandleGravity()
         {
-            Debug.Log($"[JumpingState] Logica da gravidade");
+            var previousYVelocity = Ctx.movement.y;
+            Ctx.movement.y += Ctx.gravity * Time.deltaTime;
+            Ctx.appliedMovement.y = previousYVelocity + Ctx.movement.y;
+        }
+
+        private void HandleJump()
+        {
+            Ctx.isJumping = true;
+            Ctx.movement.y = Ctx.initialJumpVelocity;
+            Ctx.appliedMovement.y = Ctx.initialJumpVelocity;
+            
+        }
+        private void CalculateJumpVariables()
+        {
+            var timeToApex = Ctx.movementSettings.maxJumpTime / 2;
+            Ctx.gravity = (-2 * Ctx.movementSettings.maxJumpHeight) / Mathf.Pow(timeToApex, 2);
+            Ctx.initialJumpVelocity = (2 * Ctx.movementSettings.maxJumpHeight) / timeToApex;
         }
     }
 }

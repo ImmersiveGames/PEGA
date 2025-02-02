@@ -5,29 +5,26 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
     public class WalkingState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Walk;
-        public WalkingState(ContextStates currentContext, StateFactory factory): base(currentContext,factory)
+        public WalkingState(StateMachineContext currentStateMachineContext, StateFactory factory): base(currentStateMachineContext,factory)
         {
         }
-        public override void EnterState()
+        protected internal override void EnterState()
         {
             base.EnterState();
             Ctx.isWalking = true;
-            //aqui ele aplica a logica de animação
-            Debug.Log($"[WalkingState] Enter State");
+            //aqui ele aplica a lógica de animação
         }
 
         protected override void UpdateState()
         {
             //aqui ele aplicou os modificadores do apply e current
-            CheckSwitchState();//Manter por ultimo
-            Debug.Log($"[WalkingState] UpdateState");
+            CheckSwitchState();//Manter por último
         }
 
         protected override void ExitState()
         {
             base.ExitState();
             Ctx.isWalking = false;
-            Debug.Log($"[WalkingState] ExitState");
         }
 
         public override void CheckSwitchState()

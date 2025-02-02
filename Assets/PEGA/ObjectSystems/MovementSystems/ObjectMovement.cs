@@ -1,9 +1,7 @@
 ﻿using System;
 using ImmersiveGames.DebugSystems;
-using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.AnimatorSystem;
 using PEGA.ObjectSystems.Modifications;
-using PEGA.ObjectSystems.MovementSystems.Drivers;
 using PEGA.ObjectSystems.MovementSystems.Handlers;
 using PEGA.ObjectSystems.ObjectsScriptables;
 using PEGA.ObjectSystems.PlayerSystems;
@@ -17,7 +15,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         [SerializeField] private string movementParameterName;
 
         [SerializeField] private MovementSettings movementSettings; // Movimento configurado no inspector
-
+        [SerializeField]
         private float _actualGravity;
         private Vector3 _actualMovement;
         private Vector3 _appliedMovement;
@@ -27,7 +25,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         private VerticalMovementState _verticalMovementState;
         private HorizontalMovementState _horizontalMovementState;
 
-        private MovementControllerComponent _movementController;
+        private MovementController _movementController;
 
         private CharacterController _characterController;
         private ModifierController _modifierController;
@@ -56,7 +54,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _verticalMovementState);
 
             // Gerencia o pulo
-            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _movementController.IsJumping(), isJumping: ref _isJumping);
+            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _movementController.IsJumpPressing(), isJumping: ref _isJumping);
 
             // Atualiza o estado do movimento
             UpdateVerticalState();
@@ -73,6 +71,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             // Atualiza animações
             UpdateAnimations();
+            Debug.Log($"Gravity{_actualGravity}");
 
             // Debug opcional
 #if UNITY_EDITOR
@@ -84,7 +83,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         #region Initialization
 
-        private void Initialize(MovementControllerComponent movementController, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
+        private void Initialize(MovementController movementController, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
         {
             // Permite a inicialização via injeção de dependências
             _movementController = movementController;
@@ -110,7 +109,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             var playerMaster = GetComponent<PlayerMaster>();
             
             Initialize(
-                GetComponent<MovementControllerComponent>(),
+                GetComponent<MovementController>(),
                 GetComponent<ModifierController>(),
                 movementSettings,
                 playerMaster.attributesBaseData
@@ -122,7 +121,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         private void DashHandler()
         {
-            if (_movementController.IsDashing() && !_isDashing)
+            if (_movementController.IsDashPressing() && !_isDashing)
             {
                 _isDashing = true;
 
@@ -135,7 +134,7 @@ namespace PEGA.ObjectSystems.MovementSystems
                 _animationHandler.SetDashing(true);
                 Debug.Log("Dash iniciado!");
             }
-            else if (!_movementController.IsDashing() && _isDashing)
+            else if (!_movementController.IsDashPressing() && _isDashing)
             {
                 _isDashing = false;
 
@@ -183,7 +182,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
                 case HorizontalMovementType.Walking:
                 case HorizontalMovementType.Running:
-                    _animationHandler.HandleMovementAnimation(_movementController.GetMovementInput());
+                    _animationHandler.HandleMovementAnimation(_movementController.GetMovementPressing());
                     break;
                 case HorizontalMovementType.Dashing:
                     break;

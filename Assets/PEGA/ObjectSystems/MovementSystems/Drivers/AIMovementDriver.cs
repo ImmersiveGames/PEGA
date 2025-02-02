@@ -9,8 +9,8 @@ namespace PEGA.ObjectSystems.MovementSystems.Drivers
 
         public AIMovementDriver(Vector2 direction) => _direction = direction;
 
-        public Vector2 GetMovementInput() => _direction;
-        public bool IsJumping() => false;
-        public bool IsDashing() => false;
+        public Vector2 GetMovementPressing() => _direction;
+        public bool IsJumpPressing() => false;
+        public bool IsDashPressing() => false;
     }
 }

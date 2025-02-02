@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 145141399169146171}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: -0, z: -0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 12.606602, z: -10.606602}
+  m_LocalPosition: {x: 0, y: 10.606602, z: -10.606602}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -198,7 +198,7 @@ Transform:
   m_GameObject: {fileID: 220444079778123775}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: -0, z: -0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 12.606602, z: -10.606602}
+  m_LocalPosition: {x: 0, y: 10.606602, z: -10.606602}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -427,7 +427,7 @@ Transform:
   m_GameObject: {fileID: 5202670250957630496}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -556,13 +556,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 910c52add1d84e7cbc8dcbf9eea9e909, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterController: {fileID: 0}
-  movement: {x: 0, y: 0, z: 0}
+  movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}
   isGrounded: 0
-  isWalking: 0
   isJumping: 0
+  isWalking: 0
   isFalling: 0
-  isDashing: 0
+  movement: {x: 0, y: 0, z: 0}
+  appliedMovement: {x: 0, y: 0, z: 0}
+  gravity: 0
+  directionPressed: {x: 0, y: 0}
+  jumpPressed: 0
+  dashPressed: 0
 --- !u!114 &3097938912641828902
 MonoBehaviour:
   m_ObjectHideFlags: 0

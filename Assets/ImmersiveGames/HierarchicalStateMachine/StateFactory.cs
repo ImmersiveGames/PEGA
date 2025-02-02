@@ -7,13 +7,13 @@ namespace ImmersiveGames.HierarchicalStateMachine
     {
         private readonly Dictionary<StatesNames, BaseState> _states = new Dictionary<StatesNames, BaseState>();
 
-        public StateFactory(ContextStates currentContext)
+        public StateFactory(StateMachineContext currentStateMachineContext)
         {
-            _states[StatesNames.Idle] = new IdleState(currentContext,this);
-            _states[StatesNames.Grounded] = new GroundedState(currentContext,this);
-            _states[StatesNames.Jump] = new JumpingState(currentContext,this);
-            _states[StatesNames.Walk] = new WalkingState(currentContext,this);
-            _states[StatesNames.Fall] = new FallingState(currentContext,this);
+            _states[StatesNames.Idle] = new IdleState(currentStateMachineContext,this);
+            _states[StatesNames.Grounded] = new GroundedState(currentStateMachineContext,this);
+            _states[StatesNames.Jump] = new JumpingState(currentStateMachineContext,this);
+            _states[StatesNames.Walk] = new WalkingState(currentStateMachineContext,this);
+            _states[StatesNames.Fall] = new FallingState(currentStateMachineContext,this);
         }
 
         public BaseState Idle()

@@ -6,53 +6,55 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
     public class FallingState : BaseState, IRootState
     {
         protected override StatesNames StateName => StatesNames.Fall;
-        public FallingState(ContextStates currentContext, StateFactory factory) : base(currentContext, factory)
+        public FallingState(StateMachineContext currentStateMachineContext, StateFactory factory) : base(currentStateMachineContext, factory)
         {
             IsRootState = true;
             
         }
 
-        public override void EnterState()
+        protected internal override void EnterState()
         {
+            Ctx.isFalling = true;
             base.EnterState();
             InitializeSubState();
-            Debug.Log($"[FallingState] EnterState");
         }
 
         protected override void UpdateState()
         {
             HandleGravity();
-            CheckSwitchState();//Manter por ultimo
-            Debug.Log($"[FallingState] UpdateState");
+            CheckSwitchState();//Manter por último
         }
 
         protected override void ExitState()
         {
+            Ctx.isFalling = false;
             base.ExitState();
-            Debug.Log($"[FallingState] ExitState");
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.isGrounded)
+            if (Ctx.CharacterController.isGrounded)
             {
                 SwitchState(Factory.Grounded());
             }
 
-            Debug.Log($"[FallingState] CheckSwitchState");
+            //Debug.Log($"[FallingState] CheckSwitchState");
         }
 
         public sealed override void InitializeSubState()
         {
             //TODO:Usar o SetSubState para definir todos as condições para cada substate e instancia-los pela fabrica.
-            SetSubState(Ctx.movement == Vector3.zero ? Factory.Idle() : Factory.Walk());
-            Debug.Log($"[FallingState] InitializeSubState");
+            SetSubState(Ctx.movement is { x: 0, z: 0 } ? Factory.Idle() : Factory.Walk());
+            //Debug.Log($"[FallingState] InitializeSubState");
         }
 
-        //Vamos precisar de um metodo de gravidade aqui HandleGravity no video 6:50
+        //Vamos precisar de um método de gravidade aqui HandleGravity no video 6:50
         public void HandleGravity()
         {
-            Debug.Log($"[FallingState] HandleGravity");
+            var previousYVelocity = Ctx.movement.y;
+            Ctx.movement.y += Ctx.gravity * Ctx.movementSettings.fallMultiplier * Time.deltaTime;
+            Ctx.appliedMovement.y = Mathf.Max((previousYVelocity + Ctx.movement.y), Ctx.movementSettings.maxFallVelocity);
+            //Debug.Log($"[FallingState] HandleGravity");
         }
     }
 }

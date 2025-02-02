@@ -13,8 +13,8 @@ namespace PEGA.ObjectSystems.MovementSystems.Drivers
             _inputHandler = inputHandler;
         }
 
-        public Vector2 GetMovementInput() => _inputHandler.GetMovementDirection();
-        public bool IsJumping() => _inputHandler.IsActionPressed("Jump");
-        public bool IsDashing() => _inputHandler.IsActionPressed("Dash");
+        public Vector2 GetMovementPressing() => _inputHandler.GetMovementDirection();
+        public bool IsJumpPressing() => _inputHandler.IsActionPressed(ActionsNames.Jump);
+        public bool IsDashPressing() => _inputHandler.IsActionPressed(ActionsNames.Dash);
     }
 }

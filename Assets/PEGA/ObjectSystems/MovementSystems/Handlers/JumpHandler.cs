@@ -22,6 +22,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             _verticalMovementState = verticalMovementState;
             // Calcula os valores iniciais do pulo
             CalculateJumpVariables();
+            Debug.Log($"Initial: {_initialJumpVelocity}, Gravity: {_gravity}");
         }
 
         public void HandleJump(ref Vector3 actualMovement, ref Vector3 appliedMovement, bool isJumpPressed, ref bool isJumping)
@@ -39,6 +40,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Handlers
             {
                 isJumping = false; // Permite um novo pulo após liberar o botão
             }
+            Debug.Log($"Initial: {_initialJumpVelocity}, Gravity: {_gravity}, Mov: {appliedMovement.y}");
         }
 
         private void CalculateJumpVariables()
