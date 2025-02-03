@@ -1,5 +1,4 @@
-﻿using System;
-using ImmersiveGames.InputSystems;
+﻿using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.MovementSystems.Drivers;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
@@ -7,6 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
+    [RequireComponent(typeof(PlayerInput))]
     public class MovementController : MonoBehaviour
     {
         private MovementControllerSwitcher _movementSwitcher;
@@ -18,11 +18,9 @@ namespace PEGA.ObjectSystems.MovementSystems
             _movementSwitcher = new MovementControllerSwitcher();
             var playerInput = GetComponent<PlayerInput>();
 
-            if (playerInput != null)
-            {
-                _characterInput = new CharacterInputHandler(playerInput);
-                SetDriver(new PlayerMovementDriver(_characterInput));
-            }
+            if (playerInput == null) return;
+            _characterInput = new CharacterInputHandler(playerInput);
+            SetDriver(new PlayerMovementDriver(_characterInput));
         }
 
         private void OnEnable()
@@ -35,7 +33,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _characterInput?.DeactivateCurrentActionMap();
         }
 
-        public void SetDriver(IMovementDriver driver)
+        private void SetDriver(IMovementDriver driver)
         {
             if (_currentDriver == driver) return;
             _movementSwitcher.SetDriver(driver);
@@ -48,17 +46,17 @@ namespace PEGA.ObjectSystems.MovementSystems
         public bool IsDashPressing() => _currentDriver?.IsDashPressing() ?? false;
 
         // 🔥 Expondo métodos para registrar e remover ações dinamicamente
-        public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
+        /*public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
             _characterInput?.RegisterAction(actionName, callback);
-        }
+        }*/
 
-        public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
+        /*public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
         {
             _characterInput?.UnregisterAction(actionName, callback);
-        }
+        }*/
 
-        public IMovementDriver GetCurrentDriver => _movementSwitcher.GetCurrentDriver();
+        //public IMovementDriver GetCurrentDriver => _movementSwitcher.GetCurrentDriver();
 
     }
 }

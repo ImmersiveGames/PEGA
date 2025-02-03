@@ -17,6 +17,11 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
 
         protected override void UpdateState()
         {
+            Ctx.movement.x = Ctx.directionPressed.x * Ctx.movementSettings.baseSpeed;
+            Ctx.movement.z = Ctx.directionPressed.y * Ctx.movementSettings.baseSpeed;
+            
+            Ctx.appliedMovement.x = Ctx.movement.x;
+            Ctx.appliedMovement.z = Ctx.movement.z;
             //aqui ele aplicou os modificadores do apply e current
             CheckSwitchState();//Manter por último
         }
@@ -29,9 +34,9 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
 
         public override void CheckSwitchState()
         {
-            if (Ctx.movement == Vector3.zero)
+            if (Ctx.directionPressed == Vector2.zero)
             {
-                SwitchState(Factory.Idle()); 
+                _currentSuperstate.SetSubState(Factory.Idle());
             }
             Debug.Log($"[WalkingState] CheckSwitchState");
         }

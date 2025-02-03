@@ -2,6 +2,7 @@
 using ImmersiveGames.Utils;
 using PEGA.ObjectSystems.MovementSystems;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ImmersiveGames.HierarchicalStateMachine
 {
@@ -23,6 +24,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public bool isFalling;
         public Vector3 movement;
         public Vector3 appliedMovement;
+        public float rotationPerFrame;
 
         public float gravity;
         public float initialJumpVelocity;
@@ -34,6 +36,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public Vector2 directionPressed;
         public bool jumpPressed;
         public bool dashPressed;
+        
 
         private void UpdateInputs()
         {
@@ -71,6 +74,8 @@ namespace ImmersiveGames.HierarchicalStateMachine
         private void Update()
         {
             UpdateInputs();
+            HandleRotate();
+            HandleMovement();
             
             //Debug.Log($"[StateMachineContext] To no chão {CharacterController.isGrounded}");
             
@@ -81,6 +86,29 @@ namespace ImmersiveGames.HierarchicalStateMachine
             CharacterController.Move(appliedMovement * Time.deltaTime);
         }
         
+        private void HandleRotate()
+        {
+            Vector3 positionToLookAt;
+            positionToLookAt.x = movement.x;
+            positionToLookAt.y = 0.0f;
+            positionToLookAt.z = movement.z;
+
+            var currentRotation = transform.rotation;
+            if (_movementController.GetMovementPressing() == Vector2.zero) return;
+            var targetRotation = Quaternion.LookRotation(positionToLookAt);
+            transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationPerFrame * Time.deltaTime);
+        }
+        private void HandleMovement()
+        {
+            /*var speedModifier = _modifierController.GetModifierValue(ModifierKeys.SpeedMultiplay);
+            speedModifier = (speedModifier == 0) ? 1f : speedModifier;*/
+
+            /*movement.x = _movementController.GetMovementPressing().x * movementSettings.baseSpeed;//(_actualSpeed * speedModifier);
+            movement.z = _movementController.GetMovementPressing().y * movementSettings.baseSpeed;//(_actualSpeed * speedModifier);
+
+            appliedMovement.x = movement.x;
+            appliedMovement.z = movement.z;*/
+        }
         
     }
 }

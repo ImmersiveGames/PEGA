@@ -11,7 +11,7 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
         protected bool IsRootState = false;
         protected readonly StateMachineContext Ctx;
         protected readonly StateFactory Factory;
-        private BaseState _currentSuperstate;
+        protected BaseState _currentSuperstate;
         private BaseState _currentSubState;
 
         protected abstract StatesNames StateName { get; }
@@ -53,15 +53,22 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
         
         protected void SwitchState(BaseState newState)
         {
+            // 🔹 Sai do subestado atual antes de sair do estado principal
+            _currentSubState?.ExitState();
+
+            // 🔹 Sai do superestado
             ExitState();
-            
+
+            // 🔹 Entra no novo estado
             newState.EnterState();
 
-            if(IsRootState)
-                Ctx.CurrentState = newState;
+            if (IsRootState)
+            {
+                Ctx.CurrentState = newState; // Se for root, troca no ContextStates
+            }
             else
             {
-                _currentSuperstate?.SetSubState(newState);
+                _currentSuperstate?.SetSubState(newState); // Se for subestado, troca dentro do superestado
             }
         }
 
@@ -70,10 +77,18 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
             _currentSuperstate = newSuperState;
         }
 
-        protected void SetSubState(BaseState newSubState)
+        protected internal void SetSubState(BaseState newSubState)
         {
-            _currentSubState = newSubState; //define um sub state para ele
-            newSubState.SetSuperState(this);//ao mesmo tempo que torna este superstate do próximo.
+            // 🔹 Sai do subestado atual ANTES de trocar
+            _currentSubState?.ExitState();
+
+            // 🔹 Atualiza o subestado e chama o Enter
+            _currentSubState = newSubState;
+            _currentSubState.EnterState();
+
+            // 🔹 Define este estado como superestado do novo subestado
+            newSubState.SetSuperState(this);
         }
+
     }
 }

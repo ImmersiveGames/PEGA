@@ -9,6 +9,13 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
         {
         }
 
+        protected internal override void EnterState()
+        {
+            base.EnterState();
+            Ctx.movement.x = 0;
+            Ctx.movement.z = 0;
+        }
+
         protected override void UpdateState()
         {
             CheckSwitchState();//manter por último
@@ -16,10 +23,10 @@ namespace ImmersiveGames.HierarchicalStateMachine.States
 
         public override void CheckSwitchState()
         {
-            /*if (Ctx.movement != Vector3.zero)
+            if (Ctx.directionPressed != Vector2.zero)
             {
-                SwitchState(Factory.Walk()); 
-            }*/
+                _currentSuperstate.SetSubState(Factory.Walk()); // ✅ Troca corretamente para Walking
+            }
             
             Debug.Log($"[IdleState] CheckSwitchState");
         }

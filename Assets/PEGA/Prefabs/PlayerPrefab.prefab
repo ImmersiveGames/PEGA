@@ -563,7 +563,9 @@ MonoBehaviour:
   isFalling: 0
   movement: {x: 0, y: 0, z: 0}
   appliedMovement: {x: 0, y: 0, z: 0}
+  rotationPerFrame: 15
   gravity: 0
+  initialJumpVelocity: 0
   directionPressed: {x: 0, y: 0}
   jumpPressed: 0
   dashPressed: 0
