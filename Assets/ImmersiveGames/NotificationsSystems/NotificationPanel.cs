@@ -33,7 +33,7 @@ namespace ImmersiveGames.NotificationsSystems
         private Action _onConfirmCallback;
 
         // Referência ao PlayerInputHandler do jogador associado
-        private PlayerInputHandler _playerInputHandler;
+        private CharacterInputHandler _characterInputHandler;
 
         private void Awake()
         {
@@ -41,9 +41,9 @@ namespace ImmersiveGames.NotificationsSystems
             _audioSource = GetComponent<AudioSource>();
         }
 
-        public void Initialize(PlayerInputHandler playerInputHandler)
+        public void Initialize(CharacterInputHandler characterInputHandler)
         {
-            _playerInputHandler = playerInputHandler;
+            _characterInputHandler = characterInputHandler;
         }
 
         public void Show(string message, Action onClose, Action onConfirm = null)
@@ -56,9 +56,9 @@ namespace ImmersiveGames.NotificationsSystems
             ConfigureButtons();
             OpenPanel();
 
-            if (_onConfirmCallback != null && _playerInputHandler != null)
+            if (_onConfirmCallback != null && _characterInputHandler != null)
             {
-                _playerInputHandler.ActionManager.RegisterAction("ConfirmNotification", ConfirmActionHandler);
+                _characterInputHandler.ActionManager.RegisterAction("ConfirmNotification", ConfirmActionHandler);
             }
         }
 
@@ -104,9 +104,9 @@ namespace ImmersiveGames.NotificationsSystems
 
         public void ClosePanel()
         {
-            if (_onConfirmCallback != null && _playerInputHandler != null)
+            if (_onConfirmCallback != null && _characterInputHandler != null)
             {
-                _playerInputHandler.ActionManager.UnregisterAction("ConfirmNotification", ConfirmActionHandler);
+                _characterInputHandler.ActionManager.UnregisterAction("ConfirmNotification", ConfirmActionHandler);
             }
 
             if (_animator != null)

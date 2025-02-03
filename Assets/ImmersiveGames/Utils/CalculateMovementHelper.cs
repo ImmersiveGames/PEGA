@@ -2,7 +2,7 @@
 
 namespace ImmersiveGames.Utils
 {
-    public static class JumpHelper
+    public static class CalculateMovementHelper
     {
         public static void CalculateJumpVariables(float maxJumpHeight, float maxJumpTime, out float gravity, out float initialJumpVelocity)
         {

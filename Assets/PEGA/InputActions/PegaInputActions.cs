@@ -28,7 +28,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
             ""id"": ""d8c17521-0089-45f9-83da-55d120818ab2"",
             ""actions"": [
                 {
-                    ""name"": ""Axis_Move"",
+                    ""name"": ""AxisMove"",
                     ""type"": ""Value"",
                     ""id"": ""5e67e393-2186-4c02-9c4f-9d88746df072"",
                     ""expectedControlType"": ""Vector2"",
@@ -67,7 +67,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""name"": ""Dash"",
                     ""type"": ""Button"",
                     ""id"": ""df2241d5-b266-44f3-8888-d3c73fb2292e"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -90,7 +90,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -101,7 +101,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -112,7 +112,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -123,7 +123,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -134,7 +134,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -145,7 +145,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -156,7 +156,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile;GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -167,7 +167,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile;GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -178,7 +178,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile;GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -189,7 +189,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile;GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -200,7 +200,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -211,7 +211,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -222,7 +222,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -233,7 +233,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -244,7 +244,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Mobile"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -255,7 +255,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -266,7 +266,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -277,7 +277,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -288,7 +288,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -299,7 +299,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";GamePad"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -310,7 +310,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -321,7 +321,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -332,7 +332,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -343,7 +343,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -354,7 +354,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Axis_Move"",
+                    ""action"": ""AxisMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -694,7 +694,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
 }");
         // Player
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
-        m_Player_Axis_Move = m_Player.FindAction("Axis_Move", throwIfNotFound: true);
+        m_Player_AxisMove = m_Player.FindAction("AxisMove", throwIfNotFound: true);
         m_Player_PauseGame = m_Player.FindAction("PauseGame", throwIfNotFound: true);
         m_Player_CamMove = m_Player.FindAction("CamMove", throwIfNotFound: true);
         m_Player_Action = m_Player.FindAction("Action", throwIfNotFound: true);
@@ -774,7 +774,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
     // Player
     private readonly InputActionMap m_Player;
     private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
-    private readonly InputAction m_Player_Axis_Move;
+    private readonly InputAction m_Player_AxisMove;
     private readonly InputAction m_Player_PauseGame;
     private readonly InputAction m_Player_CamMove;
     private readonly InputAction m_Player_Action;
@@ -784,7 +784,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
     {
         private @PegaInputActions m_Wrapper;
         public PlayerActions(@PegaInputActions wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Axis_Move => m_Wrapper.m_Player_Axis_Move;
+        public InputAction @AxisMove => m_Wrapper.m_Player_AxisMove;
         public InputAction @PauseGame => m_Wrapper.m_Player_PauseGame;
         public InputAction @CamMove => m_Wrapper.m_Player_CamMove;
         public InputAction @Action => m_Wrapper.m_Player_Action;
@@ -799,9 +799,9 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_PlayerActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_PlayerActionsCallbackInterfaces.Add(instance);
-            @Axis_Move.started += instance.OnAxis_Move;
-            @Axis_Move.performed += instance.OnAxis_Move;
-            @Axis_Move.canceled += instance.OnAxis_Move;
+            @AxisMove.started += instance.OnAxisMove;
+            @AxisMove.performed += instance.OnAxisMove;
+            @AxisMove.canceled += instance.OnAxisMove;
             @PauseGame.started += instance.OnPauseGame;
             @PauseGame.performed += instance.OnPauseGame;
             @PauseGame.canceled += instance.OnPauseGame;
@@ -821,9 +821,9 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
 
         private void UnregisterCallbacks(IPlayerActions instance)
         {
-            @Axis_Move.started -= instance.OnAxis_Move;
-            @Axis_Move.performed -= instance.OnAxis_Move;
-            @Axis_Move.canceled -= instance.OnAxis_Move;
+            @AxisMove.started -= instance.OnAxisMove;
+            @AxisMove.performed -= instance.OnAxisMove;
+            @AxisMove.canceled -= instance.OnAxisMove;
             @PauseGame.started -= instance.OnPauseGame;
             @PauseGame.performed -= instance.OnPauseGame;
             @PauseGame.canceled -= instance.OnPauseGame;
@@ -954,7 +954,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
     }
     public interface IPlayerActions
     {
-        void OnAxis_Move(InputAction.CallbackContext context);
+        void OnAxisMove(InputAction.CallbackContext context);
         void OnPauseGame(InputAction.CallbackContext context);
         void OnCamMove(InputAction.CallbackContext context);
         void OnAction(InputAction.CallbackContext context);

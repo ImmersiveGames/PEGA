@@ -4,7 +4,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 {
     public class HorizontalMovementState
     {
-        public HorizontalMovementType CurrentState { get; private set; }
+        public HorizontalMovementType CurrentState { get; internal set; }
 
         private readonly float _walkThreshold; // Velocidade para ser considerado "andando"
 
@@ -13,11 +13,15 @@ namespace PEGA.ObjectSystems.MovementSystems
             _walkThreshold = walkThreshold;
         }
 
-        public void UpdateState(Vector3 movement)
+        public void UpdateState(Vector3 movement, bool isDashing)
         {
+            if (isDashing)
+            {
+                CurrentState = HorizontalMovementType.Dashing;
+                return;
+            }
             // Calcula a magnitude do movimento horizontal
             var horizontalSpeed = new Vector3(movement.x, 0, movement.z).magnitude;
-            Debug.Log($"SPEED MOve: {horizontalSpeed}");
 
             HorizontalMovementType newState;
 
@@ -45,6 +49,7 @@ namespace PEGA.ObjectSystems.MovementSystems
     {
         Idle,      // Parado
         Walking,   // Andando
-        Running    // Correndo
+        Running,    // Correndo
+        Dashing //
     }
 }

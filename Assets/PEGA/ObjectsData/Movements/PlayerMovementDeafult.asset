@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: PlayerMovementDeafult
   m_EditorClassIdentifier: 
   baseSpeed: 10
-  gravity: -9.8
   gravityGround: -0.5
+  gravity: -9.8
+  walkThreshold: 15
   maxJumpHeight: 3
-  maxJumpTime: 0.8
+  maxJumpTime: 0.75
   fallMultiplier: 2
   maxFallVelocity: -30
+  dashSpeed: 20
+  dashDuration: 0.5
+  dashCooldown: 1

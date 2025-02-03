@@ -1,11 +1,8 @@
 ﻿using System;
 using ImmersiveGames.DebugSystems;
-using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.AnimatorSystem;
-using PEGA.ObjectSystems.Interfaces;
 using PEGA.ObjectSystems.Modifications;
 using PEGA.ObjectSystems.MovementSystems.Handlers;
-using PEGA.ObjectSystems.MovementSystems.Strategies;
 using PEGA.ObjectSystems.ObjectsScriptables;
 using PEGA.ObjectSystems.PlayerSystems;
 using UnityEngine;
@@ -18,16 +15,18 @@ namespace PEGA.ObjectSystems.MovementSystems
         [SerializeField] private string movementParameterName;
 
         [SerializeField] private MovementSettings movementSettings; // Movimento configurado no inspector
-
+        [SerializeField]
         private float _actualGravity;
         private Vector3 _actualMovement;
         private Vector3 _appliedMovement;
         private bool _isJumping;
+        private bool _isDashing;
         
         private VerticalMovementState _verticalMovementState;
         private HorizontalMovementState _horizontalMovementState;
 
-        private IMovementController _controller; // Controlador de input
+        private MovementController _movementController;
+
         private CharacterController _characterController;
         private ModifierController _modifierController;
 
@@ -47,11 +46,6 @@ namespace PEGA.ObjectSystems.MovementSystems
             InitializeComponents();
         }
 
-        private void OnEnable()
-        {
-            _controller.InitializeInput();
-        }
-
         private void Update()
         {
             _modifierController.UpdateModifiers(Time.deltaTime);
@@ -60,7 +54,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _gravityHandler.CalculateGravity(ref _actualMovement, ref _appliedMovement, _actualGravity, _verticalMovementState);
 
             // Gerencia o pulo
-            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _controller.IsJumpPressed, isJumping: ref _isJumping);
+            _jumpHandler.HandleJump(ref _actualMovement, ref _appliedMovement, _movementController.IsJumpPressing(), isJumping: ref _isJumping);
 
             // Atualiza o estado do movimento
             UpdateVerticalState();
@@ -69,11 +63,15 @@ namespace PEGA.ObjectSystems.MovementSystems
             // Atualiza movimentação horizontal
             _movementHandler.UpdateMovement(ref _actualMovement, ref _appliedMovement);
 
+            // Sobrescreve o movimento no dash
+            DashHandler();
+            
             // Aplica o movimento calculado
             MovementHandler.ApplyMovement(_appliedMovement, _characterController);
 
             // Atualiza animações
             UpdateAnimations();
+            Debug.Log($"Gravity{_actualGravity}");
 
             // Debug opcional
 #if UNITY_EDITOR
@@ -81,19 +79,15 @@ namespace PEGA.ObjectSystems.MovementSystems
 #endif
         }
 
-        private void OnDisable()
-        {
-            _controller.DisableInput();
-        }
-
         #endregion
 
         #region Initialization
 
-        private void Initialize(IMovementController controller, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
+        private void Initialize(MovementController movementController, ModifierController modifierController, MovementSettings settings, AttributesBaseData attributes)
         {
             // Permite a inicialização via injeção de dependências
-            _controller = controller;
+            _movementController = movementController;
+            
             _modifierController = modifierController;
             movementSettings = settings;
 
@@ -103,7 +97,7 @@ namespace PEGA.ObjectSystems.MovementSystems
             _verticalMovementState = new VerticalMovementState();
             _horizontalMovementState = new HorizontalMovementState(movementSettings.walkThreshold);
             _jumpHandler = new JumpHandler(movementSettings, _modifierController, _verticalMovementState);
-            _movementHandler = new MovementHandler(transform, _controller, movementSettings, attributes, _modifierController);
+            _movementHandler = new MovementHandler(transform, _movementController, movementSettings, attributes, _modifierController);
 
             // Configura gravidade inicial
             _actualGravity = _jumpHandler.Gravity;
@@ -113,8 +107,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             // Inicializa automaticamente se não usar injeção de dependência
             var playerMaster = GetComponent<PlayerMaster>();
+            
             Initialize(
-                new InputMovementController(GetComponent<PlayerInputHandler>()),
+                GetComponent<MovementController>(),
                 GetComponent<ModifierController>(),
                 movementSettings,
                 playerMaster.attributesBaseData
@@ -122,8 +117,33 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             _characterController = GetComponent<CharacterController>();
         }
-
         #endregion
+
+        private void DashHandler()
+        {
+            if (_movementController.IsDashPressing() && !_isDashing)
+            {
+                _isDashing = true;
+
+                // Calcula o multiplicador e aplica ao movimento diretamente
+                _appliedMovement.x *= 4;
+                _appliedMovement.z *= 4;
+                _actualMovement.x *= 4;
+                _actualMovement.z *= 4;
+
+                _animationHandler.SetDashing(true);
+                Debug.Log("Dash iniciado!");
+            }
+            else if (!_movementController.IsDashPressing() && _isDashing)
+            {
+                _isDashing = false;
+
+                _animationHandler.SetDashing(false);
+                Debug.Log("Dash finalizado!");
+            }
+        }
+        
+        
         #region State Updates
 
         private void UpdateVerticalState()
@@ -133,17 +153,18 @@ namespace PEGA.ObjectSystems.MovementSystems
 
             if (_verticalMovementState.CurrentState == previousState) return;
             OnVerticalStateChanged?.Invoke(_verticalMovementState.CurrentState);
-            Debug.Log($"Vertical State Changed: {_verticalMovementState.CurrentState}");
+            DebugManager.Log<ObjectMovement>($"Vertical State Changed: {_verticalMovementState.CurrentState}");
         }
 
         private void UpdateHorizontalState()
         {
             var previousState = _horizontalMovementState.CurrentState;
-            _horizontalMovementState.UpdateState(_actualMovement);
-
+            
+            _horizontalMovementState.UpdateState(_actualMovement,_isDashing);
+            Debug.Log($"Previous: {previousState}, Atual : {_horizontalMovementState.CurrentState}");
             if (_horizontalMovementState.CurrentState == previousState) return;
             OnHorizontalStateChanged?.Invoke(_horizontalMovementState.CurrentState);
-            Debug.Log($"Horizontal State Changed: {_horizontalMovementState.CurrentState}");
+            DebugManager.Log<ObjectMovement>($"Horizontal State Changed: {_horizontalMovementState.CurrentState}");
         }
 
         #endregion
@@ -156,16 +177,17 @@ namespace PEGA.ObjectSystems.MovementSystems
             switch (_horizontalMovementState.CurrentState)
             {
                 case HorizontalMovementType.Idle:
-                    _animationHandler.SetIdle();
+                    //_animationHandler.SetIdle();
                     break;
 
                 case HorizontalMovementType.Walking:
                 case HorizontalMovementType.Running:
-                    _animationHandler.HandleMovementAnimation(_controller.InputVector);
+                    _animationHandler.HandleMovementAnimation(_movementController.GetMovementPressing());
+                    break;
+                case HorizontalMovementType.Dashing:
                     break;
                 default:
-                    _animationHandler.SetIdle();
-                    break;
+                    throw new ArgumentOutOfRangeException();
             }
 
             // Atualiza animação com base no estado vertical
@@ -179,9 +201,6 @@ namespace PEGA.ObjectSystems.MovementSystems
                     break;
 
                 case VerticalMovementStateType.Grounded:
-                    _animationHandler.SetJumping(false);
-                    break;
-                default:
                     _animationHandler.SetJumping(false);
                     break;
             }

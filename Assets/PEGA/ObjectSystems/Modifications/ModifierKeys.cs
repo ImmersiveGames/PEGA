@@ -3,7 +3,9 @@ namespace PEGA.ObjectSystems.Modifications
 {
     public static class ModifierKeys
     {
-        public const string Speed = "Speed";
+        public const string SpeedMultiplay = "Speed";
         public const string JumpBoost = "JumpBoost";
+        public const string DashSpeedBoost = "DashSpeedBoost";
+        public const string DashDurationBoost = "DashDurationBoost";
     }
 }
