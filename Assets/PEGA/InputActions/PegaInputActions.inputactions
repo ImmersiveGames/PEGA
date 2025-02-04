@@ -33,7 +33,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Action",
+                    "name": "Interaction",
                     "type": "Button",
                     "id": "7730d3e5-03d5-4e0a-9846-1f630b06ddb2",
                     "expectedControlType": "",
@@ -376,7 +376,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "GamePad",
-                    "action": "Action",
+                    "action": "Interaction",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -387,7 +387,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Action",
+                    "action": "Interaction",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -398,7 +398,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Action",
+                    "action": "Interaction",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

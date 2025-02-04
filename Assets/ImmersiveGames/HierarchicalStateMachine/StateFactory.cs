@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using ImmersiveGames.HierarchicalStateMachine.States;
+using PEGA.ObjectSystems.MovementSystems;
+using PEGA.ObjectSystems.MovementSystems.States;
 
 namespace ImmersiveGames.HierarchicalStateMachine
 {
@@ -7,13 +8,14 @@ namespace ImmersiveGames.HierarchicalStateMachine
     {
         private readonly Dictionary<StatesNames, BaseState> _states = new Dictionary<StatesNames, BaseState>();
 
-        public StateFactory(StateMachineContext currentStateMachineContext)
+        public StateFactory(MovementContext currentMovementContext)
         {
-            _states[StatesNames.Idle] = new IdleState(currentStateMachineContext,this);
-            _states[StatesNames.Grounded] = new GroundedState(currentStateMachineContext,this);
-            _states[StatesNames.Jump] = new JumpingState(currentStateMachineContext,this);
-            _states[StatesNames.Walk] = new WalkingState(currentStateMachineContext,this);
-            _states[StatesNames.Fall] = new FallingState(currentStateMachineContext,this);
+            _states[StatesNames.Idle] = new IdleState(currentMovementContext,this);
+            _states[StatesNames.Grounded] = new GroundedState(currentMovementContext,this);
+            _states[StatesNames.Jump] = new JumpingState(currentMovementContext,this);
+            _states[StatesNames.Walk] = new WalkingState(currentMovementContext,this);
+            _states[StatesNames.Fall] = new FallingState(currentMovementContext,this);
+            _states[StatesNames.Dash] = new DashState(currentMovementContext,this);
         }
 
         public BaseState Idle()
@@ -39,11 +41,15 @@ namespace ImmersiveGames.HierarchicalStateMachine
         {
             return _states[StatesNames.Fall];
         }
+        public BaseState Dash()
+        {
+            return _states[StatesNames.Dash];
+        }
         
     }
 
     public enum StatesNames
     {
-        Idle,Grounded,Jump,Walk,Fall
+        Idle,Grounded,Jump,Walk,Fall,Dash
     }
 }

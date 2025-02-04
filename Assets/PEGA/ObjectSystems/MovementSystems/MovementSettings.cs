@@ -9,15 +9,15 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float baseSpeed = 10f;
         public float gravityGround = -0.5f;
         public float gravity = -9.8f;
-        public float walkThreshold = 15.0f;
         [Header("Jump Settings")]
         public float maxJumpHeight = 1.0f;
         public float maxJumpTime = 0.5f;
         public float fallMultiplier = 2f;
         public float maxFallVelocity = -30f;
         [Header("Dash Settings")]
-        public float dashSpeed = 20f;
-        public float dashDuration = 0.5f;
-        public float dashCooldown = 1f;
+        [Range(0.01f,1f)]
+        public float dashDuration = 0.3f;
+        [Range(1f,20f)]
+        public float dashMultiply = 5.0f;
     }
 }

@@ -55,7 +55,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Action"",
+                    ""name"": ""Interaction"",
                     ""type"": ""Button"",
                     ""id"": ""7730d3e5-03d5-4e0a-9846-1f630b06ddb2"",
                     ""expectedControlType"": """",
@@ -398,7 +398,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""GamePad"",
-                    ""action"": ""Action"",
+                    ""action"": ""Interaction"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -409,7 +409,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Action"",
+                    ""action"": ""Interaction"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -420,7 +420,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Action"",
+                    ""action"": ""Interaction"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -697,7 +697,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
         m_Player_AxisMove = m_Player.FindAction("AxisMove", throwIfNotFound: true);
         m_Player_PauseGame = m_Player.FindAction("PauseGame", throwIfNotFound: true);
         m_Player_CamMove = m_Player.FindAction("CamMove", throwIfNotFound: true);
-        m_Player_Action = m_Player.FindAction("Action", throwIfNotFound: true);
+        m_Player_Interaction = m_Player.FindAction("Interaction", throwIfNotFound: true);
         m_Player_Dash = m_Player.FindAction("Dash", throwIfNotFound: true);
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         // UiControls
@@ -777,7 +777,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_AxisMove;
     private readonly InputAction m_Player_PauseGame;
     private readonly InputAction m_Player_CamMove;
-    private readonly InputAction m_Player_Action;
+    private readonly InputAction m_Player_Interaction;
     private readonly InputAction m_Player_Dash;
     private readonly InputAction m_Player_Jump;
     public struct PlayerActions
@@ -787,7 +787,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
         public InputAction @AxisMove => m_Wrapper.m_Player_AxisMove;
         public InputAction @PauseGame => m_Wrapper.m_Player_PauseGame;
         public InputAction @CamMove => m_Wrapper.m_Player_CamMove;
-        public InputAction @Action => m_Wrapper.m_Player_Action;
+        public InputAction @Interaction => m_Wrapper.m_Player_Interaction;
         public InputAction @Dash => m_Wrapper.m_Player_Dash;
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -808,9 +808,9 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
             @CamMove.started += instance.OnCamMove;
             @CamMove.performed += instance.OnCamMove;
             @CamMove.canceled += instance.OnCamMove;
-            @Action.started += instance.OnAction;
-            @Action.performed += instance.OnAction;
-            @Action.canceled += instance.OnAction;
+            @Interaction.started += instance.OnInteraction;
+            @Interaction.performed += instance.OnInteraction;
+            @Interaction.canceled += instance.OnInteraction;
             @Dash.started += instance.OnDash;
             @Dash.performed += instance.OnDash;
             @Dash.canceled += instance.OnDash;
@@ -830,9 +830,9 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
             @CamMove.started -= instance.OnCamMove;
             @CamMove.performed -= instance.OnCamMove;
             @CamMove.canceled -= instance.OnCamMove;
-            @Action.started -= instance.OnAction;
-            @Action.performed -= instance.OnAction;
-            @Action.canceled -= instance.OnAction;
+            @Interaction.started -= instance.OnInteraction;
+            @Interaction.performed -= instance.OnInteraction;
+            @Interaction.canceled -= instance.OnInteraction;
             @Dash.started -= instance.OnDash;
             @Dash.performed -= instance.OnDash;
             @Dash.canceled -= instance.OnDash;
@@ -957,7 +957,7 @@ public partial class @PegaInputActions: IInputActionCollection2, IDisposable
         void OnAxisMove(InputAction.CallbackContext context);
         void OnPauseGame(InputAction.CallbackContext context);
         void OnCamMove(InputAction.CallbackContext context);
-        void OnAction(InputAction.CallbackContext context);
+        void OnInteraction(InputAction.CallbackContext context);
         void OnDash(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
     }

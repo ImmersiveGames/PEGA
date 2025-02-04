@@ -1,5 +1,6 @@
 ﻿using System;
 using ImmersiveGames.InputSystems;
+using PEGA.InputActions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -33,17 +34,14 @@ namespace ImmersiveGames.NotificationsSystems
         private Action _onConfirmCallback;
 
         // Referência ao PlayerInputHandler do jogador associado
-        private CharacterInputHandler _characterInputHandler;
+        private ActionManager _actionManager;
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _audioSource = GetComponent<AudioSource>();
-        }
-
-        public void Initialize(CharacterInputHandler characterInputHandler)
-        {
-            _characterInputHandler = characterInputHandler;
+            var pegaInputActions = new PegaInputActions();
+            _actionManager = new ActionManager(pegaInputActions.asset);
         }
 
         public void Show(string message, Action onClose, Action onConfirm = null)
@@ -56,9 +54,9 @@ namespace ImmersiveGames.NotificationsSystems
             ConfigureButtons();
             OpenPanel();
 
-            if (_onConfirmCallback != null && _characterInputHandler != null)
+            if (_onConfirmCallback != null && _actionManager != null)
             {
-                _characterInputHandler.ActionManager.RegisterAction("ConfirmNotification", ConfirmActionHandler);
+                _actionManager.RegisterAction(ActionsKey.ConfirmNotification, ActionPhase.Performed, ConfirmActionHandler);
             }
         }
 
@@ -104,9 +102,9 @@ namespace ImmersiveGames.NotificationsSystems
 
         public void ClosePanel()
         {
-            if (_onConfirmCallback != null && _characterInputHandler != null)
+            if (_onConfirmCallback != null && _actionManager != null)
             {
-                _characterInputHandler.ActionManager.UnregisterAction("ConfirmNotification", ConfirmActionHandler);
+                _actionManager.UnregisterAction(ActionsKey.ConfirmNotification, ActionPhase.Performed,ConfirmActionHandler);
             }
 
             if (_animator != null)

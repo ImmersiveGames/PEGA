@@ -409,8 +409,8 @@ GameObject:
   - component: {fileID: 8260366065765662248}
   - component: {fileID: 5272752039940584962}
   - component: {fileID: 2313026586389050340}
-  - component: {fileID: 737668538414677444}
   - component: {fileID: 3097938912641828902}
+  - component: {fileID: 1204566306826233122}
   m_Layer: 0
   m_Name: PlayerMaster
   m_TagString: Player
@@ -544,31 +544,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c220c7182c94455492b8a449a5c2f85e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &737668538414677444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5202670250957630496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 910c52add1d84e7cbc8dcbf9eea9e909, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}
-  isGrounded: 0
-  isJumping: 0
-  isWalking: 0
-  isFalling: 0
-  movement: {x: 0, y: 0, z: 0}
-  appliedMovement: {x: 0, y: 0, z: 0}
-  rotationPerFrame: 15
-  gravity: 0
-  initialJumpVelocity: 0
-  directionPressed: {x: 0, y: 0}
-  jumpPressed: 0
-  dashPressed: 0
 --- !u!114 &3097938912641828902
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -581,3 +556,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: accd3ea34aef4fb1810b4516a39696cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1204566306826233122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 910c52add1d84e7cbc8dcbf9eea9e909, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSettings: {fileID: 11400000, guid: c271aa2e20c659544be0db64800e99aa, type: 2}
+  movement: {x: 0, y: 0, z: 0}
+  appliedMovement: {x: 0, y: 0, z: 0}
+  movementDirection: {x: 0, y: 0}
+  rotationPerFrame: 15
+  gravity: 0
+  initialJumpVelocity: 0
+  dashDuration: 0.2
+  dashMultiply: 10
+  isWalking: 0
+  isGrounded: 0
+  isJumping: 0
+  isFalling: 0
+  isDashing: 0

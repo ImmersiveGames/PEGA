@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.InputSystems;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.HierarchicalStateMachine;
 using PEGA.ObjectSystems.MovementSystems.Drivers;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
@@ -6,57 +7,68 @@ using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
-    [RequireComponent(typeof(PlayerInput))]
     public class MovementController : MonoBehaviour
     {
-        private MovementControllerSwitcher _movementSwitcher;
-        private CharacterInputHandler _characterInput;
-        private IMovementDriver _currentDriver;
-
+        private MovementContext _context;
+        private CharacterController _characterController;
+        private StateFactory _states;
         private void Awake()
         {
-            _movementSwitcher = new MovementControllerSwitcher();
-            var playerInput = GetComponent<PlayerInput>();
+            _characterController = GetComponent<CharacterController>();
+            _context = GetComponent<MovementContext>();
+            SwitchToPlayerControl();
+            _states = new StateFactory(_context); //Cria a fabric usando este contexto
+            _context.CurrentState = _states.Fall(); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
+            _context.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
+        }
+        private void Update()
+        {
+            if (_context.MovementDriver == null) return;
+            _context.MovementDriver.UpdateDriver(); // Atualiza estados de input.
+            
+            _context.CurrentState.CheckSwitchState();
+            _context.movementDirection = _context.MovementDriver.GetMovementDirection();
+            
+            _context.CurrentState.UpdateStates();
+            
+            HandleRotate();
+            _characterController.Move(_context.appliedMovement * Time.deltaTime);
+            DebugManager.Log<MovementController>($"Movement Direction: {_context.movementDirection}, Jump: {_context.MovementDriver.IsJumpingPress}, Dash: {_context.MovementDriver.IsDashPress}");
+        }
+        private void HandleRotate()
+        {
+            Vector3 positionToLookAt;
+            positionToLookAt.x = _context.MovementDriver.GetMovementDirection().x;
+            positionToLookAt.y = 0.0f;
+            positionToLookAt.z = _context.MovementDriver.GetMovementDirection().y;
 
-            if (playerInput == null) return;
-            _characterInput = new CharacterInputHandler(playerInput);
-            SetDriver(new PlayerMovementDriver(_characterInput));
+            var currentRotation = transform.rotation;
+            if (_context.MovementDriver.GetMovementDirection() == Vector2.zero) return;
+            var targetRotation = Quaternion.LookRotation(positionToLookAt);
+            transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, _context.rotationPerFrame * Time.deltaTime);
+        }
+        private void SetInputSource(IMovementDriver movementDriver)
+        {
+            if (_context.MovementDriver == movementDriver) return;
+            
+            _context.MovementDriver?.ExitDriver();
+            _context.MovementDriver = movementDriver;
+            _context.MovementDriver.InitializeDriver();
         }
 
-        private void OnEnable()
+        private void SwitchToPlayerControl()
         {
-            _characterInput?.ActivateActionMap(ActionMapKey.Player);
+            SetInputSource(new PlayerMovementDriver(GetComponent<PlayerInput>()));
         }
 
-        private void OnDisable()
+        public void SwitchToAIControl()
         {
-            _characterInput?.DeactivateCurrentActionMap();
+            SetInputSource(new NullMovementDriver(transform));
         }
 
-        private void SetDriver(IMovementDriver driver)
+        private void ResetHistoryDriver()
         {
-            if (_currentDriver == driver) return;
-            _movementSwitcher.SetDriver(driver);
-            _currentDriver = driver;
+            _context.MovementDriver?.Reset();
         }
-
-        // 🔥 ÚNICO lugar onde os inputs são expostos!
-        public Vector2 GetMovementPressing() => _currentDriver?.GetMovementPressing() ?? Vector2.zero;
-        public bool IsJumpPressing() => _currentDriver?.IsJumpPressing() ?? false;
-        public bool IsDashPressing() => _currentDriver?.IsDashPressing() ?? false;
-
-        // 🔥 Expondo métodos para registrar e remover ações dinamicamente
-        /*public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
-        {
-            _characterInput?.RegisterAction(actionName, callback);
-        }*/
-
-        /*public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
-        {
-            _characterInput?.UnregisterAction(actionName, callback);
-        }*/
-
-        //public IMovementDriver GetCurrentDriver => _movementSwitcher.GetCurrentDriver();
-
     }
 }

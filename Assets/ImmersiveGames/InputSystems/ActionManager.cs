@@ -1,76 +1,144 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using PEGA.InputActions;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems
 {
     public sealed class ActionManager
     {
-        public event Action<string, InputAction.CallbackContext> OnActionTriggered;
+        // Evento geral para notificar quando qualquer ação for disparada.
+        public event Action<ActionsKey, InputAction.CallbackContext> OnActionTriggered;
 
-        private readonly Dictionary<string, List<Action<InputAction.CallbackContext>>> _actionListeners = new();
-        private readonly PlayerInput _playerInput;
+        // Dicionário para armazenar listeners com base na tupla (ActionsKey, ActionPhase).
+        private readonly Dictionary<(ActionsKey, ActionPhase), List<Action<InputAction.CallbackContext>>> _actionListeners =
+            new Dictionary<(ActionsKey, ActionPhase), List<Action<InputAction.CallbackContext>>>();
 
-        public ActionManager(PlayerInput playerInput)
+        private readonly InputActionAsset _inputActionAsset;
+
+        /// <summary>
+        /// Construtor que recebe o InputActionAsset e registra todas as ações.
+        /// </summary>
+        public ActionManager(InputActionAsset inputActionAsset)
         {
-            _playerInput = playerInput ?? throw new ArgumentNullException(nameof(playerInput));
+            _inputActionAsset = inputActionAsset ?? throw new ArgumentNullException(nameof(inputActionAsset));
             RegisterAllActions();
         }
 
-        public void RegisterAction(string actionName, Action<InputAction.CallbackContext> callback)
+        /// <summary>
+        /// Registra um callback para uma ação e fase específica.
+        /// </summary>
+        public void RegisterAction(ActionsKey actionKey, ActionPhase phase, Action<InputAction.CallbackContext> callback)
         {
-            if (!_actionListeners.ContainsKey(actionName))
-                _actionListeners[actionName] = new List<Action<InputAction.CallbackContext>>();
-
-            _actionListeners[actionName].Add(callback);
-        }
-
-        public void UnregisterAction(string actionName, Action<InputAction.CallbackContext> callback)
-        {
-            if (!_actionListeners.TryGetValue(actionName, out var actionListener)) return;
-            
-            actionListener.Remove(callback);
-            if (_actionListeners[actionName].Count == 0)
-                _actionListeners.Remove(actionName);
-        }
-
-        private void RegisterAllActions()
-        {
-            var actionMaps = _playerInput.actions.actionMaps;
-            foreach (var action in actionMaps.SelectMany(map => map.actions))
+            var key = (actionKey, phase);
+            if (!_actionListeners.TryGetValue(key, out var list))
             {
-                RegisterCallbacks(action, "_Start", "_Performed", "_Cancel");
+                list = new List<Action<InputAction.CallbackContext>>();
+                _actionListeners[key] = list;
             }
+            list.Add(callback);
         }
 
-        private void RegisterCallbacks(InputAction action, params string[] suffixes)
+        /// <summary>
+        /// Remove um callback para uma ação e fase específica.
+        /// </summary>
+        public void UnregisterAction(ActionsKey actionKey, ActionPhase phase, Action<InputAction.CallbackContext> callback)
         {
-            foreach (var suffix in suffixes)
+            var key = (actionKey, phase);
+            if (_actionListeners.TryGetValue(key, out var list))
             {
-                switch (suffix)
+                list.Remove(callback);
+                if (list.Count == 0)
                 {
-                    case "_Start":
-                        action.started += context => NotifyListeners(action.name + suffix, context);
-                        break;
-                    case "_Performed":
-                        action.performed += context => NotifyListeners(action.name + suffix, context);
-                        break;
-                    case "_Cancel":
-                        action.canceled += context => NotifyListeners(action.name + suffix, context);
-                        break;
+                    _actionListeners.Remove(key);
                 }
             }
         }
 
-        private void NotifyListeners(string actionName, InputAction.CallbackContext context)
+        /// <summary>
+        /// Registra os callbacks para todas as InputActions contidas no InputActionAsset.
+        /// </summary>
+        private void RegisterAllActions()
         {
-            OnActionTriggered?.Invoke(actionName, context);
-            if (!_actionListeners.TryGetValue(actionName, out var listeners)) return;
-            foreach (var listener in listeners)
+            foreach (var actionMap in _inputActionAsset.actionMaps)
             {
-                listener?.Invoke(context);
+                foreach (var action in actionMap.actions)
+                {
+                    if (Enum.TryParse(action.name, out ActionsKey actionKey))
+                    {
+                        RegisterActionCallbacks(action, actionKey);
+                    }
+                }
             }
         }
+
+        /// <summary>
+        /// Associa os eventos de uma InputAction às notificações dos listeners para cada fase.
+        /// </summary>
+        private void RegisterActionCallbacks(InputAction action, ActionsKey actionKey)
+        {
+            action.started += context => NotifyListeners(actionKey, ActionPhase.Started, context);
+            action.performed += context => NotifyListeners(actionKey, ActionPhase.Performed, context);
+            action.canceled += context => NotifyListeners(actionKey, ActionPhase.Canceled, context);
+        }
+
+        /// <summary>
+        /// Notifica os listeners registrados para a ação e fase especificadas.
+        /// </summary>
+        public void NotifyListeners(ActionsKey actionKey, ActionPhase phase, InputAction.CallbackContext context)
+        {
+            OnActionTriggered?.Invoke(actionKey, context);
+
+            var key = (actionKey, phase);
+            if (_actionListeners.TryGetValue(key, out var listeners))
+            {
+                foreach (var listener in listeners)
+                {
+                    listener?.Invoke(context);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifica se uma determinada ação está ativa (pressionada).
+        /// </summary>
+        public bool IsActionActive(ActionsKey actionKey)
+        {
+            foreach (var actionMap in _inputActionAsset.actionMaps)
+            {
+                var action = actionMap.FindAction(actionKey.ToString());
+                if (action != null && action.IsPressed())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Retorna o valor de uma ação do tipo T.
+        /// </summary>
+        public T GetActionValue<T>(ActionsKey actionKey) where T : struct
+        {
+            foreach (var actionMap in _inputActionAsset.actionMaps)
+            {
+                var action = actionMap.FindAction(actionKey.ToString());
+                if (action != null)
+                {
+                    return action.ReadValue<T>();
+                }
+            }
+            return default;
+        }
+    }
+
+    /// <summary>
+    /// Define as fases de execução de uma ação.
+    /// </summary>
+    public enum ActionPhase
+    {
+        Started,
+        Performed,
+        Canceled
     }
 }
