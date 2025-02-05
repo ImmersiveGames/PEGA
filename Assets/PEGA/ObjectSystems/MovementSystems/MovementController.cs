@@ -17,7 +17,9 @@ namespace PEGA.ObjectSystems.MovementSystems
             _characterController = GetComponent<CharacterController>();
             _context = GetComponent<MovementContext>();
             SwitchToPlayerControl();
+
             _states = new StateFactory(_context); //Cria a fabric usando este contexto
+   
             _context.CurrentState = _states.Fall(); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
             _context.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
         }

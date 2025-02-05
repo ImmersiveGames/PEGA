@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
 {
-    public class FallingState : BaseState
+    public class JumpingDownState : BaseState
     {
-        protected override StatesNames StateName => StatesNames.Fall;
-        public FallingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+        protected override StatesNames StateName => StatesNames.Dawn;
+        public JumpingDownState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
         {
             IsRootState = true;
         }
@@ -14,7 +14,6 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected internal override void EnterState()
         {
             InitializeSubState();
-            Ctx.isFalling = true;
             Ctx.CalculateJumpVariables();
             base.EnterState();
         }
@@ -26,7 +25,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void ExitState()
         {
-            Ctx.isFalling = false;
+            Ctx.isJumping = false;
             base.ExitState();
         }
 
@@ -36,8 +35,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             {
                 SwitchState(Factory.Grounded());
             }
-            
-            //Todo: Aqui precisa registrar um tempo ou distancia negativa maxima antes de acusar game over por cair em buraco sem fim.
+            //TODO: Aqui também precisa depois de um tempo considerar que esta caindo no infinito
         }
 
         public sealed override void InitializeSubState()

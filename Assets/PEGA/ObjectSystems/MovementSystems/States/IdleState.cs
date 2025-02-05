@@ -27,8 +27,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         public override void CheckSwitchState()
         {
             Debug.Log($"CheckSwitchState - Idle");
-            if (Ctx.MovementDriver.IsDashPress)
+            if (!Ctx.canDashAgain && !Ctx.MovementDriver.IsDashPress)
             {
+                Ctx.canDashAgain = true;
+            }
+            
+            if (Ctx.MovementDriver.IsDashPress && Ctx.canDashAgain)
+            {
+                Ctx.canDashAgain = false;
                 CurrentSuperstate.SetSubState(Factory.Dash());
                 return;
             }

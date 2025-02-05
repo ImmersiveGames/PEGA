@@ -16,6 +16,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             _states[StatesNames.Walk] = new WalkingState(currentMovementContext,this);
             _states[StatesNames.Fall] = new FallingState(currentMovementContext,this);
             _states[StatesNames.Dash] = new DashState(currentMovementContext,this);
+            _states[StatesNames.Dawn] = new JumpingDownState(currentMovementContext,this);
         }
 
         public BaseState Idle()
@@ -41,6 +42,10 @@ namespace ImmersiveGames.HierarchicalStateMachine
         {
             return _states[StatesNames.Fall];
         }
+        public BaseState Down()
+        {
+            return _states[StatesNames.Dawn];
+        }
         public BaseState Dash()
         {
             return _states[StatesNames.Dash];
@@ -50,6 +55,6 @@ namespace ImmersiveGames.HierarchicalStateMachine
 
     public enum StatesNames
     {
-        Idle,Grounded,Jump,Walk,Fall,Dash
+        Idle,Grounded,Jump,Walk,Fall,Dash,Dawn
     }
 }

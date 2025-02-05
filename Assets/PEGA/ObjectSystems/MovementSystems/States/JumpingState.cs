@@ -24,14 +24,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            var previousYVelocity = Ctx.movement.y;
-            Ctx.movement.y += Ctx.gravity * Time.deltaTime;
-            Ctx.appliedMovement.y = previousYVelocity + Ctx.movement.y;
+            Ctx.HandleGravityJump();
         }
 
         protected override void ExitState()
         {
-            Ctx.isJumping = false;
             base.ExitState();
         }
 
@@ -39,8 +36,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             if (Ctx.movement.y <= 0 || !Ctx.MovementDriver.IsJumpingPress)
             {
-                Ctx.isJumping = false;
-                SwitchState(Factory.Fall());
+                SwitchState(Factory.Down());
             }
         }
 

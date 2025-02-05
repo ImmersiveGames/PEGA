@@ -22,7 +22,7 @@ namespace PEGA.GameTests
             DebugManager.SetScriptDebugLevel<ActionMapManager>(DebugManager.DebugLevels.None);
             
             //States
-            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.None);
             
             //Drivers
             DebugManager.SetScriptDebugLevel<IMovementDriver>(DebugManager.DebugLevels.None);

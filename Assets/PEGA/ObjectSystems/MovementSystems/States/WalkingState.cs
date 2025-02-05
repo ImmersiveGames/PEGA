@@ -34,8 +34,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             Debug.Log($"CheckSwitchState - Walk");
             
-            if (Ctx.MovementDriver.IsDashPress)
+            if (!Ctx.canDashAgain && !Ctx.MovementDriver.IsDashPress)
             {
+                Ctx.canDashAgain = true;
+            }
+            
+            if (Ctx.MovementDriver.IsDashPress && Ctx.canDashAgain)
+            {
+                Ctx.canDashAgain = false;
                 CurrentSuperstate.SetSubState(Factory.Dash());
                 return;
             }

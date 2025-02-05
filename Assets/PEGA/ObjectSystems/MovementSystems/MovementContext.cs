@@ -27,6 +27,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         public bool isFalling;
         public bool isDashing;
 
+        public bool canJumpAgain;
+        public bool canDashAgain;
+
         internal IMovementDriver MovementDriver;
         internal CharacterController CharacterController;
         internal BaseState CurrentState;
@@ -35,6 +38,8 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             CharacterController = GetComponent<CharacterController>();
             gravity = movementSettings.gravity;
+            canJumpAgain = true;
+            canDashAgain = true;
         }
         
         public void ApplyMovement(float speedMultiplier = 1f)
@@ -50,6 +55,25 @@ namespace PEGA.ObjectSystems.MovementSystems
             var timeToApex = movementSettings.maxJumpTime / 2;
             gravity = (-2 * movementSettings.maxJumpHeight) / Mathf.Pow(timeToApex, 2);
             initialJumpVelocity = (2 * movementSettings.maxJumpHeight) / timeToApex;
+        }
+
+        private float HandleGravity(float speedMultiplier = 1f)
+        {
+            var previousYVelocity = movement.y;
+            movement.y += gravity * speedMultiplier * Time.deltaTime;
+            return previousYVelocity;
+        }
+
+        public void HandleGravityFall()
+        {
+            var previousYVelocity = HandleGravity(movementSettings.fallMultiplier);
+            appliedMovement.y = Mathf.Max((previousYVelocity + movement.y) *.5f, movementSettings.maxFallVelocity);
+        }
+
+        public void HandleGravityJump()
+        {
+            var previousYVelocity = HandleGravity();
+            appliedMovement.y = previousYVelocity + movement.y;
         }
 
     }
