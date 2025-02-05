@@ -39,12 +39,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             if (Ctx.MovementDriver.IsDashPress && Ctx.CanDashAgain)
             {
                 Ctx.CanDashAgain = false;
-                CurrentSuperstate.SetSubState(Factory.Dash());
+                CurrentSuperstate.SwitchSubState(Factory.Dash());
                 return;
             }
             if (Ctx.movementDirection != Vector2.zero)
             {
-                CurrentSuperstate.SetSubState(Factory.Walk());
+                CurrentSuperstate.SwitchSubState(Factory.Walk());
             }
         }
 

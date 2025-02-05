@@ -56,7 +56,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 }
                 else
                 {
-                    CurrentSuperstate.SetSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
+                    CurrentSuperstate.SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
                 }
             }
         }

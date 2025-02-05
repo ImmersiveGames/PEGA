@@ -60,16 +60,16 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             if (Ctx.MovementDriver.IsDashPress && !Ctx.isDashing)
             {
-                SetSubState(Factory.Dash());
+                SwitchSubState(Factory.Dash());
                 return;
             }
             if (Ctx.movementDirection == Vector2.zero )
             {
-                SetSubState(Factory.Idle());
+                SwitchSubState(Factory.Idle());
             }
             else
             {
-                SetSubState(Factory.Walk());
+                SwitchSubState(Factory.Walk());
             }
         }
     }

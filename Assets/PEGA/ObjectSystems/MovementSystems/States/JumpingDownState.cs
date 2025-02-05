@@ -20,7 +20,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            Ctx.HandleGravityFall();
+            Ctx.ApplyGravity(falling:true);
         }
 
         protected override void ExitState()
@@ -31,22 +31,26 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
+            if (Ctx.transform.position.y < Ctx.fallMaxHeight)
+            {
+                SwitchState(Factory.Dead());
+                return;
+            }
             if (Ctx.CharacterController.isGrounded)
             {
                 SwitchState(Factory.Grounded());
             }
-            //TODO: Aqui também precisa depois de um tempo considerar que esta caindo no infinito
         }
 
         public sealed override void InitializeSubState()
         {
             if (Ctx.movementDirection == Vector2.zero )
             {
-                SetSubState(Factory.Idle());
+                SwitchSubState(Factory.Idle());
             }
             else
             {
-                SetSubState(Factory.Walk());
+                SwitchSubState(Factory.Walk());
             }
         }
     }

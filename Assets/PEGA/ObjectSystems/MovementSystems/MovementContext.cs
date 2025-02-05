@@ -16,6 +16,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         public Vector3 appliedMovement;
         public Vector2 movementDirection;
         public float rotationPerFrame = 15f;
+        public float fallMaxHeight = -50f;
         
         public float gravity;
         public float initialJumpVelocity;
@@ -75,24 +76,13 @@ namespace PEGA.ObjectSystems.MovementSystems
             gravity = (-2 * newHeightMax) / Mathf.Pow(timeToApex, 2);
             initialJumpVelocity = (2 * newHeightMax) / timeToApex;
         }
-
-        private float HandleGravity(float speedMultiplier = 1f)
+        public void ApplyGravity(bool falling)
         {
+            var multiplier = falling ? movementSettings.fallMultiplier : 1f;
             var previousYVelocity = movement.y;
-            movement.y += gravity * speedMultiplier * Time.deltaTime;
-            return previousYVelocity;
-        }
-
-        public void HandleGravityFall()
-        {
-            var previousYVelocity = HandleGravity(movementSettings.fallMultiplier);
-            appliedMovement.y = Mathf.Max((previousYVelocity + movement.y) *.5f, movementSettings.maxFallVelocity);
-        }
-
-        public void HandleGravityJump()
-        {
-            var previousYVelocity = HandleGravity();
-            appliedMovement.y = previousYVelocity + movement.y;
+            movement.y += gravity * multiplier * Time.deltaTime;
+            appliedMovement.y = falling ? Mathf.Max((previousYVelocity + movement.y) * 0.5f, movementSettings.maxFallVelocity)
+                : previousYVelocity + movement.y;
         }
 
         #endregion
@@ -101,6 +91,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         public void GlobalNotifyStateEnter(StatesNames newState)
         {
+            Debug.Log($"Chamou o Evento paa o Estado : {newState}");
             OnStateEnter?.Invoke(newState);
         }
         public void GlobalNotifyStateExit(StatesNames newState)

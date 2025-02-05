@@ -71,7 +71,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             }
             else
             {
-                CurrentSuperstate?.SetSubState(newState); // Se for subestado, troca dentro do superestado
+                CurrentSuperstate?.SwitchSubState(newState); // Se for subestado, troca dentro do superestado
             }
         }
 
@@ -80,7 +80,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             CurrentSuperstate = newSuperState;
         }
 
-        protected internal void SetSubState(BaseState newSubState)
+        protected internal void SwitchSubState(BaseState newSubState)
         {
             // 🔹 Sai do subestado atual ANTES de trocar
             _currentSubState?.ExitState();
