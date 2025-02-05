@@ -6,12 +6,16 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class IdleState: BaseState
     {
         protected override StatesNames StateName => StatesNames.Idle;
+        private readonly AnimatorHandler _animator;
         public IdleState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext,factory)
         {
+            _animator = currentMovementContext.GetComponent<AnimatorHandler>();
         }
 
         protected internal override void EnterState()
         {
+            _animator.SetFloat("Movement", 0);
+            _animator.SetFloat("Idle", 0);
             base.EnterState();
             Ctx.isWalking = false;
             Ctx.appliedMovement.x = 0;
@@ -27,14 +31,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         public override void CheckSwitchState()
         {
             Debug.Log($"CheckSwitchState - Idle");
-            if (!Ctx.canDashAgain && !Ctx.MovementDriver.IsDashPress)
+            if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
             {
-                Ctx.canDashAgain = true;
+                Ctx.CanDashAgain = true;
             }
             
-            if (Ctx.MovementDriver.IsDashPress && Ctx.canDashAgain)
+            if (Ctx.MovementDriver.IsDashPress && Ctx.CanDashAgain)
             {
-                Ctx.canDashAgain = false;
+                Ctx.CanDashAgain = false;
                 CurrentSuperstate.SetSubState(Factory.Dash());
                 return;
             }

@@ -38,6 +38,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
         }
         protected internal virtual void EnterState()
         {
+            Ctx.GlobalNotifyStateEnter(StateName);
             OnStateEntered?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Enter");
         }
@@ -46,6 +47,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
 
         protected virtual void ExitState()
         {
+            Ctx.GlobalNotifyStateExit(StateName);
             OnStateExited?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Exit");
         }

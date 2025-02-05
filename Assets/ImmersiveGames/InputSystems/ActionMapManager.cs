@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using ImmersiveGames.DebugSystems;
 using PEGA.InputActions;
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.InputSystems

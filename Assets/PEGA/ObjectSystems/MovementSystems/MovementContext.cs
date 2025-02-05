@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using System;
+using ImmersiveGames.HierarchicalStateMachine;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 
@@ -6,6 +7,9 @@ namespace PEGA.ObjectSystems.MovementSystems
 {
     public class MovementContext : MonoBehaviour
     {
+        public event Action<StatesNames> OnStateEnter;
+        public event Action<StatesNames> OnStateExit;
+        
         public MovementSettings movementSettings;
         
         public Vector3 movement;
@@ -15,11 +19,6 @@ namespace PEGA.ObjectSystems.MovementSystems
         
         public float gravity;
         public float initialJumpVelocity;
-
-        [Range(0.01f,1f)]
-        public float dashDuration;
-        [Range(1f,20f)]
-        public float dashMultiply;
         
         public bool isWalking;
         public bool isGrounded;
@@ -27,8 +26,10 @@ namespace PEGA.ObjectSystems.MovementSystems
         public bool isFalling;
         public bool isDashing;
 
-        public bool canJumpAgain;
-        public bool canDashAgain;
+        internal bool CanJumpAgain;
+        internal bool CanDashAgain;
+        internal Vector3 StoredMomentum;
+        internal float TimeInDash;
 
         internal IMovementDriver MovementDriver;
         internal CharacterController CharacterController;
@@ -38,10 +39,12 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             CharacterController = GetComponent<CharacterController>();
             gravity = movementSettings.gravity;
-            canJumpAgain = true;
-            canDashAgain = true;
+            CanJumpAgain = true;
+            CanDashAgain = true;
         }
-        
+
+        #region Movment Calculation
+
         public void ApplyMovement(float speedMultiplier = 1f)
         {
             movement.x = movementDirection.x * movementSettings.baseSpeed;
@@ -53,8 +56,24 @@ namespace PEGA.ObjectSystems.MovementSystems
         public void CalculateJumpVariables()
         {
             var timeToApex = movementSettings.maxJumpTime / 2;
-            gravity = (-2 * movementSettings.maxJumpHeight) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = (2 * movementSettings.maxJumpHeight) / timeToApex;
+    
+            // 🔹 Mantém o momentum horizontal
+            StoredMomentum = new Vector3(appliedMovement.x, 0, appliedMovement.z);
+            var horizontalSpeed = StoredMomentum.magnitude;
+
+            // 🔹 Define um multiplicador de influência do Dash na altura
+            var heightMultiply = Mathf.Lerp(movementSettings.minDashJumpInfluence, movementSettings.maxDashJumpInfluence, TimeInDash / movementSettings.dashDuration);
+
+            // 🔹 Ajusta a altura máxima do pulo dinamicamente
+            var newHeightMax = movementSettings.maxJumpHeight + (horizontalSpeed * heightMultiply);
+    
+            // 🔹 Limita a altura máxima para evitar saltos absurdos
+            var maxBoost = movementSettings.maxJumpHeight * movementSettings.momentumMultiply;
+            newHeightMax = Mathf.Min(newHeightMax, movementSettings.maxJumpHeight + maxBoost);
+    
+            // 🔹 Calcula a nova gravidade e a velocidade inicial do pulo com base na altura ajustada
+            gravity = (-2 * newHeightMax) / Mathf.Pow(timeToApex, 2);
+            initialJumpVelocity = (2 * newHeightMax) / timeToApex;
         }
 
         private float HandleGravity(float speedMultiplier = 1f)
@@ -75,6 +94,21 @@ namespace PEGA.ObjectSystems.MovementSystems
             var previousYVelocity = HandleGravity();
             appliedMovement.y = previousYVelocity + movement.y;
         }
+
+        #endregion
+
+        #region Call Events
+
+        public void GlobalNotifyStateEnter(StatesNames newState)
+        {
+            OnStateEnter?.Invoke(newState);
+        }
+        public void GlobalNotifyStateExit(StatesNames newState)
+        {
+            OnStateExit?.Invoke(newState);
+        }
+
+        #endregion
 
     }
 }

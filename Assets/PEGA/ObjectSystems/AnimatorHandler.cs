@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PEGA.ObjectSystems
 {
-    public class ObjectAnimator : MonoBehaviour
+    public class AnimatorHandler : MonoBehaviour
     {
         private Animator _animator;
         private ObjectMaster _objectMaster;

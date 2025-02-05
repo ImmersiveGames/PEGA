@@ -6,23 +6,27 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class DashState : BaseState
     {
         private float _dashTime;
+        private readonly AnimatorHandler _animator;
 
         public DashState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
         {
+            _animator = currentMovementContext.GetComponent<AnimatorHandler>();
         }
 
         protected override StatesNames StateName => StatesNames.Dash;
 
         protected internal override void EnterState()
         {
+            _animator.SetBool("Dash", true);
             base.EnterState();
             Ctx.isDashing = true;
-            _dashTime = Ctx.dashDuration; // 🔹 Tempo do dash inicializado corretamente
+            _dashTime = Ctx.movementSettings.dashDuration; // 🔹 Tempo do dash inicializado corretamente
         }
 
         protected override void UpdateState()
         {
-            Ctx.ApplyMovement(Ctx.dashMultiply); // 🔹 Dash usa um multiplicador de velocidade
+            Ctx.ApplyMovement(Ctx.movementSettings.dashMultiply); // 🔹 Dash usa um multiplicador de velocidade
+            Ctx.TimeInDash += Time.deltaTime;
             _dashTime -= Time.deltaTime;
 
             // 🔹 Garante que _dashTime nunca fique negativo
@@ -34,7 +38,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void ExitState()
         {
+            _animator.SetBool("Dash", false);
             Ctx.isDashing = false;
+            Ctx.TimeInDash = 0f; // 🔹 Reseta o tempo de Dash ao sair do estado
             _dashTime = 0f; // 🔹 Garante que o tempo seja zerado ao sair do estado
             base.ExitState();
         }

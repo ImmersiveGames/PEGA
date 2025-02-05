@@ -35,11 +35,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!Ctx.canJumpAgain && !Ctx.MovementDriver.IsJumpingPress)
+            if (!Ctx.CanJumpAgain && !Ctx.MovementDriver.IsJumpingPress)
             {
-                Ctx.canJumpAgain = true;
+                Ctx.CanJumpAgain = true;
             }
-            Debug.Log("Can Jump Again?: " + Ctx.canJumpAgain);
+            Debug.Log("Can Jump Again?: " + Ctx.CanJumpAgain);
             if (!Ctx.CharacterController.isGrounded)
             {
                 //Queda de plataforma
@@ -47,10 +47,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             }
             else
             {
-                if (Ctx.MovementDriver.IsJumpingPress && !Ctx.isJumping && Ctx.canJumpAgain)
+                if (Ctx.MovementDriver.IsJumpingPress && !Ctx.isJumping && Ctx.CanJumpAgain)
                 {
-                    Ctx.canJumpAgain = false;
-                    //TODO: Aqui precisa arrumar um jeito do pulo manter o momentum.
+                    Ctx.CanJumpAgain = false;
                     SwitchState(Factory.Jump());
                 }
             }

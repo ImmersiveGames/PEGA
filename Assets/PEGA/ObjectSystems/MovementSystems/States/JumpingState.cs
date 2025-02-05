@@ -6,15 +6,16 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class JumpingState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Jump;
-
-        public JumpingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext,
-            factory)
+        private readonly AnimatorHandler _animator;
+        public JumpingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
         {
             IsRootState = true;
+            _animator = currentMovementContext.GetComponent<AnimatorHandler>();
         }
 
         protected internal override void EnterState()
         {
+            _animator.SetBool("Jump", true);
             InitializeSubState();
             base.EnterState();
             Ctx.isJumping = true;
@@ -29,6 +30,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void ExitState()
         {
+            _animator.SetBool("Jump", false);
             base.ExitState();
         }
 
@@ -55,11 +57,22 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 SetSubState(Factory.Walk());
             }
         }
-
         private void HandleJump()
         {
-            Ctx.movement.y = Ctx.initialJumpVelocity;
-            Ctx.appliedMovement.y = Ctx.initialJumpVelocity;
+            var horizontalSpeed = Ctx.StoredMomentum.magnitude;
+
+            // 🔹 Define um multiplicador para controlar a influência do Dash no impulso inicial do pulo
+            var dashJumpInfluence = Mathf.Lerp(Ctx.movementSettings.minDashJumpInfluence, Ctx.movementSettings.maxDashJumpInfluence, Ctx.TimeInDash / Ctx.movementSettings.dashDuration);
+
+            // 🔹 Aplica o impulso do Dash no pulo, mas limita o efeito
+            var impulsoFinal = horizontalSpeed * dashJumpInfluence;
+            var maxJumpBoost = Ctx.movementSettings.maxJumpHeight * Ctx.movementSettings.momentumMultiply;
+            impulsoFinal = Mathf.Min(impulsoFinal, maxJumpBoost);
+
+            // 🔹 Agora, initialJumpVelocity já foi atualizado em `CalculateJumpVariables()`
+            Ctx.movement.y = Ctx.initialJumpVelocity + impulsoFinal;
+            Ctx.appliedMovement.y = Ctx.movement.y;
         }
+
     }
 }

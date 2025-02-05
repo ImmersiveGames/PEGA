@@ -1,6 +1,4 @@
 ﻿using System.Threading.Tasks;
-using UnityEngine.SceneManagement;
-
 namespace ImmersiveGames.StateSystems.Interfaces
 {
     public interface IState
