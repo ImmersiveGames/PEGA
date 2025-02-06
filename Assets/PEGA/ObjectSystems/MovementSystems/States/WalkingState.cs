@@ -33,18 +33,18 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            /*if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
+            if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
             {
                 Ctx.CanDashAgain = true;
             }
-            
-            if (Ctx.MovementDriver.IsDashPress && Ctx.CanDashAgain)
+            if (Ctx.CharacterController.isGrounded && Ctx.MovementDriver.IsDashPress && !Ctx.isDashing && Ctx.CanDashAgain)
             {
                 Debug.Log("Dashing - Initialize - Do Walking");
                 Ctx.CanDashAgain = false;
+                //Aqui acho que é importante ele manda o Estado Acima, mudar.
                 CurrentSuperstate.SwitchSubState(Factory.Dash());
                 return;
-            }*/
+            }
             if (Ctx.movementDirection == Vector2.zero)
             {
                 CurrentSuperstate.SwitchSubState(Factory.Idle());

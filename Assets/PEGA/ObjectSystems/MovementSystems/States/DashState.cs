@@ -9,6 +9,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private float _dashTime;
         private readonly AnimatorHandler _animator;
         private Vector3 _startPosition; // 🔹 Posição inicial do dash
+        private Vector2 _dashDirection;
 
         public DashState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
         {
@@ -24,6 +25,17 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _dashTime = Ctx.movementSettings.dashDuration;
             base.EnterState();
             
+            // 📌 Guarda a direção inicial do Dash
+            if (Ctx.movementDirection != Vector2.zero)
+            {
+                _dashDirection = Ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
+            }
+            else
+            {
+                var forward = Ctx.transform.forward.normalized * Ctx.movementSettings.idleDashMultiply;
+                _dashDirection = new Vector2(forward.x, forward.z); // 🔹 Se parado, move para frente
+            }
+            
             //Debug
             _startPosition = Ctx.transform.position; // 🔹 Armazena a posição inicial do dash
         }
@@ -31,6 +43,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void UpdateState()
         {
             Debug.Log($"Update - Dash");
+            // 📌 Força um movimento inicial se o jogador estiver parado (Idle)
+            if (Ctx.movementDirection == Vector2.zero) Ctx.movementDirection = _dashDirection; // 🔹 Converte para um Vector2
+            
             Ctx.ApplyMovement(Ctx.movementSettings.dashMultiply);
             Ctx.TimeInDash += Time.deltaTime;
             _dashTime -= Time.deltaTime;
@@ -62,16 +77,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!Ctx.MovementDriver.IsDashPress || _dashTime <= 0)
+            if (Ctx.MovementDriver.IsDashPress && !(_dashTime <= 0)) return;
+            if (!Ctx.CharacterController.isGrounded)
             {
-                if (!Ctx.CharacterController.isGrounded)
-                {
-                    SwitchState(Factory.Fall());
-                }
-                else
-                {
-                    CurrentSuperstate.SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
-                }
+                SwitchState(Factory.Fall());
+            }
+            else
+            {
+                CurrentSuperstate.SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
