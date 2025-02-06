@@ -24,15 +24,14 @@ namespace PEGA.GameTests
             
             //States
             DebugManager.SetScriptDebugLevel<MovementContext>(DebugManager.DebugLevels.None);
-            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<JumpingState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<GroundedState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<JumpingDownState>(DebugManager.DebugLevels.None);
-            DebugManager.SetScriptDebugLevel<IdleState>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<IdleState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<DashState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<DeadState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<WalkingState>(DebugManager.DebugLevels.None);
-            
             
             //Drivers
             DebugManager.SetScriptDebugLevel<IMovementDriver>(DebugManager.DebugLevels.None);

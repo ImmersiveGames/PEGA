@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.HierarchicalStateMachine;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
@@ -19,8 +20,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             Ctx.jumpStartPosition = Ctx.transform.position;
             Ctx.maxJumpHeight = Ctx.jumpStartPosition.y;
             Ctx.jumpStartTime = Time.time;
-            Debug.Log($"🏃 Entering JumpState | TimeInDash={Ctx.TimeInDash}");
             
+            
+            DebugManager.Log<JumpingState>($"🏃 Entering JumpState | TimeInDash={Ctx.TimeInDash} | Velocity={Ctx.StoredMomentum}");
             
             _animator.SetBool("Jump", true);
             Ctx.isJumping = true;
@@ -53,38 +55,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected sealed override void InitializeSubState()
         {
             //Nenhum Estado é inicializado junto a este estado
-            
-            /*if (Ctx.MovementDriver.IsDashPress && !Ctx.isDashing && Ctx.dashCooldown <= 0)
-            {
-                Debug.Log("Dashing - Initialize - Do Jumping");
-                SwitchSubState(Factory.Dash());
-                return;
-            }*/
-            /*if (Ctx.movementDirection == Vector2.zero )
-            {
-                SwitchSubState(Factory.Idle());
-            }
-            else
-            {
-                SwitchSubState(Factory.Walk());
-            }*/
         }
         private void HandleJump()
         {
-            /*var horizontalSpeed = Ctx.StoredMomentum.magnitude;
-
-            // 🔹 Define um multiplicador para controlar a influência do Dash no impulso inicial do pulo
-            var dashJumpInfluence = Mathf.Lerp(Ctx.movementSettings.minDashJumpInfluence, Ctx.movementSettings.maxDashJumpInfluence, Ctx.TimeInDash / Ctx.movementSettings.dashDuration);
-
-            // 🔹 Aplica o impulso do Dash no pulo, mas limita o efeito
-            var impulsoFinal = horizontalSpeed * dashJumpInfluence;
-            var maxJumpBoost = Ctx.movementSettings.maxJumpHeight * Ctx.movementSettings.momentumMultiply;
-            impulsoFinal = Mathf.Min(impulsoFinal, maxJumpBoost);
-
-            // 🔹 Agora, initialJumpVelocity já foi atualizado em `CalculateJumpVariables()`
-            Ctx.movement.y = Ctx.initialJumpVelocity + impulsoFinal;
-            Ctx.appliedMovement.y = Ctx.movement.y;*/
-            
+            // 🔹 Usa a nova velocidade vertical calculada
             Ctx.movement.y = Ctx.initialJumpVelocity;
             Ctx.appliedMovement.y = Ctx.initialJumpVelocity;
         }

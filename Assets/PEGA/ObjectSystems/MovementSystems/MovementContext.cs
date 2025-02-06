@@ -30,7 +30,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         internal bool CanJumpAgain;
         internal bool CanDashAgain;
-        internal Vector3 StoredMomentum;
+        internal float StoredMomentum;
         internal float TimeInDash;
 
         internal IMovementDriver MovementDriver;
@@ -39,6 +39,8 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float maxJumpHeight;
         public Vector3 jumpStartPosition;
         public float jumpStartTime;
+
+        public float realBaseSpeed;
         
         
         public float dashCooldown;
@@ -47,6 +49,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             CharacterController = GetComponent<CharacterController>();
             gravity = movementSettings.gravity;
+            //Calcular as variáveis base
+            realBaseSpeed = movementSettings.baseSpeed;
+            //
             CanJumpAgain = true;
             CanDashAgain = true;
         }
@@ -55,38 +60,37 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         public void ApplyMovement(float speedMultiplier = 1f)
         {
-            movement.x = movementDirection.x * movementSettings.baseSpeed;
-            movement.z = movementDirection.y * movementSettings.baseSpeed;
+            movement.x = movementDirection.x * realBaseSpeed;
+            movement.z = movementDirection.y * realBaseSpeed;
 
             appliedMovement.x = movement.x * speedMultiplier;
             appliedMovement.z = movement.z * speedMultiplier;
         }
         public void CalculateJumpVariables()
         {
-            /*var timeToApex = movementSettings.maxJumpTime / 2;
-    
-            // 🔹 Mantém o momentum horizontal
-            StoredMomentum = new Vector3(appliedMovement.x, 0, appliedMovement.z);
-            var horizontalSpeed = StoredMomentum.magnitude;
-
-            // 🔹 Define um multiplicador de influência do Dash na altura
-            var heightMultiply = Mathf.Lerp(movementSettings.minDashJumpInfluence, movementSettings.maxDashJumpInfluence, TimeInDash / movementSettings.dashDuration);
-
-            // 🔹 Ajusta a altura máxima do pulo dinamicamente
-            var newHeightMax = movementSettings.maxJumpHeight + (horizontalSpeed * heightMultiply);
-    
-            // 🔹 Limita a altura máxima para evitar saltos absurdos
-            var maxBoost = movementSettings.maxJumpHeight * movementSettings.momentumMultiply;
-            newHeightMax = Mathf.Min(newHeightMax, movementSettings.maxJumpHeight + maxBoost);
-    
-            // 🔹 Calcula a nova gravidade e a velocidade inicial do pulo com base na altura ajustada
-            gravity = (-2 * newHeightMax) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = (2 * newHeightMax) / timeToApex;*/
-            
             var timeToApex = movementSettings.maxJumpTime / 2;
-            gravity = (-2 * movementSettings.maxJumpHeight) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = (2 * movementSettings.maxJumpHeight) / timeToApex;
+    
+            // 🔹 Altura base do pulo (sem modificações)
+            var maxRealJumpHeight = movementSettings.maxJumpHeight;
+            
+            var currentSpeed = CharacterController.velocity.magnitude;
+
+            // 🔹 Calcula a diferença entre a velocidade atual e a base
+            var speedDifference = Mathf.Max(currentSpeed - realBaseSpeed, 0f);
+    
+            // 🔹 Aplica um ajuste não-linear (sqrt) e limita o impulso máximo
+            var speedBoost = Mathf.Sqrt(speedDifference) * movementSettings.impulseMultiply; // Fator de escala ajustável
+
+            speedBoost = Mathf.Min(speedBoost, movementSettings.maxSpeedBoost);
+
+            // 🔹 Aplica o impulso à altura do pulo
+            maxRealJumpHeight += speedBoost;
+
+            // 🔹 Cálculo da gravidade e velocidade inicial
+            gravity = (-2 * maxRealJumpHeight) / Mathf.Pow(timeToApex, 2);
+            initialJumpVelocity = Mathf.Sqrt(2 * -gravity * maxRealJumpHeight);
         }
+
         public void ApplyGravity(bool falling)
         {
             var multiplier = falling ? movementSettings.fallMultiplier : 1f;

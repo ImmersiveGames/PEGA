@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.HierarchicalStateMachine;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
@@ -34,7 +35,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 new Vector3(Ctx.jumpStartPosition.x, 0, Ctx.jumpStartPosition.z),
                 new Vector3(finalPosition.x, 0, finalPosition.z)
             );
-            Debug.Log($"🛬 Jump Ended | Max Height: {Ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
+            DebugManager.Log<JumpingDownState>($"🛬 Jump Ended | Max Height: {Ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
             //######## 
         }
 

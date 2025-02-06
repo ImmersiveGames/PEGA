@@ -18,12 +18,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override StatesNames StateName => StatesNames.Dead;
         protected override void UpdateState()
         {
-            throw new System.NotImplementedException();
+            //throw new System.NotImplementedException();
         }
 
         public override void CheckSwitchState()
         {
-            throw new System.NotImplementedException();
+            //throw new System.NotImplementedException();
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
         protected override void InitializeSubState()

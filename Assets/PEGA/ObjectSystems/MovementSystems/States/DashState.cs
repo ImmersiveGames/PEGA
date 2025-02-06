@@ -26,11 +26,8 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             base.EnterState();
             
             // 📌 Guarda a direção inicial do Dash
-            if (Ctx.movementDirection != Vector2.zero)
-            {
-                _dashDirection = Ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
-            }
-            else
+            _dashDirection = Ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
+            if (Ctx.movementDirection == Vector2.zero)
             {
                 var forward = Ctx.transform.forward.normalized * Ctx.movementSettings.idleDashMultiply;
                 _dashDirection = new Vector2(forward.x, forward.z); // 🔹 Se parado, move para frente
@@ -42,7 +39,6 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            Debug.Log($"Update - Dash");
             // 📌 Força um movimento inicial se o jogador estiver parado (Idle)
             if (Ctx.movementDirection == Vector2.zero) Ctx.movementDirection = _dashDirection; // 🔹 Converte para um Vector2
             
@@ -62,12 +58,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             Ctx.dashCooldown = 1f;
 
             //######################
-            Vector3 endPosition = Ctx.transform.position; // 🔹 Captura a posição final
-            float distanceTraveled = Vector3.Distance(_startPosition, endPosition); // 🔹 Calcula a distância percorrida
+            var endPosition = Ctx.transform.position; // 🔹 Captura a posição final
+            var distanceTraveled = Vector3.Distance(_startPosition, endPosition); // 🔹 Calcula a distância percorrida
 
-            Vector3 finalMomentum = Ctx.CharacterController.velocity; // 🔹 Captura a velocidade final
+            var finalMomentum = Ctx.CharacterController.velocity; // 🔹 Captura a velocidade final
 
-            Debug.Log($"Dash Finalizado -> Tempo: {Ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
+            DebugManager.Log<DashState>($"Dash Finalizado -> Tempo: {Ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
             //######################
             
             Ctx.TimeInDash = 0f;

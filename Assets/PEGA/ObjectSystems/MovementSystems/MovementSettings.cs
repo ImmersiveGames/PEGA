@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
@@ -13,8 +12,8 @@ namespace PEGA.ObjectSystems.MovementSystems
         [Header("Jump Settings")]
         public float maxJumpHeight = 1.0f;
         public float maxJumpTime = 0.5f;
-        [Range(0.01f,1f)]
-        public float momentumMultiply = 0.3f;
+        public float maxSpeedBoost = 4;
+        public float impulseMultiply = 0.2f;
         [Header("Fall Settings")]
         [Range(1f,10f)]
         public float fallMultiplier = 2f;
@@ -25,10 +24,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         [Range(1f,20f)]
         public float dashMultiply = 5.0f;
         [Range(0f, 1f)]
-        public float minDashJumpInfluence = 0.1f; 
-        [Range(0f, 1f)]
-        public float maxDashJumpInfluence = 0.4f;
-        [Range(0f, 1f)]
         public float idleDashMultiply = 0.6f;
+        
     }
 }

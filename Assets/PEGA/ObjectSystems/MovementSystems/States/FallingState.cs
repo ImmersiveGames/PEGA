@@ -1,5 +1,4 @@
 ﻿using ImmersiveGames.HierarchicalStateMachine;
-using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
 {
