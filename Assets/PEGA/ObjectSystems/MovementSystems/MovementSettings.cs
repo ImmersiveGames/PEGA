@@ -25,6 +25,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float dashMultiply = 5.0f;
         [Range(0f, 1f)]
         public float idleDashMultiply = 0.6f;
-        
+        [Range(0f, 1f)] 
+        public float dashCooldownTime = 0.2f;
     }
 }

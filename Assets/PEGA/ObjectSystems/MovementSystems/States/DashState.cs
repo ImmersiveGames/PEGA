@@ -55,7 +55,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             _animator.SetBool("Dash", false);
             Ctx.isDashing = false;
-            Ctx.dashCooldown = 1f;
+            // 🔹 Inicia o cooldown ao final do Dash
+            Ctx.DashCooldownTimer = Ctx.movementSettings.dashCooldownTime;
+
+            DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {Ctx.DashCooldownTimer:F2}s");
+
 
             //######################
             var endPosition = Ctx.transform.position; // 🔹 Captura a posição final

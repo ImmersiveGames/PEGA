@@ -31,7 +31,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
+            if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress && Ctx.DashCooldownTimer <= 0)
             {
                 Ctx.CanDashAgain = true;
             }

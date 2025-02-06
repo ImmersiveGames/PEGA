@@ -3,6 +3,7 @@ using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
@@ -19,7 +20,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float rotationPerFrame = 15f;
         public float fallMaxHeight = -50f;
         
-        public float gravity;
+        [FormerlySerializedAs("actualGravity")] [FormerlySerializedAs("gravity")] public float realGravity;
         public float initialJumpVelocity;
         
         public bool isWalking;
@@ -32,6 +33,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         internal bool CanDashAgain;
         internal float StoredMomentum;
         internal float TimeInDash;
+        internal float DashCooldownTimer;
 
         internal IMovementDriver MovementDriver;
         internal CharacterController CharacterController;
@@ -43,17 +45,25 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float realBaseSpeed;
         
         
-        public float dashCooldown;
 
         private void Awake()
         {
             CharacterController = GetComponent<CharacterController>();
-            gravity = movementSettings.gravity;
+            realGravity = movementSettings.gravity;
             //Calcular as variáveis base
             realBaseSpeed = movementSettings.baseSpeed;
             //
             CanJumpAgain = true;
             CanDashAgain = true;
+        }
+
+        private void Update()
+        {
+            // 🔹 Reduz o cooldown do Dash ao longo do tempo
+            if (DashCooldownTimer > 0)
+            {
+                DashCooldownTimer -= Time.deltaTime;
+            }
         }
 
         #region Movment Calculation
@@ -87,15 +97,15 @@ namespace PEGA.ObjectSystems.MovementSystems
             maxRealJumpHeight += speedBoost;
 
             // 🔹 Cálculo da gravidade e velocidade inicial
-            gravity = (-2 * maxRealJumpHeight) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = Mathf.Sqrt(2 * -gravity * maxRealJumpHeight);
+            realGravity = (-2 * maxRealJumpHeight) / Mathf.Pow(timeToApex, 2);
+            initialJumpVelocity = Mathf.Sqrt(2 * -realGravity * maxRealJumpHeight);
         }
 
         public void ApplyGravity(bool falling)
         {
             var multiplier = falling ? movementSettings.fallMultiplier : 1f;
             var previousYVelocity = movement.y;
-            movement.y += gravity * multiplier * Time.deltaTime;
+            movement.y += realGravity * multiplier * Time.deltaTime;
             appliedMovement.y = falling ? Mathf.Max((previousYVelocity + movement.y) * 0.5f, movementSettings.maxFallVelocity)
                 : previousYVelocity + movement.y;
         }
