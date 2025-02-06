@@ -4,6 +4,7 @@ using ImmersiveGames.InputSystems;
 using ImmersiveGames.PlayersSystems;
 using PEGA.ObjectSystems.MovementSystems;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
+using PEGA.ObjectSystems.MovementSystems.States;
 using UnityEngine;
 
 namespace PEGA.GameTests
@@ -22,7 +23,16 @@ namespace PEGA.GameTests
             DebugManager.SetScriptDebugLevel<ActionMapManager>(DebugManager.DebugLevels.None);
             
             //States
-            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<MovementContext>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<JumpingState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<GroundedState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<JumpingDownState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<IdleState>(DebugManager.DebugLevels.All);
+            DebugManager.SetScriptDebugLevel<DashState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<DeadState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<WalkingState>(DebugManager.DebugLevels.None);
+            
             
             //Drivers
             DebugManager.SetScriptDebugLevel<IMovementDriver>(DebugManager.DebugLevels.None);

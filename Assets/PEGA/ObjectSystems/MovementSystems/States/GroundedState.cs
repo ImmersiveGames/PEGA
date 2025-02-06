@@ -3,20 +3,21 @@ using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
 {
-    public class GroundedState: BaseState
+    public class GroundedState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Grounded;
-        public GroundedState(MovementContext currentMovementContext, StateFactory factory): base(currentMovementContext,factory)
+
+        public GroundedState(MovementContext currentMovementContext, StateFactory factory) : base(
+            currentMovementContext, factory)
         {
             IsRootState = true;
-            
         }
+
         protected internal override void EnterState()
         {
-            InitializeSubState();
-            base.EnterState();
             Ctx.isGrounded = true;
-   
+            base.EnterState();
+
             Ctx.movement.y = Ctx.movementSettings.gravityGround;
             Ctx.appliedMovement.y = Ctx.movementSettings.gravityGround;
         }
@@ -35,42 +36,32 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
+            //Verifica se ja soltou o botão para liberar o pulo
             if (!Ctx.CanJumpAgain && !Ctx.MovementDriver.IsJumpingPress)
             {
                 Ctx.CanJumpAgain = true;
             }
-            Debug.Log("Can Jump Again?: " + Ctx.CanJumpAgain);
+
+            //Debug.Log("Can Jump Again?: " + Ctx.CanJumpAgain);
             if (!Ctx.CharacterController.isGrounded)
             {
                 //Queda de plataforma
                 SwitchState(Factory.Fall());
-            }
-            else
-            {
-                if (Ctx.MovementDriver.IsJumpingPress && !Ctx.isJumping && Ctx.CanJumpAgain)
-                {
-                    Ctx.CanJumpAgain = false;
-                    SwitchState(Factory.Jump());
-                }
-            }
-        }
-
-
-        public sealed override void InitializeSubState()
-        {
-            if (Ctx.MovementDriver.IsDashPress && !Ctx.isDashing)
-            {
-                SwitchSubState(Factory.Dash());
                 return;
             }
-            if (Ctx.movementDirection == Vector2.zero )
-            {
-                SwitchSubState(Factory.Idle());
-            }
-            else
-            {
-                SwitchSubState(Factory.Walk());
-            }
+
+            if (!Ctx.CharacterController.isGrounded || !Ctx.MovementDriver.IsJumpingPress 
+                                                    || Ctx.isJumping || !Ctx.CanJumpAgain) return;
+            Ctx.CanJumpAgain = false;
+            SwitchState(Factory.Jump());
         }
+
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected sealed override void InitializeSubState()
+        {
+            SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
+        }
+
     }
 }
+

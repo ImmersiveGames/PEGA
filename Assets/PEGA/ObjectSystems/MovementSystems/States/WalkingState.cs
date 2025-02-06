@@ -14,8 +14,8 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected internal override void EnterState()
         {
             _animator.SetFloat("Movement", Ctx.movementDirection.magnitude);
-            base.EnterState();
             Ctx.isWalking = true;
+            base.EnterState();
             //aqui ele aplica a lógica de animação
         }
 
@@ -33,25 +33,27 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
+            /*if (!Ctx.CanDashAgain && !Ctx.MovementDriver.IsDashPress)
             {
                 Ctx.CanDashAgain = true;
             }
             
             if (Ctx.MovementDriver.IsDashPress && Ctx.CanDashAgain)
             {
+                Debug.Log("Dashing - Initialize - Do Walking");
                 Ctx.CanDashAgain = false;
                 CurrentSuperstate.SwitchSubState(Factory.Dash());
                 return;
-            }
+            }*/
             if (Ctx.movementDirection == Vector2.zero)
             {
                 CurrentSuperstate.SwitchSubState(Factory.Idle());
             }
         }
-
-        public sealed override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected sealed override void InitializeSubState()
         {
+            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }

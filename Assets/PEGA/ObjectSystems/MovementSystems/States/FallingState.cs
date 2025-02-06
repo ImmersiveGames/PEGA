@@ -6,14 +6,15 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class FallingState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Fall;
-        public FallingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+
+        public FallingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext,
+            factory)
         {
             IsRootState = true;
         }
 
         protected internal override void EnterState()
         {
-            InitializeSubState();
             Ctx.isFalling = true;
             Ctx.CalculateJumpVariables();
             base.EnterState();
@@ -21,7 +22,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            Ctx.ApplyGravity(falling:true);
+            Ctx.ApplyGravity(falling: true);
         }
 
         protected override void ExitState()
@@ -37,22 +38,17 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 SwitchState(Factory.Dead());
                 return;
             }
+
             if (Ctx.CharacterController.isGrounded)
             {
                 SwitchState(Factory.Grounded());
             }
         }
 
-        public sealed override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected sealed override void InitializeSubState()
         {
-            if (Ctx.movementDirection == Vector2.zero )
-            {
-                SwitchSubState(Factory.Idle());
-            }
-            else
-            {
-                SwitchSubState(Factory.Walk());
-            }
+            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }

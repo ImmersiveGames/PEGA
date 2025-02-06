@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using ImmersiveGames.DebugSystems;
+using ImmersiveGames.HierarchicalStateMachine;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
@@ -7,6 +8,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     {
         private float _dashTime;
         private readonly AnimatorHandler _animator;
+        private Vector3 _startPosition; // 🔹 Posição inicial do dash
 
         public DashState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
         {
@@ -18,41 +20,53 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected internal override void EnterState()
         {
             _animator.SetBool("Dash", true);
-            base.EnterState();
             Ctx.isDashing = true;
-            _dashTime = Ctx.movementSettings.dashDuration; // 🔹 Tempo do dash inicializado corretamente
+            _dashTime = Ctx.movementSettings.dashDuration;
+            base.EnterState();
+            
+            //Debug
+            _startPosition = Ctx.transform.position; // 🔹 Armazena a posição inicial do dash
         }
 
         protected override void UpdateState()
         {
-            Ctx.ApplyMovement(Ctx.movementSettings.dashMultiply); // 🔹 Dash usa um multiplicador de velocidade
+            Debug.Log($"Update - Dash");
+            Ctx.ApplyMovement(Ctx.movementSettings.dashMultiply);
             Ctx.TimeInDash += Time.deltaTime;
             _dashTime -= Time.deltaTime;
 
-            // 🔹 Garante que _dashTime nunca fique negativo
             if (_dashTime < 0) _dashTime = 0;
 
-            Debug.Log($"Dash Time: {_dashTime}");
-            CheckSwitchState(); // 🔹 Sempre chamar no final
+            CheckSwitchState();
         }
 
         protected override void ExitState()
         {
             _animator.SetBool("Dash", false);
             Ctx.isDashing = false;
-            Ctx.TimeInDash = 0f; // 🔹 Reseta o tempo de Dash ao sair do estado
-            _dashTime = 0f; // 🔹 Garante que o tempo seja zerado ao sair do estado
+            Ctx.dashCooldown = 1f;
+
+            //######################
+            Vector3 endPosition = Ctx.transform.position; // 🔹 Captura a posição final
+            float distanceTraveled = Vector3.Distance(_startPosition, endPosition); // 🔹 Calcula a distância percorrida
+
+            Vector3 finalMomentum = Ctx.CharacterController.velocity; // 🔹 Captura a velocidade final
+
+            Debug.Log($"Dash Finalizado -> Tempo: {Ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
+            //######################
+            
+            Ctx.TimeInDash = 0f;
+            _dashTime = 0f;
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            // 🔹 Sai do dash se o jogador soltar o botão ou o tempo acabar
             if (!Ctx.MovementDriver.IsDashPress || _dashTime <= 0)
             {
                 if (!Ctx.CharacterController.isGrounded)
                 {
-                    SwitchState(Factory.Fall()); // 🔹 Se não está no chão, cai!
+                    SwitchState(Factory.Fall());
                 }
                 else
                 {
@@ -60,9 +74,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 }
             }
         }
-
-        public override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected override void InitializeSubState()
         {
+            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }

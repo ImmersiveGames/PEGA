@@ -38,6 +38,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
         }
         protected internal virtual void EnterState()
         {
+            InitializeSubState();
             Ctx.GlobalNotifyStateEnter(StateName);
             OnStateEntered?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Enter");
@@ -51,8 +52,10 @@ namespace ImmersiveGames.HierarchicalStateMachine
             OnStateExited?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Exit");
         }
+        //Cada estado cuida de como vai transicionar entre seus irmãos hierárquicos não sub estados.
         public abstract void CheckSwitchState();
-        public abstract void InitializeSubState();
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected abstract void InitializeSubState();
         
         protected void SwitchState(BaseState newState)
         {
@@ -65,6 +68,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             // 🔹 Entra no novo estado
             newState.EnterState();
 
+            //Necessário se for um root state
             if (IsRootState)
             {
                 Ctx.CurrentState = newState; // Se for root, troca no ContextStates

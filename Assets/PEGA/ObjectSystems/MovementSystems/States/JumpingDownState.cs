@@ -13,7 +13,6 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected internal override void EnterState()
         {
-            InitializeSubState();
             Ctx.CalculateJumpVariables();
             base.EnterState();
         }
@@ -27,6 +26,16 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             Ctx.isJumping = false;
             base.ExitState();
+
+            //######## DEBUG
+            var jumpDuration = Time.time - Ctx.jumpStartTime;
+            var finalPosition = Ctx.transform.position;
+            var horizontalDistance = Vector3.Distance(
+                new Vector3(Ctx.jumpStartPosition.x, 0, Ctx.jumpStartPosition.z),
+                new Vector3(finalPosition.x, 0, finalPosition.z)
+            );
+            Debug.Log($"🛬 Jump Ended | Max Height: {Ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
+            //######## 
         }
 
         public override void CheckSwitchState()
@@ -41,17 +50,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 SwitchState(Factory.Grounded());
             }
         }
-
-        public sealed override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected sealed override void InitializeSubState()
         {
-            if (Ctx.movementDirection == Vector2.zero )
-            {
-                SwitchSubState(Factory.Idle());
-            }
-            else
-            {
-                SwitchSubState(Factory.Walk());
-            }
+            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }

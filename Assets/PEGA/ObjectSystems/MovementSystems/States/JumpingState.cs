@@ -15,12 +15,18 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected internal override void EnterState()
         {
+            // 📌 Armazena posição inicial e tempo do pulo no Contexto
+            Ctx.jumpStartPosition = Ctx.transform.position;
+            Ctx.maxJumpHeight = Ctx.jumpStartPosition.y;
+            Ctx.jumpStartTime = Time.time;
+            Debug.Log($"🏃 Entering JumpState | TimeInDash={Ctx.TimeInDash}");
+            
+            
             _animator.SetBool("Jump", true);
-            InitializeSubState();
-            base.EnterState();
             Ctx.isJumping = true;
             Ctx.CalculateJumpVariables();
             HandleJump();
+            base.EnterState();
         }
 
         protected override void UpdateState()
@@ -30,6 +36,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void ExitState()
         {
+            Ctx.maxJumpHeight = Ctx.transform.position.y;
             _animator.SetBool("Jump", false);
             base.ExitState();
         }
@@ -42,24 +49,29 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             }
         }
 
-        public sealed override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected sealed override void InitializeSubState()
         {
-            if (Ctx.MovementDriver.IsDashPress)
+            //Nenhum Estado é inicializado junto a este estado
+            
+            /*if (Ctx.MovementDriver.IsDashPress && !Ctx.isDashing && Ctx.dashCooldown <= 0)
             {
+                Debug.Log("Dashing - Initialize - Do Jumping");
                 SwitchSubState(Factory.Dash());
-            }
-            else if (Ctx.movementDirection == Vector2.zero )
+                return;
+            }*/
+            /*if (Ctx.movementDirection == Vector2.zero )
             {
                 SwitchSubState(Factory.Idle());
             }
             else
             {
                 SwitchSubState(Factory.Walk());
-            }
+            }*/
         }
         private void HandleJump()
         {
-            var horizontalSpeed = Ctx.StoredMomentum.magnitude;
+            /*var horizontalSpeed = Ctx.StoredMomentum.magnitude;
 
             // 🔹 Define um multiplicador para controlar a influência do Dash no impulso inicial do pulo
             var dashJumpInfluence = Mathf.Lerp(Ctx.movementSettings.minDashJumpInfluence, Ctx.movementSettings.maxDashJumpInfluence, Ctx.TimeInDash / Ctx.movementSettings.dashDuration);
@@ -71,7 +83,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
             // 🔹 Agora, initialJumpVelocity já foi atualizado em `CalculateJumpVariables()`
             Ctx.movement.y = Ctx.initialJumpVelocity + impulsoFinal;
-            Ctx.appliedMovement.y = Ctx.movement.y;
+            Ctx.appliedMovement.y = Ctx.movement.y;*/
+            
+            Ctx.movement.y = Ctx.initialJumpVelocity;
+            Ctx.appliedMovement.y = Ctx.initialJumpVelocity;
         }
 
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
@@ -35,6 +36,12 @@ namespace PEGA.ObjectSystems.MovementSystems
         internal IMovementDriver MovementDriver;
         internal CharacterController CharacterController;
         internal BaseState CurrentState;
+        public float maxJumpHeight;
+        public Vector3 jumpStartPosition;
+        public float jumpStartTime;
+        
+        
+        public float dashCooldown;
 
         private void Awake()
         {
@@ -56,7 +63,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         }
         public void CalculateJumpVariables()
         {
-            var timeToApex = movementSettings.maxJumpTime / 2;
+            /*var timeToApex = movementSettings.maxJumpTime / 2;
     
             // 🔹 Mantém o momentum horizontal
             StoredMomentum = new Vector3(appliedMovement.x, 0, appliedMovement.z);
@@ -74,7 +81,11 @@ namespace PEGA.ObjectSystems.MovementSystems
     
             // 🔹 Calcula a nova gravidade e a velocidade inicial do pulo com base na altura ajustada
             gravity = (-2 * newHeightMax) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = (2 * newHeightMax) / timeToApex;
+            initialJumpVelocity = (2 * newHeightMax) / timeToApex;*/
+            
+            var timeToApex = movementSettings.maxJumpTime / 2;
+            gravity = (-2 * movementSettings.maxJumpHeight) / Mathf.Pow(timeToApex, 2);
+            initialJumpVelocity = (2 * movementSettings.maxJumpHeight) / timeToApex;
         }
         public void ApplyGravity(bool falling)
         {
@@ -91,7 +102,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         public void GlobalNotifyStateEnter(StatesNames newState)
         {
-            Debug.Log($"Chamou o Evento paa o Estado : {newState}");
+            DebugManager.Log<MovementContext>($"Chamou o Evento paa o Estado : {newState}");
             OnStateEnter?.Invoke(newState);
         }
         public void GlobalNotifyStateExit(StatesNames newState)

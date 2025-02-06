@@ -25,10 +25,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             throw new System.NotImplementedException();
         }
-
-        public override void InitializeSubState()
+        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
+        protected override void InitializeSubState()
         {
-            throw new System.NotImplementedException();
+            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }
