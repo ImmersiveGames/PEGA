@@ -7,12 +7,11 @@ using UnityEngine;
 namespace ImmersiveGames.HierarchicalStateMachine
 {
     [DefaultExecutionOrder(-10)]
-    public class StateContext : MonoBehaviour
+    public class StateContext : MonoBehaviour,IStateContext
     {
         public event Action<StatesNames> OnStateEnter;
         public event Action<StatesNames> OnStateExit;
         
-        internal BaseState CurrentState;
         internal IMovementDriver ActualDriver;
         
         #region Call Events
@@ -26,6 +25,8 @@ namespace ImmersiveGames.HierarchicalStateMachine
         {
             OnStateExit?.Invoke(newState);
         }
+
+        public BaseState CurrentState { get; set; }
 
         #endregion
     }

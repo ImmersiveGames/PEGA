@@ -8,7 +8,7 @@ namespace PEGA.ObjectSystems.InteractionSystems.States
         {
         }
 
-        protected override StatesNames StateName=> StatesNames.InteractIdle;
+        public override StatesNames StateName=> StatesNames.InteractIdle;
         protected override void UpdateState()
         {
 

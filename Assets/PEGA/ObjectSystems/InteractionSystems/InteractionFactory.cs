@@ -7,11 +7,7 @@ namespace PEGA.ObjectSystems.InteractionSystems
     {
         public InteractionFactory(InteractionContext currentInteractionContext) : base(currentInteractionContext)
         {
-            States[StatesNames.InteractIdle] = new InteractIdle(currentInteractionContext,this);
-        }
-        public BaseState InteractIdle()
-        {
-            return States[StatesNames.InteractIdle];
+            RegisterState(StatesNames.InteractIdle, () => new InteractIdle(currentInteractionContext, this));
         }
     }
 }

@@ -20,7 +20,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _factory = factory;
         }
 
-        protected override StatesNames StateName => StatesNames.Dash;
+        public override StatesNames StateName => StatesNames.Dash;
 
         protected internal override void EnterState()
         {
@@ -55,7 +55,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             CheckSwitchState();
         }
 
-        protected override void ExitState()
+        public override void ExitState()
         {
             _animator.SetBool("Dash", false);
             _ctx.isDashing = false;
@@ -84,11 +84,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             if (_ctx.ActualDriver.IsDashPress && !(_dashTime <= 0)) return;
             if (!_ctx.CharacterController.isGrounded)
             {
-                SwitchState(_factory.Fall());
+                SwitchState(_factory.GetState(StatesNames.Fall));
             }
             else
             {
-                CurrentSuperstate.SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.Idle() : _factory.Walk());
+                CurrentSuperstate.SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

@@ -6,7 +6,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class JumpingDownState : BaseState
     {
-        protected override StatesNames StateName => StatesNames.Dawn;
+        public override StatesNames StateName => StatesNames.Dawn;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         public JumpingDownState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
@@ -27,7 +27,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.ApplyGravity(falling:true);
         }
 
-        protected override void ExitState()
+        public override void ExitState()
         {
             _ctx.isJumping = false;
             base.ExitState();
@@ -45,14 +45,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (Ctx.transform.position.y < _ctx.fallMaxHeight)
+            if (_ctx.transform.position.y < _ctx.fallMaxHeight)
             {
-                SwitchState(Factory.Dead());
+                SwitchState(Factory.GetState(StatesNames.Dead));
                 return;
             }
             if (_ctx.CharacterController.isGrounded)
             {
-                SwitchState(_factory.Grounded());
+                SwitchState(_factory.GetState(StatesNames.Grounded));
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

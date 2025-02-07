@@ -6,7 +6,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class IdleState: BaseState
     {
-        protected override StatesNames StateName => StatesNames.Idle;
+        public override StatesNames StateName => StatesNames.Idle;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
@@ -44,13 +44,13 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 Debug.Log("Dashing - Initialize - Do Idle");
                 _ctx.CanDashAgain = false;
                 //Aqui acho que é importante ele manda o Estado Acima, mudar.
-                CurrentSuperstate.SwitchSubState(_factory.Dash());
+                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Dash));
                 return;
             }
             
             if (_ctx.movementDirection != Vector2.zero)
             {
-                CurrentSuperstate.SwitchSubState(_factory.Walk());
+                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Walk));
             }
         } 
         

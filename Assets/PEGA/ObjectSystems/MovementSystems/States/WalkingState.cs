@@ -5,7 +5,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class WalkingState : BaseState
     {
-        protected override StatesNames StateName => StatesNames.Walk;
+        public override StatesNames StateName => StatesNames.Walk;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
@@ -29,7 +29,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
            CheckSwitchState();//Manter por último
         }
 
-        protected override void ExitState()
+        public override void ExitState()
         {
             base.ExitState();
             _ctx.isWalking = false;
@@ -46,12 +46,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 Debug.Log("Dashing - Initialize - Do Walking");
                 _ctx.CanDashAgain = false;
                 //Aqui acho que é importante ele manda o Estado Acima, mudar.
-                CurrentSuperstate.SwitchSubState(_factory.Dash());
+                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Dash));
                 return;
             }
             if (_ctx.movementDirection == Vector2.zero)
             {
-                CurrentSuperstate.SwitchSubState(_factory.Idle());
+                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Idle));
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

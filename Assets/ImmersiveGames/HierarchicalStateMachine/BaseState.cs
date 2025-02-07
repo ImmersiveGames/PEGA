@@ -9,12 +9,12 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public event Action<StatesNames> OnStateExited;
         
         protected bool IsRootState = false;
-        protected readonly StateContext Ctx;
+        protected readonly IStateContext Ctx;
         protected readonly HsmFactory Factory;
         protected BaseState CurrentSuperstate;
         private BaseState _currentSubState;
 
-        protected abstract StatesNames StateName { get; }
+        public abstract StatesNames StateName { get; }
         protected BaseState(StateContext currentMovementContext, HsmFactory factory)
         {
             Ctx = currentMovementContext;
@@ -45,10 +45,11 @@ namespace ImmersiveGames.HierarchicalStateMachine
         
         protected abstract void UpdateState();
 
-        protected virtual void ExitState()
+        public virtual void ExitState()
         {
             Ctx.GlobalNotifyStateExit(StateName);
             OnStateExited?.Invoke(StateName);
+            UnsubscribeEvents();
             DebugManager.Log<BaseState>($"[{StateName}] Exit");
         }
         //Cada estado cuida de como vai transicionar entre seus irmãos hierárquicos não sub estados.
@@ -74,7 +75,8 @@ namespace ImmersiveGames.HierarchicalStateMachine
             }
             else
             {
-                CurrentSuperstate?.SwitchSubState(newState); // Se for subestado, troca dentro do superestado
+                StateTransitionManager.SwitchState(this, newState, Ctx);
+                //CurrentSuperstate?.SwitchSubState(newState); // Se for subestado, troca dentro do superestado
             }
         }
 
@@ -94,6 +96,12 @@ namespace ImmersiveGames.HierarchicalStateMachine
 
             // 🔹 Define este estado como superestado do novo subestado
             newSubState.SetSuperState(this);
+        }
+
+        private void UnsubscribeEvents()
+        {
+            OnStateEntered = null;
+            OnStateExited = null;
         }
 
     }

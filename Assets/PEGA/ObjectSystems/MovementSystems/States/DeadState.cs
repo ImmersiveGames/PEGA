@@ -15,7 +15,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             Ctx.GlobalNotifyStateEnter(StatesNames.Dead);
         }
 
-        protected override StatesNames StateName => StatesNames.Dead;
+        public override StatesNames StateName => StatesNames.Dead;
         protected override void UpdateState()
         {
             //throw new System.NotImplementedException();

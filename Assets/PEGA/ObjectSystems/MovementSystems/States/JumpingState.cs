@@ -6,7 +6,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class JumpingState : BaseState
     {
-        protected override StatesNames StateName => StatesNames.Jump;
+        public override StatesNames StateName => StatesNames.Jump;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
@@ -21,7 +21,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected internal override void EnterState()
         {
             // 📌 Armazena posição inicial e tempo do pulo no Contexto
-            _ctx.jumpStartPosition = Ctx.transform.position;
+            _ctx.jumpStartPosition = _ctx.transform.position;
             _ctx.maxJumpHeight = _ctx.jumpStartPosition.y;
             _ctx.jumpStartTime = Time.time;
             
@@ -40,9 +40,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.ApplyGravity(falling:false);
         }
 
-        protected override void ExitState()
+        public override void ExitState()
         {
-            _ctx.maxJumpHeight = Ctx.transform.position.y;
+            _ctx.maxJumpHeight = _ctx.transform.position.y;
             _animator.SetBool("Jump", false);
             base.ExitState();
         }
@@ -51,7 +51,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             if (_ctx.movement.y <= 0 || !_ctx.ActualDriver.IsJumpingPress)
             {
-                SwitchState(_factory.Down());
+                SwitchState(_factory.GetState(StatesNames.Dawn));
             }
         }
 

@@ -1,4 +1,6 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using System;
+using System.Collections.Generic;
+using ImmersiveGames.HierarchicalStateMachine;
 using PEGA.ObjectSystems.MovementSystems.States;
 
 namespace PEGA.ObjectSystems.MovementSystems
@@ -7,45 +9,14 @@ namespace PEGA.ObjectSystems.MovementSystems
     {
         public MovementStateFactory(MovementContext currentMovementContext) : base(currentMovementContext)
         {
-            States[StatesNames.Idle] = new IdleState(currentMovementContext,this);
-            States[StatesNames.Grounded] = new GroundedState(currentMovementContext,this);
-            States[StatesNames.Jump] = new JumpingState(currentMovementContext,this);
-            States[StatesNames.Walk] = new WalkingState(currentMovementContext,this);
-            States[StatesNames.Fall] = new FallingState(currentMovementContext,this);
-            States[StatesNames.Dash] = new DashState(currentMovementContext,this);
-            States[StatesNames.Dawn] = new JumpingDownState(currentMovementContext,this);
-        }
-
-        public BaseState Idle()
-        {
-            return States[StatesNames.Idle];
-        }
-
-        public BaseState Grounded()
-        {
-            return States[StatesNames.Grounded];
-        }
-
-        public BaseState Jump()
-        {
-            return States[StatesNames.Jump];
-        }
-
-        public BaseState Walk()
-        {
-            return States[StatesNames.Walk];
-        }
-        public BaseState Fall()
-        {
-            return States[StatesNames.Fall];
-        }
-        public BaseState Down()
-        {
-            return States[StatesNames.Dawn];
-        }
-        public BaseState Dash()
-        {
-            return States[StatesNames.Dash];
+            // 🔹 Registramos os estados com construtores
+            RegisterState(StatesNames.Idle, () => new IdleState(currentMovementContext, this));
+            RegisterState(StatesNames.Grounded, () => new GroundedState(currentMovementContext, this));
+            RegisterState(StatesNames.Jump, () => new JumpingState(currentMovementContext, this));
+            RegisterState(StatesNames.Walk, () => new WalkingState(currentMovementContext, this));
+            RegisterState(StatesNames.Fall, () => new FallingState(currentMovementContext, this));
+            RegisterState(StatesNames.Dash, () => new DashState(currentMovementContext, this));
+            RegisterState(StatesNames.Dawn, () => new JumpingDownState(currentMovementContext, this));
         }
         
     }

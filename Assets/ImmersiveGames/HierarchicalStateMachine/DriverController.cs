@@ -1,45 +1,48 @@
-﻿using System;
-using PEGA.ObjectSystems.MovementSystems.Drivers;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+﻿using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace ImmersiveGames.HierarchicalStateMachine
 {
     public class DriverController : MonoBehaviour
     {
-        protected StateContext Context;
-
-        protected virtual void Awake()
-        {
-            SwitchToPlayerControl();
-        }
+        private IMovementDriver _playerDriver;
+        private IMovementDriver _aiDriver;
+        private StateContext _context;
 
         protected virtual void Update()
         {
-            Context.ActualDriver?.UpdateDriver(); // Atualiza estados de input.
+            _context.ActualDriver?.UpdateDriver(); // Atualiza estados de input.
         }
-        private void SetInputSource(IMovementDriver actualDriver)
+        public void Initialize(IMovementDriver playerDriver, IMovementDriver aiDriver, StateContext context)
         {
-            if (Context.ActualDriver == actualDriver) return;
-            
-            Context.ActualDriver?.ExitDriver();
-            Context.ActualDriver = actualDriver;
-            Context.ActualDriver.InitializeDriver();
+            _playerDriver = playerDriver;
+            _aiDriver = aiDriver;
+            _context = context;
+
+            SwitchToPlayerControl(); // ✅ Definimos o input inicial aqui
         }
-        private void SwitchToPlayerControl()
+        private void SetInputSource(IMovementDriver newDriver)
         {
-            SetInputSource(new PlayerMovementDriver(GetComponent<PlayerInput>()));
+            if (_context.ActualDriver == newDriver) return;
+
+            _context.ActualDriver?.ExitDriver();
+            _context.ActualDriver = newDriver;
+            _context.ActualDriver.InitializeDriver();
+        }
+        
+        public void SwitchToPlayerControl()
+        {
+            SetInputSource(_playerDriver);
         }
 
         public void SwitchToAIControl()
         {
-            SetInputSource(new NullMovementDriver(transform));
+            SetInputSource(_aiDriver);
         }
 
         private void ResetHistoryDriver()
         {
-            Context.ActualDriver?.Reset();
+            _context.ActualDriver?.Reset();
         }
    
     }

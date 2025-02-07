@@ -5,7 +5,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class GroundedState : BaseState
     {
-        protected override StatesNames StateName => StatesNames.Grounded;
+        public override StatesNames StateName => StatesNames.Grounded;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
 
@@ -32,7 +32,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             //Debug.Log($"Update - Grounded - no chão: {Ctx.CharacterController.isGrounded}");
         }
 
-        protected override void ExitState()
+        public override void ExitState()
         {
             _ctx.isGrounded = false;
             base.ExitState();
@@ -50,20 +50,20 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             if (!_ctx.CharacterController.isGrounded)
             {
                 //Queda de plataforma
-                SwitchState(_factory.Fall());
+                SwitchState(_factory.GetState(StatesNames.Fall));
                 return;
             }
 
             if (!_ctx.CharacterController.isGrounded || !_ctx.ActualDriver.IsJumpingPress 
                                                      || _ctx.isJumping || !_ctx.CanJumpAgain) return;
             _ctx.CanJumpAgain = false;
-            SwitchState(_factory.Jump());
+            SwitchState(_factory.GetState(StatesNames.Jump));
         }
 
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
         protected sealed override void InitializeSubState()
         {
-            SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.Idle() : _factory.Walk());
+            SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
         }
 
     }
