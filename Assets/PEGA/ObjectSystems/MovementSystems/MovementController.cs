@@ -1,4 +1,5 @@
-﻿using ImmersiveGames.DebugSystems;
+﻿using System;
+using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.MovementSystems.Drivers;
@@ -14,11 +15,16 @@ namespace PEGA.ObjectSystems.MovementSystems
         private MovementStateFactory _movementStates;
         private MovementContext _movementContext;
         
+        [SerializeField]
+        private DriverType driverType;
         
         protected void Awake()
         {
             _characterController = GetComponent<CharacterController>();
             _movementContext = GetComponent<MovementContext>();
+
+            _movementContext.InputDriver = SetObjectDriver(driverType);
+            
             _movementStates = new MovementStateFactory(_movementContext); //Cria a fabric usando este contexto
    
             _movementContext.CurrentState = _movementStates.GetState(StatesNames.Fall); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
@@ -26,6 +32,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         }
         private void Update()
         {
+            _movementContext.InputDriver.UpdateDriver();
             
             _movementContext.CurrentState.CheckSwitchState();
             _movementContext.movementDirection = _movementContext.InputDriver.GetMovementDirection();
@@ -47,6 +54,18 @@ namespace PEGA.ObjectSystems.MovementSystems
             if (_movementContext.InputDriver.GetMovementDirection() == Vector2.zero) return;
             var targetRotation = Quaternion.LookRotation(positionToLookAt);
             transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, _movementContext.rotationPerFrame * Time.deltaTime);
+        }
+        
+        private IInputDriver SetObjectDriver(DriverType newDriverType)
+        {
+            IInputDriver driver = newDriverType switch
+            {
+                DriverType.Player => new PlayerInputDriver(GetComponent<PlayerInput>()),
+                DriverType.AI => new NullInputDriver(transform),
+                _ => throw new ArgumentOutOfRangeException(nameof(newDriverType), newDriverType, null)
+            };
+            var driverController = new DriverController(driver);
+            return driverController.GetActualDriver();
         }
         
     }

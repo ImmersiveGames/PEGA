@@ -1,5 +1,4 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+﻿using PEGA.ObjectSystems.MovementSystems.Interfaces;
 
 namespace ImmersiveGames.InputSystems
 {
@@ -8,46 +7,26 @@ namespace ImmersiveGames.InputSystems
         private readonly IInputDriver _playerDriver;
         private readonly IInputDriver _aiDriver;
 
-        private IInputDriver _actualDriver;
-        
-
-        public DriverController(IInputDriver playerDriver, IInputDriver aiDriver)
+        private IInputDriver _inputDriver;
+        public DriverController(IInputDriver actualDriver)
         {
-            _playerDriver = playerDriver;
-            _aiDriver = aiDriver;
-            //_context = context;
-
-            SwitchToPlayerControl(); // ✅ Definimos o input inicial aqui
+            SwitchDriveControl(actualDriver);
         }
-        public IInputDriver GetActualDriver() => _actualDriver;
-
-        public void Update()
-        {
-            _actualDriver?.UpdateDriver(); // Atualiza estados de input.
-        }
+        public IInputDriver GetActualDriver() => _inputDriver;
 
         private void SwitchDriveControl(IInputDriver newDriver)
         {
-            if (_actualDriver == newDriver) return;
+            if (_inputDriver == newDriver) return;
 
-            _actualDriver?.ExitDriver();
-            _actualDriver = newDriver;
-            _actualDriver.InitializeDriver();
+            _inputDriver?.ExitDriver();
+            _inputDriver = newDriver;
+            _inputDriver.InitializeDriver();
         }
         
-        public void SwitchToPlayerControl()
-        {
-            SwitchDriveControl(_playerDriver);
-        }
-
-        public void SwitchToAIControl()
-        {
-            SwitchDriveControl(_aiDriver);
-        }
 
         private void ResetHistoryDriver()
         {
-            _actualDriver?.Reset();
+            _inputDriver?.Reset();
         }
    
     }

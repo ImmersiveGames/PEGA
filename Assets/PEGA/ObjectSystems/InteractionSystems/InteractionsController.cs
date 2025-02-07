@@ -1,6 +1,8 @@
-﻿using ImmersiveGames.HierarchicalStateMachine;
+﻿using System;
+using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.MovementSystems.Drivers;
+using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,14 +12,14 @@ namespace PEGA.ObjectSystems.InteractionSystems
     {
         private InteractionFactory _interactionStates;
         private InteractionContext _interactionContext;
-        
-        private DriverController _driverController;
+
+        [SerializeField]
+        private DriverType driverType;
 
         private void Awake()
         {
             _interactionContext = GetComponent<InteractionContext>();
-            _driverController = new DriverController(new PlayerInputDriver(GetComponent<PlayerInput>()),
-                new NullInputDriver(transform));
+            _interactionContext.InputDriver = SetObjectDriver(driverType);
             
             _interactionStates = new InteractionFactory(_interactionContext); //Cria a fabric usando este contexto
             _interactionContext.CurrentState = _interactionStates.GetState(StatesNames.InteractIdle); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
@@ -26,12 +28,23 @@ namespace PEGA.ObjectSystems.InteractionSystems
         }
         private void Update()
         {
-            _driverController.Update();
+            _interactionContext.InputDriver.UpdateDriver();
             _interactionContext.CurrentState.CheckSwitchState();
             
             //_movementContext.movementDirection = Context.ActualDriver.GetMovementDirection();
             
             _interactionContext.CurrentState.UpdateStates();
+        }
+        private IInputDriver SetObjectDriver(DriverType newDriverType)
+        {
+            IInputDriver driver = newDriverType switch
+            {
+                DriverType.Player => new PlayerInputDriver(GetComponent<PlayerInput>()),
+                DriverType.AI => new NullInputDriver(transform),
+                _ => throw new ArgumentOutOfRangeException(nameof(newDriverType), newDriverType, null)
+            };
+            var driverController = new DriverController(driver);
+            return driverController.GetActualDriver();
         }
     }
 }
