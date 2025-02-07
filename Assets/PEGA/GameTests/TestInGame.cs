@@ -34,7 +34,7 @@ namespace PEGA.GameTests
             DebugManager.SetScriptDebugLevel<WalkingState>(DebugManager.DebugLevels.None);
             
             //Drivers
-            DebugManager.SetScriptDebugLevel<IMovementDriver>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<IInputDriver>(DebugManager.DebugLevels.None);
             
             //MovementController
             DebugManager.SetScriptDebugLevel<MovementController>(DebugManager.DebugLevels.None);

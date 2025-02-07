@@ -2,7 +2,7 @@
 
 namespace PEGA.ObjectSystems.MovementSystems.Interfaces
 {
-    public interface IMovementDriver
+    public interface IInputDriver
     {
         Vector2 GetMovementDirection();
         bool IsJumpingPress { get; }

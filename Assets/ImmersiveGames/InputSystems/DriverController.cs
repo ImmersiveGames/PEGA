@@ -5,45 +5,49 @@ namespace ImmersiveGames.InputSystems
 {
     public class DriverController
     {
-        private readonly IMovementDriver _playerDriver;
-        private readonly IMovementDriver _aiDriver;
-        private readonly StateContext _context;
+        private readonly IInputDriver _playerDriver;
+        private readonly IInputDriver _aiDriver;
 
-        public DriverController(IMovementDriver playerDriver, IMovementDriver aiDriver, StateContext context)
+        private IInputDriver _actualDriver;
+        
+
+        public DriverController(IInputDriver playerDriver, IInputDriver aiDriver)
         {
             _playerDriver = playerDriver;
             _aiDriver = aiDriver;
-            _context = context;
+            //_context = context;
 
             SwitchToPlayerControl(); // ✅ Definimos o input inicial aqui
         }
+        public IInputDriver GetActualDriver() => _actualDriver;
 
         public void Update()
         {
-            _context.ActualDriver?.UpdateDriver(); // Atualiza estados de input.
-        }
-        private void SetInputSource(IMovementDriver newDriver)
-        {
-            if (_context.ActualDriver == newDriver) return;
-
-            _context.ActualDriver?.ExitDriver();
-            _context.ActualDriver = newDriver;
-            _context.ActualDriver.InitializeDriver();
+            _actualDriver?.UpdateDriver(); // Atualiza estados de input.
         }
 
-        private void SwitchToPlayerControl()
+        private void SwitchDriveControl(IInputDriver newDriver)
         {
-            SetInputSource(_playerDriver);
+            if (_actualDriver == newDriver) return;
+
+            _actualDriver?.ExitDriver();
+            _actualDriver = newDriver;
+            _actualDriver.InitializeDriver();
+        }
+        
+        public void SwitchToPlayerControl()
+        {
+            SwitchDriveControl(_playerDriver);
         }
 
         public void SwitchToAIControl()
         {
-            SetInputSource(_aiDriver);
+            SwitchDriveControl(_aiDriver);
         }
 
         private void ResetHistoryDriver()
         {
-            _context.ActualDriver?.Reset();
+            _actualDriver?.Reset();
         }
    
     }

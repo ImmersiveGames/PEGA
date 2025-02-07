@@ -16,10 +16,8 @@ namespace PEGA.ObjectSystems.InteractionSystems
         private void Awake()
         {
             _interactionContext = GetComponent<InteractionContext>();
-            _driverController = new DriverController(new PlayerMovementDriver(GetComponent<PlayerInput>()),
-                new NullMovementDriver(transform), 
-                _interactionContext
-            );
+            _driverController = new DriverController(new PlayerInputDriver(GetComponent<PlayerInput>()),
+                new NullInputDriver(transform));
             
             _interactionStates = new InteractionFactory(_interactionContext); //Cria a fabric usando este contexto
             _interactionContext.CurrentState = _interactionStates.GetState(StatesNames.InteractIdle); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)

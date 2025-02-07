@@ -1,5 +1,9 @@
 ﻿using ImmersiveGames.HierarchicalStateMachine;
+using ImmersiveGames.InputSystems;
+using PEGA.ObjectSystems.MovementSystems.Drivers;
+using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
@@ -30,16 +34,26 @@ namespace PEGA.ObjectSystems.MovementSystems
         internal float DashCooldownTimer;
         
         internal CharacterController CharacterController;
+        private DriverController _driverController;
         
         public float maxJumpHeight;
         public Vector3 jumpStartPosition;
         public float jumpStartTime;
 
         public float realBaseSpeed;
+        public IInputDriver InputDriver { get; set; }
+
 
         private void Awake()
         {
             CharacterController = GetComponent<CharacterController>();
+            
+            _driverController = new DriverController(
+                new PlayerInputDriver(GetComponent<PlayerInput>()), 
+                new NullInputDriver(transform)
+            );
+            InputDriver = _driverController.GetActualDriver();
+            
             realGravity = movementSettings.gravity;
             //Calcular as variáveis base
             realBaseSpeed = movementSettings.baseSpeed;
@@ -50,6 +64,7 @@ namespace PEGA.ObjectSystems.MovementSystems
 
         private void Update()
         {
+            _driverController.Update();
             // 🔹 Reduz o cooldown do Dash ao longo do tempo
             if (DashCooldownTimer > 0)
             {

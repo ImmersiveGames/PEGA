@@ -81,7 +81,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (_ctx.ActualDriver.IsDashPress && !(_dashTime <= 0)) return;
+            if (_ctx.InputDriver.IsDashPress && !(_dashTime <= 0)) return;
             if (!_ctx.CharacterController.isGrounded)
             {
                 SwitchState(_factory.GetState(StatesNames.Fall));

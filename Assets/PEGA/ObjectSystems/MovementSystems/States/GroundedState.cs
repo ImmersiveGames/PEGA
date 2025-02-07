@@ -41,7 +41,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         public override void CheckSwitchState()
         {
             //Verifica se ja soltou o botão para liberar o pulo
-            if (!_ctx.CanJumpAgain && !_ctx.ActualDriver.IsJumpingPress)
+            if (!_ctx.CanJumpAgain && !_ctx.InputDriver.IsJumpingPress)
             {
                 _ctx.CanJumpAgain = true;
             }
@@ -54,7 +54,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 return;
             }
 
-            if (!_ctx.CharacterController.isGrounded || !_ctx.ActualDriver.IsJumpingPress 
+            if (!_ctx.CharacterController.isGrounded || !_ctx.InputDriver.IsJumpingPress 
                                                      || _ctx.isJumping || !_ctx.CanJumpAgain) return;
             _ctx.CanJumpAgain = false;
             SwitchState(_factory.GetState(StatesNames.Jump));

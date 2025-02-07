@@ -35,11 +35,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!_ctx.CanDashAgain && !_ctx.ActualDriver.IsDashPress && _ctx.DashCooldownTimer <= 0)
+            if (!_ctx.CanDashAgain && !_ctx.InputDriver.IsDashPress && _ctx.DashCooldownTimer <= 0)
             {
                 _ctx.CanDashAgain = true;
             }
-            if (_ctx.CharacterController.isGrounded && _ctx.ActualDriver.IsDashPress && !_ctx.isDashing && _ctx.CanDashAgain)
+            if (_ctx.CharacterController.isGrounded && _ctx.InputDriver.IsDashPress && !_ctx.isDashing && _ctx.CanDashAgain)
             {
                 Debug.Log("Dashing - Initialize - Do Idle");
                 _ctx.CanDashAgain = false;
