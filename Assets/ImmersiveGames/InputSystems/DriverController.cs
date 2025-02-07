@@ -1,25 +1,26 @@
-﻿using PEGA.ObjectSystems.MovementSystems.Interfaces;
-using UnityEngine;
+﻿using ImmersiveGames.HierarchicalStateMachine;
+using PEGA.ObjectSystems.MovementSystems.Interfaces;
 
-namespace ImmersiveGames.HierarchicalStateMachine
+namespace ImmersiveGames.InputSystems
 {
-    public class DriverController : MonoBehaviour
+    public class DriverController
     {
-        private IMovementDriver _playerDriver;
-        private IMovementDriver _aiDriver;
-        private StateContext _context;
+        private readonly IMovementDriver _playerDriver;
+        private readonly IMovementDriver _aiDriver;
+        private readonly StateContext _context;
 
-        protected virtual void Update()
-        {
-            _context.ActualDriver?.UpdateDriver(); // Atualiza estados de input.
-        }
-        public void Initialize(IMovementDriver playerDriver, IMovementDriver aiDriver, StateContext context)
+        public DriverController(IMovementDriver playerDriver, IMovementDriver aiDriver, StateContext context)
         {
             _playerDriver = playerDriver;
             _aiDriver = aiDriver;
             _context = context;
 
             SwitchToPlayerControl(); // ✅ Definimos o input inicial aqui
+        }
+
+        public void Update()
+        {
+            _context.ActualDriver?.UpdateDriver(); // Atualiza estados de input.
         }
         private void SetInputSource(IMovementDriver newDriver)
         {
@@ -29,8 +30,8 @@ namespace ImmersiveGames.HierarchicalStateMachine
             _context.ActualDriver = newDriver;
             _context.ActualDriver.InitializeDriver();
         }
-        
-        public void SwitchToPlayerControl()
+
+        private void SwitchToPlayerControl()
         {
             SetInputSource(_playerDriver);
         }

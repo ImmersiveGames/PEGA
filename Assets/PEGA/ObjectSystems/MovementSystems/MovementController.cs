@@ -1,22 +1,25 @@
 ﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
+using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.MovementSystems.Drivers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
-    public class MovementController : DriverController
+    public class MovementController : MonoBehaviour
     {
         private CharacterController _characterController;
         private MovementStateFactory _movementStates;
         private MovementContext _movementContext;
+        
+        private DriverController _driverController;
 
         protected void Awake()
         {
             _characterController = GetComponent<CharacterController>();
             _movementContext = GetComponent<MovementContext>();
-            Initialize(
+            _driverController = new DriverController(
                 new PlayerMovementDriver(GetComponent<PlayerInput>()), 
                 new NullMovementDriver(transform), 
                 _movementContext
@@ -27,9 +30,9 @@ namespace PEGA.ObjectSystems.MovementSystems
             _movementContext.CurrentState = _movementStates.GetState(StatesNames.Fall); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
             _movementContext.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
         }
-        protected override void Update()
+        private void Update()
         {
-            base.Update();
+            _driverController.Update();
             _movementContext.CurrentState.CheckSwitchState();
             _movementContext.movementDirection = _movementContext.ActualDriver.GetMovementDirection();
             
