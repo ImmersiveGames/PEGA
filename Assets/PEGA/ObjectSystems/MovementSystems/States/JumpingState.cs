@@ -7,47 +7,51 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class JumpingState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Jump;
+        private readonly MovementContext _ctx;
+        private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
-        public JumpingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+        public JumpingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
             IsRootState = true;
+            _ctx = currentMovementContext;
+            _factory = factory;
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();
         }
 
         protected internal override void EnterState()
         {
             // 📌 Armazena posição inicial e tempo do pulo no Contexto
-            Ctx.jumpStartPosition = Ctx.transform.position;
-            Ctx.maxJumpHeight = Ctx.jumpStartPosition.y;
-            Ctx.jumpStartTime = Time.time;
+            _ctx.jumpStartPosition = Ctx.transform.position;
+            _ctx.maxJumpHeight = _ctx.jumpStartPosition.y;
+            _ctx.jumpStartTime = Time.time;
             
             
-            DebugManager.Log<JumpingState>($"🏃 Entering JumpState | TimeInDash={Ctx.TimeInDash} | Velocity={Ctx.StoredMomentum}");
+            DebugManager.Log<JumpingState>($"🏃 Entering JumpState | TimeInDash={_ctx.TimeInDash} | Velocity={_ctx.StoredMomentum}");
             
             _animator.SetBool("Jump", true);
-            Ctx.isJumping = true;
-            Ctx.CalculateJumpVariables();
+            _ctx.isJumping = true;
+            _ctx.CalculateJumpVariables();
             HandleJump();
             base.EnterState();
         }
 
         protected override void UpdateState()
         {
-            Ctx.ApplyGravity(falling:false);
+            _ctx.ApplyGravity(falling:false);
         }
 
         protected override void ExitState()
         {
-            Ctx.maxJumpHeight = Ctx.transform.position.y;
+            _ctx.maxJumpHeight = Ctx.transform.position.y;
             _animator.SetBool("Jump", false);
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.movement.y <= 0 || !Ctx.MovementDriver.IsJumpingPress)
+            if (_ctx.movement.y <= 0 || !_ctx.ActualDriver.IsJumpingPress)
             {
-                SwitchState(Factory.Down());
+                SwitchState(_factory.Down());
             }
         }
 
@@ -59,8 +63,8 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private void HandleJump()
         {
             // 🔹 Usa a nova velocidade vertical calculada
-            Ctx.movement.y = Ctx.initialJumpVelocity;
-            Ctx.appliedMovement.y = Ctx.initialJumpVelocity;
+            _ctx.movement.y = _ctx.initialJumpVelocity;
+            _ctx.appliedMovement.y = _ctx.initialJumpVelocity;
         }
 
     }

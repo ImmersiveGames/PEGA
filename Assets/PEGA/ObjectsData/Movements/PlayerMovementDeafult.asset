@@ -15,9 +15,13 @@ MonoBehaviour:
   baseSpeed: 10
   gravityGround: -0.5
   gravity: -9.8
-  maxJumpHeight: 3
+  maxJumpHeight: 2
   maxJumpTime: 0.75
+  maxSpeedBoost: 4
+  impulseMultiply: 0.2
   fallMultiplier: 3
   maxFallVelocity: -30
   dashDuration: 0.3
-  dashMultiply: 5
+  dashMultiply: 2
+  idleDashMultiply: 0.4
+  dashCooldownTime: 0.2

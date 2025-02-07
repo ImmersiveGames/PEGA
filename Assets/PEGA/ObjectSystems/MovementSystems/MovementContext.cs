@@ -1,17 +1,11 @@
-﻿using System;
-using ImmersiveGames.DebugSystems;
-using ImmersiveGames.HierarchicalStateMachine;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+﻿using ImmersiveGames.HierarchicalStateMachine;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
-    public class MovementContext : MonoBehaviour
+    [DefaultExecutionOrder(-10)]
+    public class MovementContext : StateContext
     {
-        public event Action<StatesNames> OnStateEnter;
-        public event Action<StatesNames> OnStateExit;
-        
         public MovementSettings movementSettings;
         
         public Vector3 movement;
@@ -20,7 +14,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         public float rotationPerFrame = 15f;
         public float fallMaxHeight = -50f;
         
-        [FormerlySerializedAs("actualGravity")] [FormerlySerializedAs("gravity")] public float realGravity;
+        public float realGravity;
         public float initialJumpVelocity;
         
         public bool isWalking;
@@ -34,17 +28,14 @@ namespace PEGA.ObjectSystems.MovementSystems
         internal float StoredMomentum;
         internal float TimeInDash;
         internal float DashCooldownTimer;
-
-        internal IMovementDriver MovementDriver;
+        
         internal CharacterController CharacterController;
-        internal BaseState CurrentState;
+        
         public float maxJumpHeight;
         public Vector3 jumpStartPosition;
         public float jumpStartTime;
 
         public float realBaseSpeed;
-        
-        
 
         private void Awake()
         {
@@ -108,20 +99,6 @@ namespace PEGA.ObjectSystems.MovementSystems
             movement.y += realGravity * multiplier * Time.deltaTime;
             appliedMovement.y = falling ? Mathf.Max((previousYVelocity + movement.y) * 0.5f, movementSettings.maxFallVelocity)
                 : previousYVelocity + movement.y;
-        }
-
-        #endregion
-
-        #region Call Events
-
-        public void GlobalNotifyStateEnter(StatesNames newState)
-        {
-            DebugManager.Log<MovementContext>($"Chamou o Evento paa o Estado : {newState}");
-            OnStateEnter?.Invoke(newState);
-        }
-        public void GlobalNotifyStateExit(StatesNames newState)
-        {
-            OnStateExit?.Invoke(newState);
         }
 
         #endregion

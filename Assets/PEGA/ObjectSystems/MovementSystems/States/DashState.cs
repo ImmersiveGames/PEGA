@@ -10,10 +10,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly AnimatorHandler _animator;
         private Vector3 _startPosition; // 🔹 Posição inicial do dash
         private Vector2 _dashDirection;
+        private readonly MovementContext _ctx;
+        private readonly MovementStateFactory _factory;
 
-        public DashState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+        public DashState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();
+            _ctx = currentMovementContext;
+            _factory = factory;
         }
 
         protected override StatesNames StateName => StatesNames.Dash;
@@ -21,29 +25,29 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected internal override void EnterState()
         {
             _animator.SetBool("Dash", true);
-            Ctx.isDashing = true;
-            _dashTime = Ctx.movementSettings.dashDuration;
+            _ctx.isDashing = true;
+            _dashTime = _ctx.movementSettings.dashDuration;
             base.EnterState();
             
             // 📌 Guarda a direção inicial do Dash
-            _dashDirection = Ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
-            if (Ctx.movementDirection == Vector2.zero)
+            _dashDirection = _ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
+            if (_ctx.movementDirection == Vector2.zero)
             {
-                var forward = Ctx.transform.forward.normalized * Ctx.movementSettings.idleDashMultiply;
+                var forward = _ctx.transform.forward.normalized * _ctx.movementSettings.idleDashMultiply;
                 _dashDirection = new Vector2(forward.x, forward.z); // 🔹 Se parado, move para frente
             }
             
             //Debug
-            _startPosition = Ctx.transform.position; // 🔹 Armazena a posição inicial do dash
+            _startPosition = _ctx.transform.position; // 🔹 Armazena a posição inicial do dash
         }
 
         protected override void UpdateState()
         {
             // 📌 Força um movimento inicial se o jogador estiver parado (Idle)
-            if (Ctx.movementDirection == Vector2.zero) Ctx.movementDirection = _dashDirection; // 🔹 Converte para um Vector2
+            if (_ctx.movementDirection == Vector2.zero) _ctx.movementDirection = _dashDirection; // 🔹 Converte para um Vector2
             
-            Ctx.ApplyMovement(Ctx.movementSettings.dashMultiply);
-            Ctx.TimeInDash += Time.deltaTime;
+            _ctx.ApplyMovement(_ctx.movementSettings.dashMultiply);
+            _ctx.TimeInDash += Time.deltaTime;
             _dashTime -= Time.deltaTime;
 
             if (_dashTime < 0) _dashTime = 0;
@@ -54,37 +58,37 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void ExitState()
         {
             _animator.SetBool("Dash", false);
-            Ctx.isDashing = false;
+            _ctx.isDashing = false;
             // 🔹 Inicia o cooldown ao final do Dash
-            Ctx.DashCooldownTimer = Ctx.movementSettings.dashCooldownTime;
+            _ctx.DashCooldownTimer = _ctx.movementSettings.dashCooldownTime;
 
-            DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {Ctx.DashCooldownTimer:F2}s");
+            DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {_ctx.DashCooldownTimer:F2}s");
 
 
             //######################
-            var endPosition = Ctx.transform.position; // 🔹 Captura a posição final
+            var endPosition = _ctx.transform.position; // 🔹 Captura a posição final
             var distanceTraveled = Vector3.Distance(_startPosition, endPosition); // 🔹 Calcula a distância percorrida
 
-            var finalMomentum = Ctx.CharacterController.velocity; // 🔹 Captura a velocidade final
+            var finalMomentum = _ctx.CharacterController.velocity; // 🔹 Captura a velocidade final
 
-            DebugManager.Log<DashState>($"Dash Finalizado -> Tempo: {Ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
+            DebugManager.Log<DashState>($"Dash Finalizado -> Tempo: {_ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
             //######################
             
-            Ctx.TimeInDash = 0f;
+            _ctx.TimeInDash = 0f;
             _dashTime = 0f;
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.MovementDriver.IsDashPress && !(_dashTime <= 0)) return;
-            if (!Ctx.CharacterController.isGrounded)
+            if (_ctx.ActualDriver.IsDashPress && !(_dashTime <= 0)) return;
+            if (!_ctx.CharacterController.isGrounded)
             {
-                SwitchState(Factory.Fall());
+                SwitchState(_factory.Fall());
             }
             else
             {
-                CurrentSuperstate.SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
+                CurrentSuperstate.SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.Idle() : _factory.Walk());
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

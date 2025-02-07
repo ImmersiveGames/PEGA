@@ -6,20 +6,24 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class GroundedState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Grounded;
+        private readonly MovementContext _ctx;
+        private readonly MovementStateFactory _factory;
 
-        public GroundedState(MovementContext currentMovementContext, StateFactory factory) : base(
+        public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(
             currentMovementContext, factory)
         {
             IsRootState = true;
+            _ctx = currentMovementContext;
+            _factory = factory;
         }
 
         protected internal override void EnterState()
         {
-            Ctx.isGrounded = true;
+            _ctx.isGrounded = true;
             base.EnterState();
 
-            Ctx.movement.y = Ctx.movementSettings.gravityGround;
-            Ctx.appliedMovement.y = Ctx.movementSettings.gravityGround;
+            _ctx.movement.y = _ctx.movementSettings.gravityGround;
+            _ctx.appliedMovement.y = _ctx.movementSettings.gravityGround;
         }
 
         protected override void UpdateState()
@@ -30,36 +34,36 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void ExitState()
         {
-            Ctx.isGrounded = false;
+            _ctx.isGrounded = false;
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
             //Verifica se ja soltou o botão para liberar o pulo
-            if (!Ctx.CanJumpAgain && !Ctx.MovementDriver.IsJumpingPress)
+            if (!_ctx.CanJumpAgain && !_ctx.ActualDriver.IsJumpingPress)
             {
-                Ctx.CanJumpAgain = true;
+                _ctx.CanJumpAgain = true;
             }
 
             //Debug.Log("Can Jump Again?: " + Ctx.CanJumpAgain);
-            if (!Ctx.CharacterController.isGrounded)
+            if (!_ctx.CharacterController.isGrounded)
             {
                 //Queda de plataforma
-                SwitchState(Factory.Fall());
+                SwitchState(_factory.Fall());
                 return;
             }
 
-            if (!Ctx.CharacterController.isGrounded || !Ctx.MovementDriver.IsJumpingPress 
-                                                    || Ctx.isJumping || !Ctx.CanJumpAgain) return;
-            Ctx.CanJumpAgain = false;
-            SwitchState(Factory.Jump());
+            if (!_ctx.CharacterController.isGrounded || !_ctx.ActualDriver.IsJumpingPress 
+                                                     || _ctx.isJumping || !_ctx.CanJumpAgain) return;
+            _ctx.CanJumpAgain = false;
+            SwitchState(_factory.Jump());
         }
 
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
         protected sealed override void InitializeSubState()
         {
-            SwitchSubState(Ctx.movementDirection == Vector2.zero ? Factory.Idle() : Factory.Walk());
+            SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.Idle() : _factory.Walk());
         }
 
     }

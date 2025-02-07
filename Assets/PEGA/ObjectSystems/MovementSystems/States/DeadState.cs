@@ -4,7 +4,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class DeadState: BaseState
     {
-        public DeadState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+        public DeadState(StateContext currentMovementContext, HsmFactory factory) : base(currentMovementContext, factory)
         {
             IsRootState = true;
         }

@@ -7,48 +7,52 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class JumpingDownState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Dawn;
-        public JumpingDownState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext, factory)
+        private readonly MovementContext _ctx;
+        private readonly MovementStateFactory _factory;
+        public JumpingDownState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
             IsRootState = true;
+            _ctx = currentMovementContext;
+            _factory = factory;
         }
 
         protected internal override void EnterState()
         {
-            Ctx.CalculateJumpVariables();
+            _ctx.CalculateJumpVariables();
             base.EnterState();
         }
 
         protected override void UpdateState()
         {
-            Ctx.ApplyGravity(falling:true);
+            _ctx.ApplyGravity(falling:true);
         }
 
         protected override void ExitState()
         {
-            Ctx.isJumping = false;
+            _ctx.isJumping = false;
             base.ExitState();
 
             //######## DEBUG
-            var jumpDuration = Time.time - Ctx.jumpStartTime;
-            var finalPosition = Ctx.transform.position;
+            var jumpDuration = Time.time - _ctx.jumpStartTime;
+            var finalPosition = _ctx.transform.position;
             var horizontalDistance = Vector3.Distance(
-                new Vector3(Ctx.jumpStartPosition.x, 0, Ctx.jumpStartPosition.z),
+                new Vector3(_ctx.jumpStartPosition.x, 0, _ctx.jumpStartPosition.z),
                 new Vector3(finalPosition.x, 0, finalPosition.z)
             );
-            DebugManager.Log<JumpingDownState>($"🛬 Jump Ended | Max Height: {Ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
+            DebugManager.Log<JumpingDownState>($"🛬 Jump Ended | Max Height: {_ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
             //######## 
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.transform.position.y < Ctx.fallMaxHeight)
+            if (Ctx.transform.position.y < _ctx.fallMaxHeight)
             {
                 SwitchState(Factory.Dead());
                 return;
             }
-            if (Ctx.CharacterController.isGrounded)
+            if (_ctx.CharacterController.isGrounded)
             {
-                SwitchState(Factory.Grounded());
+                SwitchState(_factory.Grounded());
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

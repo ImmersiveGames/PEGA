@@ -410,7 +410,9 @@ GameObject:
   - component: {fileID: 5272752039940584962}
   - component: {fileID: 2313026586389050340}
   - component: {fileID: 3097938912641828902}
+  - component: {fileID: 5935187083182994883}
   - component: {fileID: 1204566306826233122}
+  - component: {fileID: 3251945375106204805}
   m_Layer: 0
   m_Name: PlayerMaster
   m_TagString: Player
@@ -556,6 +558,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: accd3ea34aef4fb1810b4516a39696cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &5935187083182994883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ee820cd5e08a9e48a25a883a04b549b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1204566306826233122
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -573,12 +587,27 @@ MonoBehaviour:
   appliedMovement: {x: 0, y: 0, z: 0}
   movementDirection: {x: 0, y: 0}
   rotationPerFrame: 15
-  gravity: 0
+  fallMaxHeight: -50
+  realGravity: 0
   initialJumpVelocity: 0
-  dashDuration: 0.2
-  dashMultiply: 10
   isWalking: 0
   isGrounded: 0
   isJumping: 0
   isFalling: 0
   isDashing: 0
+  maxJumpHeight: 0
+  jumpStartPosition: {x: 0, y: 0, z: 0}
+  jumpStartTime: 0
+  realBaseSpeed: 0
+--- !u!114 &3251945375106204805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202670250957630496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cdbd950faac4fa290399106a18260ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

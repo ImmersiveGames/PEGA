@@ -1,6 +1,5 @@
 ﻿using System;
 using ImmersiveGames.DebugSystems;
-using PEGA.ObjectSystems.MovementSystems;
 
 namespace ImmersiveGames.HierarchicalStateMachine
 {
@@ -10,13 +9,13 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public event Action<StatesNames> OnStateExited;
         
         protected bool IsRootState = false;
-        protected readonly MovementContext Ctx;
-        protected readonly StateFactory Factory;
+        protected readonly StateContext Ctx;
+        protected readonly HsmFactory Factory;
         protected BaseState CurrentSuperstate;
         private BaseState _currentSubState;
 
         protected abstract StatesNames StateName { get; }
-        protected BaseState(MovementContext currentMovementContext, StateFactory factory)
+        protected BaseState(StateContext currentMovementContext, HsmFactory factory)
         {
             Ctx = currentMovementContext;
             Factory = factory;

@@ -5,42 +5,46 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     public class FallingState : BaseState
     {
         protected override StatesNames StateName => StatesNames.Fall;
+        private readonly MovementContext _ctx;
+        private readonly MovementStateFactory _factory;
 
-        public FallingState(MovementContext currentMovementContext, StateFactory factory) : base(currentMovementContext,
+        public FallingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext,
             factory)
         {
             IsRootState = true;
+            _ctx = currentMovementContext;
+            _factory = factory;
         }
 
         protected internal override void EnterState()
         {
-            Ctx.isFalling = true;
-            Ctx.CalculateJumpVariables();
+            _ctx.isFalling = true;
+            _ctx.CalculateJumpVariables();
             base.EnterState();
         }
 
         protected override void UpdateState()
         {
-            Ctx.ApplyGravity(falling: true);
+            _ctx.ApplyGravity(falling: true);
         }
 
         protected override void ExitState()
         {
-            Ctx.isFalling = false;
+            _ctx.isFalling = false;
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            if (Ctx.transform.position.y < Ctx.fallMaxHeight)
+            if (Ctx.transform.position.y < _ctx.fallMaxHeight)
             {
                 SwitchState(Factory.Dead());
                 return;
             }
 
-            if (Ctx.CharacterController.isGrounded)
+            if (_ctx.CharacterController.isGrounded)
             {
-                SwitchState(Factory.Grounded());
+                SwitchState(_factory.Grounded());
             }
         }
 
