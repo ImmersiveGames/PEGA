@@ -1,7 +1,6 @@
 ﻿using System;
 using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
-using PEGA.ObjectSystems.MovementSystems.Drivers;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,44 +11,44 @@ namespace PEGA.ObjectSystems.MovementSystems
     public class MovementContext : StateContext
     {
         public MovementSettings movementSettings;
-        
+        [Header("Movement Settings")]
         public Vector3 movement;
         public Vector3 appliedMovement;
-        public Vector2 movementDirection;
         public float rotationPerFrame = 15f;
+        
+        public float maxJumpHeight;
+        
         public float fallMaxHeight = -50f;
+        [Header("Debug Only - Hide inspector")]
+        [SerializeField]internal bool isWalking;
+        [SerializeField]internal bool isGrounded;
+        [SerializeField]internal bool isJumping;
+        [SerializeField]internal bool isFalling;
+        [SerializeField]internal bool isDashing;
         
-        public float realGravity;
-        public float initialJumpVelocity;
-        
-        public bool isWalking;
-        public bool isGrounded;
-        public bool isJumping;
-        public bool isFalling;
-        public bool isDashing;
+        [Header("Debug Only")]
+        [SerializeField]internal float realBaseSpeed;
+        [SerializeField]internal float initialJumpVelocity;
+        [SerializeField]internal Vector3 jumpStartPosition;
+        [SerializeField]internal float jumpStartTime;
 
+        private float _realGravity;
+        
         internal bool CanJumpAgain;
         internal bool CanDashAgain;
+        
         internal float StoredMomentum;
         internal float TimeInDash;
         internal float DashCooldownTimer;
         
         internal CharacterController CharacterController;
         internal IInputDriver InputDriver;
-        
-        public float maxJumpHeight;
-        public Vector3 jumpStartPosition;
-        public float jumpStartTime;
-
-        public float realBaseSpeed;
-        
-
 
         private void Awake()
         {
             CharacterController = GetComponent<CharacterController>();
             
-            realGravity = movementSettings.gravity;
+            _realGravity = movementSettings.gravity;
             //Calcular as variáveis base
             realBaseSpeed = movementSettings.baseSpeed;
             //
@@ -66,14 +65,13 @@ namespace PEGA.ObjectSystems.MovementSystems
             }
         }
 
-        
-
         #region Movment Calculation
 
-        public void ApplyMovement(float speedMultiplier = 1f)
+        public void ApplyMovement(Vector2 direction, float speedMultiplier = 1f)
         {
-            movement.x = movementDirection.x * realBaseSpeed;
-            movement.z = movementDirection.y * realBaseSpeed;
+            if (InputDriver == null) return;
+            movement.x =  direction.x * realBaseSpeed;
+            movement.z = direction.y * realBaseSpeed;
 
             appliedMovement.x = movement.x * speedMultiplier;
             appliedMovement.z = movement.z * speedMultiplier;
@@ -99,15 +97,15 @@ namespace PEGA.ObjectSystems.MovementSystems
             maxRealJumpHeight += speedBoost;
 
             // 🔹 Cálculo da gravidade e velocidade inicial
-            realGravity = (-2 * maxRealJumpHeight) / Mathf.Pow(timeToApex, 2);
-            initialJumpVelocity = Mathf.Sqrt(2 * -realGravity * maxRealJumpHeight);
+            _realGravity = (-2 * maxRealJumpHeight) / Mathf.Pow(timeToApex, 2);
+            initialJumpVelocity = Mathf.Sqrt(2 * -_realGravity * maxRealJumpHeight);
         }
 
         public void ApplyGravity(bool falling)
         {
             var multiplier = falling ? movementSettings.fallMultiplier : 1f;
             var previousYVelocity = movement.y;
-            movement.y += realGravity * multiplier * Time.deltaTime;
+            movement.y += _realGravity * multiplier * Time.deltaTime;
             appliedMovement.y = falling ? Mathf.Max((previousYVelocity + movement.y) * 0.5f, movementSettings.maxFallVelocity)
                 : previousYVelocity + movement.y;
         }

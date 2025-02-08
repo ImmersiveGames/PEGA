@@ -63,7 +63,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
         protected sealed override void InitializeSubState()
         {
-            SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
+            SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
         }
 
     }

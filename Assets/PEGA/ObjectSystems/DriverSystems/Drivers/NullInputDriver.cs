@@ -1,7 +1,7 @@
 ﻿using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems.Drivers
+namespace PEGA.ObjectSystems.DriverSystems.Drivers
 {
     public class NullInputDriver : IInputDriver
     {

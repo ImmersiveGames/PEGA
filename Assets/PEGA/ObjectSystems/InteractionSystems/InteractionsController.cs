@@ -1,7 +1,8 @@
 ﻿using System;
 using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
-using PEGA.ObjectSystems.MovementSystems.Drivers;
+using PEGA.ObjectSystems.DriverSystems;
+using PEGA.ObjectSystems.DriverSystems.Drivers;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,7 +20,7 @@ namespace PEGA.ObjectSystems.InteractionSystems
         private void Awake()
         {
             _interactionContext = GetComponent<InteractionContext>();
-            _interactionContext.InputDriver = SetObjectDriver(driverType);
+            _interactionContext.InputDriver = InputDriverFactory.CreateDriver(driverType, transform);
             
             _interactionStates = new InteractionFactory(_interactionContext); //Cria a fabric usando este contexto
             _interactionContext.CurrentState = _interactionStates.GetState(StatesNames.InteractIdle); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)

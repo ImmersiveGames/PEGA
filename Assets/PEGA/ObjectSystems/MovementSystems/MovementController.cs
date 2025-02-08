@@ -1,11 +1,8 @@
-﻿using System;
-using ImmersiveGames.DebugSystems;
+﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
-using PEGA.ObjectSystems.MovementSystems.Drivers;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+using PEGA.ObjectSystems.DriverSystems;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
@@ -22,8 +19,9 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             _characterController = GetComponent<CharacterController>();
             _movementContext = GetComponent<MovementContext>();
-
-            _movementContext.InputDriver = SetObjectDriver(driverType);
+            Debug.Log($"Driver: {InputDriverFactory.CreateDriver(driverType, transform)}");
+            
+            _movementContext.InputDriver = InputDriverFactory.CreateDriver(driverType, transform);
             
             _movementStates = new MovementStateFactory(_movementContext); //Cria a fabric usando este contexto
    
@@ -35,13 +33,13 @@ namespace PEGA.ObjectSystems.MovementSystems
             _movementContext.InputDriver.UpdateDriver();
             
             _movementContext.CurrentState.CheckSwitchState();
-            _movementContext.movementDirection = _movementContext.InputDriver.GetMovementDirection();
+            //_movementContext.movementDirection = _movementContext.InputDriver.GetMovementDirection();
             
             _movementContext.CurrentState.UpdateStates();
             
             HandleRotate();
             _characterController.Move(_movementContext.appliedMovement * Time.deltaTime);
-            DebugManager.Log<MovementController>($"Movement Direction: {_movementContext.movementDirection}, Jump: {_movementContext.InputDriver.IsJumpingPress}, Dash: {_movementContext.InputDriver.IsDashPress}");
+            DebugManager.Log<MovementController>($"Movement Direction: {_movementContext.InputDriver.GetMovementDirection()}, Jump: {_movementContext.InputDriver.IsJumpingPress}, Dash: {_movementContext.InputDriver.IsDashPress}");
         }
         private void HandleRotate()
         {
@@ -54,18 +52,6 @@ namespace PEGA.ObjectSystems.MovementSystems
             if (_movementContext.InputDriver.GetMovementDirection() == Vector2.zero) return;
             var targetRotation = Quaternion.LookRotation(positionToLookAt);
             transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, _movementContext.rotationPerFrame * Time.deltaTime);
-        }
-        
-        private IInputDriver SetObjectDriver(DriverType newDriverType)
-        {
-            IInputDriver driver = newDriverType switch
-            {
-                DriverType.Player => new PlayerInputDriver(GetComponent<PlayerInput>()),
-                DriverType.AI => new NullInputDriver(transform),
-                _ => throw new ArgumentOutOfRangeException(nameof(newDriverType), newDriverType, null)
-            };
-            var driverController = new DriverController(driver);
-            return driverController.GetActualDriver();
         }
         
     }

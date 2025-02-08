@@ -28,10 +28,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.isDashing = true;
             _dashTime = _ctx.movementSettings.dashDuration;
             base.EnterState();
-            
-            // 📌 Guarda a direção inicial do Dash
-            _dashDirection = _ctx.movementDirection; // 🔹 Usa a direção do input se estiver se movendo
-            if (_ctx.movementDirection == Vector2.zero)
+            _dashDirection = _ctx.InputDriver.GetMovementDirection();
+            // 🔹 Usa a direção do input se estiver se movendo
+            if (_ctx.InputDriver.GetMovementDirection() == Vector2.zero)
             {
                 var forward = _ctx.transform.forward.normalized * _ctx.movementSettings.idleDashMultiply;
                 _dashDirection = new Vector2(forward.x, forward.z); // 🔹 Se parado, move para frente
@@ -43,10 +42,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            // 📌 Força um movimento inicial se o jogador estiver parado (Idle)
-            if (_ctx.movementDirection == Vector2.zero) _ctx.movementDirection = _dashDirection; // 🔹 Converte para um Vector2
-            
-            _ctx.ApplyMovement(_ctx.movementSettings.dashMultiply);
+            _ctx.ApplyMovement(_dashDirection,_ctx.movementSettings.dashMultiply);
             _ctx.TimeInDash += Time.deltaTime;
             _dashTime -= Time.deltaTime;
 
@@ -88,7 +84,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             }
             else
             {
-                CurrentSuperstate.SwitchSubState(_ctx.movementDirection == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
+                CurrentSuperstate.SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"

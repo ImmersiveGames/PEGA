@@ -5,7 +5,7 @@ using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PEGA.ObjectSystems.MovementSystems.Drivers
+namespace PEGA.ObjectSystems.DriverSystems.Drivers
 {
     public class PlayerInputDriver : IInputDriver
     {

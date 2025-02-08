@@ -48,7 +48,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 return;
             }
             
-            if (_ctx.movementDirection != Vector2.zero)
+            if (_ctx.InputDriver.GetMovementDirection() != Vector2.zero)
             {
                 CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Walk));
             }
