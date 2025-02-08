@@ -17,7 +17,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         }
         protected internal override void EnterState()
         {
-            _animator.SetFloat("Movement", _ctx.movementDirection.magnitude);
+            _animator.SetFloat("Movement", _ctx.InputDriver.GetMovementDirection().magnitude);
             _ctx.isWalking = true;
             base.EnterState();
             //aqui ele aplica a lógica de animação
@@ -25,7 +25,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            _ctx.ApplyMovement();
+            _ctx.ApplyMovement(_ctx.InputDriver.GetMovementDirection());
            CheckSwitchState();//Manter por último
         }
 
@@ -37,11 +37,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (!_ctx.CanDashAgain && !_ctx.ActualDriver.IsDashPress && _ctx.DashCooldownTimer <= 0)
+            if (!_ctx.CanDashAgain && !_ctx.InputDriver.IsDashPress && _ctx.DashCooldownTimer <= 0)
             {
                 _ctx.CanDashAgain = true;
             }
-            if (_ctx.CharacterController.isGrounded && _ctx.ActualDriver.IsDashPress && !_ctx.isDashing && _ctx.CanDashAgain)
+            if (_ctx.CharacterController.isGrounded && _ctx.InputDriver.IsDashPress && !_ctx.isDashing && _ctx.CanDashAgain)
             {
                 Debug.Log("Dashing - Initialize - Do Walking");
                 _ctx.CanDashAgain = false;
@@ -49,7 +49,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Dash));
                 return;
             }
-            if (_ctx.movementDirection == Vector2.zero)
+            if (_ctx.InputDriver.GetMovementDirection() == Vector2.zero)
             {
                 CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Idle));
             }

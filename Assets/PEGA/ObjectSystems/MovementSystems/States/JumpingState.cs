@@ -49,7 +49,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         public override void CheckSwitchState()
         {
-            if (_ctx.movement.y <= 0 || !_ctx.ActualDriver.IsJumpingPress)
+            if (_ctx.movement.y <= 0 || !_ctx.InputDriver.IsJumpingPress)
             {
                 SwitchState(_factory.GetState(StatesNames.Dawn));
             }

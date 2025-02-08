@@ -1,12 +1,12 @@
 ﻿using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems.Drivers
+namespace PEGA.ObjectSystems.DriverSystems.Drivers
 {
-    public class NullMovementDriver : IMovementDriver
+    public class NullInputDriver : IInputDriver
     {
         private readonly Transform _target;
-        public NullMovementDriver(Transform target)
+        public NullInputDriver(Transform target)
         {
             _target = target;
         }

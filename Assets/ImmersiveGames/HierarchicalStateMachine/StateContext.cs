@@ -12,8 +12,6 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public event Action<StatesNames> OnStateEnter;
         public event Action<StatesNames> OnStateExit;
         
-        internal IMovementDriver ActualDriver;
-        
         #region Call Events
 
         public void GlobalNotifyStateEnter(StatesNames newState)

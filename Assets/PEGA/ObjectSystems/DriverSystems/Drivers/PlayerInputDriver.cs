@@ -5,14 +5,14 @@ using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PEGA.ObjectSystems.MovementSystems.Drivers
+namespace PEGA.ObjectSystems.DriverSystems.Drivers
 {
-    public class PlayerMovementDriver : IMovementDriver
+    public class PlayerInputDriver : IInputDriver
     {
         private readonly ActionManager _actionManager;
         private readonly ActionMapManager _actionMapManager;
 
-        public PlayerMovementDriver(PlayerInput playerInput)
+        public PlayerInputDriver(PlayerInput playerInput)
         {
             _actionManager = new ActionManager(playerInput.actions);
             _actionMapManager = new ActionMapManager(playerInput);
@@ -57,7 +57,7 @@ namespace PEGA.ObjectSystems.MovementSystems.Drivers
                 }
             }
 
-            DebugManager.Log<IMovementDriver>($"Action Triggered: {actionName}, Phase: {context.phase}");
+            DebugManager.Log<IInputDriver>($"Action Triggered: {actionName}, Phase: {context.phase}");
         }
 
 
@@ -68,14 +68,14 @@ namespace PEGA.ObjectSystems.MovementSystems.Drivers
 
         public void ExitDriver()
         {
-            DebugManager.Log<IMovementDriver>($"Exiting player movement driver");
+            DebugManager.Log<IInputDriver>($"Exiting player movement driver");
             _actionManager.OnActionTriggered -= HandleActionTriggered;
             _actionMapManager.RestorePreviousActionMap();
         }
 
         public void Reset()
         {
-            DebugManager.Log<IMovementDriver>($"Reset");
+            DebugManager.Log<IInputDriver>($"Reset");
             _actionMapManager.ClearHistory();
             IsJumpingPress = false;
             IsDashPress = false;
