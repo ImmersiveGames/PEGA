@@ -1,17 +1,18 @@
 ﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
+using ImmersiveGames.Utils;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class DashState : BaseState
     {
-        private float _dashTime;
         private readonly AnimatorHandler _animator;
         private Vector3 _startPosition; // 🔹 Posição inicial do dash
         private Vector2 _dashDirection;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
+        private CountdownManager _countdown;
 
         public DashState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
@@ -26,7 +27,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         {
             _animator.SetBool("Dash", true);
             _ctx.isDashing = true;
-            _dashTime = _ctx.movementSettings.dashDuration;
+            _ctx.TimeInDash = 0f;
+            _countdown = new CountdownManager();
+            _countdown.RegisterCountdown(StatesNames.Dash.ToString(),_ctx.movementSettings.dashDuration, CheckSwitchState);
             base.EnterState();
             _dashDirection = _ctx.InputDriver.GetMovementDirection();
             // 🔹 Usa a direção do input se estiver se movendo
@@ -42,13 +45,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
+            _ctx.TimeInDash += Time.deltaTime; //debug only
             _ctx.ApplyMovement(_dashDirection,_ctx.movementSettings.dashMultiply);
-            _ctx.TimeInDash += Time.deltaTime;
-            _dashTime -= Time.deltaTime;
-
-            if (_dashTime < 0) _dashTime = 0;
-
-            CheckSwitchState();
+            _countdown.Update(Time.deltaTime);
+            //CheckSwitchState() // Aqui esta comentado porque o contador vai disparar a saida autoaticamente
         }
 
         public override void ExitState()
@@ -56,9 +56,9 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _animator.SetBool("Dash", false);
             _ctx.isDashing = false;
             // 🔹 Inicia o cooldown ao final do Dash
-            _ctx.DashCooldownTimer = _ctx.movementSettings.dashCooldownTime;
+            _ctx.DashingCooldown = true;
 
-            DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {_ctx.DashCooldownTimer:F2}s");
+            DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {_ctx.movementSettings.dashDuration:F2}s");
 
 
             //######################
@@ -70,14 +70,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             DebugManager.Log<DashState>($"Dash Finalizado -> Tempo: {_ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
             //######################
             
-            _ctx.TimeInDash = 0f;
-            _dashTime = 0f;
             base.ExitState();
         }
 
         public override void CheckSwitchState()
         {
-            if (_ctx.InputDriver.IsDashPress && !(_dashTime <= 0)) return;
+            Debug.Log("Dash Testando");
             if (!_ctx.CharacterController.isGrounded)
             {
                 SwitchState(_factory.GetState(StatesNames.Fall));

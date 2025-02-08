@@ -1,9 +1,8 @@
-﻿using System;
+﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
-using ImmersiveGames.InputSystems;
+using ImmersiveGames.Utils;
 using PEGA.ObjectSystems.MovementSystems.Interfaces;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace PEGA.ObjectSystems.MovementSystems
 {
@@ -31,15 +30,16 @@ namespace PEGA.ObjectSystems.MovementSystems
         [SerializeField]internal float initialJumpVelocity;
         [SerializeField]internal Vector3 jumpStartPosition;
         [SerializeField]internal float jumpStartTime;
+        internal float TimeInDash;//Debug only
 
         private float _realGravity;
+        private CountdownManager _timers;
         
         internal bool CanJumpAgain;
         internal bool CanDashAgain;
         
         internal float StoredMomentum;
-        internal float TimeInDash;
-        internal float DashCooldownTimer;
+        internal bool DashingCooldown;
         
         internal CharacterController CharacterController;
         internal IInputDriver InputDriver;
@@ -47,6 +47,13 @@ namespace PEGA.ObjectSystems.MovementSystems
         private void Awake()
         {
             CharacterController = GetComponent<CharacterController>();
+            DashingCooldown = false;
+            _timers = new CountdownManager();
+            _timers.RegisterAutoCountdown("dash_cooldown", movementSettings.dashCooldownTime, () => DashingCooldown, () =>
+            {
+                DebugManager.Log<MovementContext>("Dash pronta para uso!");
+                DashingCooldown = false;
+            });
             
             _realGravity = movementSettings.gravity;
             //Calcular as variáveis base
@@ -59,10 +66,7 @@ namespace PEGA.ObjectSystems.MovementSystems
         private void Update()
         {
             // 🔹 Reduz o cooldown do Dash ao longo do tempo
-            if (DashCooldownTimer > 0)
-            {
-                DashCooldownTimer -= Time.deltaTime;
-            }
+            _timers.Update(Time.deltaTime);
         }
 
         #region Movment Calculation

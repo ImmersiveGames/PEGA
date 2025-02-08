@@ -24,9 +24,8 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.jumpStartPosition = _ctx.transform.position;
             _ctx.maxJumpHeight = _ctx.jumpStartPosition.y;
             _ctx.jumpStartTime = Time.time;
-            
-            
             DebugManager.Log<JumpingState>($"🏃 Entering JumpState | TimeInDash={_ctx.TimeInDash} | Velocity={_ctx.StoredMomentum}");
+            //
             
             _animator.SetBool("Jump", true);
             _ctx.isJumping = true;
