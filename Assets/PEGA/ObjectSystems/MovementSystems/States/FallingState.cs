@@ -26,6 +26,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void UpdateState()
         {
             _ctx.ApplyGravity(falling: true);
+            base.UpdateState();
         }
 
         public override void ExitState()
@@ -34,7 +35,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             base.ExitState();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             if (_ctx.transform.position.y < _ctx.fallMaxHeight)
             {

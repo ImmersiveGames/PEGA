@@ -48,7 +48,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.TimeInDash += Time.deltaTime; //debug only
             _ctx.ApplyMovement(_dashDirection,_ctx.movementSettings.dashMultiply);
             _countdown.Update(Time.deltaTime);
-            //CheckSwitchState() // Aqui esta comentado porque o contador vai disparar a saida autoaticamente
+            //base.UpdateState() // Aqui esta comentado porque o contador vai disparar a saida automaticamente
         }
 
         public override void ExitState()
@@ -73,7 +73,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             base.ExitState();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             Debug.Log("Dash Testando");
             if (!_ctx.CharacterController.isGrounded)

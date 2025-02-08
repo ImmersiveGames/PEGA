@@ -32,7 +32,6 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             _movementContext.InputDriver.UpdateDriver();
             
-            _movementContext.CurrentState.CheckSwitchState();
             //_movementContext.movementDirection = _movementContext.InputDriver.GetMovementDirection();
             
             _movementContext.CurrentState.UpdateStates();

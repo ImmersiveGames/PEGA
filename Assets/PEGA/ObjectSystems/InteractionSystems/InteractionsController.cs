@@ -30,9 +30,6 @@ namespace PEGA.ObjectSystems.InteractionSystems
         private void Update()
         {
             _interactionContext.InputDriver.UpdateDriver();
-            _interactionContext.CurrentState.CheckSwitchState();
-            
-            //_movementContext.movementDirection = Context.ActualDriver.GetMovementDirection();
             
             _interactionContext.CurrentState.UpdateStates();
         }

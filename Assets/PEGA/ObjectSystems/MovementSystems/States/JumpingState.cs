@@ -37,6 +37,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void UpdateState()
         {
             _ctx.ApplyGravity(falling:false);
+            base.UpdateState();
         }
 
         public override void ExitState()
@@ -46,7 +47,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             base.ExitState();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             if (_ctx.movement.y <= 0 || !_ctx.InputDriver.IsJumpingPress)
             {

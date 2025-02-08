@@ -14,7 +14,7 @@ namespace PEGA.ObjectSystems.InteractionSystems.States
 
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
 
         }

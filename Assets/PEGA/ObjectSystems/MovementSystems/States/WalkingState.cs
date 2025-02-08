@@ -26,7 +26,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void UpdateState()
         {
             _ctx.ApplyMovement(_ctx.InputDriver.GetMovementDirection());
-           CheckSwitchState();//Manter por último
+            base.UpdateState();//Manter por último
         }
 
         public override void ExitState()
@@ -35,7 +35,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.isWalking = false;
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             if (!_ctx.CanDashAgain && !_ctx.InputDriver.IsDashPress && !_ctx.DashingCooldown)
             {

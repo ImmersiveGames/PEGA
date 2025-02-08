@@ -42,8 +42,11 @@ namespace ImmersiveGames.HierarchicalStateMachine
             OnStateEntered?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Enter");
         }
-        
-        protected abstract void UpdateState();
+
+        protected virtual void UpdateState()
+        {
+            CheckSwitchState(); 
+        }
 
         public virtual void ExitState()
         {
@@ -53,7 +56,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             DebugManager.Log<BaseState>($"[{StateName}] Exit");
         }
         //Cada estado cuida de como vai transicionar entre seus irmãos hierárquicos não sub estados.
-        public abstract void CheckSwitchState();
+        protected abstract void CheckSwitchState();
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
         protected abstract void InitializeSubState();
         

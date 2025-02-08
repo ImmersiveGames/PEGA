@@ -28,8 +28,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override void UpdateState()
         {
-            //Debug.Log($"Subindo; {Ctx.movement.y}");
-            //Debug.Log($"Update - Grounded - no chão: {Ctx.CharacterController.isGrounded}");
+            base.UpdateState();
         }
 
         public override void ExitState()
@@ -38,7 +37,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             base.ExitState();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             //Verifica se ja soltou o botão para liberar o pulo
             if (!_ctx.CanJumpAgain && !_ctx.InputDriver.IsJumpingPress)

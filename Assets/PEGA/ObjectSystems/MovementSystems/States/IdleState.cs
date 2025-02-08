@@ -30,10 +30,10 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override void UpdateState()
         {
             DebugManager.Log<IdleState>($"Update - Idle");
-            CheckSwitchState(); //Subs Precisam atualizar aqui. E sempre no fim.
+            base.UpdateState();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             if (!_ctx.CanDashAgain && !_ctx.InputDriver.IsDashPress && !_ctx.DashingCooldown)
             {

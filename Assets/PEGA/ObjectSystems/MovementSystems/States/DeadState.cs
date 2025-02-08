@@ -18,10 +18,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         public override StatesNames StateName => StatesNames.Dead;
         protected override void UpdateState()
         {
+            base.UpdateState();
             //throw new System.NotImplementedException();
         }
 
-        public override void CheckSwitchState()
+        protected override void CheckSwitchState()
         {
             //throw new System.NotImplementedException();
         }
