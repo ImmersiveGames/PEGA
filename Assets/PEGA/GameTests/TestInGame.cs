@@ -24,7 +24,7 @@ namespace PEGA.GameTests
             
             //States
             DebugManager.SetScriptDebugLevel<MovementContext>(DebugManager.DebugLevels.None);
-            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.None);
+            DebugManager.SetScriptDebugLevel<BaseState>(DebugManager.DebugLevels.All);
             DebugManager.SetScriptDebugLevel<JumpingState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<GroundedState>(DebugManager.DebugLevels.None);
             DebugManager.SetScriptDebugLevel<JumpingDownState>(DebugManager.DebugLevels.None);

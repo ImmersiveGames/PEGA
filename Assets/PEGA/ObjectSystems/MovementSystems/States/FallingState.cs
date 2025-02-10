@@ -4,14 +4,13 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class FallingState : BaseState
     {
-        public override StatesNames StateName => StatesNames.Fall;
+        protected override StatesNames StateName => StatesNames.Fall;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
 
         public FallingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext,
             factory)
         {
-            IsRootState = true;
             _ctx = currentMovementContext;
             _factory = factory;
         }

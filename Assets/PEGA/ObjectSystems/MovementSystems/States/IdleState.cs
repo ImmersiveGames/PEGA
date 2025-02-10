@@ -6,7 +6,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class IdleState: BaseState
     {
-        public override StatesNames StateName => StatesNames.Idle;
+        protected override StatesNames StateName => StatesNames.Idle;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;

@@ -5,7 +5,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class WalkingState : BaseState
     {
-        public override StatesNames StateName => StatesNames.Walk;
+        protected override StatesNames StateName => StatesNames.Walk;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;

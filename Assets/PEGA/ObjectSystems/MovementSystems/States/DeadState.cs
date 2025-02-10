@@ -6,7 +6,6 @@ namespace PEGA.ObjectSystems.MovementSystems.States
     {
         public DeadState(StateContext currentMovementContext, HsmFactory factory) : base(currentMovementContext, factory)
         {
-            IsRootState = true;
         }
 
         protected internal override void EnterState()
@@ -15,7 +14,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             Ctx.GlobalNotifyStateEnter(StatesNames.Dead);
         }
 
-        public override StatesNames StateName => StatesNames.Dead;
+        protected override StatesNames StateName => StatesNames.Dead;
         protected override void UpdateState()
         {
             base.UpdateState();

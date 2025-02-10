@@ -21,7 +21,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _factory = factory;
         }
 
-        public override StatesNames StateName => StatesNames.Dash;
+        protected override StatesNames StateName => StatesNames.Dash;
 
         protected internal override void EnterState()
         {

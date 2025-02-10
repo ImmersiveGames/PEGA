@@ -6,12 +6,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class JumpingDownState : BaseState
     {
-        public override StatesNames StateName => StatesNames.Dawn;
+        protected override StatesNames StateName => StatesNames.Dawn;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         public JumpingDownState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
-            IsRootState = true;
             _ctx = currentMovementContext;
             _factory = factory;
         }

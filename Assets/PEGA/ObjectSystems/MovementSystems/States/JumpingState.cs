@@ -6,13 +6,12 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class JumpingState : BaseState
     {
-        public override StatesNames StateName => StatesNames.Jump;
+        protected override StatesNames StateName => StatesNames.Jump;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
         public JumpingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
         {
-            IsRootState = true;
             _ctx = currentMovementContext;
             _factory = factory;
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();

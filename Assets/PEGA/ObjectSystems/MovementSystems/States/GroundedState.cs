@@ -5,14 +5,13 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 {
     public class GroundedState : BaseState
     {
-        public override StatesNames StateName => StatesNames.Grounded;
+        protected override StatesNames StateName => StatesNames.Grounded;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
 
         public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(
             currentMovementContext, factory)
         {
-            IsRootState = true;
             _ctx = currentMovementContext;
             _factory = factory;
         }
