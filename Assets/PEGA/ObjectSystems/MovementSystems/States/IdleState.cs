@@ -10,27 +10,27 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
-        public IdleState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext,factory)
+        public IdleState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();
             _ctx = currentMovementContext;
             _factory = factory;
         }
 
-        protected internal override void EnterState()
+        protected internal override void OnEnter()
         {
             _animator.SetFloat("Movement", 0);
             _animator.SetFloat("Idle", 0);
             _ctx.isWalking = false;
             _ctx.appliedMovement.x = 0;
             _ctx.appliedMovement.z = 0;
-            base.EnterState();
+            base.OnEnter();
         }
 
-        protected override void UpdateState()
+        protected override void Tick()
         {
             DebugManager.Log<IdleState>($"Update - Idle");
-            base.UpdateState();
+            base.Tick();
         }
 
         protected override void CheckSwitchState()
@@ -44,18 +44,18 @@ namespace PEGA.ObjectSystems.MovementSystems.States
                 Debug.Log("Dashing - Initialize - Do Idle");
                 _ctx.CanDashAgain = false;
                 //Aqui acho que é importante ele manda o Estado Acima, mudar.
-                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Dash));
+                InMySuperState.SwitchSubState(_factory.GetState(StatesNames.Dash));
                 return;
             }
             
             if (_ctx.InputDriver.GetMovementDirection() != Vector2.zero)
             {
-                CurrentSuperstate.SwitchSubState(_factory.GetState(StatesNames.Walk));
+                InMySuperState.SwitchSubState(_factory.GetState(StatesNames.Walk));
             }
         } 
         
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected sealed override void InitializeSubState()
+        protected sealed override void InitializeSubStatesOnEnter()
         {
             //Nenhum Estado é inicializado junto a este estado
         }

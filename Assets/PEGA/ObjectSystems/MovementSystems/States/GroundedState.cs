@@ -9,31 +9,25 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
 
-        public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(
-            currentMovementContext, factory)
+        public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _ctx = currentMovementContext;
             _factory = factory;
         }
 
-        protected internal override void EnterState()
+        protected internal override void OnEnter()
         {
             _ctx.isGrounded = true;
-            base.EnterState();
+            base.OnEnter();
 
             _ctx.movement.y = _ctx.movementSettings.gravityGround;
             _ctx.appliedMovement.y = _ctx.movementSettings.gravityGround;
         }
 
-        protected override void UpdateState()
-        {
-            base.UpdateState();
-        }
-
-        public override void ExitState()
+        protected override void OnExit()
         {
             _ctx.isGrounded = false;
-            base.ExitState();
+            base.OnExit();
         }
 
         protected override void CheckSwitchState()
@@ -59,7 +53,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         }
 
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected sealed override void InitializeSubState()
+        protected sealed override void InitializeSubStatesOnEnter()
         {
             SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
         }

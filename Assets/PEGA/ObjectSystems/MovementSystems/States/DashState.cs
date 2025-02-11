@@ -14,7 +14,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly MovementStateFactory _factory;
         private CountdownManager _countdown;
 
-        public DashState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
+        public DashState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();
             _ctx = currentMovementContext;
@@ -23,14 +23,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
 
         protected override StatesNames StateName => StatesNames.Dash;
 
-        protected internal override void EnterState()
+        protected internal override void OnEnter()
         {
             _animator.SetBool("Dash", true);
             _ctx.isDashing = true;
             _ctx.TimeInDash = 0f;
             _countdown = new CountdownManager();
             _countdown.RegisterCountdown(StatesNames.Dash.ToString(),_ctx.movementSettings.dashDuration, CheckSwitchState);
-            base.EnterState();
+            base.OnEnter();
             _dashDirection = _ctx.InputDriver.GetMovementDirection();
             // 🔹 Usa a direção do input se estiver se movendo
             if (_ctx.InputDriver.GetMovementDirection() == Vector2.zero)
@@ -43,7 +43,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _startPosition = _ctx.transform.position; // 🔹 Armazena a posição inicial do dash
         }
 
-        protected override void UpdateState()
+        protected override void Tick()
         {
             _ctx.TimeInDash += Time.deltaTime; //debug only
             _ctx.ApplyMovement(_dashDirection,_ctx.movementSettings.dashMultiply);
@@ -51,7 +51,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             //base.UpdateState() // Aqui esta comentado porque o contador vai disparar a saida automaticamente
         }
 
-        public override void ExitState()
+        protected override void OnExit()
         {
             _animator.SetBool("Dash", false);
             _ctx.isDashing = false;
@@ -59,8 +59,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.DashingCooldown = true;
 
             DebugManager.Log<DashState>($"Dash Finalizado -> Cooldown Iniciado: {_ctx.movementSettings.dashDuration:F2}s");
-
-
+            
             //######################
             var endPosition = _ctx.transform.position; // 🔹 Captura a posição final
             var distanceTraveled = Vector3.Distance(_startPosition, endPosition); // 🔹 Calcula a distância percorrida
@@ -70,7 +69,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             DebugManager.Log<DashState>($"Dash Finalizado -> Tempo: {_ctx.TimeInDash:F2}s, Distância: {distanceTraveled:F2}m, Momentum Final: {finalMomentum}");
             //######################
             
-            base.ExitState();
+            base.OnExit();
         }
 
         protected override void CheckSwitchState()
@@ -82,11 +81,11 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             }
             else
             {
-                CurrentSuperstate.SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
+                InMySuperState.SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
             }
         }
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected override void InitializeSubState()
+        protected override void InitializeSubStatesOnEnter()
         {
             //Nenhum Estado é inicializado junto a este estado
         }

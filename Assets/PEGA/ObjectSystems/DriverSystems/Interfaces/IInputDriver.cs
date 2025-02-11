@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace PEGA.ObjectSystems.MovementSystems.Interfaces
+namespace PEGA.ObjectSystems.DriverSystems.Interfaces
 {
     public interface IInputDriver
     {

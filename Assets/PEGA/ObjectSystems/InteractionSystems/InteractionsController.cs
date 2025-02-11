@@ -3,7 +3,7 @@ using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.DriverSystems;
 using PEGA.ObjectSystems.DriverSystems.Drivers;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+using PEGA.ObjectSystems.DriverSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,7 +24,7 @@ namespace PEGA.ObjectSystems.InteractionSystems
             
             _interactionStates = new InteractionFactory(_interactionContext); //Cria a fabric usando este contexto
             _interactionContext.CurrentState = _interactionStates.GetState(StatesNames.InteractIdle); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
-            _interactionContext.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
+            _interactionContext.CurrentState.OnEnter(); //Inicia o Grounded para iniciar o jogo em um estado.
             
         }
         private void Update()

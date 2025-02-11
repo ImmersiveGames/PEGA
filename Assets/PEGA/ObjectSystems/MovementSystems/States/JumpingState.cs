@@ -10,14 +10,14 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
         private readonly AnimatorHandler _animator;
-        public JumpingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
+        public JumpingState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _ctx = currentMovementContext;
             _factory = factory;
             _animator = currentMovementContext.GetComponent<AnimatorHandler>();
         }
 
-        protected internal override void EnterState()
+        protected internal override void OnEnter()
         {
             // 📌 Armazena posição inicial e tempo do pulo no Contexto
             _ctx.jumpStartPosition = _ctx.transform.position;
@@ -30,20 +30,20 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             _ctx.isJumping = true;
             _ctx.CalculateJumpVariables();
             HandleJump();
-            base.EnterState();
+            base.OnEnter();
         }
 
-        protected override void UpdateState()
+        protected override void Tick()
         {
             _ctx.ApplyGravity(falling:false);
-            base.UpdateState();
+            base.Tick();
         }
 
-        public override void ExitState()
+        protected override void OnExit()
         {
             _ctx.maxJumpHeight = _ctx.transform.position.y;
             _animator.SetBool("Jump", false);
-            base.ExitState();
+            base.OnExit();
         }
 
         protected override void CheckSwitchState()
@@ -55,7 +55,7 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         }
 
         //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected sealed override void InitializeSubState()
+        protected sealed override void InitializeSubStatesOnEnter()
         {
             //Nenhum Estado é inicializado junto a este estado
         }

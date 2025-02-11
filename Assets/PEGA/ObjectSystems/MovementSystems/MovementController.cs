@@ -26,13 +26,11 @@ namespace PEGA.ObjectSystems.MovementSystems
             _movementStates = new MovementStateFactory(_movementContext); //Cria a fabric usando este contexto
    
             _movementContext.CurrentState = _movementStates.GetState(StatesNames.Fall); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
-            _movementContext.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
+            _movementContext.CurrentState.OnEnter(); //Inicia o Grounded para iniciar o jogo em um estado.
         }
         private void Update()
         {
             _movementContext.InputDriver.UpdateDriver();
-            
-            //_movementContext.movementDirection = _movementContext.InputDriver.GetMovementDirection();
             
             _movementContext.CurrentState.UpdateStates();
             

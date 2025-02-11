@@ -1,7 +1,7 @@
 ﻿using System;
 using ImmersiveGames.InputSystems;
 using PEGA.ObjectSystems.DriverSystems.Drivers;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+using PEGA.ObjectSystems.DriverSystems.Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

@@ -9,50 +9,35 @@ namespace ImmersiveGames.HierarchicalStateMachine
         public event Action<StatesNames> OnStateExited;
         
         protected readonly IStateContext Ctx;
-        protected readonly HsmFactory Factory;
-        protected BaseState CurrentSuperstate;
+        protected BaseState InMySuperState;
         private BaseState _currentSubState;
 
         protected abstract StatesNames StateName { get; }
 
-        protected BaseState(IStateContext currentMovementContext, HsmFactory factory)
+        protected BaseState(IStateContext currentMovementContext)
         {
             Ctx = currentMovementContext;
-            Factory = factory;
         }
 
         public void UpdateStates()
         {
-            UpdateState();
+            Tick();
             _currentSubState?.UpdateStates();
         }
-
-        public void EnterStates()
+        protected internal virtual void OnEnter()
         {
-            EnterState();
-            _currentSubState?.EnterStates();
-        }
-
-        public void ExitStates()
-        {
-            ExitState();
-            _currentSubState?.ExitStates();
-        }
-
-        protected internal virtual void EnterState()
-        {
-            InitializeSubState();
+            InitializeSubStatesOnEnter();
             Ctx.GlobalNotifyStateEnter(StateName);
             OnStateEntered?.Invoke(StateName);
             DebugManager.Log<BaseState>($"[{StateName}] Enter");
         }
 
-        protected virtual void UpdateState()
+        protected virtual void Tick()
         {
             CheckSwitchState(); 
         }
 
-        public virtual void ExitState()
+        protected virtual void OnExit()
         {
             Ctx.GlobalNotifyStateExit(StateName);
             OnStateExited?.Invoke(StateName);
@@ -64,7 +49,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
         protected abstract void CheckSwitchState();
         
         // Inicializa qual sub estado deve ser ativado ao entrar nesse estado
-        protected abstract void InitializeSubState();
+        protected abstract void InitializeSubStatesOnEnter();
         
         /// <summary>
         /// Troca de estado de maneira segura, sem depender de IsRootState
@@ -74,29 +59,29 @@ namespace ImmersiveGames.HierarchicalStateMachine
             if (newState == this) return; // 🔹 Evita trocas desnecessárias
 
             // 🔹 Sai do subestado atual antes de sair do estado principal
-            _currentSubState?.ExitState();
+            _currentSubState?.OnExit();
 
             // 🔹 Sai do estado atual
-            ExitState();
+            OnExit();
 
             // 🔹 Entra no novo estado
-            newState.EnterState();
+            newState.OnEnter();
 
             // 🔹 Se não houver um superestado, significa que este é o estado raiz
-            if (CurrentSuperstate == null)
+            if (InMySuperState == null)
             {
                 Ctx.CurrentState = newState; // 🔹 Atualiza o contexto com o novo estado
             }
             else
             {
                 // 🔹 Se for um subestado, troca dentro do superestado
-                CurrentSuperstate.SwitchSubState(newState);
+                InMySuperState.SwitchSubState(newState);
             }
         }
 
         private void SetSuperState(BaseState newSuperState)
         {
-            CurrentSuperstate = newSuperState;
+            InMySuperState = newSuperState;
         }
 
         /// <summary>
@@ -107,13 +92,13 @@ namespace ImmersiveGames.HierarchicalStateMachine
             if (_currentSubState == newSubState) return; // 🔹 Evita reinicializações desnecessárias
 
             // 🔹 Sai do subestado atual antes de trocar
-            _currentSubState?.ExitState();
+            _currentSubState?.OnExit();
 
             // 🔹 Atualiza o subestado e o ativa
             _currentSubState = newSubState;
-            _currentSubState.EnterState();
+            _currentSubState.OnEnter();
 
-            // 🔹 Define o superestado do novo subestado
+            // 🔹 Define como o próprio superestado do novo subestado
             newSubState.SetSuperState(this);
         }
 

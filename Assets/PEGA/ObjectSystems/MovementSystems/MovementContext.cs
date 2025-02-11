@@ -1,7 +1,7 @@
 ﻿using ImmersiveGames.DebugSystems;
 using ImmersiveGames.HierarchicalStateMachine;
 using ImmersiveGames.Utils;
-using PEGA.ObjectSystems.MovementSystems.Interfaces;
+using PEGA.ObjectSystems.DriverSystems.Interfaces;
 using UnityEngine;
 
 namespace PEGA.ObjectSystems.MovementSystems
