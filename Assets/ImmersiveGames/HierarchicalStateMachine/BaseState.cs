@@ -6,24 +6,39 @@ using ImmersiveGames.FiniteStateMachine;
 
 namespace ImmersiveGames.HierarchicalStateMachine
 {
-    public abstract class BaseState: IHierarchicalState
+    public abstract class BaseState : IHierarchicalState
     {
+        #region Events and Fields
+
         public event Action<StatesNames> OnStateEntered;
         public event Action<StatesNames> OnStateExited;
-        
-        private readonly List<StateTransition> _stateTransitions = new(); // Transições entre estados principais
-        private readonly List<StateTransition> _subStateTransitions = new(); // Transições entre sobestados
 
-        protected readonly IStateContext Ctx;
+        private readonly List<StateTransition> _stateTransitions = new();
+        private readonly List<StateTransition> _subStateTransitions = new();
+        
         private IHierarchicalState _currentSuperstate;
         private IHierarchicalState _currentSubState;
+        
+        protected readonly IStateContext Ctx;
+
+        #endregion
+
+        #region Abstract Properties
 
         protected abstract StatesNames StateName { get; }
+
+        #endregion
+
+        #region Constructor
 
         protected BaseState(IStateContext currentMovementContext)
         {
             Ctx = currentMovementContext;
         }
+
+        #endregion
+
+        #region Public Interface
 
         public void UpdateStates()
         {
@@ -33,96 +48,22 @@ namespace ImmersiveGames.HierarchicalStateMachine
 
         public virtual void OnEnter()
         {
-            SetupTransitions(); // 🔹 Chama o método de transições antes de entrar no estado
-            InitializeSubState(); // 🔹 Garante que um subestado é ativado imediatamente
-            Ctx.GlobalNotifyStateEnter(StateName);
-            OnStateEntered?.Invoke(StateName);
+            SetupTransitions();
+            InitializeSubState();
+            NotifyStateEntry();
             DebugManager.Log<BaseState>($"[{StateName}] Enter");
         }
 
         public virtual void Tick()
         {
-            CheckSwitchState(); // 🔹 Agora só verifica mudanças dentro do mesmo nível
+            CheckSwitchState();
         }
 
         public virtual void OnExit()
         {
-            Ctx.GlobalNotifyStateExit(StateName);
-            OnStateExited?.Invoke(StateName);
-            UnsubscribeEvents();
+            NotifyStateExit();
+            CleanupResources();
             DebugManager.Log<BaseState>($"[{StateName}] Exit");
-        }
-
-        #region Transitions
-        /// <summary>
-        /// Método opcional para configurar transições (substituído nos estados concretos)
-        /// </summary>
-        protected virtual void SetupTransitions() { } // 🔹 Método vazio por padrão
-
-        /// <summary>
-        /// Adiciona uma transição entre estados principais.
-        /// </summary>
-        protected void AddTransition(IState toState, Func<bool> condition)
-        {
-            _stateTransitions.Add(new StateTransition(toState, condition));
-        }
-
-        /// <summary>
-        /// Adiciona uma transição entre sobestados.
-        /// </summary>
-        protected void AddSubStateTransition(IState toSubState, Func<bool> condition)
-        {
-            _subStateTransitions.Add(new StateTransition(toSubState, condition));
-        }
-        #endregion
-
-        /// <summary>
-        /// Verifica se há uma transição válida dentro do mesmo nível hierárquico.
-        /// </summary>
-        private void CheckSwitchState()
-        {
-            foreach (var transition in _stateTransitions.Where(transition => transition.Condition()))
-            {
-                SwitchState(transition.To);
-                return;
-            }
-
-            // 🔹 Só verifica transições de subestado dentro do mesmo nível, sem chamar o superestado
-            foreach (var transition in _subStateTransitions.Where(transition => transition.Condition()))
-            {
-                SwitchSubState(transition.To);
-                return;
-            }
-        }
-
-        /// <summary>
-        /// Ativa imediatamente o subestado inicial ao entrar no estado pai.
-        /// </summary>
-        private void InitializeSubState()
-        {
-            foreach (var transition in _subStateTransitions.Where(transition => transition.Condition()))
-            {
-                SwitchSubState(transition.To);
-                return;
-            }
-        }
-
-        private void SwitchState(IState newState)
-        {
-            if (newState == this) return;
-
-            _currentSubState?.OnExit();
-            OnExit();
-            newState.OnEnter();
-
-            if (_currentSuperstate == null)
-            {
-                Ctx.CurrentState = (IHierarchicalState)newState;
-            }
-            else
-            {
-                _currentSuperstate.SwitchSubState(newState);
-            }
         }
 
         public void SetSuperState(IHierarchicalState newSuperState)
@@ -140,10 +81,110 @@ namespace ImmersiveGames.HierarchicalStateMachine
             _currentSubState.SetSuperState(this);
         }
 
-        private void UnsubscribeEvents()
+        #endregion
+
+        #region State Transition Logic
+
+        private void CheckSwitchState()
+        {
+            CheckMainStateTransitions();
+            CheckSubStateTransitions();
+        }
+
+        private void CheckMainStateTransitions()
+        {
+            foreach (var transition in _stateTransitions)
+            {
+                if (transition.Condition())
+                {
+                    SwitchState(transition.To);
+                    return;
+                }
+            }
+        }
+
+        private void CheckSubStateTransitions()
+        {
+            foreach (var transition in _subStateTransitions)
+            {
+                if (transition.Condition())
+                {
+                    SwitchSubState(transition.To);
+                    return;
+                }
+            }
+        }
+
+        private void SwitchState(IState newState)
+        {
+            if (newState == this) return;
+
+            _currentSubState?.OnExit();
+            OnExit();
+            newState.OnEnter();
+
+            UpdateContextState(newState);
+        }
+
+        private void UpdateContextState(IState newState)
+        {
+            if (_currentSuperstate == null)
+            {
+                Ctx.CurrentState = (IHierarchicalState)newState;
+            }
+            else
+            {
+                _currentSuperstate.SwitchSubState(newState);
+            }
+        }
+
+        #endregion
+
+        #region Transitions Configuration
+
+        protected virtual void SetupTransitions() { }
+
+        protected void AddTransition(IState toState, Func<bool> condition)
+        {
+            _stateTransitions.Add(new StateTransition(toState, condition));
+        }
+
+        protected void AddSubStateTransition(IState toSubState, Func<bool> condition)
+        {
+            _subStateTransitions.Add(new StateTransition(toSubState, condition));
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private void InitializeSubState()
+        {
+            var initialTransition = _subStateTransitions.FirstOrDefault(t => t.Condition());
+            if (initialTransition != null)
+            {
+                SwitchSubState(initialTransition.To);
+            }
+        }
+
+        private void NotifyStateEntry()
+        {
+            Ctx.GlobalNotifyStateEnter(StateName);
+            OnStateEntered?.Invoke(StateName);
+        }
+
+        private void NotifyStateExit()
+        {
+            Ctx.GlobalNotifyStateExit(StateName);
+            OnStateExited?.Invoke(StateName);
+        }
+
+        private void CleanupResources()
         {
             OnStateEntered = null;
             OnStateExited = null;
         }
+
+        #endregion
     }
 }

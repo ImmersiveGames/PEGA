@@ -87,7 +87,8 @@ namespace PEGA.ObjectSystems.MovementSystems
             // 🔹 Altura base do pulo (sem modificações)
             var maxRealJumpHeight = movementSettings.maxJumpHeight;
             
-            var currentSpeed = CharacterController.velocity.magnitude;
+            Debug.Log($"SPEED: {CharacterController.velocity.magnitude}");
+            var currentSpeed = StoredMomentum;
 
             // 🔹 Calcula a diferença entre a velocidade atual e a base
             var speedDifference = Mathf.Max(currentSpeed - realBaseSpeed, 0f);
