@@ -9,28 +9,28 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         protected override StatesNames StateName => StatesNames.Dawn;
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
-        public JumpingDownState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext, factory)
+        public JumpingDownState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _ctx = currentMovementContext;
             _factory = factory;
         }
 
-        protected internal override void EnterState()
+        public override void OnEnter()
         {
             _ctx.CalculateJumpVariables();
-            base.EnterState();
+            base.OnEnter();
         }
 
-        protected override void UpdateState()
+        public override void Tick()
         {
             _ctx.ApplyGravity(falling:true);
-            base.UpdateState();
+            base.Tick();
         }
 
-        public override void ExitState()
+        public override void OnExit()
         {
             _ctx.isJumping = false;
-            base.ExitState();
+            base.OnExit();
 
             //######## DEBUG
             var jumpDuration = Time.time - _ctx.jumpStartTime;
@@ -42,23 +42,13 @@ namespace PEGA.ObjectSystems.MovementSystems.States
             DebugManager.Log<JumpingDownState>($"🛬 Jump Ended | Max Height: {_ctx.maxJumpHeight:F2}m | Distance: {horizontalDistance:F2}m | Time: {jumpDuration:F2}s");
             //######## 
         }
+        protected override void SetupTransitions()
+        {
+            // 🔹 Definição das transições de estado principal (muda o DashState inteiro)
+            AddTransition(_factory.GetState(StatesNames.Dead), () => _ctx.transform.position.y < _ctx.fallMaxHeight);
+            
+            AddTransition(_factory.GetState(StatesNames.Grounded), () => _ctx.CharacterController.isGrounded);
 
-        protected override void CheckSwitchState()
-        {
-            if (_ctx.transform.position.y < _ctx.fallMaxHeight)
-            {
-                SwitchState(Factory.GetState(StatesNames.Dead));
-                return;
-            }
-            if (_ctx.CharacterController.isGrounded)
-            {
-                SwitchState(_factory.GetState(StatesNames.Grounded));
-            }
-        }
-        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected sealed override void InitializeSubState()
-        {
-            //Nenhum Estado é inicializado junto a este estado
         }
     }
 }

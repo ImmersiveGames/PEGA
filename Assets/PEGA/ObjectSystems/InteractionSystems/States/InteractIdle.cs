@@ -4,24 +4,18 @@ namespace PEGA.ObjectSystems.InteractionSystems.States
 {
     public class InteractIdle : BaseState
     {
-        public InteractIdle(StateContext currentMovementContext, HsmFactory factory) : base(currentMovementContext, factory)
+        private readonly HsmFactory _factory;
+
+        public InteractIdle(StateContext currentMovementContext, HsmFactory factory) : base(currentMovementContext)
         {
+            _factory = factory;
         }
 
         protected override StatesNames StateName=> StatesNames.InteractIdle;
-        protected override void UpdateState()
+
+        public override void Tick()
         {
 
-        }
-
-        protected override void CheckSwitchState()
-        {
-
-        }
-
-        protected override void InitializeSubState()
-        {
- 
         }
     }
 }

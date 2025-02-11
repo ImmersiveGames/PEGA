@@ -24,7 +24,7 @@ namespace ImmersiveGames.HierarchicalStateMachine
             OnStateExit?.Invoke(newState);
         }
 
-        public BaseState CurrentState { get; set; }
+        public IHierarchicalState CurrentState { get; set; }
 
         #endregion
     }

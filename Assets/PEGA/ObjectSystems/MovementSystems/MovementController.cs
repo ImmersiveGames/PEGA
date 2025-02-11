@@ -19,14 +19,13 @@ namespace PEGA.ObjectSystems.MovementSystems
         {
             _characterController = GetComponent<CharacterController>();
             _movementContext = GetComponent<MovementContext>();
-            Debug.Log($"Driver: {InputDriverFactory.CreateDriver(driverType, transform)}");
             
             _movementContext.InputDriver = InputDriverFactory.CreateDriver(driverType, transform);
             
             _movementStates = new MovementStateFactory(_movementContext); //Cria a fabric usando este contexto
    
             _movementContext.CurrentState = _movementStates.GetState(StatesNames.Fall); //cria um estado corrente para iniciar o jogo em grounded (um dos roots)
-            _movementContext.CurrentState.EnterState(); //Inicia o Grounded para iniciar o jogo em um estado.
+            _movementContext.CurrentState.OnEnter(); //Inicia o Grounded para iniciar o jogo em um estado.
         }
         private void Update()
         {

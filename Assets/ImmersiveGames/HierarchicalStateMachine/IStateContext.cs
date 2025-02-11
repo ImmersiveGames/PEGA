@@ -4,6 +4,6 @@
     {
         void GlobalNotifyStateEnter(StatesNames state);
         void GlobalNotifyStateExit(StatesNames state);
-        BaseState CurrentState { get; set; }
+        IHierarchicalState CurrentState { get; set; }
     }
 }

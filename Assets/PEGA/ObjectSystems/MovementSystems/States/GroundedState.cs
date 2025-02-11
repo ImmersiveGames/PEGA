@@ -9,59 +9,75 @@ namespace PEGA.ObjectSystems.MovementSystems.States
         private readonly MovementContext _ctx;
         private readonly MovementStateFactory _factory;
 
-        public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(
-            currentMovementContext, factory)
+        public GroundedState(MovementContext currentMovementContext, MovementStateFactory factory) : base(currentMovementContext)
         {
             _ctx = currentMovementContext;
             _factory = factory;
         }
 
-        protected internal override void EnterState()
+        public override void OnEnter()
         {
             _ctx.isGrounded = true;
-            base.EnterState();
+            _ctx.isFalling = false;
+            base.OnEnter();
 
             _ctx.movement.y = _ctx.movementSettings.gravityGround;
             _ctx.appliedMovement.y = _ctx.movementSettings.gravityGround;
         }
 
-        protected override void UpdateState()
-        {
-            base.UpdateState();
-        }
-
-        public override void ExitState()
-        {
-            _ctx.isGrounded = false;
-            base.ExitState();
-        }
-
-        protected override void CheckSwitchState()
+        public override void Tick()
         {
             //Verifica se ja soltou o botão para liberar o pulo
-            if (!_ctx.CanJumpAgain && !_ctx.InputDriver.IsJumpingPress)
+            if (_ctx.CharacterController.isGrounded && !_ctx.CanJumpAgain && !_ctx.InputDriver.IsJumpingPress)
             {
                 _ctx.CanJumpAgain = true;
             }
-
-            //Debug.Log("Can Jump Again?: " + Ctx.CanJumpAgain);
-            if (!_ctx.CharacterController.isGrounded)
-            {
-                //Queda de plataforma
-                SwitchState(_factory.GetState(StatesNames.Fall));
-                return;
-            }
-
-            if (!_ctx.CharacterController.isGrounded || !_ctx.InputDriver.IsJumpingPress 
-                                                     || _ctx.isJumping || !_ctx.CanJumpAgain) return;
-            _ctx.CanJumpAgain = false;
-            SwitchState(_factory.GetState(StatesNames.Jump));
+            base.Tick();
         }
 
-        //Inicializa qual sub estado vai entrar "automaticamente ao entrar nesse estado e deve ser chamado no início"
-        protected sealed override void InitializeSubState()
+        public override void OnExit()
         {
-            SwitchSubState(_ctx.InputDriver.GetMovementDirection() == Vector2.zero ? _factory.GetState(StatesNames.Idle) : _factory.GetState(StatesNames.Walk));
+            _ctx.isGrounded = false;
+            base.OnExit();
+        }
+        
+        protected override void SetupTransitions()
+        {
+            // 🔹 Definição das transições de estado principal (muda o DashState inteiro)
+            AddTransition(_factory.GetState(StatesNames.Fall), () => !_ctx.CharacterController.isGrounded);
+            
+            AddTransition(_factory.GetState(StatesNames.Jump), PredicateJump);
+            
+            // 🔹 Definição das transições de subestado (muda apenas dentro do estado pai)
+            AddSubStateTransition(_factory.GetState(StatesNames.Idle), () => _ctx.CharacterController.isGrounded && _ctx.InputDriver.GetMovementDirection() == Vector2.zero);
+            AddSubStateTransition(_factory.GetState(StatesNames.Walk), () => _ctx.CharacterController.isGrounded && _ctx.InputDriver.GetMovementDirection() != Vector2.zero);
+            AddTransition(_factory.GetState(StatesNames.Dash), PredicateDash);
+        }
+
+        private bool PredicateJump()
+        {
+            var resolve = _ctx.CharacterController.isGrounded 
+                          && _ctx.InputDriver.IsJumpingPress 
+                          && !_ctx.isJumping 
+                          && _ctx.CanJumpAgain;
+            if (resolve)
+            {
+                _ctx.CanJumpAgain = false;
+            }
+            return resolve;
+        }
+        private bool PredicateDash()
+        {
+            var resolve = _ctx.CharacterController.isGrounded
+                          && _ctx.InputDriver.IsDashPress
+                          && !_ctx.isDashing
+                          && _ctx.CanDashAgain;
+            if (resolve)
+            {
+                _ctx.CanDashAgain = false;
+            }
+
+            return resolve;
         }
 
     }
