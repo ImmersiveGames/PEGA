@@ -1,0 +1,35 @@
+/* PEGA documentation additions. The default template remains the base theme. */
+.docs-pega-hero {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--docs-color-accent) 18%, transparent), transparent 45%),
+    linear-gradient(135deg, var(--docs-color-surface-raised), var(--docs-color-surface));
+}
+
+.docs-pega-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--docs-spacing-sm);
+  margin-top: var(--docs-spacing-md);
+}
+
+.docs-art-figure img {
+  background: var(--docs-color-surface-soft);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  height: auto;
+  margin: 0 auto;
+  max-height: 42rem;
+  object-fit: contain;
+  width: auto;
+}
+
+.docs-table-wrap {
+  overflow-x: auto;
+}
+
+.docs-block-objective { border-color: var(--docs-color-success); }
+.docs-block-requirement { border-color: var(--docs-color-info); }
+.docs-block-configuration { border-color: var(--docs-color-accent); }
+
+.docs-section:empty {
+  display: none;
+}

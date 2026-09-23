@@ -1,0 +1,254 @@
+.docs-callout,
+.docs-block,
+.docs-figure,
+.docs-empty-state,
+.docs-search-panel,
+.docs-search-results,
+.docs-glossary-tools,
+.docs-related-documents {
+  background: var(--docs-color-surface);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-lg);
+  margin: var(--docs-spacing-xl) 0;
+  padding: var(--docs-spacing-lg);
+}
+
+.docs-callout {
+  border-left-width: 5px;
+}
+
+.docs-callout__title {
+  font-weight: 800;
+  margin-bottom: var(--docs-spacing-xs);
+}
+
+.docs-callout-note { background: var(--docs-color-note-bg); border-left-color: var(--docs-color-note); }
+.docs-callout-info { background: var(--docs-color-info-bg); border-left-color: var(--docs-color-info); }
+.docs-callout-tip { background: var(--docs-color-tip-bg); border-left-color: var(--docs-color-tip); }
+.docs-callout-warning { background: var(--docs-color-warning-bg); border-left-color: var(--docs-color-warning); }
+.docs-callout-important { background: var(--docs-color-important-bg); border-left-color: var(--docs-color-important); }
+.docs-callout-success { background: var(--docs-color-success-bg); border-left-color: var(--docs-color-success); }
+.docs-callout-example { background: var(--docs-color-example-bg); border-left-color: var(--docs-color-example); }
+.docs-callout-best-practice { background: var(--docs-color-best-practice-bg); border-left-color: var(--docs-color-best-practice); }
+
+.docs-callout-grid {
+  display: grid;
+  gap: var(--docs-spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.docs-block {
+  box-shadow: var(--docs-shadow-sm);
+}
+
+.docs-block + .docs-block,
+.docs-callout + .docs-callout,
+.docs-table + .docs-block,
+.docs-block + .docs-table {
+  margin-top: var(--docs-spacing-xl);
+}
+
+.docs-block h4 {
+  margin-bottom: var(--docs-spacing-sm);
+}
+
+.docs-block-decision { border-color: var(--docs-color-accent); }
+.docs-block-risk { border-color: var(--docs-color-warning); }
+.docs-block-open-question { border-color: var(--docs-color-example); }
+.docs-block-api { border-color: var(--docs-color-info); }
+.docs-block-flow { border-color: var(--docs-color-tip); }
+
+.docs-code {
+  background: var(--docs-color-code-bg);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-lg);
+  color: var(--docs-color-code-text);
+  font-size: 0.92rem;
+  padding: calc(var(--docs-spacing-lg) + 2rem) var(--docs-spacing-lg) var(--docs-spacing-lg);
+  position: relative;
+}
+
+.docs-code code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  display: block;
+  padding: 0;
+}
+
+.docs-code-copy {
+  background: var(--docs-color-surface-raised);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-pill);
+  color: var(--docs-color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  min-height: 2rem;
+  padding: var(--docs-spacing-2xs) var(--docs-spacing-sm);
+  position: absolute;
+  right: var(--docs-spacing-sm);
+  top: var(--docs-spacing-sm);
+}
+
+.docs-code-copy:hover {
+  border-color: var(--docs-color-accent);
+  color: var(--docs-color-accent-strong);
+}
+
+.docs-table {
+  border-collapse: collapse;
+  margin: var(--docs-spacing-xl) 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.docs-table th,
+.docs-table td {
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  padding: var(--docs-spacing-sm);
+  text-align: left;
+  vertical-align: top;
+}
+
+.docs-table th {
+  background: var(--docs-color-surface-raised);
+}
+
+.docs-figure img,
+.docs-diagram {
+  border-radius: var(--docs-radius-md);
+  display: block;
+  max-width: 100%;
+}
+
+.docs-diagram {
+  height: auto;
+  width: 100%;
+}
+
+.docs-diagram__background {
+  fill: var(--docs-color-surface-soft);
+}
+
+.docs-diagram__node rect {
+  fill: var(--docs-color-surface);
+  stroke: var(--docs-color-border-strong);
+  stroke-width: 2;
+}
+
+.docs-diagram__label {
+  fill: var(--docs-color-text);
+}
+
+.docs-diagram__arrow {
+  stroke: var(--docs-color-accent);
+}
+
+.docs-diagram__caption {
+  fill: var(--docs-color-text-muted);
+}
+
+.docs-badge {
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-pill);
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1rem 0.55rem;
+}
+
+.docs-badge-success {
+  color: var(--docs-color-success);
+}
+
+.docs-badge-warning {
+  color: var(--docs-color-warning);
+}
+
+.docs-empty-state {
+  text-align: center;
+}
+
+.docs-search-panel {
+  box-shadow: var(--docs-shadow-sm);
+  margin: 0 auto var(--docs-spacing-xl);
+  width: 100%;
+}
+
+.docs-search-panel__header {
+  border-bottom: var(--docs-border-width) solid var(--docs-color-border);
+  margin-bottom: var(--docs-spacing-lg);
+  padding-bottom: var(--docs-spacing-md);
+}
+
+.docs-search-panel__header h2 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.docs-search-results {
+  display: grid;
+  gap: var(--docs-spacing-md);
+}
+
+.docs-search-result {
+  background: var(--docs-color-surface-soft);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-md);
+  padding: var(--docs-spacing-md);
+}
+
+.docs-search-result a {
+  display: inline-block;
+  font-weight: 700;
+  margin-bottom: var(--docs-spacing-xs);
+}
+
+.docs-search-result small,
+.docs-search-result__section,
+.docs-search-result__path {
+  color: var(--docs-color-text-muted);
+  display: block;
+}
+
+.docs-search-result__section,
+.docs-search-result__path {
+  font-size: 0.85rem;
+}
+
+.docs-search-result__path {
+  margin-bottom: var(--docs-spacing-sm);
+}
+
+.docs-search-result p {
+  margin-bottom: 0;
+}
+
+.docs-glossary-tools {
+  display: grid;
+  gap: var(--docs-spacing-sm);
+}
+
+.docs-glossary-term {
+  border-bottom: var(--docs-border-width) solid var(--docs-color-border);
+  padding-bottom: var(--docs-spacing-lg);
+}
+
+.docs-flow-list {
+  counter-reset: flow-step;
+  list-style: none;
+  padding-left: 0;
+}
+
+.docs-flow-list li {
+  background: var(--docs-color-surface-soft);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-md);
+  margin-bottom: var(--docs-spacing-sm);
+  padding: var(--docs-spacing-sm) var(--docs-spacing-md);
+}
+
+.is-search-hidden {
+  display: none !important;
+}

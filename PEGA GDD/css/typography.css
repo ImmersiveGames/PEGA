@@ -1,0 +1,118 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--docs-color-bg);
+  color: var(--docs-color-text);
+  font-family: var(--docs-font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--docs-color-text);
+  line-height: 1.2;
+  margin: 0 0 var(--docs-spacing-md);
+  scroll-margin-top: calc(var(--docs-layout-topbar-height) + var(--docs-spacing-lg));
+}
+
+h1 {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  margin: 0;
+}
+
+h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+}
+
+h3 {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  margin-top: var(--docs-spacing-xl);
+}
+
+h4 {
+  font-size: 1.1rem;
+}
+
+p {
+  margin: 0 0 var(--docs-spacing-md);
+}
+
+a {
+  color: var(--docs-color-accent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--docs-color-accent-strong);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--docs-color-accent);
+  outline-offset: 3px;
+}
+
+ul,
+ol {
+  margin: 0 0 var(--docs-spacing-md);
+  padding-left: var(--docs-spacing-lg);
+}
+
+li + li {
+  margin-top: var(--docs-spacing-2xs);
+}
+
+blockquote {
+  border-left: 4px solid var(--docs-color-accent);
+  color: var(--docs-color-text-muted);
+  margin: var(--docs-spacing-lg) 0;
+  padding: var(--docs-spacing-sm) var(--docs-spacing-lg);
+  background: var(--docs-color-surface-soft);
+  border-radius: var(--docs-radius-md);
+}
+
+code,
+pre {
+  font-family: var(--docs-font-code);
+}
+
+code {
+  background: var(--docs-color-surface-soft);
+  border: var(--docs-border-width) solid var(--docs-color-border);
+  border-radius: var(--docs-radius-sm);
+  color: var(--docs-color-accent-strong);
+  padding: 0.1rem 0.3rem;
+}
+
+pre {
+  overflow-x: auto;
+}
+
+figcaption,
+.docs-kicker,
+.docs-search-status,
+.docs-footer {
+  color: var(--docs-color-text-muted);
+  font-size: 0.875rem;
+}
+
+.docs-kicker {
+  letter-spacing: 0.08em;
+  margin: 0 0 var(--docs-spacing-xs);
+  text-transform: uppercase;
+}

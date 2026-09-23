@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PEGA - Documentação</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/typography.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pega.css">
+</head>
+<body>
+  <a class="docs-skip-link" href="#docs-main">Pular para o conteúdo</a>
+
+  <div class="docs-topbar">
+    <header class="docs-header">
+      <div class="docs-header__brand">
+        <span class="docs-header__logo-set" aria-hidden="true">
+          <img class="docs-header__logo docs-header__logo--dark" src="assets/images/immersive-games-logo-full-white.png" alt="" width="180" height="65">
+          <img class="docs-header__logo docs-header__logo--light" src="assets/images/immersive-games-logo-full-black.png" alt="" width="180" height="65">
+        </span>
+        <div>
+          <h1>PEGA</h1>
+        </div>
+      </div>
+
+      <div class="docs-header__tools">
+        <label class="docs-search-label" for="docs-search-input">Buscar documentação</label>
+        <input id="docs-search-input" class="docs-search-input" type="search" placeholder="Buscar no documento ativo..." autocomplete="off">
+        <button class="docs-button docs-button--ghost" type="button" data-action="toggle-search-mode" aria-pressed="false">Global</button>
+        <button class="docs-button docs-button--ghost" type="button" data-action="toggle-theme" aria-label="Alternar tema claro ou escuro">Tema</button>
+        <button class="docs-button docs-button--ghost docs-mobile-only" type="button" data-action="toggle-sidebar" aria-expanded="false" aria-controls="docs-sidebar">Menu</button>
+      </div>
+    </header>
+
+    <nav class="docs-tabs" role="tablist" aria-label="Documentos">
+      <button id="docs-tab-gdd" class="docs-tab is-active" type="button" role="tab" data-document-target="gdd" aria-selected="true" aria-controls="docs-panel-gdd">Game Design Document</button><button id="docs-tab-artbook" class="docs-tab" type="button" role="tab" data-document-target="artbook" aria-selected="false" aria-controls="docs-panel-artbook">Art Book</button>
+    </nav>
+  </div>
+
+  <div class="docs-search-status" id="docs-search-status" role="status" aria-live="polite">Busca pronta.</div>
+
+  <div class="docs-shell">
+    <aside class="docs-sidebar" id="docs-sidebar" aria-label="Navegação do documento">
+      <div class="docs-sidebar__header">
+        <span>Navegação</span>
+      </div>
+      <nav class="docs-sidebar__nav" data-sidebar-nav></nav>
+      <div class="docs-sidebar__footer">
+        <button class="docs-back-to-top" type="button" data-action="back-to-top">&uarr; Voltar ao topo</button>
+      </div>
+    </aside>
+
+    <main class="docs-main" id="docs-main" tabindex="-1">
+      <section class="docs-search-panel docs-content" data-search-panel hidden aria-labelledby="docs-search-panel-title">
+        <div class="docs-search-panel__header">
+          <p class="docs-kicker">Resultados de Busca</p>
+          <h2 id="docs-search-panel-title">Resultados de busca</h2>
+          <p data-search-summary>Digite no campo de busca para pesquisar no documento ativo.</p>
+        </div>
+        <div class="docs-search-results" data-search-results></div>
+        <div class="docs-empty-state" data-search-empty hidden>
+          <h2>Nenhum resultado encontrado.</h2>
+          <p>Tente outro termo ou limpe a busca.</p>
+        </div>
+      </section>
+
+      <section id="docs-panel-gdd" class="docs-document is-active" role="tabpanel" aria-labelledby="docs-tab-gdd" data-document="gdd" data-document-title="Game Design Document"><article class="docs-content"><header class="docs-page-header" id="gdd-pega---game-design-document" data-title="PEGA - Game Design Document">
+<p class="docs-kicker">GDD</p>
+<h2>PEGA - Game Design Document</h2>
+</header>
+<p><strong>Projeto:</strong> <code>PEGA</code> <strong>Tipo de documento:</strong> Game Design Document <strong>Status:</strong> Rascunho reorganizado <strong>Versão:</strong> 0.2.0 <strong>Fonte principal:</strong> <code>Exemplos/GDD PEGA.docx</code> <strong>Última atualização:</strong> 2026-07-08</p>
+<p>---</p>
+<section class="docs-section" id="gdd-visao" data-title="Visão">
+<h3>Visão</h3>
+<p><strong>PEGA</strong> é um jogo de ação top-down para PC, com foco em perseguição, captura e recuperação de itens roubados. O jogo acompanha Rick Ronda e Petra Patrol, dois jovens que tentam entrar para a Polícia e Guarda Avançada de Larópolis, a <strong>P.G.A. Larópolis</strong>, mas não são aceitos por falta de experiência. Sem desistir da carreira de segurança, eles fundam a própria empresa: <strong>Proteção e Estratégia na Guarda de Ativos em Larópolis</strong>, ou <strong>P.E.G.A. Larópolis</strong>.</p>
+<p>O jogo coloca um ou dois jogadores em missões de segurança por diferentes pontos da cidade. Cada missão apresenta um local invadido por larápios, itens valiosos em risco, rotas de fuga, armadilhas, câmeras, power-ups e inimigos com comportamentos próprios. O objetivo central é impedir que os criminosos escapem com os itens, capturar o maior número possível de inimigos e proteger os bens do cliente antes do fim do assalto.</p>
+<div class="docs-callout docs-callout-note"><p class="docs-callout__title">Tratamento da fonte</p><p>Este documento reorganiza e detalha o GDD original em Word. A intenção não é substituir decisões de design ainda não validadas, mas transformar o material existente em uma base mais clara para produção, prototipação e discussão.</p></div>
+<div class="docs-block docs-block-objective"><h4>Objetivo</h4><p><strong>Objetivo do documento:</strong> consolidar a visão, os sistemas e as regras principais de PEGA em uma versão de GDD mais legível, navegável e pronta para evolução.</p><p><strong>Critério de sucesso:</strong> uma pessoa de design, programação, arte ou produção deve conseguir entender a fantasia do jogo, o loop principal, os modos, os inimigos, as interações de cenário, a progressão e os pontos que ainda precisam de definição.</p><p><strong>Estado:</strong> ativo</p></div>
+</section>
+<section class="docs-section" id="gdd-pilares-de-design" data-title="Pilares de design">
+<h4>Pilares de design</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Pilar</th><th>Descrição</th><th>Consequência prática</th></tr></thead><tbody><tr><td>Perseguição cartunesca</td><td>A graça principal está em correr atrás de ladrões por cenários cheios de obstáculos.</td><td>Os mapas precisam ter rotas alternativas, atalhos, esconderijos, objetos interativos e momentos de quase captura.</td></tr><tr><td>Segurança improvisada</td><td>Rick e Petra não são policiais perfeitos; eles resolvem problemas com ferramentas disponíveis no local.</td><td>Carrinhos, armadilhas, portas, câmeras, cofres e objetos seguráveis devem fazer parte do combate e da estratégia.</td></tr><tr><td>Caos legível</td><td>O jogo pode ser frenético, mas o jogador precisa entender o que está acontecendo.</td><td>HUD, minimapa, feedback de estado, ícones de item e leitura visual dos inimigos são críticos.</td></tr><tr><td>Cooperação local</td><td>O jogo foi pensado para um ou dois jogadores locais.</td><td>A experiência deve funcionar em modo solo e em multiplayer local com tela dividida horizontalmente.</td></tr><tr><td>Escalada de contratos</td><td>A agência PEGA cresce conforme assume locais mais perigosos.</td><td>Novos cenários, gangues, dificuldades e modos devem aparecer como progressão de carreira.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-experiencia-alvo" data-title="Experiência alvo">
+<h4>Experiência alvo</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Campo</th><th>Definição</th></tr></thead><tbody><tr><td>Gênero</td><td>Ação top-down, perseguição, captura, recuperação de itens e controle de cenário.</td></tr><tr><td>Plataforma</td><td>PC.</td></tr><tr><td>Jogadores</td><td>Um jogador ou dois jogadores em multiplayer local cooperativo.</td></tr><tr><td>Público</td><td>A partir de 12 anos.</td></tr><tr><td>Idiomas planejados</td><td>Português brasileiro e inglês.</td></tr><tr><td>Tom</td><td>Cartunesco, cômico, dinâmico e levemente caótico.</td></tr><tr><td>Lançamento desejado no GDD original</td><td>Steam, Epic Games e Microsoft Game Pass.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-risk"><h4>Risco</h4><p><strong>Risco:</strong> informações de plataforma, público, idiomas e lançamento aparecem no GDD original, mas podem estar desatualizadas em relação ao planejamento atual.</p><p><strong>Impacto:</strong> médio.</p><p><strong>Mitigação:</strong> confirmar escopo comercial antes de estimar localização, certificação, requisitos de loja e suporte a controles.</p></div>
+</section>
+<section class="docs-section" id="gdd-resumo-do-jogo" data-title="Resumo do jogo">
+<h3>Resumo do jogo</h3>
+</section>
+<section class="docs-section" id="gdd-conceito-principal" data-title="Conceito principal">
+<h4>Conceito principal</h4>
+<p>Rick Ronda e Petra Patrol protegem negócios de Larópolis contra gangues de larápios. Em cada fase, criminosos entram por pontos específicos do cenário, procuram itens de desejo, sabotam defesas, tentam fugir e reagem à presença dos jogadores. Os jogadores devem explorar o ambiente, usar informações do minimapa e da sala de controle, ativar armadilhas, perseguir inimigos, recuperar itens e levar criminosos capturados até a prisão do cenário.</p>
+</section>
+<section class="docs-section" id="gdd-fantasia-do-jogador" data-title="Fantasia do jogador">
+<h4>Fantasia do jogador</h4>
+<p>O jogador deve sentir que está comandando uma dupla de seguranças determinados, atrapalhados na medida certa e obrigados a resolver situações maiores do que sua experiência. A fantasia não é de simulação policial realista. Ela é de ação física, decisões rápidas, humor visual e domínio gradual de cenários cada vez mais complexos.</p>
+</section>
+<section class="docs-section" id="gdd-verbos-principais" data-title="Verbos principais">
+<h4>Verbos principais</h4>
+<ul>
+<li>Mover-se pelo cenário.</li>
+<li>Localizar entradas, saídas, itens valiosos e pontos de interesse.</li>
+<li>Perseguir larápios.</li>
+<li>Atacar, interromper ou derrubar inimigos.</li>
+<li>Carregar inimigos e objetos.</li>
+<li>Depositar inimigos na prisão.</li>
+<li>Depositar itens recuperados no cofre.</li>
+<li>Ativar armadilhas e dispositivos de cenário.</li>
+<li>Usar power-ups.</li>
+<li>Consultar minimapa e câmeras de segurança.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-pressao-de-vitoria-e-derrota" data-title="Pressão de vitória e derrota">
+<h4>Pressão de vitória e derrota</h4>
+<p>O desempenho do jogador é medido pelo quanto ele consegue proteger durante o assalto. A missão não depende apenas de vencer ou perder, mas de classificação:</p>
+<ul>
+<li>Quantos inimigos foram capturados.</li>
+<li>Quantos itens de desejo foram salvos.</li>
+<li>Quanto tempo restou ou quanto tempo foi gasto.</li>
+<li>Quantos inimigos escaparam.</li>
+<li>Quantos itens foram roubados.</li>
+</ul>
+<div class="docs-callout docs-callout-important"><p class="docs-callout__title">Important</p><p>O jogo deve evitar uma leitura binária simples de sucesso ou fracasso. A classificação por letras cria espaço para replay, domínio de rotas, otimização e progressão.</p></div>
+</section>
+<section class="docs-section" id="gdd-loop-principal" data-title="Loop principal">
+<h3>Loop principal</h3>
+<div class="docs-block docs-block-flow"><h4>Fluxo</h4><p>1. O jogador escolhe uma missão no mapa/HUB de Larópolis. 2. O jogo apresenta o cenário, pontos de entrada, saídas, itens valiosos, armadilhas e novidades da fase. 3. O jogador recebe um curto período de exploração inicial. 4. Um grupo de larápios invade o local. 5. Os inimigos procuram itens de desejo e executam comportamentos de roubo, fuga, sabotagem ou ataque. 6. O jogador persegue, captura, recupera itens e usa ferramentas do ambiente. 7. O tempo crítico começa quando resta uma porcentagem baixa do assalto. 8. Os inimigos priorizam fuga com o que conseguiram roubar. 9. O assalto termina. 10. O jogo calcula classificação, créditos e progresso.</p></div>
+</section>
+<section class="docs-section" id="gdd-estrutura-de-uma-missao" data-title="Estrutura de uma missão">
+<h4>Estrutura de uma missão</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Etapa</th><th>Função</th></tr></thead><tbody><tr><td>Apresentação do cenário</td><td>Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas.</td></tr><tr><td>Exploração inicial</td><td>Jogador controla o personagem por um curto período antes da invasão.</td></tr><tr><td>Entrada dos larápios</td><td>Splash screen apresenta grupo inimigo, representantes e indicação de dificuldade.</td></tr><tr><td>Janela de entrada</td><td>Inimigos podem entrar em grupos diferentes durante aproximadamente um minuto.</td></tr><tr><td>Assalto ativo</td><td>Contagem regressiva principal, captura, roubo e recuperação.</td></tr><tr><td>Tempo crítico</td><td>Nos 20% finais do tempo, ladrões tendem a fugir com o que tiverem.</td></tr><tr><td>Encerramento</td><td>Classificação, créditos, desbloqueios e retorno ao fluxo de progressão.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-decision"><h4>Decisão</h4><p><strong>Decisão recomendada:</strong> tratar <code>Assalto</code> como a unidade principal de gameplay.</p><p><strong>Motivo:</strong> o GDD original usa &quot;assalto&quot;, &quot;fase&quot; e &quot;missão&quot; em contextos próximos. Para produção, <code>Assalto</code> deve representar o evento jogável completo, enquanto <code>Missão</code> pode representar o contrato escolhido no mapa.</p><p><strong>Consequência:</strong> documentação técnica, UI e narrativa devem padronizar esses termos.</p></div>
+</section>
+<section class="docs-section" id="gdd-narrativa-e-mundo" data-title="Narrativa e mundo">
+<h3>Narrativa e mundo</h3>
+</section>
+<section class="docs-section" id="gdd-premissa" data-title="Premissa">
+<h4>Premissa</h4>
+<p>Larópolis é uma cidade fictícia dominada por crimes cartunescos. O setor de segurança cresce porque comerciantes e instituições precisam proteger seus bens. Rick e Petra, impedidos de entrar na PGA por falta de experiência, veem nessa crise uma oportunidade de provar valor. A primeira grande missão descrita no GDD é proteger um baú de barras de ouro em um armazém.</p>
+</section>
+<section class="docs-section" id="gdd-laropolis" data-title="Larópolis">
+<h4>Larópolis</h4>
+<p>Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecível. O tom é de desenho animado: gangues têm temas visuais fortes, comportamentos teatrais e métodos de roubo absurdos. A polícia oficial existe, mas aparece de forma limitada, principalmente para levar criminosos capturados à prisão da cidade.</p>
+</section>
+<section class="docs-section" id="gdd-hub" data-title="HUB">
+<h4>HUB</h4>
+<p>O HUB é a cidade de Larópolis representada como mapa de progressão. O GDD original indica pontos fixos distribuídos em uma lógica de avanço, com áreas mais avançadas escondidas por nuvens. O HUB deve permitir:</p>
+<ul>
+<li>Selecionar fases liberadas.</li>
+<li>Visualizar progressão.</li>
+<li>Retornar ao menu inicial.</li>
+<li>Esconder conteúdos futuros até o jogador cumprir requisitos.</li>
+</ul>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> o HUB será apenas uma tela de seleção de fases ou um espaço navegável?</p><p><strong>Impacto:</strong> essa decisão afeta escopo de arte, UI, câmera, save, tutorial e ritmo entre missões.</p><p><strong>Recomendação inicial:</strong> para MVP, usar HUB como mapa interativo simples, sem navegação livre.</p></div>
+</section>
+<section class="docs-section" id="gdd-personagens-principais" data-title="Personagens principais">
+<h3>Personagens principais</h3>
+<div class="docs-callout docs-callout-info"><p class="docs-callout__title">Info</p><p>A documentação visual dos protagonistas, gangues e conceitos de personagem fica no <a href="#artbook-personagens-principais" data-document-link="artbook">Art Book</a>.</p></div>
+</section>
+<section class="docs-section" id="gdd-rick-ronda" data-title="Rick Ronda">
+<h4>Rick Ronda</h4>
+<p>Rick é um jovem aspirante à PGA Larópolis. Depois de ser reprovado, funda a PEGA como alternativa para ganhar experiência e provar competência. Sua imagem deve comunicar iniciativa, improviso e energia.</p>
+</section>
+<section class="docs-section" id="gdd-petra-patrol" data-title="Petra Patrol">
+<h4>Petra Patrol</h4>
+<p>Petra é parceira de Rick e cofundadora da PEGA. O GDD a apresenta como parte da dupla protagonista e jogável. A documentação futura deve detalhar se Petra tem atributos, animações ou habilidades distintas de Rick.</p>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> Rick e Petra terão diferenças mecânicas ou apenas diferenças cosméticas?</p><p><strong>Opções:</strong> personagens equivalentes para facilitar balanceamento; ou personagens com atributos próprios para reforçar cooperação.</p><p><strong>Recomendação inicial:</strong> começar com equivalência mecânica no MVP e reservar diferenças para evolução.</p></div>
+</section>
+<section class="docs-section" id="gdd-npcs" data-title="NPCs">
+<h4>NPCs</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Categoria</th><th>Função</th></tr></thead><tbody><tr><td>Larapolitanos</td><td>NPCs civis ou figurantes que dão vida aos cenários.</td></tr><tr><td>Larápios</td><td>Inimigos principais, organizados em gangues temáticas.</td></tr><tr><td>Polícia oficial</td><td>Presença limitada, relacionada ao destino dos criminosos capturados.</td></tr><tr><td>Clientes</td><td>Donos ou responsáveis pelos locais protegidos, úteis para briefing narrativo.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-controles" data-title="Controles">
+<h3>Controles</h3>
+<p>O GDD original usa o padrão Microsoft de controle, em que o botão sul é <code>A</code>, o botão leste é <code>B</code>, o botão oeste é <code>X</code> e <code>Start</code> pausa o jogo.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Ação</th><th>Entrada</th><th>Descrição</th></tr></thead><tbody><tr><td>Mover</td><td>Eixo esquerdo ou D-Pad</td><td>Movimento em todas as direções no solo.</td></tr><tr><td>Impulso</td><td>Botão oeste (<code>X</code>)</td><td>Aumento temporário de velocidade.</td></tr><tr><td>Saltar</td><td>Botão a definir no mapeamento final</td><td>Salto direcional com altura baseada em força.</td></tr><tr><td>Interagir / atacar / soltar</td><td>Botão leste (<code>B</code>)</td><td>Interage com inimigos, objetos ou executa ataque se não houver alvo interativo.</td></tr><tr><td>Confirmar</td><td>Botão sul (<code>A</code>)</td><td>Confirmação em menus.</td></tr><tr><td>Pausar</td><td><code>Start</code></td><td>Abre ou fecha menu de pausa.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-movimento" data-title="Movimento">
+<h4>Movimento</h4>
+<p>Personagens podem se mover em todas as direções enquanto estiverem no solo. A velocidade é definida pelo atributo <strong>Agilidade</strong> e pode ser modificada durante a partida. O movimento é bloqueado por objetos comuns, exceto interações de mobilidade e objetos explicitamente configurados para permitir passagem.</p>
+</section>
+<section class="docs-section" id="gdd-impulso" data-title="Impulso">
+<h4>Impulso</h4>
+<p>O impulso aumenta temporariamente a velocidade em <code>1.5x</code>. Para executar a ação, o personagem precisa ter ao menos <code>1</code> ponto de <strong>Vigor</strong> e respeitar um tempo de resfriamento.</p>
+<div class="docs-block docs-block-configuration"><h4>Configuração</h4><p><strong>Fórmula de referência:</strong> <code>tempo base (2) - (Vigor / Agilidade)</code></p><p><strong>Observação:</strong> a fórmula vem do GDD original e deve ser validada em protótipo, porque pode gerar valores baixos demais dependendo da escala de atributos.</p></div>
+</section>
+<section class="docs-section" id="gdd-salto" data-title="Salto">
+<h4>Salto</h4>
+<p>O salto permite alcançar áreas elevadas até <code>1.3x</code> a altura do personagem, sem troca de andar. A altura pode variar com a <strong>Força</strong>, adicionando <code>Força * 0.1</code> à altura base. Exemplo: um personagem com <code>3</code> de Força salta <code>1.6x</code> sua altura.</p>
+<div class="docs-block docs-block-risk"><h4>Risco</h4><p><strong>Risco:</strong> salto em jogo top-down pode gerar problemas de leitura de altura, colisão e navegação.</p><p><strong>Mitigação:</strong> prototipar cedo a leitura visual do salto e definir claramente quais obstáculos podem ser vencidos.</p></div>
+</section>
+<section class="docs-section" id="gdd-interacao" data-title="Interação">
+<h4>Interação</h4>
+<p>A interação depende do objeto diretamente à frente do personagem e dentro de sua área de ação. Se houver mais de um objeto interativo, a prioridade vai para o objeto mais próximo, indicado visualmente por linha, contorno ou efeito.</p>
+<ul>
+<li>Interagir com inimigo executa ação conforme tipo e estado do inimigo.</li>
+<li>Interagir com objeto segurável pega, solta ou manipula o objeto.</li>
+<li>Sem objeto válido, a interação vira ataque.</li>
+<li>Se o personagem estiver carregando outro personagem, a interação solta o carregado.</li>
+<li>Cada interação tem cadência base de <code>1</code> segundo.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-camera-e-apresentacao" data-title="Câmera e apresentação">
+<h3>Câmera e apresentação</h3>
+<p>A câmera é top-down, fixa em distância determinada e acompanha o personagem. Em multiplayer local, a tela é dividida horizontalmente. A apresentação deve manter leitura clara de:</p>
+<ul>
+<li>Rotas e obstáculos.</li>
+<li>Inimigos próximos.</li>
+<li>Itens roubáveis.</li>
+<li>Armadilhas e dispositivos.</li>
+<li>Estado do jogador.</li>
+<li>Direção de perseguição.</li>
+</ul>
+<div class="docs-block docs-block-requirement"><h4>Requisito</h4><p><strong>Requisito:</strong> em tela dividida, HUD, minimapa e ícones precisam ser legíveis para os dois jogadores.</p><p><strong>Critério de aceitação:</strong> nenhum elemento crítico pode depender de leitura em tamanho pequeno demais ou de informação que apareça apenas na metade da tela do outro jogador.</p></div>
+</section>
+<section class="docs-section" id="gdd-cenarios" data-title="Cenários">
+<h3>Cenários</h3>
+<div class="docs-callout docs-callout-info"><p class="docs-callout__title">Info</p><p>A documentação visual dos cenários, incluindo espaço para concepts e modelos futuros, fica no <a href="#artbook-cenarios" data-document-link="artbook">Art Book</a>.</p></div>
+</section>
+<section class="docs-section" id="gdd-funcao-dos-cenarios" data-title="Função dos cenários">
+<h4>Função dos cenários</h4>
+<p>Cada cenário é uma arena de perseguição com identidade própria. Um bom cenário de PEGA precisa combinar:</p>
+<ul>
+<li>Itens de alto valor.</li>
+<li>Rotas de entrada e saída dos larápios.</li>
+<li>Portas, corredores, salas e gargalos.</li>
+<li>Armadilhas comuns e específicas.</li>
+<li>Cofre para itens recuperados.</li>
+<li>Prisão ou área de contenção.</li>
+<li>Sala de controle com câmeras.</li>
+<li>Objetos seguráveis.</li>
+<li>Pontos de power up.</li>
+<li>Elementos de mobilidade e bloqueio.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-armazem" data-title="Armazém">
+<h4>Armazém</h4>
+<p>O armazém é o cenário inicial mais detalhado no GDD. Ele funciona como centro de distribuição com caixas, malotes, prédio administrativo, doca de carregamento e pátio de veículos.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Uso de gameplay</th></tr></thead><tbody><tr><td>Caixas e corredores</td><td>Criam labirinto, bloqueios e oportunidades de esconderijo.</td></tr><tr><td>Baú de ouro</td><td>Item de desejo principal da primeira missão.</td></tr><tr><td>Doca de carregamento</td><td>Área natural para entrada, saída ou fuga.</td></tr><tr><td>Pátio de veículos</td><td>Espaço para carrinhos motorizados e rotas externas.</td></tr><tr><td>Prédio administrativo</td><td>Pode concentrar sala de controle, portas e câmeras.</td></tr><tr><td>Cofre</td><td>Local para depositar itens recuperados.</td></tr><tr><td>Prisão</td><td>Local para depositar inimigos capturados.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-objective"><h4>Objetivo</h4><p><strong>Objetivo do MVP:</strong> usar o armazém como primeiro cenário jogável completo.</p><p><strong>Escopo mínimo:</strong> uma gangue, itens de desejo, rotas de fuga, prisão, cofre, minimapa, uma sala de controle, armadilhas básicas e classificação ao final do assalto.</p><p><strong>Motivo:</strong> o armazém concentra as mecânicas fundamentais sem exigir variedade excessiva de biomas.</p></div>
+</section>
+<section class="docs-section" id="gdd-catalogo-de-cenarios" data-title="Catálogo de cenários">
+<h4>Catálogo de cenários</h4>
+<p>O GDD original sugere múltiplos locais de Larópolis. Para organização de produção, cada cenário futuro deve ser documentado com a mesma estrutura: tema, itens de desejo, gangue dominante, armadilhas específicas, gimmick principal e requisito de desbloqueio.</p>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> quais cenários além do armazém estão confirmados para a primeira versão?</p><p><strong>Recomendação:</strong> definir uma lista curta para produção e manter os demais como backlog de expansão.</p></div>
+</section>
+<section class="docs-section" id="gdd-sistemas-do-jogador" data-title="Sistemas do jogador">
+<h3>Sistemas do jogador</h3>
+</section>
+<section class="docs-section" id="gdd-atributos" data-title="Atributos">
+<h4>Atributos</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Atributo</th><th>Função provável</th></tr></thead><tbody><tr><td>Vigor</td><td>Energia, resistência a dano e custo mínimo para ações como impulso.</td></tr><tr><td>Agilidade</td><td>Velocidade de movimento e influência no resfriamento do impulso.</td></tr><tr><td>Força</td><td>Influência em salto, empurrões, ataques e interação com obstáculos.</td></tr><tr><td>Presença</td><td>Pode afetar percepção, intimidação, detecção ou testes de reação.</td></tr><tr><td>Proficiência</td><td>Pode afetar uso de objetos, armadilhas, portas e ações técnicas.</td></tr><tr><td>Especial SP</td><td>Recurso limitado para habilidades especiais.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> os atributos pertencem apenas aos inimigos, aos jogadores ou a todos os personagens?</p><p><strong>Recomendação:</strong> padronizar a ficha de personagem para jogadores e inimigos, mesmo que nem todos usem todos os atributos no MVP.</p></div>
+</section>
+<section class="docs-section" id="gdd-estados-gerais" data-title="Estados gerais">
+<h4>Estados gerais</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Estado</th><th>Descrição</th></tr></thead><tbody><tr><td>Normal</td><td>Personagem livre para se mover e agir.</td></tr><tr><td>Carregando</td><td>Personagem segura item ou outro personagem.</td></tr><tr><td>Caído</td><td>Personagem temporariamente incapaz de agir.</td></tr><tr><td>Incapacitado</td><td>Estado mais forte de controle ou derrota temporária.</td></tr><tr><td>Escondido</td><td>Personagem usa objeto ou cenário para ocultação.</td></tr><tr><td>Ocultado</td><td>Personagem não aparece em câmera, minimapa ou percepção por certo tempo.</td></tr><tr><td>Agressivo</td><td>Personagem prioriza ataque.</td></tr><tr><td>Fugindo</td><td>Personagem tenta escapar do cenário.</td></tr><tr><td>Furtando</td><td>Personagem busca item de desejo.</td></tr><tr><td>Perseguindo</td><td>Personagem segue alvo específico.</td></tr><tr><td>Escapando</td><td>Personagem tenta sair de perigo imediato.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-inimigos-e-gangues" data-title="Inimigos e gangues">
+<h3>Inimigos e gangues</h3>
+<div class="docs-callout docs-callout-info"><p class="docs-callout__title">Info</p><p>As fichas visuais, conceitos extraídos do Word e observações de direção artística das gangues ficam no <a href="#artbook-gangues-de-laropolis" data-document-link="artbook">Art Book</a>.</p></div>
+</section>
+<section class="docs-section" id="gdd-larapios" data-title="Larápios">
+<h4>Larápios</h4>
+<p>Os larápios são os principais inimigos de PEGA. Eles são organizados em gangues temáticas, cada uma com identidade visual, tática e humor próprios. O GDD descreve os larápios como especialistas em furto, capazes de se esconder, fugir, sabotar, atacar, roubar itens e reagir às ações dos jogadores.</p>
+</section>
+<section class="docs-section" id="gdd-grupos-de-inimigos" data-title="Grupos de inimigos">
+<h4>Grupos de inimigos</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Gangue</th><th>Tema</th><th>Leitura de gameplay</th></tr></thead><tbody><tr><td>Os Trapalhões do Crime</td><td>Comédia caótica e crime clássico cartunesco.</td><td>Boa gangue inicial, com ladrões comuns e inimigos fisicamente mais fortes.</td></tr><tr><td>Os Incríveis Larápios</td><td>Circo, disfarce, ilusão e palhaçaria criminosa.</td><td>Foco em confusão visual, distração, disfarces e engano.</td></tr><tr><td>Os Sem Leis</td><td>Faroeste, cangaço, punk e banditismo organizado.</td><td>Foco em emboscadas, ataques à distância e inimigos mais agressivos.</td></tr><tr><td>Os Cyber Piratas</td><td>Piratas tecnológicos, drones e hacking.</td><td>Foco em câmeras, portas digitais, minimapa e sabotagem de sistemas.</td></tr><tr><td>Os Fantasmas da Noite</td><td>Monstros clássicos e terror cartunesco.</td><td>Foco em invisibilidade, medo, transformação e atravessar obstáculos.</td></tr><tr><td>A Tríade da Realeza Opulenta</td><td>Elegância criminosa, realeza e sofisticação.</td><td>Foco em inimigos refinados, técnicas especiais e padrões avançados.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-exemplos-de-arquetipos" data-title="Exemplos de arquétipos">
+<h4>Exemplos de arquétipos</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Arquétipo</th><th>Gangue</th><th>Função</th></tr></thead><tbody><tr><td>Ladrões Listrados</td><td>Trapalhões do Crime</td><td>Inimigos comuns, simples e legíveis.</td></tr><tr><td>Ladrões Molhados</td><td>Trapalhões do Crime</td><td>Usam artimanhas e obstáculos.</td></tr><tr><td>Capangas Atrapalhados</td><td>Trapalhões do Crime</td><td>Criam caos e momentos cômicos.</td></tr><tr><td>Marombas Ameaçadores</td><td>Trapalhões do Crime</td><td>Inimigos de força bruta.</td></tr><tr><td>Trupe Trapatapa</td><td>Incríveis Larápios</td><td>Palhaços criminosos com distrações.</td></tr><tr><td>Mimiquetes</td><td>Incríveis Larápios</td><td>Mímicos e disfarces.</td></tr><tr><td>Foras da Lei</td><td>Sem Leis</td><td>Ataques à distância e emboscadas.</td></tr><tr><td>Drone Caravela</td><td>Cyber Piratas</td><td>Hacking e mobilidade aérea.</td></tr><tr><td>Capitão Hacker</td><td>Cyber Piratas</td><td>Líder com sabotagem tecnológica.</td></tr><tr><td>Fantasma Noturno</td><td>Fantasmas da Noite</td><td>Atravessa ou ignora barreiras.</td></tr><tr><td>Vampiros Pálidos</td><td>Fantasmas da Noite</td><td>Controle, sedução ou drenagem de energia.</td></tr><tr><td>Múmia Maldita</td><td>Fantasmas da Noite</td><td>Desorientação, faixas e terror.</td></tr></tbody></table></div>
+<div class="docs-callout docs-callout-best-practice"><p class="docs-callout__title">Best Practice</p><p>Cada gangue deve ter pelo menos um inimigo comum, um inimigo de suporte, um inimigo de pressão e um líder. Isso ajuda a criar variedade sem transformar cada fase em um conjunto imprevisível demais.</p></div>
+</section>
+<section class="docs-section" id="gdd-inteligencia-artificial" data-title="Inteligência artificial">
+<h3>Inteligência artificial</h3>
+</section>
+<section class="docs-section" id="gdd-desejo" data-title="Desejo">
+<h4>Desejo</h4>
+<p>Cada inimigo pode ter uma lista de itens de desejo. Quando há um item desejado no cenário, o comportamento muda conforme distância, tempo de assalto, posse do item por outro personagem e pressão do jogador.</p>
+<p>O inimigo pode priorizar:</p>
+<ul>
+<li>Ir até o item.</li>
+<li>Roubar item de outro larapio.</li>
+<li>Fugir se já estiver com o item.</li>
+<li>Reagir ao jogador se for detectado.</li>
+<li>Mudar de rota durante o tempo crítico.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-percepcao" data-title="Percepção">
+<h4>Percepção</h4>
+<p>Inimigos possuem área de visão e podem realizar testes de presença para decidir reação. A percepção pode levar em conta:</p>
+<ul>
+<li>Distância do jogador.</li>
+<li>Iluminação.</li>
+<li>Movimento rápido.</li>
+<li>Estado escondido.</li>
+<li>Obstáculos.</li>
+<li>Grupo ao qual o personagem pertence.</li>
+</ul>
+<p>Personagens do mesmo grupo devem ter consciência mais confiável uns dos outros. Personagens de grupos diferentes podem ter percepção parcial.</p>
+</section>
+<section class="docs-section" id="gdd-reacao-ao-perder-inventario" data-title="Reação ao perder inventário">
+<h4>Reação ao perder inventário</h4>
+<p>Quando um inimigo é atingido e possui itens, seu inventário cai no chão. Após isso, ele deve tomar uma decisão de comportamento. O GDD sugere pesos como:</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Reação</th><th>Peso de referência</th></tr></thead><tbody><tr><td>Fugindo</td><td>50%</td></tr><tr><td>Escapando</td><td>20%</td></tr><tr><td>Furtando</td><td>15%</td></tr><tr><td>Agressivo</td><td>10%</td></tr><tr><td>Perseguindo</td><td>5%</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-reacao-a-dano" data-title="Reação a dano">
+<h4>Reação a dano</h4>
+<p>Quando um inimigo sofre dano em seu vigor, ele também pode mudar de comportamento. O GDD sugere pesos como:</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Reação</th><th>Peso de referência</th></tr></thead><tbody><tr><td>Agressivo</td><td>50%</td></tr><tr><td>Fugindo</td><td>20%</td></tr><tr><td>Perseguindo</td><td>15%</td></tr><tr><td>Escapando</td><td>10%</td></tr><tr><td>Furtando</td><td>5%</td></tr></tbody></table></div>
+<div class="docs-block docs-block-risk"><h4>Risco</h4><p><strong>Risco:</strong> IA com muitos estados, pesos e exceções pode ficar difícil de depurar.</p><p><strong>Mitigação:</strong> implementar primeiro uma máquina de estados reduzida para o MVP: <code>Furtando</code>, <code>Fugindo</code>, <code>Agressivo</code>, <code>Atordoado/Caído</code> e <code>Capturado</code>.</p></div>
+</section>
+<section class="docs-section" id="gdd-habilidades" data-title="Habilidades">
+<h3>Habilidades</h3>
+</section>
+<section class="docs-section" id="gdd-habilidades-comuns" data-title="Habilidades comuns">
+<h4>Habilidades comuns</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Habilidade</th><th>Descrição</th></tr></thead><tbody><tr><td>Disfarçando</td><td>Troca aparência por objeto ou NPC configurado no cenário.</td></tr><tr><td>Escondendo</td><td>Usa objetos com característica de esconderijo.</td></tr><tr><td>Tocaia</td><td>Esconde-se e ataca quando o jogador se aproxima.</td></tr><tr><td>Invisibilidade</td><td>Fica difícil de perceber por tempo limitado.</td></tr><tr><td>Ataque corpo a corpo</td><td>Causa dano usando arma ou objeto próximo.</td></tr><tr><td>Ataque de média distância</td><td>Causa dano com alcance intermediário.</td></tr><tr><td>Ataque de longa distância</td><td>Arremessa ou dispara objeto contra alvo.</td></tr><tr><td>Imobilizar</td><td>Força estado caído ou incapacitado.</td></tr><tr><td>Desativar armadilhas</td><td>Interage com armadilha para torná-la inativa.</td></tr><tr><td>Roubar outro larapio</td><td>Toma item desejado de outro inimigo.</td></tr><tr><td>Arrombar portas</td><td>Destrói ou inutiliza portas usando força.</td></tr><tr><td>Trancar/destrancar fechaduras</td><td>Manipula portas trancáveis.</td></tr><tr><td>Destrancar fechadura digital</td><td>Usa habilidade técnica ou hacker em portas digitais.</td></tr><tr><td>Apagar luzes</td><td>Escurece área e favorece esconderijos.</td></tr><tr><td>Hackear câmeras</td><td>Desativa transmissão da sala de controle.</td></tr><tr><td>Não aparecer na câmera</td><td>Oculta presença em câmera e minimapa.</td></tr><tr><td>Arrastar objetos</td><td>Move objetos seguráveis para bloquear rotas.</td></tr><tr><td>Teleportar</td><td>Move-se instantaneamente para espaço vazio.</td></tr><tr><td>Atalho</td><td>Usa interações de mobilidade para trocar de posição.</td></tr><tr><td>Andar pelas paredes</td><td>Move-se por superfícies ignorando mobilidade normal.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-habilidades-especiais" data-title="Habilidades especiais">
+<h4>Habilidades especiais</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Habilidade</th><th>Efeito</th><th>Referência do GDD</th></tr></thead><tbody><tr><td>Tufão</td><td>Cria tufões que empurram o jogador e derrubam itens.</td><td>Nômades do Deserto.</td></tr><tr><td>Rampage</td><td>Faz inimigos entrarem em estado agressivo por tempo limitado.</td><td>Rei do Crime dá ordens.</td></tr><tr><td>Apagão</td><td>Desativa câmeras e minimapa temporariamente.</td><td>Capitão Hacker.</td></tr><tr><td>Sísmico</td><td>Cria ondas de choque que empurram e podem derrubar o jogador.</td><td>Papagaio na armadura.</td></tr><tr><td>Múltiplo</td><td>Cria cópias falsas durante fuga.</td><td>Inimigo ilusionista.</td></tr><tr><td>Terror</td><td>Incapacita imediatamente o jogador.</td><td>Amon-ha assusta o jogador.</td></tr><tr><td>Transformação</td><td>Vampiro vira morcego com mais agilidade ao ficar com pouco vigor.</td><td>Vampiro.</td></tr><tr><td>Transpor</td><td>Atravessa portas e paredes.</td><td>Fantasma.</td></tr><tr><td>Arremessar tortas</td><td>Ataque à distância que suja a tela e reduz visibilidade.</td><td>Palhaço.</td></tr><tr><td>Parede invisível</td><td>Cria obstáculo transparente temporário.</td><td>Mímico.</td></tr><tr><td>Uppercut</td><td>Inimigo vira poça e ataca com uppercut incapacitante.</td><td>Ladrão molhado.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-interacoes-de-cenario" data-title="Interações de cenário">
+<h3>Interações de cenário</h3>
+</section>
+<section class="docs-section" id="gdd-tipos-de-interacao" data-title="Tipos de interação">
+<h4>Tipos de interação</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Tipo</th><th>Uso</th></tr></thead><tbody><tr><td>Armadilhas comuns</td><td>Podem capturar, atrasar, empurrar ou derrubar inimigos.</td></tr><tr><td>Armadilhas específicas</td><td>Relacionadas ao tema do cenário.</td></tr><tr><td>Objetos seguráveis</td><td>Podem ser carregados, soltos, roubados ou usados para bloquear caminho.</td></tr><tr><td>Portas</td><td>Podem ser abertas, fechadas, trancadas, arrombadas ou hackeadas.</td></tr><tr><td>Câmeras</td><td>Informam posição e permitem ativar armadilhas em áreas monitoradas.</td></tr><tr><td>Cofres</td><td>Recebem itens recuperados.</td></tr><tr><td>Prisões</td><td>Recebem inimigos capturados.</td></tr><tr><td>Interações de mobilidade</td><td>Atalhos, passagens, carrinhos ou objetos que mudam deslocamento.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-requirement"><h4>Requisito</h4><p><strong>Requisito:</strong> todo objeto interativo precisa comunicar estado atual.</p><p><strong>Exemplos:</strong> ativo, inativo, trancado, hackeado, quebrado, disponível, ocupado, carregável, escondível.</p></div>
+</section>
+<section class="docs-section" id="gdd-sala-de-controle" data-title="Sala de controle">
+<h4>Sala de controle</h4>
+<p>A sala de controle contém uma interface simples com cerca de seis monitores. Cada monitor exibe uma câmera de uma área específica do cenário. O jogador pode usar a sala para:</p>
+<ul>
+<li>Identificar entradas dos larápios.</li>
+<li>Acompanhar trajetos.</li>
+<li>Localizar itens e inimigos.</li>
+<li>Antecipar fuga.</li>
+<li>Ativar armadilhas em áreas monitoradas.</li>
+</ul>
+<div class="docs-block docs-block-risk"><h4>Risco</h4><p><strong>Risco:</strong> a sala de controle pode ser poderosa demais ou inútil demais.</p><p><strong>Mitigação:</strong> equilibrar custo de tempo, distância até a sala e valor da informação obtida. No multiplayer, a sala pode criar uma função cooperativa interessante para um jogador orientar o outro.</p></div>
+</section>
+<section class="docs-section" id="gdd-power-ups" data-title="Power-ups">
+<h3>Power-ups</h3>
+<p>Power-ups são modificadores temporários que alteram atributos ou concedem vantagem situacional. O HUD do personagem deve mostrar quando um power-up é recebido ou perdido, com barra temporária próxima ao personagem, cubos preenchendo ou esvaziando, cor associada ao atributo e nome abreviado.</p>
+</section>
+<section class="docs-section" id="gdd-regras-de-design" data-title="Regras de design">
+<h4>Regras de design</h4>
+<ul>
+<li>Power-ups devem ser fáceis de reconhecer no cenário.</li>
+<li>O efeito deve ser comunicado imediatamente.</li>
+<li>A duração precisa ser legível.</li>
+<li>A coleta não deve interromper o fluxo de perseguição.</li>
+<li>O efeito deve conversar com atributos como Vigor, Agilidade, Força, Presença ou Proficiência.</li>
+</ul>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> quais power-ups existem na primeira versão?</p><p><strong>Recomendação:</strong> começar com três efeitos simples: velocidade, força e recuperação de vigor.</p></div>
+</section>
+<section class="docs-section" id="gdd-modos-de-jogo-e-progressao" data-title="Modos de jogo e progressão">
+<h3>Modos de jogo e progressão</h3>
+</section>
+<section class="docs-section" id="gdd-campanha" data-title="Campanha">
+<h4>Campanha</h4>
+<p>Modo principal, acompanha a história de Rick e Petra e a evolução da PEGA em Larópolis. Pode ser jogado por um ou dois jogadores.</p>
+</section>
+<section class="docs-section" id="gdd-endless" data-title="Endless">
+<h4>Endless</h4>
+<p>Modo desbloqueável em que o jogador tenta deter o maior número possível de larápios durante um assalto contínuo. A dificuldade aumenta por ondas inimigas.</p>
+</section>
+<section class="docs-section" id="gdd-creditos-e-desbloqueio" data-title="Créditos e desbloqueio">
+<h4>Créditos e desbloqueio</h4>
+<p>O jogador recebe créditos conforme classificação. Cada estágio pode ter um custo em créditos para ser acessado. A progressão deve incentivar replay de fases para melhorar classificação e liberar novos contratos.</p>
+</section>
+<section class="docs-section" id="gdd-dificuldade" data-title="Dificuldade">
+<h4>Dificuldade</h4>
+<p>Cada cenário possui três níveis de dificuldade. O layout permanece reconhecível, mas obstáculos, inimigos, tempo, quantidade de itens e pressão aumentam.</p>
+<div class="docs-block docs-block-configuration"><h4>Configuração</h4><p><strong>Escala de classificação:</strong> <code>F</code>, <code>E</code>, <code>D</code>, <code>C</code>, <code>B</code>, <code>A</code>, <code>S</code>, <code>S+</code></p><p><strong>Referência de design:</strong> <code>S+</code> representa excelência, <code>A</code> representa resultado desejável e <code>F</code> representa fracasso.</p></div>
+</section>
+<section class="docs-section" id="gdd-criterios-de-classificacao" data-title="Critérios de classificação">
+<h4>Critérios de classificação</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Critério</th><th>Descrição</th></tr></thead><tbody><tr><td>Prisão de inimigos</td><td>Mede quantos inimigos foram capturados em relação ao total e dificuldade deles.</td></tr><tr><td>Proteção de itens</td><td>Mede quantos itens de desejo foram recuperados ou preservados.</td></tr><tr><td>Tempo</td><td>Mede velocidade e eficiência do assalto.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-decision"><h4>Decisão</h4><p><strong>Decisão recomendada:</strong> no MVP, calcular classificação com poucos critérios e pesos claros.</p><p><strong>Motivo:</strong> a classificação precisa ser previsível para o jogador entender como melhorar.</p></div>
+</section>
+<section class="docs-section" id="gdd-interface-e-hud" data-title="Interface e HUD">
+<h3>Interface e HUD</h3>
+</section>
+<section class="docs-section" id="gdd-hud-principal" data-title="HUD principal">
+<h4>HUD principal</h4>
+<p>O HUD deve apresentar informações essenciais durante o gameplay:</p>
+<ul>
+<li>Tempo restante do assalto.</li>
+<li>Alerta de tempo crítico.</li>
+<li>Inventário atual do jogador.</li>
+<li>Itens recuperados.</li>
+<li>Itens salvos no cofre.</li>
+<li>Quantidade de inimigos capturados.</li>
+<li>Estado do personagem.</li>
+<li>Indicação de power up ativo.</li>
+<li>Minimapa.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-minimapa" data-title="Minimapa">
+<h4>Minimapa</h4>
+<p>O minimapa segue padrão quadriculado, com a posição atual do jogador no centro. Deve indicar:</p>
+<ul>
+<li>Layout simplificado do cenário.</li>
+<li>Larápios próximos dentro de distância máxima de detecção.</li>
+<li>Itens de desejo sem limite de distância.</li>
+<li>Sala de controle.</li>
+<li>Cofres.</li>
+<li>Prisão.</li>
+<li>Possível opção de norte fixo ou norte relativo.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-menus" data-title="Menus">
+<h4>Menus</h4>
+</section>
+<section class="docs-section" id="gdd-menu-inicial" data-title="Menu inicial">
+<h5>Menu inicial</h5>
+<ul>
+<li>Novo jogo.</li>
+<li>Modo solo.</li>
+<li>Multiplayer local cooperativo.</li>
+<li>Seleção de personagem.</li>
+<li>Endless, quando desbloqueado.</li>
+<li>Opções.</li>
+<li>Sair.</li>
+</ul>
+</section>
+<section class="docs-section" id="gdd-menu-de-pausa" data-title="Menu de pausa">
+<h5>Menu de pausa</h5>
+<ul>
+<li>Continuar.</li>
+<li>Salvar.</li>
+<li>Carregar.</li>
+<li>Opções.</li>
+<li>Retornar à tela inicial.</li>
+</ul>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> haverá salvamento durante a missão ou apenas entre missões?</p><p><strong>Recomendação:</strong> para MVP, salvar apenas fora do assalto para reduzir complexidade e evitar problemas de estado.</p></div>
+</section>
+<section class="docs-section" id="gdd-escopo-recomendado-de-mvp" data-title="Escopo recomendado de MVP">
+<h3>Escopo recomendado de MVP</h3>
+<p>O GDD original descreve um projeto amplo, com várias gangues, habilidades, cenários, modos e sistemas. Para validar a experiência central, o MVP deve reduzir escopo e provar primeiro o loop de perseguição.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Área</th><th>MVP recomendado</th></tr></thead><tbody><tr><td>Personagens</td><td>Rick e Petra jogáveis, sem diferenças mecânicas obrigatórias.</td></tr><tr><td>Modo</td><td>Campanha ou missão única estruturada.</td></tr><tr><td>Cenário</td><td>Armazém completo.</td></tr><tr><td>Inimigos</td><td>Uma gangue inicial com três ou quatro arquétipos.</td></tr><tr><td>Objetivos</td><td>Proteger itens, recuperar roubos e capturar inimigos.</td></tr><tr><td>IA</td><td>Furtar, fugir, perseguir, atacar e reagir a dano.</td></tr><tr><td>Sistemas</td><td>Movimento, impulso, interação, carregar/soltar, prisão, cofre.</td></tr><tr><td>Interface</td><td>HUD, minimapa, tempo e resultado.</td></tr><tr><td>Progressão</td><td>Classificação simples ao fim do assalto.</td></tr><tr><td>Multiplayer</td><td>Tela dividida local, se tecnicamente viável no primeiro protótipo.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-risk"><h4>Risco</h4><p><strong>Risco:</strong> tentar implementar todas as gangues e habilidades antes de validar o loop principal.</p><p><strong>Impacto:</strong> alto.</p><p><strong>Mitigação:</strong> validar primeiro uma fase vertical slice com armazém, uma gangue e classificação.</p></div>
+</section>
+<section class="docs-section" id="gdd-perguntas-abertas" data-title="Perguntas abertas">
+<h3>Perguntas abertas</h3>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> qual é a diferença mecânica entre capturar um inimigo e apenas derrubá-lo?</p><p><strong>Impacto:</strong> define combate, transporte, prisão e pontuação.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> os itens de desejo podem ser destruídos, apenas roubados ou também danificados?</p><p><strong>Impacto:</strong> afeta pontuação, feedback visual e comportamento dos inimigos.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> como funciona derrota total em uma missão?</p><p><strong>Possibilidades:</strong> tempo acaba, todos os itens são roubados, jogadores ficam incapacitados ou classificação <code>F</code>.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> a polícia oficial aparece visualmente durante o gameplay ou apenas em transições?</p><p><strong>Impacto:</strong> afeta narrativa, animação, final de missão e tom.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> quais habilidades são exclusivas de chefes e quais podem aparecer em inimigos comuns?</p><p><strong>Impacto:</strong> afeta balanceamento e clareza da progressão.</p></div>
+</section>
+<section class="docs-section" id="gdd-glossario" data-title="Glossário">
+<h3>Glossário</h3>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Termo</th><th>Definição</th></tr></thead><tbody><tr><td>PEGA</td><td>Proteção e Estratégia na Guarda de Ativos em Larópolis.</td></tr><tr><td>PGA Larópolis</td><td>Polícia e Guarda Avançada de Larópolis.</td></tr><tr><td>Larópolis</td><td>Cidade fictícia onde o jogo acontece.</td></tr><tr><td>Larápios</td><td>Criminosos/inimigos do jogo.</td></tr><tr><td>Assalto</td><td>Unidade principal de gameplay dentro de uma fase ou missão.</td></tr><tr><td>Item de desejo</td><td>Item valioso que inimigos querem roubar.</td></tr><tr><td>Cofre</td><td>Local onde itens recuperados devem ser depositados.</td></tr><tr><td>Prisão</td><td>Local onde inimigos capturados devem ser depositados.</td></tr><tr><td>Tempo crítico</td><td>Porção final do assalto em que inimigos priorizam fuga.</td></tr><tr><td>Especial SP</td><td>Recurso usado para habilidades especiais.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-documentos-relacionados" data-title="Documentos relacionados">
+<h3>Documentos relacionados</h3>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Documento</th><th>Uso</th></tr></thead><tbody><tr><td><code>Exemplos/GDD PEGA.docx</code></td><td>Fonte principal do conteúdo.</td></tr><tr><td><a href="#docs-panel-artbook" data-document-link="artbook">Art Book</a></td><td>Documentação visual de personagens, gangues, conceitos, modelos e cenários.</td></tr><tr><td><code>skills/immersive-documentation-framework/SKILL.md</code></td><td>Especificação operacional da documentação.</td></tr><tr><td><code>skills/immersive-documentation-framework/guidelines/ComponentLibrary.md</code></td><td>Componentes usados neste Markdown.</td></tr><tr><td><code>skills/immersive-documentation-framework/guidelines/ContentSystem.md</code></td><td>Organização editorial e hierarquia de conteúdo.</td></tr><tr><td><code>skills/immersive-documentation-framework/guidelines/Terminology.md</code></td><td>Diretrizes de termos e consistência.</td></tr><tr><td><code>skills/immersive-documentation-framework/guidelines/DocumentationStandards.md</code></td><td>Padrões gerais de documentação.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="gdd-historico-de-revisao" data-title="Histórico de revisão">
+<h3>Histórico de revisão</h3>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Versão</th><th>Data</th><th>Alteração</th></tr></thead><tbody><tr><td>0.2.1</td><td>2026-07-08</td><td>Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários.</td></tr><tr><td>0.2.0</td><td>2026-07-08</td><td>Recriação em Markdown a partir do GDD Word, com organização ampliada, componentes do framework e foco em GDD melhorado.</td></tr></tbody></table></div>
+</section></article></section><section id="docs-panel-artbook" class="docs-document" role="tabpanel" aria-labelledby="docs-tab-artbook" data-document="artbook" data-document-title="Art Book" hidden><article class="docs-content"><header class="docs-page-header" id="artbook-pega---art-book" data-title="PEGA - Art Book">
+<p class="docs-kicker">Arte e Personagens</p>
+<h2>PEGA - Art Book</h2>
+</header>
+<p><strong>Projeto:</strong> <code>PEGA</code> <strong>Tipo de documento:</strong> Art Book / Character Bible <strong>Status:</strong> Rascunho inicial <strong>Versão:</strong> 0.1.0 <strong>Fonte principal:</strong> <code>Exemplos/GDD PEGA.docx</code> <strong>Documento relacionado:</strong> <a href="#docs-panel-gdd" data-document-link="gdd">Game Design Document</a> <strong>Última atualização:</strong> 2026-07-08</p>
+<p>---</p>
+<section class="docs-section" id="artbook-visao-artistica" data-title="Visão artística">
+<h3>Visão artística</h3>
+<p>O Art Book de <strong>PEGA</strong> documenta a intenção visual do jogo, os conceitos de personagens, gangues, inimigos, modelos e cenários. Ele existe separado do GDD para manter o documento de design focado em regras e sistemas, enquanto a direção visual fica em um espaço próprio, mais adequado para imagens, fichas de personagem e comentários de arte.</p>
+<p>PEGA tem uma identidade cartunesca: personagens exagerados, gangues temáticas, humor visual, silhuetas fortes e leitura rápida durante perseguições top-down. A arte deve ajudar o jogador a reconhecer função, perigo, personalidade e grupo de cada personagem mesmo em movimento.</p>
+<div class="docs-callout docs-callout-note"><p class="docs-callout__title">Escopo deste documento</p><p>Esta primeira versão usa as informações e imagens presentes no GDD original em Word. As seções de cenário já foram criadas para receber arte futura, mesmo quando ainda não há conceito visual extraído.</p></div>
+<div class="docs-block docs-block-objective"><h4>Objetivo</h4><p><strong>Objetivo:</strong> criar uma base autoral para documentar personagens, gangues, conceitos e modelos visuais de PEGA.</p><p><strong>Critério de sucesso:</strong> artistas, designers e produção devem conseguir localizar rapidamente a intenção visual de cada grupo, quais conceitos já existem e quais pontos ainda precisam de definição.</p><p><strong>Estado:</strong> ativo</p></div>
+</section>
+<section class="docs-section" id="artbook-principios-de-direcao-visual" data-title="Princípios de direção visual">
+<h4>Princípios de direção visual</h4>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Princípio</th><th>Aplicação</th></tr></thead><tbody><tr><td>Silhueta reconhecível</td><td>Cada personagem deve ser identificável pelo contorno antes mesmo dos detalhes.</td></tr><tr><td>Tema de gangue claro</td><td>Roupa, cor, acessórios e atitude devem comunicar a gangue.</td></tr><tr><td>Comédia visual</td><td>Crimes e perigos são tratados de forma exagerada, teatral e cartunesca.</td></tr><tr><td>Leitura top-down</td><td>Cores e formas precisam funcionar em câmera superior e em tela dividida.</td></tr><tr><td>Função antes de detalhe</td><td>A arte deve comunicar se o inimigo rouba, foge, ataca, sabota, engana ou lidera.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-requirement"><h4>Requisito</h4><p><strong>Requisito visual:</strong> todo inimigo jogável no cenário precisa ter leitura clara de grupo, ameaça e estado.</p><p><strong>Critério de aceitação:</strong> o jogador deve conseguir distinguir inimigo comum, suporte, ameaça física e líder sem abrir menus ou depender de texto.</p></div>
+</section>
+<section class="docs-section" id="artbook-personagens-principais" data-title="Personagens principais">
+<h3>Personagens principais</h3>
+</section>
+<section class="docs-section" id="artbook-rick-ronda" data-title="Rick Ronda">
+<h4>Rick Ronda</h4>
+<p>Rick Ronda é um jovem aspirante à <strong>P.G.A. Larópolis</strong> que não passa nos testes da instituição e decide fundar a própria agência de segurança. Visualmente, Rick deve comunicar iniciativa, improviso e energia. Ele é parte da fantasia de &quot;segurança em começo de carreira&quot;: alguém determinado, ainda não totalmente profissionalizado, mas pronto para provar valor em campo.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Campo</th><th>Direção</th></tr></thead><tbody><tr><td>Papel</td><td>Protagonista jogável.</td></tr><tr><td>Fantasia visual</td><td>Segurança iniciante, determinado e improvisador.</td></tr><tr><td>Leitura esperada</td><td>Rápido, ativo, confiante e acessível.</td></tr><tr><td>Relação com gameplay</td><td>Deve funcionar em perseguição, carregamento de itens, combate leve e interação com cenário.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> Rick já possui modelo/concept final fora do GDD Word?</p><p><strong>Uso futuro:</strong> inserir frente, costas, expressões, paleta, proporções e variações de roupa.</p></div>
+</section>
+<section class="docs-section" id="artbook-petra-patrol" data-title="Petra Patrol">
+<h4>Petra Patrol</h4>
+<p>Petra Patrol é parceira de Rick e cofundadora da <strong>P.E.G.A. Larópolis</strong>. O GDD a posiciona como personagem jogável e parte da dupla principal. Visualmente, Petra deve comunicar competência, parceria e a mesma energia de segurança improvisada presente em Rick, sem perder identidade própria.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Campo</th><th>Direção</th></tr></thead><tbody><tr><td>Papel</td><td>Protagonista jogável.</td></tr><tr><td>Fantasia visual</td><td>Segurança parceira, ativa e preparada para perseguição.</td></tr><tr><td>Leitura esperada</td><td>Cooperativa, ágil e expressiva.</td></tr><tr><td>Relação com gameplay</td><td>Deve funcionar tanto em modo solo quanto em multiplayer local.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> Petra terá diferenças visuais que também indicam diferenças mecânicas?</p><p><strong>Recomendação inicial:</strong> documentar primeiro a identidade visual própria e só depois atrelar diferenças de atributos, se o design confirmar essa necessidade.</p></div>
+</section>
+<section class="docs-section" id="artbook-gangues-de-laropolis" data-title="Gangues de Larópolis">
+<h3>Gangues de Larópolis</h3>
+<p>As gangues são a principal base visual dos inimigos. Cada grupo precisa ter tema, paleta, comportamento, humor e silhueta próprios. O GDD original apresenta várias gangues, cada uma com arquétipos internos e líderes.</p>
+</section>
+<section class="docs-section" id="artbook-os-trapalhoes-do-crime" data-title="Os Trapalhões do Crime">
+<h4>Os Trapalhões do Crime</h4>
+<p>Grupo criminoso excêntrico, caótico e cômico. É uma mistura de crime clássico cartunesco com situações atrapalhadas. Funciona bem como gangue inicial por ter leitura simples, humor direto e arquétipos fáceis de entender.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Crime clássico, comédia física e trapalhada.</td></tr><tr><td>Paleta citada no GDD</td><td>Cinza listrado, vermelho básico e outras cores de suporte a confirmar.</td></tr><tr><td>Leitura de gameplay</td><td>Inimigos comuns, distrações, obstáculos e força bruta.</td></tr><tr><td>Tom</td><td>Leve, cômico, caótico e acessível.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-ladroes-listrados" data-title="Ladrões Listrados">
+<h5>Ladrões Listrados</h5>
+<p>Ladrões comuns do grupo. Usam trajes listrados inspirados em criminosos clássicos de quadrinhos. Devem ser simples, imediatamente reconhecíveis e úteis como base visual da gangue.</p>
+</section>
+<section class="docs-section" id="artbook-ladroes-molhados" data-title="Ladrões Molhados">
+<h5>Ladrões Molhados</h5>
+<p>Inimigos um pouco mais inteligentes, inspirados em artimanhas e situações elaboradas. A leitura visual pode reforçar esperteza, bagunça e uso de truques ambientais.</p>
+</section>
+<section class="docs-section" id="artbook-capangas-atrapalhados" data-title="Capangas Atrapalhados">
+<h5>Capangas Atrapalhados</h5>
+<p>Capangas cômicos e desastrados. Devem transmitir caos e obediência atrapalhada, funcionando como suporte visual para humor e confusão.</p>
+</section>
+<section class="docs-section" id="artbook-marombas-ameacadores" data-title="Marombas Ameaçadores">
+<h5>Marombas Ameaçadores</h5>
+<p>Inimigos fisicamente imponentes. Eles representam força bruta dentro da gangue e precisam ter silhueta mais larga, pesada e intimidadora.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/01-marombas-ameacadores-threatening-brutes.png" alt="Marombas Ameaçadores - Referência 01" loading="lazy"><figcaption>Marombas Ameaçadores - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/02-marombas-ameacadores-threatening-brutes.png" alt="Marombas Ameaçadores - Referência 02" loading="lazy"><figcaption>Marombas Ameaçadores - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/03-marombas-ameacadores-threatening-brutes.png" alt="Marombas Ameaçadores - Modelo/Conceito 03" loading="lazy"><figcaption>Marombas Ameaçadores - Modelo/Conceito 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/04-marombas-ameacadores-threatening-brutes.png" alt="Marombas Ameaçadores - Referência 04" loading="lazy"><figcaption>Marombas Ameaçadores - Referência 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/05-concepts.png" alt="Os Trapalhões do Crime - Painel de conceitos" loading="lazy"><figcaption>Os Trapalhões do Crime - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-os-incriveis-larapios" data-title="Os Incríveis Larápios">
+<h4>Os Incríveis Larápios</h4>
+<p>Gangue de temática circense. A aparência festiva esconde criminosos engenhosos que usam confusão, disfarce e espetáculo como estratégia. A direção visual deve equilibrar alegria de circo com intenção criminosa.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Circo, palco, palhaçaria, truques e disfarces.</td></tr><tr><td>Paleta citada no GDD</td><td>Vermelho carnaval e amarelo dourado.</td></tr><tr><td>Leitura de gameplay</td><td>Distração, ilusão, camuflagem e engano.</td></tr><tr><td>Tom</td><td>Festivo, teatral, caótico e malandro.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-trupe-trapatapa" data-title="Trupe Trapatapa">
+<h5>Trupe Trapatapa</h5>
+<p>Palhaços ultrajantes com narizes vermelhos, sapatos grandes e cabelos coloridos. Suas ações criminosas são executadas com linguagem pastelão.</p>
+</section>
+<section class="docs-section" id="artbook-os-malabaristas-da-malandragem" data-title="Os Malabaristas da Malandragem">
+<h5>Os Malabaristas da Malandragem</h5>
+<p>Malabaristas especializados em ilusões e distrações. O GDD cita roupas listradas, cartolas e uso de bolas de malabares como distração.</p>
+</section>
+<section class="docs-section" id="artbook-os-mimiquetes" data-title="Os Mimiquetes">
+<h5>Os Mimiquetes</h5>
+<p>Mestres em disfarces e movimentos teatrais. Devem se camuflar entre objetos e confundir o jogador com gestos exagerados.</p>
+</section>
+<section class="docs-section" id="artbook-o-enigmatico-mascarado" data-title="O Enigmático Mascarado">
+<h5>O Enigmático Mascarado</h5>
+<p>Líder imprevisível que oculta a identidade por trás de cabeças de pelúcia e máscaras. Deve parecer misterioso, teatral e visualmente mutável.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/06-o-enigmatico-mascarado.png" alt="O Enigmático Mascarado - Referência 01" loading="lazy"><figcaption>O Enigmático Mascarado - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/07-o-enigmatico-mascarado.png" alt="O Enigmático Mascarado - Referência 02" loading="lazy"><figcaption>O Enigmático Mascarado - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/08-o-enigmatico-mascarado.png" alt="O Enigmático Mascarado - Referência 03" loading="lazy"><figcaption>O Enigmático Mascarado - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/09-o-enigmatico-mascarado.png" alt="O Enigmático Mascarado - Modelo/Conceito 04" loading="lazy"><figcaption>O Enigmático Mascarado - Modelo/Conceito 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/10-concepts.png" alt="Os Incríveis Larápios - Painel de conceitos" loading="lazy"><figcaption>Os Incríveis Larápios - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-os-sem-leis" data-title="Os Sem Leis">
+<h4>Os Sem Leis</h4>
+<p>Gangue mais organizada e perigosa. Mistura faroeste, cangaço, banditismo, emboscada e ameaça de rua. Deve parecer mais profissional e coordenada do que Os Trapalhões do Crime.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Fora da lei, faroeste, cangaço, punk e deserto.</td></tr><tr><td>Leitura de gameplay</td><td>Emboscadas, ataques à distância e pressão agressiva.</td></tr><tr><td>Tom</td><td>Mais ameaçador, seco, duro e organizado.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-os-cachaceiros" data-title="Os Cachaceiros">
+<h5>Os Cachaceiros</h5>
+<p>Bando que prefere tocaias e emboscadas. A direção visual deve combinar astúcia, sujeira, improviso e agressividade.</p>
+</section>
+<section class="docs-section" id="artbook-foras-da-lei" data-title="Foras da Lei">
+<h5>Foras da Lei</h5>
+<p>Criminosos com estilo de velho oeste. São especialistas em emboscadas e ataques planejados à distância.</p>
+</section>
+<section class="docs-section" id="artbook-anarquistas" data-title="Anarquistas">
+<h5>Anarquistas</h5>
+<p>Grupo mais caótico, ligado a gangues de rua, punk e possível influência cyberpunk. Deve comunicar ação direta, ruptura e barulho visual.</p>
+</section>
+<section class="docs-section" id="artbook-nomades-do-deserto" data-title="Nômades do Deserto">
+<h5>Nômades do Deserto</h5>
+<p>Líderes ou inimigos de alta ameaça, rápidos e habilidosos, inspirados em andarilhos, bandidos de contos orientais e referências de &quot;Ali Babá e os 40 Ladrões&quot;.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/11-nomades-do-deserto.png" alt="Nômades do Deserto - Referência 01" loading="lazy"><figcaption>Nômades do Deserto - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/12-nomades-do-deserto.png" alt="Nômades do Deserto - Referência 02" loading="lazy"><figcaption>Nômades do Deserto - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/13-nomades-do-deserto.png" alt="Nômades do Deserto - Referência 03" loading="lazy"><figcaption>Nômades do Deserto - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/14-nomades-do-deserto.png" alt="Nômades do Deserto - Referência 04" loading="lazy"><figcaption>Nômades do Deserto - Referência 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/15-concepts.png" alt="Os Sem Leis - Painel de conceitos" loading="lazy"><figcaption>Os Sem Leis - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-os-cyber-piratas" data-title="Os Cyber Piratas">
+<h4>Os Cyber Piratas</h4>
+<p>Gangue que mistura piratas clássicos com tecnologia, drones e hacking. Visualmente, precisa unir elementos marítimos, acessórios piratas e componentes digitais/neon sem perder leitura cartunesca.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Pirataria, tecnologia, drones, hacking e navegação digital.</td></tr><tr><td>Paleta citada no GDD</td><td>Azul oceano e verde neon.</td></tr><tr><td>Leitura de gameplay</td><td>Sabotagem de câmeras, sistemas, portas digitais e minimapa.</td></tr><tr><td>Tom</td><td>Aventureiro, tecnológico, astuto e excêntrico.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-drone-caravela" data-title="Drone Caravela">
+<h5>Drone Caravela</h5>
+<p>Pequena caravela voadora equipada com tecnologia de hacking. Deve parecer uma homenagem a navios piratas adaptada para drone.</p>
+</section>
+<section class="docs-section" id="artbook-drone-pirata-assistente" data-title="Drone Pirata Assistente">
+<h5>Drone Pirata Assistente</h5>
+<p>Drone com aparência de peão de xadrez vestido como assistente pirata. Deve comunicar suporte, infiltração e distração.</p>
+</section>
+<section class="docs-section" id="artbook-papagaio-pirata" data-title="Papagaio Pirata">
+<h5>Papagaio Pirata</h5>
+<p>Personagem com cabeça de papagaio e corpo de pirata robusto, capaz de interagir com sistemas de segurança.</p>
+</section>
+<section class="docs-section" id="artbook-capitao-hacker" data-title="Capitão Hacker">
+<h5>Capitão Hacker</h5>
+<p>Líder carismático da gangue. Inspirado no Capitão Gancho, com gancho cibernético e linguagem visual de pirata hacker.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/16-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Referência 01" loading="lazy"><figcaption>Capitão Hacker - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/17-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Referência 02" loading="lazy"><figcaption>Capitão Hacker - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/18-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Referência 03" loading="lazy"><figcaption>Capitão Hacker - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/19-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Referência 04" loading="lazy"><figcaption>Capitão Hacker - Referência 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/20-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Referência 05" loading="lazy"><figcaption>Capitão Hacker - Referência 05</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/21-capitao-hacker-cpt-hook.png" alt="Capitão Hacker - Modelo/Conceito 06" loading="lazy"><figcaption>Capitão Hacker - Modelo/Conceito 06</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/22-concepts.png" alt="Os Cyber Piratas - Painel de conceitos" loading="lazy"><figcaption>Os Cyber Piratas - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-os-fantasmas-da-noite" data-title="Os Fantasmas da Noite">
+<h4>Os Fantasmas da Noite</h4>
+<p>Gangue sobrenatural de criaturas clássicas. O tom é mais sombrio, mas ainda dentro da estética cartunesca de PEGA. Deve parecer assustadora de forma divertida, não realista.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Monstros clássicos, noite, terror leve e poderes sobrenaturais.</td></tr><tr><td>Paleta citada no GDD</td><td>Roxo profundo e azul noturno.</td></tr><tr><td>Leitura de gameplay</td><td>Invisibilidade, medo, transformação, ocultação e transposição.</td></tr><tr><td>Tom</td><td>Misterioso, teatral, noturno e cômico-sombrio.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-o-fantasma-noturno" data-title="O Fantasma Noturno">
+<h5>O Fantasma Noturno</h5>
+<p>Figura espectral envolta em lençol etéreo. Deve comunicar confusão, medo e capacidade de atravessar barreiras.</p>
+</section>
+<section class="docs-section" id="artbook-o-lobisomem-dentinho" data-title="O Lobisomem Dentinho">
+<h5>O Lobisomem Dentinho</h5>
+<p>Forma bestial associada à lua cheia e emboscadas noturnas. Deve parecer forte, rápido e ameaçador, mas ainda estilizado.</p>
+</section>
+<section class="docs-section" id="artbook-os-vampiros-palidos" data-title="Os Vampiros Pálidos">
+<h5>Os Vampiros Pálidos</h5>
+<p>Inimigos de sedução hipnótica e presença social. Devem comunicar elegância pálida, sombra e drenagem de energia.</p>
+</section>
+<section class="docs-section" id="artbook-a-mumia-maldita" data-title="A Múmia Maldita">
+<h5>A Múmia Maldita</h5>
+<p>Líder astuciosa com poderes místicos. Usa faixas, desorientação e controle para criar desespero.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/23-a-mumia-maldita.png" alt="A Múmia Maldita - Referência 01" loading="lazy"><figcaption>A Múmia Maldita - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/24-a-mumia-maldita.png" alt="A Múmia Maldita - Referência 02" loading="lazy"><figcaption>A Múmia Maldita - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/25-a-mumia-maldita.png" alt="A Múmia Maldita - Referência 03" loading="lazy"><figcaption>A Múmia Maldita - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/26-a-mumia-maldita.png" alt="A Múmia Maldita - Referência 04" loading="lazy"><figcaption>A Múmia Maldita - Referência 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/27-concepts.png" alt="Os Fantasmas da Noite - Painel de conceitos" loading="lazy"><figcaption>Os Fantasmas da Noite - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-a-triade-da-realeza-opulenta" data-title="A Tríade da Realeza Opulenta">
+<h4>A Tríade da Realeza Opulenta</h4>
+<p>Gangue sofisticada, elegante e refinada. O GDD descreve um código de ética próprio e uma relação entre crime, estilo e opulência.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Realeza, luxo, elegância e crime refinado.</td></tr><tr><td>Paleta citada no GDD</td><td>Preto noturno e cores de sofisticação a confirmar.</td></tr><tr><td>Leitura de gameplay</td><td>Técnicas avançadas, postura refinada e inimigos mais controlados.</td></tr><tr><td>Tom</td><td>Elegante, teatral, frio e aristocrático.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-os-cla-de-lotus-ninja" data-title="Os Clã de Lótus Ninja">
+<h5>Os Clã de Lótus Ninja</h5>
+<p>Personagens com trajes de seda negra e máscaras intrincadas. Devem comunicar precisão, sigilo e sofisticação.</p>
+</section>
+<section class="docs-section" id="artbook-os-larapios-mascarados" data-title="Os Larápios Mascarados">
+<h5>Os Larápios Mascarados</h5>
+<p>Criminosos mascarados ligados ao tema da realeza opulenta. A direção visual deve reforçar disfarce, baile, mistério e classe.</p>
+</section>
+<section class="docs-section" id="artbook-os-cavalheiros" data-title="Os Cavalheiros">
+<h5>Os Cavalheiros</h5>
+<p>Inimigos elegantes e possivelmente mais formais. Devem comunicar controle, postura e ameaça educada.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/28-os-cavalheiros.png" alt="Os Cavalheiros - Referência 01" loading="lazy"><figcaption>Os Cavalheiros - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/29-os-cavalheiros.png" alt="Os Cavalheiros - Referência 02" loading="lazy"><figcaption>Os Cavalheiros - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/30-os-cavalheiros.png" alt="Os Cavalheiros - Referência 03" loading="lazy"><figcaption>Os Cavalheiros - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/31-os-cavalheiros.png" alt="Os Cavalheiros - Referência 04" loading="lazy"><figcaption>Os Cavalheiros - Referência 04</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/32-concepts.png" alt="A Tríade da Realeza Opulenta - Painel de conceitos" loading="lazy"><figcaption>A Tríade da Realeza Opulenta - Painel de conceitos</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-os-larapios-das-galaxias" data-title="Os Larápios das Galáxias">
+<h4>Os Larápios das Galáxias</h4>
+<p>Gangue de temática espacial e alienígena. O GDD lista Veloxlins, Cognitrons, Furiosoids e CryoSpectra, com CryoSpectra aparecendo como figura de destaque à frente da invasão.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Elemento</th><th>Direção</th></tr></thead><tbody><tr><td>Tema</td><td>Ficção científica, alienígenas, tecnologia e ameaça cósmica.</td></tr><tr><td>Leitura de gameplay</td><td>A confirmar conforme mecânicas específicas da gangue.</td></tr><tr><td>Tom</td><td>Estranho, energético, futurista e cartunesco.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-veloxlins" data-title="Veloxlins">
+<h5>Veloxlins</h5>
+<p>Arquétipo citado no GDD. A direção visual e mecânica ainda precisa ser detalhada.</p>
+</section>
+<section class="docs-section" id="artbook-cognitrons" data-title="Cognitrons">
+<h5>Cognitrons</h5>
+<p>Arquétipo citado no GDD. A direção visual e mecânica ainda precisa ser detalhada.</p>
+</section>
+<section class="docs-section" id="artbook-furiosoids" data-title="Furiosoids">
+<h5>Furiosoids</h5>
+<p>Arquétipo citado no GDD. A direção visual e mecânica ainda precisa ser detalhada.</p>
+</section>
+<section class="docs-section" id="artbook-cryospectra" data-title="CryoSpectra">
+<h5>CryoSpectra</h5>
+<p>Criatura formada por metal e gelo, descrita como estrutura alienígena única e figura à frente da invasão. Deve comunicar frieza, ameaça e estranhamento tecnológico.</p>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/33-cryospectra.png" alt="CryoSpectra - Referência 01" loading="lazy"><figcaption>CryoSpectra - Referência 01</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/34-cryospectra.png" alt="CryoSpectra - Referência 02" loading="lazy"><figcaption>CryoSpectra - Referência 02</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/35-cryospectra.png" alt="CryoSpectra - Referência 03" loading="lazy"><figcaption>CryoSpectra - Referência 03</figcaption></figure>
+<figure class="docs-figure docs-art-figure"><img src="assets/documents/art-book/36-cryospectra.png" alt="CryoSpectra - Modelo/Conceito 04" loading="lazy"><figcaption>CryoSpectra - Modelo/Conceito 04</figcaption></figure>
+</section>
+<section class="docs-section" id="artbook-cenarios" data-title="Cenários">
+<h3>Cenários</h3>
+</section>
+<section class="docs-section" id="artbook-direcao-visual-dos-cenarios" data-title="Direção visual dos cenários">
+<h4>Direção visual dos cenários</h4>
+<p>Os cenários de PEGA devem ser espaços de perseguição com identidade própria. Cada ambiente precisa oferecer leitura top-down clara, rotas de fuga, objetos interativos, áreas de interesse e elementos visuais que reforcem a fantasia do contrato.</p>
+<div class="docs-block docs-block-requirement"><h4>Requisito</h4><p><strong>Requisito de cenário:</strong> cada cenário deve ter uma ficha visual própria antes de entrar em produção.</p><p><strong>Campos mínimos:</strong> tema, paleta, materiais dominantes, objetos de leitura, armadilhas específicas, itens de desejo, áreas de contraste e referências visuais.</p></div>
+</section>
+<section class="docs-section" id="artbook-armazem" data-title="Armazém">
+<h4>Armazém</h4>
+<p>O Armazém é um centro de distribuição com característica de galpão, caixas, malotes, prédio administrativo, doca de carregamento e pátio de veículos. Ele é o cenário inicial mais consolidado no GDD e deve funcionar como vertical slice visual do jogo.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Campo</th><th>Direção</th></tr></thead><tbody><tr><td>Função</td><td>Primeiro cenário completo e provável MVP.</td></tr><tr><td>Identidade</td><td>Galpão logístico, caixas, docas, carga, escritório e pátio.</td></tr><tr><td>Leitura de gameplay</td><td>Corredores, bloqueios, rotas alternativas, esconderijos e pontos de contenção.</td></tr><tr><td>Objetos importantes</td><td>Baú de ouro, caixas, malotes, carrinhos, portas, cofre, prisão e câmeras.</td></tr></tbody></table></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> já existem concepts ou modelos do Armazém fora do GDD Word?</p><p><strong>Uso futuro:</strong> inserir layout visual, moodboard, mapa top-down, props principais e variações de iluminação.</p></div>
+</section>
+<section class="docs-section" id="artbook-cidade-de-laropolis" data-title="Cidade de Larópolis">
+<h4>Cidade de Larópolis</h4>
+<p>Larópolis é uma cidade fictícia cartunesca marcada por criminalidade exagerada. No Art Book, esta seção deve reunir referências de arquitetura, mapa/HUB, bairros, identidade urbana, placas, veículos, lojas e linguagem visual da cidade.</p>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> o mapa de Larópolis será representado como ilustração 2D, mapa interativo ou ambiente navegável?</p><p><strong>Impacto visual:</strong> define escala de produção, detalhamento dos bairros e estilo do HUB.</p></div>
+</section>
+<section class="docs-section" id="artbook-sala-de-controle" data-title="Sala de controle">
+<h4>Sala de controle</h4>
+<p>A sala de controle é uma área funcional com monitores de câmeras. Visualmente, ela precisa comunicar vigilância, estratégia e leitura rápida de informações sem parecer complexa demais para o tom cartunesco.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Campo</th><th>Direção</th></tr></thead><tbody><tr><td>Função</td><td>Observar câmeras e ativar armadilhas.</td></tr><tr><td>Elementos</td><td>Monitores numerados, mesa, luzes de status, controles e mapa simplificado.</td></tr><tr><td>Leitura</td><td>Deve ser reconhecida rapidamente como ponto estratégico.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-prisao-e-cofre" data-title="Prisão e cofre">
+<h4>Prisão e cofre</h4>
+<p>Prisão e cofre são salas de descarga: uma recebe inimigos capturados, a outra recebe itens recuperados. A arte precisa diferenciar claramente os dois destinos.</p>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Espaço</th><th>Direção visual</th></tr></thead><tbody><tr><td>Prisão</td><td>Grades, contenção, segurança e feedback de captura.</td></tr><tr><td>Cofre</td><td>Proteção de valor, porta reforçada, brilho de item e leitura de depósito.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-modelo-de-ficha-visual" data-title="Modelo de ficha visual">
+<h3>Modelo de ficha visual</h3>
+<p>Use este modelo para documentar novos personagens, inimigos ou props.</p>
+<pre class="docs-code"><code class="language-md">### Nome do personagem ou objeto
+
+| Campo | Direção |
+|---|---|
+| Categoria | Protagonista, inimigo, chefe, NPC, prop ou cenário. |
+| Grupo | Gangue, facção, cidade, cenário ou sistema relacionado. |
+| Função de gameplay | O que ele comunica ou faz durante o jogo. |
+| Silhueta | Forma principal e leitura à distância. |
+| Paleta | Cores principais e acentos. |
+| Materiais | Tecidos, metais, madeira, vidro, luz, pele, etc. |
+| Animação-chave | Poses, idle, ataque, fuga, captura ou interação. |
+| Observações | Pontos de produção, riscos ou decisões pendentes. |
+
+Imagem de referência: `assets/documents/art-book/nome-do-asset.png`</code></pre>
+</section>
+<section class="docs-section" id="artbook-pendencias-visuais" data-title="Pendências visuais">
+<h3>Pendências visuais</h3>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> quais imagens extraídas do Word são concepts próprios, referências externas ou modelos finais?</p><p><strong>Impacto:</strong> o Art Book precisa diferenciar autoria, referência e asset final para evitar uso indevido em produção.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> Rick e Petra possuem concepts visuais no arquivo original ou em outro local do projeto?</p><p><strong>Impacto:</strong> os protagonistas ainda estão descritos por intenção, mas sem imagem documentada nesta versão.</p></div>
+<div class="docs-block docs-block-open-question"><h4>Pergunta aberta</h4><p><strong>Pergunta:</strong> quais gangues fazem parte da primeira entrega jogável?</p><p><strong>Impacto:</strong> a prioridade de arte deve seguir o escopo de MVP e não a lista completa de gangues.</p></div>
+</section>
+<section class="docs-section" id="artbook-documentos-relacionados" data-title="Documentos relacionados">
+<h3>Documentos relacionados</h3>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Documento</th><th>Uso</th></tr></thead><tbody><tr><td><a href="#docs-panel-gdd" data-document-link="gdd">Game Design Document</a></td><td>Documento principal de regras, sistemas e loop de jogo.</td></tr><tr><td><code>Exemplos/GDD PEGA.docx</code></td><td>Fonte original do conteúdo e das imagens extraídas.</td></tr><tr><td><code>assets/documents/art-book/</code></td><td>Pasta local com imagens extraídas para este documento.</td></tr><tr><td><code>skills/immersive-documentation-framework/SKILL.md</code></td><td>Especificação operacional da documentação.</td></tr><tr><td><code>guidelines/ComponentLibrary.md</code></td><td>Componentes usados neste Markdown.</td></tr><tr><td><code>guidelines/AssetSystem.md</code></td><td>Organização e referências de assets locais.</td></tr></tbody></table></div>
+</section>
+<section class="docs-section" id="artbook-historico-de-revisao" data-title="Histórico de revisão">
+<h3>Histórico de revisão</h3>
+<div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Versão</th><th>Data</th><th>Alteração</th></tr></thead><tbody><tr><td>0.1.0</td><td>2026-07-08</td><td>Criação do Art Book com direção visual, fichas de gangues, imagens extraídas do GDD Word e seções iniciais de cenários.</td></tr></tbody></table></div>
+</section></article></section>
+    </main>
+  </div>
+
+  <footer class="docs-footer">
+    <p>PEGA documentação offline. Markdown continua sendo a fonte de verdade.</p>
+    <nav aria-label="Links do rodapé">
+      <a href="source/gdd.md">Fonte GDD</a>
+      <a href="source/artbook.md">Fonte Art Book</a>
+      <a href="#docs-panel-gdd" data-document-link="gdd">Voltar ao topo</a>
+    </nav>
+  </footer>
+
+  <script src="js/navigation.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/glossary.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest("[data-document-link]");
+      if (!link || !window.docsNavigation) return;
+      const documentId = link.dataset.documentLink;
+      const hash = link.getAttribute("href");
+      if (!hash || !hash.startsWith("#")) return;
+      event.preventDefault();
+      window.docsNavigation.setActiveDocument(documentId, { preserveScroll: true });
+      window.requestAnimationFrame(function () {
+        const target = document.querySelector(hash);
+        if (target) {
+          history.replaceState(null, "", hash);
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
