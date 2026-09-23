@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
+  <title id="title">Offline package diagram</title>
+  <desc id="desc">A simple diagram showing Markdown transformed into a local offline HTML package.</desc>
+  <style>
+    :root {
+      --diagram-bg: #eef2f7;
+      --diagram-node: #ffffff;
+      --diagram-border: #c1cad8;
+      --diagram-text: #111827;
+      --diagram-muted: #536074;
+      --diagram-accent: #2563eb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --diagram-bg: #11151d;
+        --diagram-node: #171c26;
+        --diagram-border: #394354;
+        --diagram-text: #e7eaf0;
+        --diagram-muted: #9da7b7;
+        --diagram-accent: #7bb7ff;
+      }
+    }
+  </style>
+  <rect width="960" height="420" rx="28" fill="var(--diagram-bg)"/>
+  <g fill="var(--diagram-node)" stroke="var(--diagram-border)" stroke-width="2">
+    <rect x="70" y="110" width="210" height="150" rx="18"/>
+    <rect x="375" y="110" width="210" height="150" rx="18"/>
+    <rect x="680" y="110" width="210" height="150" rx="18"/>
+  </g>
+  <g fill="var(--diagram-text)" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="700">
+    <text x="120" y="185">Markdown</text>
+    <text x="430" y="185">Renderer</text>
+    <text x="720" y="185">Offline HTML</text>
+  </g>
+  <g stroke="var(--diagram-accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M300 185h50"/>
+    <path d="m340 170 18 15-18 15"/>
+    <path d="M605 185h50"/>
+    <path d="m645 170 18 15-18 15"/>
+  </g>
+  <text x="70" y="330" fill="var(--diagram-muted)" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="22">All required assets, styles, and scripts are local.</text>
+</svg>

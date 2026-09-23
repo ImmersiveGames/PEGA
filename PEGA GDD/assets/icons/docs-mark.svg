@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Immersive Games documentation mark">
+  <style>
+    :root {
+      --mark-bg: #ffffff;
+      --mark-primary: #2563eb;
+      --mark-secondary: #15803d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --mark-bg: #11151d;
+        --mark-primary: #7bb7ff;
+        --mark-secondary: #98e6a6;
+      }
+    }
+  </style>
+  <rect width="64" height="64" rx="16" fill="var(--mark-bg)"/>
+  <path d="M18 18h18c7 0 12 5 12 12s-5 12-12 12H26v8h-8V18Zm8 8v8h10c2.6 0 4-1.6 4-4s-1.4-4-4-4H26Z" fill="var(--mark-primary)"/>
+  <path d="M18 50h28" stroke="var(--mark-secondary)" stroke-width="4" stroke-linecap="round"/>
+</svg>

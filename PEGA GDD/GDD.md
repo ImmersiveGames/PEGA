@@ -1,0 +1,714 @@
+# PEGA - Game Design Document
+
+**Projeto:** `PEGA`  
+**Tipo de documento:** Game Design Document  
+**Status:** Rascunho reorganizado  
+**Versão:** 0.2.0  
+**Fonte principal:** `Exemplos/GDD PEGA.docx`  
+**Última atualização:** 2026-07-08
+
+---
+
+## Visão
+
+**PEGA** é um jogo de ação top-down para PC, com foco em perseguição, captura e recuperação de itens roubados. O jogo acompanha Rick Ronda e Petra Patrol, dois jovens que tentam entrar para a Polícia e Guarda Avançada de Larópolis, a **P.G.A. Larópolis**, mas não são aceitos por falta de experiência. Sem desistir da carreira de segurança, eles fundam a própria empresa: **Proteção e Estratégia na Guarda de Ativos em Larópolis**, ou **P.E.G.A. Larópolis**.
+
+O jogo coloca um ou dois jogadores em missões de segurança por diferentes pontos da cidade. Cada missão apresenta um local invadido por larápios, itens valiosos em risco, rotas de fuga, armadilhas, câmeras, power-ups e inimigos com comportamentos próprios. O objetivo central é impedir que os criminosos escapem com os itens, capturar o maior número possível de inimigos e proteger os bens do cliente antes do fim do assalto.
+
+> [!NOTE] Tratamento da fonte
+> Este documento reorganiza e detalha o GDD original em Word. A intenção não é substituir decisões de design ainda não validadas, mas transformar o material existente em uma base mais clara para produção, prototipação e discussão.
+
+:::objective
+**Objetivo do documento:** consolidar a visão, os sistemas e as regras principais de PEGA em uma versão de GDD mais legível, navegável e pronta para evolução.
+
+**Critério de sucesso:** uma pessoa de design, programação, arte ou produção deve conseguir entender a fantasia do jogo, o loop principal, os modos, os inimigos, as interações de cenário, a progressão e os pontos que ainda precisam de definição.
+
+**Estado:** ativo
+:::
+
+### Pilares de design
+
+| Pilar | Descrição | Consequência prática |
+|---|---|---|
+| Perseguição cartunesca | A graça principal está em correr atrás de ladrões por cenários cheios de obstáculos. | Os mapas precisam ter rotas alternativas, atalhos, esconderijos, objetos interativos e momentos de quase captura. |
+| Segurança improvisada | Rick e Petra não são policiais perfeitos; eles resolvem problemas com ferramentas disponíveis no local. | Carrinhos, armadilhas, portas, câmeras, cofres e objetos seguráveis devem fazer parte do combate e da estratégia. |
+| Caos legível | O jogo pode ser frenético, mas o jogador precisa entender o que está acontecendo. | HUD, minimapa, feedback de estado, ícones de item e leitura visual dos inimigos são críticos. |
+| Cooperação local | O jogo foi pensado para um ou dois jogadores locais. | A experiência deve funcionar em modo solo e em multiplayer local com tela dividida horizontalmente. |
+| Escalada de contratos | A agência PEGA cresce conforme assume locais mais perigosos. | Novos cenários, gangues, dificuldades e modos devem aparecer como progressão de carreira. |
+
+### Experiência alvo
+
+| Campo | Definição |
+|---|---|
+| Gênero | Ação top-down, perseguição, captura, recuperação de itens e controle de cenário. |
+| Plataforma | PC. |
+| Jogadores | Um jogador ou dois jogadores em multiplayer local cooperativo. |
+| Público | A partir de 12 anos. |
+| Idiomas planejados | Português brasileiro e inglês. |
+| Tom | Cartunesco, cômico, dinâmico e levemente caótico. |
+| Lançamento desejado no GDD original | Steam, Epic Games e Microsoft Game Pass. |
+
+:::risk
+**Risco:** informações de plataforma, público, idiomas e lançamento aparecem no GDD original, mas podem estar desatualizadas em relação ao planejamento atual.
+
+**Impacto:** médio.
+
+**Mitigação:** confirmar escopo comercial antes de estimar localização, certificação, requisitos de loja e suporte a controles.
+:::
+
+## Resumo do jogo
+
+### Conceito principal
+
+Rick Ronda e Petra Patrol protegem negócios de Larópolis contra gangues de larápios. Em cada fase, criminosos entram por pontos específicos do cenário, procuram itens de desejo, sabotam defesas, tentam fugir e reagem à presença dos jogadores. Os jogadores devem explorar o ambiente, usar informações do minimapa e da sala de controle, ativar armadilhas, perseguir inimigos, recuperar itens e levar criminosos capturados até a prisão do cenário.
+
+### Fantasia do jogador
+
+O jogador deve sentir que está comandando uma dupla de seguranças determinados, atrapalhados na medida certa e obrigados a resolver situações maiores do que sua experiência. A fantasia não é de simulação policial realista. Ela é de ação física, decisões rápidas, humor visual e domínio gradual de cenários cada vez mais complexos.
+
+### Verbos principais
+
+- Mover-se pelo cenário.
+- Localizar entradas, saídas, itens valiosos e pontos de interesse.
+- Perseguir larápios.
+- Atacar, interromper ou derrubar inimigos.
+- Carregar inimigos e objetos.
+- Depositar inimigos na prisão.
+- Depositar itens recuperados no cofre.
+- Ativar armadilhas e dispositivos de cenário.
+- Usar power-ups.
+- Consultar minimapa e câmeras de segurança.
+
+### Pressão de vitória e derrota
+
+O desempenho do jogador é medido pelo quanto ele consegue proteger durante o assalto. A missão não depende apenas de vencer ou perder, mas de classificação:
+
+- Quantos inimigos foram capturados.
+- Quantos itens de desejo foram salvos.
+- Quanto tempo restou ou quanto tempo foi gasto.
+- Quantos inimigos escaparam.
+- Quantos itens foram roubados.
+
+> [!IMPORTANT]
+> O jogo deve evitar uma leitura binária simples de sucesso ou fracasso. A classificação por letras cria espaço para replay, domínio de rotas, otimização e progressão.
+
+## Loop principal
+
+:::flow
+1. O jogador escolhe uma missão no mapa/HUB de Larópolis.
+2. O jogo apresenta o cenário, pontos de entrada, saídas, itens valiosos, armadilhas e novidades da fase.
+3. O jogador recebe um curto período de exploração inicial.
+4. Um grupo de larápios invade o local.
+5. Os inimigos procuram itens de desejo e executam comportamentos de roubo, fuga, sabotagem ou ataque.
+6. O jogador persegue, captura, recupera itens e usa ferramentas do ambiente.
+7. O tempo crítico começa quando resta uma porcentagem baixa do assalto.
+8. Os inimigos priorizam fuga com o que conseguiram roubar.
+9. O assalto termina.
+10. O jogo calcula classificação, créditos e progresso.
+:::
+
+### Estrutura de uma missão
+
+| Etapa | Função |
+|---|---|
+| Apresentação do cenário | Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas. |
+| Exploração inicial | Jogador controla o personagem por um curto período antes da invasão. |
+| Entrada dos larápios | Splash screen apresenta grupo inimigo, representantes e indicação de dificuldade. |
+| Janela de entrada | Inimigos podem entrar em grupos diferentes durante aproximadamente um minuto. |
+| Assalto ativo | Contagem regressiva principal, captura, roubo e recuperação. |
+| Tempo crítico | Nos 20% finais do tempo, ladrões tendem a fugir com o que tiverem. |
+| Encerramento | Classificação, créditos, desbloqueios e retorno ao fluxo de progressão. |
+
+:::decision
+**Decisão recomendada:** tratar `Assalto` como a unidade principal de gameplay.
+
+**Motivo:** o GDD original usa "assalto", "fase" e "missão" em contextos próximos. Para produção, `Assalto` deve representar o evento jogável completo, enquanto `Missão` pode representar o contrato escolhido no mapa.
+
+**Consequência:** documentação técnica, UI e narrativa devem padronizar esses termos.
+:::
+
+## Narrativa e mundo
+
+### Premissa
+
+Larópolis é uma cidade fictícia dominada por crimes cartunescos. O setor de segurança cresce porque comerciantes e instituições precisam proteger seus bens. Rick e Petra, impedidos de entrar na PGA por falta de experiência, veem nessa crise uma oportunidade de provar valor. A primeira grande missão descrita no GDD é proteger um baú de barras de ouro em um armazém.
+
+### Larópolis
+
+Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecível. O tom é de desenho animado: gangues têm temas visuais fortes, comportamentos teatrais e métodos de roubo absurdos. A polícia oficial existe, mas aparece de forma limitada, principalmente para levar criminosos capturados à prisão da cidade.
+
+### HUB
+
+O HUB é a cidade de Larópolis representada como mapa de progressão. O GDD original indica pontos fixos distribuídos em uma lógica de avanço, com áreas mais avançadas escondidas por nuvens. O HUB deve permitir:
+
+- Selecionar fases liberadas.
+- Visualizar progressão.
+- Retornar ao menu inicial.
+- Esconder conteúdos futuros até o jogador cumprir requisitos.
+
+:::open-question
+**Pergunta:** o HUB será apenas uma tela de seleção de fases ou um espaço navegável?
+
+**Impacto:** essa decisão afeta escopo de arte, UI, câmera, save, tutorial e ritmo entre missões.
+
+**Recomendação inicial:** para MVP, usar HUB como mapa interativo simples, sem navegação livre.
+:::
+
+## Personagens principais
+
+> [!INFO]
+> A documentação visual dos protagonistas, gangues e conceitos de personagem fica no [Art Book](ArtBook.md#personagens-principais).
+
+### Rick Ronda
+
+Rick é um jovem aspirante à PGA Larópolis. Depois de ser reprovado, funda a PEGA como alternativa para ganhar experiência e provar competência. Sua imagem deve comunicar iniciativa, improviso e energia.
+
+### Petra Patrol
+
+Petra é parceira de Rick e cofundadora da PEGA. O GDD a apresenta como parte da dupla protagonista e jogável. A documentação futura deve detalhar se Petra tem atributos, animações ou habilidades distintas de Rick.
+
+:::open-question
+**Pergunta:** Rick e Petra terão diferenças mecânicas ou apenas diferenças cosméticas?
+
+**Opções:** personagens equivalentes para facilitar balanceamento; ou personagens com atributos próprios para reforçar cooperação.
+
+**Recomendação inicial:** começar com equivalência mecânica no MVP e reservar diferenças para evolução.
+:::
+
+### NPCs
+
+| Categoria | Função |
+|---|---|
+| Larapolitanos | NPCs civis ou figurantes que dão vida aos cenários. |
+| Larápios | Inimigos principais, organizados em gangues temáticas. |
+| Polícia oficial | Presença limitada, relacionada ao destino dos criminosos capturados. |
+| Clientes | Donos ou responsáveis pelos locais protegidos, úteis para briefing narrativo. |
+
+## Controles
+
+O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, o botão leste é `B`, o botão oeste é `X` e `Start` pausa o jogo.
+
+| Ação | Entrada | Descrição |
+|---|---|---|
+| Mover | Eixo esquerdo ou D-Pad | Movimento em todas as direções no solo. |
+| Impulso | Botão oeste (`X`) | Aumento temporário de velocidade. |
+| Saltar | Botão a definir no mapeamento final | Salto direcional com altura baseada em força. |
+| Interagir / atacar / soltar | Botão leste (`B`) | Interage com inimigos, objetos ou executa ataque se não houver alvo interativo. |
+| Confirmar | Botão sul (`A`) | Confirmação em menus. |
+| Pausar | `Start` | Abre ou fecha menu de pausa. |
+
+### Movimento
+
+Personagens podem se mover em todas as direções enquanto estiverem no solo. A velocidade é definida pelo atributo **Agilidade** e pode ser modificada durante a partida. O movimento é bloqueado por objetos comuns, exceto interações de mobilidade e objetos explicitamente configurados para permitir passagem.
+
+### Impulso
+
+O impulso aumenta temporariamente a velocidade em `1.5x`. Para executar a ação, o personagem precisa ter ao menos `1` ponto de **Vigor** e respeitar um tempo de resfriamento.
+
+:::configuration
+**Fórmula de referência:** `tempo base (2) - (Vigor / Agilidade)`
+
+**Observação:** a fórmula vem do GDD original e deve ser validada em protótipo, porque pode gerar valores baixos demais dependendo da escala de atributos.
+:::
+
+### Salto
+
+O salto permite alcançar áreas elevadas até `1.3x` a altura do personagem, sem troca de andar. A altura pode variar com a **Força**, adicionando `Força * 0.1` à altura base. Exemplo: um personagem com `3` de Força salta `1.6x` sua altura.
+
+:::risk
+**Risco:** salto em jogo top-down pode gerar problemas de leitura de altura, colisão e navegação.
+
+**Mitigação:** prototipar cedo a leitura visual do salto e definir claramente quais obstáculos podem ser vencidos.
+:::
+
+### Interação
+
+A interação depende do objeto diretamente à frente do personagem e dentro de sua área de ação. Se houver mais de um objeto interativo, a prioridade vai para o objeto mais próximo, indicado visualmente por linha, contorno ou efeito.
+
+- Interagir com inimigo executa ação conforme tipo e estado do inimigo.
+- Interagir com objeto segurável pega, solta ou manipula o objeto.
+- Sem objeto válido, a interação vira ataque.
+- Se o personagem estiver carregando outro personagem, a interação solta o carregado.
+- Cada interação tem cadência base de `1` segundo.
+
+## Câmera e apresentação
+
+A câmera é top-down, fixa em distância determinada e acompanha o personagem. Em multiplayer local, a tela é dividida horizontalmente. A apresentação deve manter leitura clara de:
+
+- Rotas e obstáculos.
+- Inimigos próximos.
+- Itens roubáveis.
+- Armadilhas e dispositivos.
+- Estado do jogador.
+- Direção de perseguição.
+
+:::requirement
+**Requisito:** em tela dividida, HUD, minimapa e ícones precisam ser legíveis para os dois jogadores.
+
+**Critério de aceitação:** nenhum elemento crítico pode depender de leitura em tamanho pequeno demais ou de informação que apareça apenas na metade da tela do outro jogador.
+:::
+
+## Cenários
+
+> [!INFO]
+> A documentação visual dos cenários, incluindo espaço para concepts e modelos futuros, fica no [Art Book](ArtBook.md#cenários).
+
+### Função dos cenários
+
+Cada cenário é uma arena de perseguição com identidade própria. Um bom cenário de PEGA precisa combinar:
+
+- Itens de alto valor.
+- Rotas de entrada e saída dos larápios.
+- Portas, corredores, salas e gargalos.
+- Armadilhas comuns e específicas.
+- Cofre para itens recuperados.
+- Prisão ou área de contenção.
+- Sala de controle com câmeras.
+- Objetos seguráveis.
+- Pontos de power up.
+- Elementos de mobilidade e bloqueio.
+
+### Armazém
+
+O armazém é o cenário inicial mais detalhado no GDD. Ele funciona como centro de distribuição com caixas, malotes, prédio administrativo, doca de carregamento e pátio de veículos.
+
+| Elemento | Uso de gameplay |
+|---|---|
+| Caixas e corredores | Criam labirinto, bloqueios e oportunidades de esconderijo. |
+| Baú de ouro | Item de desejo principal da primeira missão. |
+| Doca de carregamento | Área natural para entrada, saída ou fuga. |
+| Pátio de veículos | Espaço para carrinhos motorizados e rotas externas. |
+| Prédio administrativo | Pode concentrar sala de controle, portas e câmeras. |
+| Cofre | Local para depositar itens recuperados. |
+| Prisão | Local para depositar inimigos capturados. |
+
+:::objective
+**Objetivo do MVP:** usar o armazém como primeiro cenário jogável completo.
+
+**Escopo mínimo:** uma gangue, itens de desejo, rotas de fuga, prisão, cofre, minimapa, uma sala de controle, armadilhas básicas e classificação ao final do assalto.
+
+**Motivo:** o armazém concentra as mecânicas fundamentais sem exigir variedade excessiva de biomas.
+:::
+
+### Catálogo de cenários
+
+O GDD original sugere múltiplos locais de Larópolis. Para organização de produção, cada cenário futuro deve ser documentado com a mesma estrutura: tema, itens de desejo, gangue dominante, armadilhas específicas, gimmick principal e requisito de desbloqueio.
+
+:::open-question
+**Pergunta:** quais cenários além do armazém estão confirmados para a primeira versão?
+
+**Recomendação:** definir uma lista curta para produção e manter os demais como backlog de expansão.
+:::
+
+## Sistemas do jogador
+
+### Atributos
+
+| Atributo | Função provável |
+|---|---|
+| Vigor | Energia, resistência a dano e custo mínimo para ações como impulso. |
+| Agilidade | Velocidade de movimento e influência no resfriamento do impulso. |
+| Força | Influência em salto, empurrões, ataques e interação com obstáculos. |
+| Presença | Pode afetar percepção, intimidação, detecção ou testes de reação. |
+| Proficiência | Pode afetar uso de objetos, armadilhas, portas e ações técnicas. |
+| Especial SP | Recurso limitado para habilidades especiais. |
+
+:::open-question
+**Pergunta:** os atributos pertencem apenas aos inimigos, aos jogadores ou a todos os personagens?
+
+**Recomendação:** padronizar a ficha de personagem para jogadores e inimigos, mesmo que nem todos usem todos os atributos no MVP.
+:::
+
+### Estados gerais
+
+| Estado | Descrição |
+|---|---|
+| Normal | Personagem livre para se mover e agir. |
+| Carregando | Personagem segura item ou outro personagem. |
+| Caído | Personagem temporariamente incapaz de agir. |
+| Incapacitado | Estado mais forte de controle ou derrota temporária. |
+| Escondido | Personagem usa objeto ou cenário para ocultação. |
+| Ocultado | Personagem não aparece em câmera, minimapa ou percepção por certo tempo. |
+| Agressivo | Personagem prioriza ataque. |
+| Fugindo | Personagem tenta escapar do cenário. |
+| Furtando | Personagem busca item de desejo. |
+| Perseguindo | Personagem segue alvo específico. |
+| Escapando | Personagem tenta sair de perigo imediato. |
+
+## Inimigos e gangues
+
+> [!INFO]
+> As fichas visuais, conceitos extraídos do Word e observações de direção artística das gangues ficam no [Art Book](ArtBook.md#gangues-de-larópolis).
+
+### Larápios
+
+Os larápios são os principais inimigos de PEGA. Eles são organizados em gangues temáticas, cada uma com identidade visual, tática e humor próprios. O GDD descreve os larápios como especialistas em furto, capazes de se esconder, fugir, sabotar, atacar, roubar itens e reagir às ações dos jogadores.
+
+### Grupos de inimigos
+
+| Gangue | Tema | Leitura de gameplay |
+|---|---|---|
+| Os Trapalhões do Crime | Comédia caótica e crime clássico cartunesco. | Boa gangue inicial, com ladrões comuns e inimigos fisicamente mais fortes. |
+| Os Incríveis Larápios | Circo, disfarce, ilusão e palhaçaria criminosa. | Foco em confusão visual, distração, disfarces e engano. |
+| Os Sem Leis | Faroeste, cangaço, punk e banditismo organizado. | Foco em emboscadas, ataques à distância e inimigos mais agressivos. |
+| Os Cyber Piratas | Piratas tecnológicos, drones e hacking. | Foco em câmeras, portas digitais, minimapa e sabotagem de sistemas. |
+| Os Fantasmas da Noite | Monstros clássicos e terror cartunesco. | Foco em invisibilidade, medo, transformação e atravessar obstáculos. |
+| A Tríade da Realeza Opulenta | Elegância criminosa, realeza e sofisticação. | Foco em inimigos refinados, técnicas especiais e padrões avançados. |
+
+### Exemplos de arquétipos
+
+| Arquétipo | Gangue | Função |
+|---|---|---|
+| Ladrões Listrados | Trapalhões do Crime | Inimigos comuns, simples e legíveis. |
+| Ladrões Molhados | Trapalhões do Crime | Usam artimanhas e obstáculos. |
+| Capangas Atrapalhados | Trapalhões do Crime | Criam caos e momentos cômicos. |
+| Marombas Ameaçadores | Trapalhões do Crime | Inimigos de força bruta. |
+| Trupe Trapatapa | Incríveis Larápios | Palhaços criminosos com distrações. |
+| Mimiquetes | Incríveis Larápios | Mímicos e disfarces. |
+| Foras da Lei | Sem Leis | Ataques à distância e emboscadas. |
+| Drone Caravela | Cyber Piratas | Hacking e mobilidade aérea. |
+| Capitão Hacker | Cyber Piratas | Líder com sabotagem tecnológica. |
+| Fantasma Noturno | Fantasmas da Noite | Atravessa ou ignora barreiras. |
+| Vampiros Pálidos | Fantasmas da Noite | Controle, sedução ou drenagem de energia. |
+| Múmia Maldita | Fantasmas da Noite | Desorientação, faixas e terror. |
+
+> [!BEST_PRACTICE]
+> Cada gangue deve ter pelo menos um inimigo comum, um inimigo de suporte, um inimigo de pressão e um líder. Isso ajuda a criar variedade sem transformar cada fase em um conjunto imprevisível demais.
+
+## Inteligência artificial
+
+### Desejo
+
+Cada inimigo pode ter uma lista de itens de desejo. Quando há um item desejado no cenário, o comportamento muda conforme distância, tempo de assalto, posse do item por outro personagem e pressão do jogador.
+
+O inimigo pode priorizar:
+
+- Ir até o item.
+- Roubar item de outro larapio.
+- Fugir se já estiver com o item.
+- Reagir ao jogador se for detectado.
+- Mudar de rota durante o tempo crítico.
+
+### Percepção
+
+Inimigos possuem área de visão e podem realizar testes de presença para decidir reação. A percepção pode levar em conta:
+
+- Distância do jogador.
+- Iluminação.
+- Movimento rápido.
+- Estado escondido.
+- Obstáculos.
+- Grupo ao qual o personagem pertence.
+
+Personagens do mesmo grupo devem ter consciência mais confiável uns dos outros. Personagens de grupos diferentes podem ter percepção parcial.
+
+### Reação ao perder inventário
+
+Quando um inimigo é atingido e possui itens, seu inventário cai no chão. Após isso, ele deve tomar uma decisão de comportamento. O GDD sugere pesos como:
+
+| Reação | Peso de referência |
+|---|---:|
+| Fugindo | 50% |
+| Escapando | 20% |
+| Furtando | 15% |
+| Agressivo | 10% |
+| Perseguindo | 5% |
+
+### Reação a dano
+
+Quando um inimigo sofre dano em seu vigor, ele também pode mudar de comportamento. O GDD sugere pesos como:
+
+| Reação | Peso de referência |
+|---|---:|
+| Agressivo | 50% |
+| Fugindo | 20% |
+| Perseguindo | 15% |
+| Escapando | 10% |
+| Furtando | 5% |
+
+:::risk
+**Risco:** IA com muitos estados, pesos e exceções pode ficar difícil de depurar.
+
+**Mitigação:** implementar primeiro uma máquina de estados reduzida para o MVP: `Furtando`, `Fugindo`, `Agressivo`, `Atordoado/Caído` e `Capturado`.
+:::
+
+## Habilidades
+
+### Habilidades comuns
+
+| Habilidade | Descrição |
+|---|---|
+| Disfarçando | Troca aparência por objeto ou NPC configurado no cenário. |
+| Escondendo | Usa objetos com característica de esconderijo. |
+| Tocaia | Esconde-se e ataca quando o jogador se aproxima. |
+| Invisibilidade | Fica difícil de perceber por tempo limitado. |
+| Ataque corpo a corpo | Causa dano usando arma ou objeto próximo. |
+| Ataque de média distância | Causa dano com alcance intermediário. |
+| Ataque de longa distância | Arremessa ou dispara objeto contra alvo. |
+| Imobilizar | Força estado caído ou incapacitado. |
+| Desativar armadilhas | Interage com armadilha para torná-la inativa. |
+| Roubar outro larapio | Toma item desejado de outro inimigo. |
+| Arrombar portas | Destrói ou inutiliza portas usando força. |
+| Trancar/destrancar fechaduras | Manipula portas trancáveis. |
+| Destrancar fechadura digital | Usa habilidade técnica ou hacker em portas digitais. |
+| Apagar luzes | Escurece área e favorece esconderijos. |
+| Hackear câmeras | Desativa transmissão da sala de controle. |
+| Não aparecer na câmera | Oculta presença em câmera e minimapa. |
+| Arrastar objetos | Move objetos seguráveis para bloquear rotas. |
+| Teleportar | Move-se instantaneamente para espaço vazio. |
+| Atalho | Usa interações de mobilidade para trocar de posição. |
+| Andar pelas paredes | Move-se por superfícies ignorando mobilidade normal. |
+
+### Habilidades especiais
+
+| Habilidade | Efeito | Referência do GDD |
+|---|---|---|
+| Tufão | Cria tufões que empurram o jogador e derrubam itens. | Nômades do Deserto. |
+| Rampage | Faz inimigos entrarem em estado agressivo por tempo limitado. | Rei do Crime dá ordens. |
+| Apagão | Desativa câmeras e minimapa temporariamente. | Capitão Hacker. |
+| Sísmico | Cria ondas de choque que empurram e podem derrubar o jogador. | Papagaio na armadura. |
+| Múltiplo | Cria cópias falsas durante fuga. | Inimigo ilusionista. |
+| Terror | Incapacita imediatamente o jogador. | Amon-ha assusta o jogador. |
+| Transformação | Vampiro vira morcego com mais agilidade ao ficar com pouco vigor. | Vampiro. |
+| Transpor | Atravessa portas e paredes. | Fantasma. |
+| Arremessar tortas | Ataque à distância que suja a tela e reduz visibilidade. | Palhaço. |
+| Parede invisível | Cria obstáculo transparente temporário. | Mímico. |
+| Uppercut | Inimigo vira poça e ataca com uppercut incapacitante. | Ladrão molhado. |
+
+## Interações de cenário
+
+### Tipos de interação
+
+| Tipo | Uso |
+|---|---|
+| Armadilhas comuns | Podem capturar, atrasar, empurrar ou derrubar inimigos. |
+| Armadilhas específicas | Relacionadas ao tema do cenário. |
+| Objetos seguráveis | Podem ser carregados, soltos, roubados ou usados para bloquear caminho. |
+| Portas | Podem ser abertas, fechadas, trancadas, arrombadas ou hackeadas. |
+| Câmeras | Informam posição e permitem ativar armadilhas em áreas monitoradas. |
+| Cofres | Recebem itens recuperados. |
+| Prisões | Recebem inimigos capturados. |
+| Interações de mobilidade | Atalhos, passagens, carrinhos ou objetos que mudam deslocamento. |
+
+:::requirement
+**Requisito:** todo objeto interativo precisa comunicar estado atual.
+
+**Exemplos:** ativo, inativo, trancado, hackeado, quebrado, disponível, ocupado, carregável, escondível.
+:::
+
+### Sala de controle
+
+A sala de controle contém uma interface simples com cerca de seis monitores. Cada monitor exibe uma câmera de uma área específica do cenário. O jogador pode usar a sala para:
+
+- Identificar entradas dos larápios.
+- Acompanhar trajetos.
+- Localizar itens e inimigos.
+- Antecipar fuga.
+- Ativar armadilhas em áreas monitoradas.
+
+:::risk
+**Risco:** a sala de controle pode ser poderosa demais ou inútil demais.
+
+**Mitigação:** equilibrar custo de tempo, distância até a sala e valor da informação obtida. No multiplayer, a sala pode criar uma função cooperativa interessante para um jogador orientar o outro.
+:::
+
+## Power-ups
+
+Power-ups são modificadores temporários que alteram atributos ou concedem vantagem situacional. O HUD do personagem deve mostrar quando um power-up é recebido ou perdido, com barra temporária próxima ao personagem, cubos preenchendo ou esvaziando, cor associada ao atributo e nome abreviado.
+
+### Regras de design
+
+- Power-ups devem ser fáceis de reconhecer no cenário.
+- O efeito deve ser comunicado imediatamente.
+- A duração precisa ser legível.
+- A coleta não deve interromper o fluxo de perseguição.
+- O efeito deve conversar com atributos como Vigor, Agilidade, Força, Presença ou Proficiência.
+
+:::open-question
+**Pergunta:** quais power-ups existem na primeira versão?
+
+**Recomendação:** começar com três efeitos simples: velocidade, força e recuperação de vigor.
+:::
+
+## Modos de jogo e progressão
+
+### Campanha
+
+Modo principal, acompanha a história de Rick e Petra e a evolução da PEGA em Larópolis. Pode ser jogado por um ou dois jogadores.
+
+### Endless
+
+Modo desbloqueável em que o jogador tenta deter o maior número possível de larápios durante um assalto contínuo. A dificuldade aumenta por ondas inimigas.
+
+### Créditos e desbloqueio
+
+O jogador recebe créditos conforme classificação. Cada estágio pode ter um custo em créditos para ser acessado. A progressão deve incentivar replay de fases para melhorar classificação e liberar novos contratos.
+
+### Dificuldade
+
+Cada cenário possui três níveis de dificuldade. O layout permanece reconhecível, mas obstáculos, inimigos, tempo, quantidade de itens e pressão aumentam.
+
+:::configuration
+**Escala de classificação:** `F`, `E`, `D`, `C`, `B`, `A`, `S`, `S+`
+
+**Referência de design:** `S+` representa excelência, `A` representa resultado desejável e `F` representa fracasso.
+:::
+
+### Critérios de classificação
+
+| Critério | Descrição |
+|---|---|
+| Prisão de inimigos | Mede quantos inimigos foram capturados em relação ao total e dificuldade deles. |
+| Proteção de itens | Mede quantos itens de desejo foram recuperados ou preservados. |
+| Tempo | Mede velocidade e eficiência do assalto. |
+
+:::decision
+**Decisão recomendada:** no MVP, calcular classificação com poucos critérios e pesos claros.
+
+**Motivo:** a classificação precisa ser previsível para o jogador entender como melhorar.
+:::
+
+## Interface e HUD
+
+### HUD principal
+
+O HUD deve apresentar informações essenciais durante o gameplay:
+
+- Tempo restante do assalto.
+- Alerta de tempo crítico.
+- Inventário atual do jogador.
+- Itens recuperados.
+- Itens salvos no cofre.
+- Quantidade de inimigos capturados.
+- Estado do personagem.
+- Indicação de power up ativo.
+- Minimapa.
+
+### Minimapa
+
+O minimapa segue padrão quadriculado, com a posição atual do jogador no centro. Deve indicar:
+
+- Layout simplificado do cenário.
+- Larápios próximos dentro de distância máxima de detecção.
+- Itens de desejo sem limite de distância.
+- Sala de controle.
+- Cofres.
+- Prisão.
+- Possível opção de norte fixo ou norte relativo.
+
+### Menus
+
+#### Menu inicial
+
+- Novo jogo.
+- Modo solo.
+- Multiplayer local cooperativo.
+- Seleção de personagem.
+- Endless, quando desbloqueado.
+- Opções.
+- Sair.
+
+#### Menu de pausa
+
+- Continuar.
+- Salvar.
+- Carregar.
+- Opções.
+- Retornar à tela inicial.
+
+:::open-question
+**Pergunta:** haverá salvamento durante a missão ou apenas entre missões?
+
+**Recomendação:** para MVP, salvar apenas fora do assalto para reduzir complexidade e evitar problemas de estado.
+:::
+
+## Escopo recomendado de MVP
+
+O GDD original descreve um projeto amplo, com várias gangues, habilidades, cenários, modos e sistemas. Para validar a experiência central, o MVP deve reduzir escopo e provar primeiro o loop de perseguição.
+
+| Área | MVP recomendado |
+|---|---|
+| Personagens | Rick e Petra jogáveis, sem diferenças mecânicas obrigatórias. |
+| Modo | Campanha ou missão única estruturada. |
+| Cenário | Armazém completo. |
+| Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
+| Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
+| IA | Furtar, fugir, perseguir, atacar e reagir a dano. |
+| Sistemas | Movimento, impulso, interação, carregar/soltar, prisão, cofre. |
+| Interface | HUD, minimapa, tempo e resultado. |
+| Progressão | Classificação simples ao fim do assalto. |
+| Multiplayer | Tela dividida local, se tecnicamente viável no primeiro protótipo. |
+
+:::risk
+**Risco:** tentar implementar todas as gangues e habilidades antes de validar o loop principal.
+
+**Impacto:** alto.
+
+**Mitigação:** validar primeiro uma fase vertical slice com armazém, uma gangue e classificação.
+:::
+
+## Perguntas abertas
+
+:::open-question
+**Pergunta:** qual é a diferença mecânica entre capturar um inimigo e apenas derrubá-lo?
+
+**Impacto:** define combate, transporte, prisão e pontuação.
+:::
+
+:::open-question
+**Pergunta:** os itens de desejo podem ser destruídos, apenas roubados ou também danificados?
+
+**Impacto:** afeta pontuação, feedback visual e comportamento dos inimigos.
+:::
+
+:::open-question
+**Pergunta:** como funciona derrota total em uma missão?
+
+**Possibilidades:** tempo acaba, todos os itens são roubados, jogadores ficam incapacitados ou classificação `F`.
+:::
+
+:::open-question
+**Pergunta:** a polícia oficial aparece visualmente durante o gameplay ou apenas em transições?
+
+**Impacto:** afeta narrativa, animação, final de missão e tom.
+:::
+
+:::open-question
+**Pergunta:** quais habilidades são exclusivas de chefes e quais podem aparecer em inimigos comuns?
+
+**Impacto:** afeta balanceamento e clareza da progressão.
+:::
+
+## Glossário
+
+| Termo | Definição |
+|---|---|
+| PEGA | Proteção e Estratégia na Guarda de Ativos em Larópolis. |
+| PGA Larópolis | Polícia e Guarda Avançada de Larópolis. |
+| Larópolis | Cidade fictícia onde o jogo acontece. |
+| Larápios | Criminosos/inimigos do jogo. |
+| Assalto | Unidade principal de gameplay dentro de uma fase ou missão. |
+| Item de desejo | Item valioso que inimigos querem roubar. |
+| Cofre | Local onde itens recuperados devem ser depositados. |
+| Prisão | Local onde inimigos capturados devem ser depositados. |
+| Tempo crítico | Porção final do assalto em que inimigos priorizam fuga. |
+| Especial SP | Recurso usado para habilidades especiais. |
+
+## Documentos relacionados
+
+| Documento | Uso |
+|---|---|
+| `Exemplos/GDD PEGA.docx` | Fonte principal do conteúdo. |
+| [Art Book](ArtBook.md) | Documentação visual de personagens, gangues, conceitos, modelos e cenários. |
+| `skills/immersive-documentation-framework/SKILL.md` | Especificação operacional da documentação. |
+| `skills/immersive-documentation-framework/guidelines/ComponentLibrary.md` | Componentes usados neste Markdown. |
+| `skills/immersive-documentation-framework/guidelines/ContentSystem.md` | Organização editorial e hierarquia de conteúdo. |
+| `skills/immersive-documentation-framework/guidelines/Terminology.md` | Diretrizes de termos e consistência. |
+| `skills/immersive-documentation-framework/guidelines/DocumentationStandards.md` | Padrões gerais de documentação. |
+
+## Histórico de revisão
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 0.2.1 | 2026-07-08 | Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários. |
+| 0.2.0 | 2026-07-08 | Recriação em Markdown a partir do GDD Word, com organização ampliada, componentes do framework e foco em GDD melhorado. |
