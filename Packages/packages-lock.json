@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.immersive.audio": {
+      "version": "https://github.com/ImmersiveGames/com.immersive.audio.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.immersive.pooling": "0.2.1"
+      },
+      "hash": "2c4493327ed61370fcb4408f86d59d7c12f919e0"
+    },
     "com.immersive.foundation": {
       "version": "0.2.1",
       "depth": 1,
@@ -21,6 +30,13 @@
     },
     "com.immersive.logging": {
       "version": "0.2.2",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.immersive.pooling": {
+      "version": "0.2.1",
       "depth": 1,
       "source": "registry",
       "dependencies": {},

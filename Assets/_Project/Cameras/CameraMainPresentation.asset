@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8f462e826b8420997d5f1292d8fe2d9, type: 3}
+  m_Name: CameraMainPresentation
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.CameraAuthoring.CameraPresentationDefinition
+  stableId: 7b53141b30484469aeca01e3ca6d94c2
+  description: 
+  outputDefinition: {fileID: 11400000, guid: 9c06b3d044fb2ea4c8a8fa5163015750, type: 2}
+  rigPrefab: {fileID: 6102830329239094849, guid: 305691ab7af6e444c99d9059ec31afb7, type: 3}
+  transitionMode: 10
+  subjectPolicy: 10
+  requestPrecedence: 0

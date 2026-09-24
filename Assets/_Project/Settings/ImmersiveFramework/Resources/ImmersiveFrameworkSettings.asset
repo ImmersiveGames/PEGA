@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e26429fffbfe4f4982799913c06a72f, type: 3}
   m_Name: ImmersiveFrameworkSettings
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ImmersiveFrameworkSettingsAsset
-  activeGameApplication: {fileID: 0}
+  activeGameApplication: {fileID: 11400000, guid: 33e8c0574129f7d4ab07d8923258ee43, type: 2}
   editorPlayModeStartup: 0
   frameRatePolicy:
-    mode: 0
+    mode: 10
     targetFrameRate: 60
     vSyncCount: 1
-  loggingConfig: {fileID: 0}
+  loggingConfig: {fileID: 11400000, guid: 5039ee4bd4e32ee4a91f88c452f4986c, type: 2}
