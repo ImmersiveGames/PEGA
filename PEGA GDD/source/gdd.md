@@ -119,9 +119,9 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 4. Um grupo de larápios invade o local.
 5. Os inimigos procuram itens de desejo e executam comportamentos de roubo, fuga, sabotagem ou ataque.
 6. O jogador persegue, captura, recupera itens e usa ferramentas do ambiente.
-7. O tempo crítico começa quando resta uma porcentagem baixa do assalto.
-8. Os inimigos priorizam fuga com o que conseguiram roubar.
-9. O assalto termina.
+7. Quando o tempo do assalto termina, todos os larápios ainda ativos entram em modo de fuga e tentam deixar o cenário com o que conseguiram roubar.
+8. O jogador recebe uma última oportunidade de perseguir, incapacitar e deter os larápios restantes antes que escapem.
+9. O assalto termina quando não existem mais larápios ativos no cenário: cada larápio foi detido ou conseguiu fugir.
 10. O jogo calcula classificação, créditos e progresso.
 :::
 
@@ -134,7 +134,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 | Entrada dos larápios | Splash screen apresenta grupo inimigo, representantes e indicação de dificuldade. |
 | Janela de entrada | Inimigos podem entrar em grupos diferentes durante aproximadamente um minuto. |
 | Assalto ativo | Contagem regressiva principal, captura, roubo e recuperação. |
-| Tempo crítico | Nos 20% finais do tempo, ladrões tendem a fugir com o que tiverem. |
+| Fuga final | Quando o tempo termina, todos os larápios ainda ativos passam a priorizar a fuga com o que tiverem. O assalto continua até que todos sejam detidos ou escapem. |
 | Encerramento | Classificação, créditos, desbloqueios e retorno ao fluxo de progressão. |
 
 :::decision
@@ -343,8 +343,10 @@ O GDD original sugere múltiplos locais de Larópolis. Para organização de pro
 |---|---|
 | Normal | Personagem livre para se mover e agir. |
 | Carregando | Personagem segura item ou outro personagem. |
-| Caído | Personagem temporariamente incapaz de agir. |
-| Incapacitado | Estado mais forte de controle ou derrota temporária. |
+| Caído / Incapacitado | Larápio temporariamente incapaz de agir após ser neutralizado. Um temporizador de recuperação começa; enquanto estiver nesse estado, ele pode ser recolhido pelo jogador, mas ainda não está capturado. |
+| Em transporte | Larápio incapacitado sob custódia de um jogador e sendo levado à sala de detenção. |
+| Detido / Capturado | Larápio entregue à sala de detenção. Sua captura está concluída e ele deixa definitivamente o assalto. |
+| Escapou | Larápio que deixou o cenário por uma rota de fuga. Ele deixa definitivamente o assalto sem ser capturado. |
 | Escondido | Personagem usa objeto ou cenário para ocultação. |
 | Ocultado | Personagem não aparece em câmera, minimapa ou percepção por certo tempo. |
 | Agressivo | Personagem prioriza ataque. |
@@ -657,6 +659,16 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Progressão | Classificação simples ao fim do assalto. |
 | Multiplayer | Tela dividida local, se tecnicamente viável no primeiro protótipo. |
 
+:::decision
+**Decisão:** o fim do cronômetro não encerra imediatamente o assalto.
+
+Quando o tempo chega a zero, inicia-se a **Fuga Final**: todos os larápios ainda ativos passam a priorizar a saída do cenário com os itens que estiverem carregando. O jogador ainda pode persegui-los, incapacitá-los e concluir capturas durante essa etapa.
+
+O assalto termina somente quando não existem mais larápios ativos no cenário. Cada larápio deve ter alcançado uma resolução final: **Detido/Capturado** ou **Escapou**.
+
+**Consequência:** o cronômetro funciona como gatilho para o clímax da perseguição, e não como encerramento automático da partida.
+:::
+
 :::risk
 **Risco:** tentar implementar todas as gangues e habilidades antes de validar o loop principal.
 
@@ -667,10 +679,19 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 
 ## Perguntas abertas
 
-:::open-question
-**Pergunta:** qual é a diferença mecânica entre capturar um inimigo e apenas derrubá-lo?
+:::decision
+**Decisão:** incapacitar e capturar são etapas diferentes da resolução de um larápio.
 
-**Impacto:** define combate, transporte, prisão e pontuação.
+O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar → deter**.
+
+- **Incapacitar:** impede temporariamente o larápio de continuar roubando, fugindo ou executando outras ações. A incapacitação inicia um temporizador de recuperação definido por arquétipo.
+- **Recuperação:** se o larápio não entrar em custódia antes do fim do temporizador, ele recupera a capacidade de agir e retorna ao comportamento ativo apropriado.
+- **Transportar:** ao recolher um larápio incapacitado, o jogador assume sua custódia e deve levá-lo até a sala de detenção. Estar em transporte ainda não significa que a captura foi concluída.
+- **Deter/Capturar:** a captura só é concluída quando o larápio é entregue à sala de detenção. Nesse momento ele deixa definitivamente o assalto.
+
+**Consequência de gameplay:** incapacitar um larápio cria uma janela limitada para concluir a captura. Transportá-lo até a detenção consome tempo e atenção enquanto os demais larápios continuam suas atividades, criando custo de oportunidade e pressão de perseguição.
+
+**Referência de balanceamento do MVP:** os tempos de recuperação são definidos por arquétipo; os valores atuais dos Trapalhões do Crime ficam aproximadamente entre 4,0 s e 4,6 s e devem permanecer configuráveis para balanceamento.
 :::
 
 :::open-question
@@ -709,7 +730,8 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Item de desejo | Item valioso que inimigos querem roubar. |
 | Cofre | Local onde itens recuperados devem ser depositados. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
-| Tempo crítico | Porção final do assalto em que inimigos priorizam fuga. |
+| Fuga final | Estado iniciado quando o tempo do assalto termina; todos os larápios ainda ativos priorizam escapar do cenário. |
+| Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
 | Especial SP | Recurso usado para habilidades especiais. |
 
 ## Documentos relacionados
