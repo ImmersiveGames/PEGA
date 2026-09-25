@@ -61,8 +61,9 @@ Fluxo completo de telas, incluindo as que já existiam implícitas no GDD (brief
 | Cenário | Armazém completo (ver [GDD § Armazém](GDD.md#armazém)). |
 | Inimigos | Uma gangue: **Os Trapalhões do Crime**, 4 arquétipos. |
 | Sistemas core | Movimento, impulso, salto, interação, carregar/soltar, prisão, cofre. |
-| IA | Máquina de estados reduzida: `Furtando`, `Fugindo`, `Agressivo`, `Caído`, `Capturado`. |
-| Power-ups | 3 efeitos: velocidade, força, recuperação de vigor. |
+| IA | Regras legíveis por posse e desejo: furtar, fugir, recuperar item, perseguir portador e confrontar quando necessário. |
+| Confronto | Capacidade de ataque × Resistência; sem HP ou dano acumulativo como base da incapacitação. |
+| Power-ups | Poucos efeitos ligados à perseguição, priorizando mobilidade e vantagem temporária para incapacitar. |
 | Interface | HUD, minimapa, tempo, resultado da missão. |
 | Classificação | `F` a `S+`, com créditos por faixa (ver [GDD § Dificuldade](GDD.md#dificuldade)). |
 | **Carreira** | Saldo acumulado entre partidas, com condição de bancarrota (novo — ver seção própria). |
@@ -72,22 +73,13 @@ Fora de escopo por enquanto: outras gangues, habilidades especiais, HUB navegáv
 
 ## Gangue da Demo: Os Trapalhões do Crime
 
-Números validados em `Tabela de Atributos e Habilidades.xlsx` (fórmulas corrigidas em 2026-09-24 — ver histórico de revisão).
+Os valores da `Tabela de Atributos e Habilidades.xlsx` permanecem como material histórico de balanceamento, mas as colunas de dano, golpes para imobilizar, Defesa e demais fórmulas derivadas do modelo antigo **não são mais contrato de gameplay**.
 
-| Arquétipo | Força | Agilidade | Presença | Defesa | CD (peso) | Dano melee ao jogador | Golpes p/ imobilizar (melee) | Recup. de incapacidade |
-|---|---|---|---|---|---|---|---|---|
-| Ladrão Clássico | 1 | 2 | 1 | 1 | 27 | 1 | 6 | 4,5s |
-| Ladrões Molhados | 2 | 2 | 3 | 1 | 35 | 0 | 6 | 4,0s |
-| Minion | 1 | 3 | 2 | 1 | 32 | 1 | 6 | 4,0s |
-| Os Marombas | 3 | 2 | 2 | 2 | 39 | 2 | 3 | 4,6s |
+O balanceamento da Demo deve ser reconciliado para o novo modelo: cada arquétipo recebe uma **Resistência** legível e valores/comportamentos fixos necessários à perseguição. O jogador utiliza sua **Capacidade de ataque** atual e pode obter vantagens por itens, power-ups, armadilhas ou interações do cenário.
 
-> [!WARNING] Risco
+> [!IMPORTANT] Decisão
 >
-> **Risco:** a planilha de origem tinha fórmulas sem piso (`<=0`) que geravam valores negativos para inimigos fracos (Ladrão Clássico, Minion, Os Cavalheiros).
->
-> **Impacto:** médio — números errados de balanceamento entrariam direto no código.
->
-> **Mitigação:** corrigido em 79 células (linhas de Dano base do jogador no inimigo, Quantidade de golpes melee e Quantidade de golpes range), recalculado sem erros. Arquivo corrigido salvo na mesma pasta.
+> Não existe desgaste de HP como requisito para incapacitar. Um ataque válido sempre derruba os itens transportados pelo alvo. Se `Capacidade de ataque >= Resistência atual`, o alvo também fica incapacitado; caso contrário, permanece ativo e sua Resistência não é consumida pelo golpe.
 
 ## Captura vs. Derrubada (Incapacitação)
 
