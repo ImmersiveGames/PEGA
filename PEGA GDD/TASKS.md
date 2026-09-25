@@ -38,17 +38,21 @@ Perguntas que precisam ser fechadas antes de virarem tarefa de desenvolvimento (
 
 ### Regras de jogo específicas do PEGA (lógica nova)
 - Movimento base (direções, velocidade por Agilidade)
-- Impulso/dash (fórmula `2 - Vigor/Agilidade`, cooldown)
-- Salto (altura por Força)
+- Impulso/dash (cooldown e parâmetros a validar sem dependência obrigatória de Vigor)
+- Salto como ferramenta de mobilidade/perseguição (altura e regras a reavaliar)
 - Sistema de interação (prioridade de alvo, contexto pega/solta/ataque)
 - Carregar/soltar objeto e personagem
 - Depositar inimigo na prisão / item no cofre
-- Sistema de dano e combate (usando a tabela corrigida dos Trapalhões)
+- Sistema de confronto: Capacidade de ataque × Resistência, sem HP/dano acumulativo
+- Ataque derruba itens transportados; incapacitação ocorre apenas quando a capacidade é suficiente
+- Feedback visual da Resistência atual do alvo
+- Modificadores de Resistência por armadilhas/interações e de Capacidade de ataque por vantagens do jogador
 
 ### IA
-- Máquina de estados: `Furtando` → `Fugindo`/`Agressivo` → `Caído` → `Capturado`
+- IA orientada por posse/desejo: `Furtando`, `Fugindo`, `Recuperando item`, `Perseguindo portador`, `Confrontando`, `Caído`, `Em transporte`, `Capturado`
 - Timer de recuperação de incapacitação por arquétipo
-- Lógica de percepção/reação (teste de presença)
+- Reavaliação determinística de prioridade por posse, desejo, Fuga Final e oportunidade
+- Lógica de percepção a simplificar; remover dependência obrigatória de teste de Presença
 
 ### Sistema de Carreira (regras específicas do PEGA)
 - Cálculo de classificação (F a S+) e crédito ao fim do turno
@@ -61,7 +65,8 @@ Perguntas que precisam ser fechadas antes de virarem tarefa de desenvolvimento (
 - Conteúdo/lógica interna de cada tela (o que aparece: quadro de missão e PC do HUB, briefing, splash de gangue, resumo do turno) — a navegação entre elas já é do framework
 
 ### Power-ups
-- Lógica dos 3 efeitos (velocidade, força, recuperação de vigor)
+- Power-ups de perseguição: mobilidade e vantagem temporária de Capacidade de ataque
+- Avaliar efeitos adicionais somente se criarem decisões claras de perseguição
 
 ## 🟢 Arte/Visual (Ubiratan)
 
