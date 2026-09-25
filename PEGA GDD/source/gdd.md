@@ -337,9 +337,9 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 :::
 
 :::open-question
-**Pergunta:** quais propriedades adicionais, como Agilidade, precisam permanecer como atributos numéricos após a simplificação do sistema?
+**Pergunta:** quais propriedades de movimento precisam permanecer numéricas após a simplificação do sistema?
 
-**Impacto:** afeta movimento, impulso, salto, power-ups e fichas de personagens.
+**Impacto:** velocidade/corrida, impulso, salto, esquiva/rolagem e diferenças de mobilidade entre atores serão redefinidos em etapa própria. O modelo antigo de ficha universal (`Vigor`, `Agilidade`, `Força`, `Presença`, `Proficiência` e `Especial SP`) não é mais obrigatório.
 :::
 
 ### Estados gerais
@@ -354,7 +354,7 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 | Escapou | Larápio que deixou o cenário por uma rota de fuga. Ele deixa definitivamente o assalto sem ser capturado. |
 | Escondido | Personagem usa objeto ou cenário para ocultação. |
 | Ocultado | Personagem não aparece em câmera, minimapa ou percepção por certo tempo. |
-| Agressivo | Personagem prioriza ataque. |
+| Confrontando | Personagem usa confronto porque isso atende a um objetivo concreto, como recuperar um item desejado ou remover um bloqueio. |
 | Fugindo | Personagem tenta escapar do cenário. |
 | Furtando | Personagem busca item de desejo. |
 | Perseguindo | Personagem segue alvo específico. |
@@ -414,18 +414,15 @@ O inimigo pode priorizar:
 - Reagir ao jogador se for detectado.
 - Mudar de rota durante o tempo crítico.
 
-### Percepção
+### Percepção e decisão
 
-Inimigos possuem área de visão e podem realizar testes de presença para decidir reação. A percepção pode levar em conta:
+:::decision
+**Decisão:** percepção e decisão são sistemas distintos. A percepção determina **o que o larápio sabe**; a decisão determina **o que ele faz com essa informação**.
 
-- Distância do jogador.
-- Iluminação.
-- Movimento rápido.
-- Estado escondido.
-- Obstáculos.
-- Grupo ao qual o personagem pertence.
+A detecção deve ser baseada em condições objetivas e legíveis, e não em testes abstratos de `Presença` ou probabilidades. O modelo concreto de percepção — alcance, campo de visão, linha de visão, memória da última posição conhecida, compartilhamento de informação e outros estímulos — será definido em etapa própria.
 
-Personagens do mesmo grupo devem ter consciência mais confiável uns dos outros. Personagens de grupos diferentes podem ter percepção parcial.
+A decisão de comportamento deve ser determinística a partir do conhecimento disponível, do estado do assalto, da posse e do desejo. Aleatoriedade pode existir para variedade, mas não deve substituir as regras principais de prioridade.
+:::
 
 ### Posse, desejo e inversão da perseguição
 
@@ -445,6 +442,20 @@ Como regra de leitura para o MVP, a IA deve reavaliar prioridades a partir do es
 **Risco:** comportamentos com muitas exceções podem tornar a perseguição imprevisível.
 
 **Mitigação:** priorizar regras determinísticas e legíveis baseadas em posse, desejo, estado do assalto e oportunidade de fuga.
+:::
+
+### Capacidades de interação
+
+:::decision
+**Decisão:** `Proficiência` deixa de ser um atributo numérico genérico. Sua intenção é preservada por **capacidades determinísticas de interação**.
+
+Objetos do cenário podem exigir um tipo e um requisito de interação. Cada arquétipo possui capacidades explícitas que determinam se consegue executar aquela interação e, quando consegue, quanto tempo precisa para concluí-la.
+
+O princípio é: **consegue ou não consegue; se consegue, existe um custo de tempo legível**. Esse tempo cria oportunidades de perseguição, aproximação e interceptação.
+
+Exemplos provisórios, não nomenclatura final: uma trava pode exigir uma capacidade de abertura de determinado nível; um larápio pode possuir `Lockpick`, `Hack` ou `Arrombar` compatível e um tempo próprio de execução. Tipos, níveis, nomes e valores serão definidos posteriormente.
+
+Se o ator não possuir uma capacidade compatível, deve buscar outra solução ou recalcular sua rota em vez de realizar um teste probabilístico de Proficiência.
 :::
 
 ## Habilidades
@@ -475,6 +486,12 @@ Como regra de leitura para o MVP, a IA deve reavaliar prioridades a partir do es
 | Andar pelas paredes | Move-se por superfícies ignorando mobilidade normal. |
 
 ### Habilidades especiais
+
+:::decision
+**Decisão:** habilidades especiais não dependem de um recurso universal `Especial SP`. Cada especial pertence ao arquétipo e é acionado por condições explícitas de gameplay.
+
+O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo de execução e cooldown são adicionados apenas quando necessários para a habilidade específica. As condições concretas de cada especial ainda precisam ser revisadas para garantir que a habilidade crie ou altere uma situação de perseguição.
+:::
 
 | Habilidade | Efeito | Referência do GDD |
 |---|---|---|
@@ -529,7 +546,7 @@ A sala de controle contém uma interface simples com cerca de seis monitores. Ca
 
 ## Power-ups
 
-Power-ups são modificadores temporários que alteram propriedades de gameplay ou concedem vantagem situacional. O HUD do personagem deve mostrar quando um power-up é recebido ou perdido, com barra temporária próxima ao personagem, cubos preenchendo ou esvaziando, cor associada ao atributo e nome abreviado.
+Power-ups são modificadores temporários que alteram propriedades de gameplay ou concedem vantagem situacional. Eles não dependem de uma ficha universal de atributos. O HUD deve comunicar claramente quando um power-up é recebido ou perdido, seu efeito e, quando aplicável, sua duração.
 
 ### Regras de design
 
@@ -729,6 +746,9 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
 | Capacidade de ataque | Limiar ofensivo atual usado para verificar se um ataque pode incapacitar o alvo. Não representa dano acumulado. |
 | Resistência | Limiar atual que deve ser alcançado pela Capacidade de ataque para incapacitar um ator. Pode ser modificado por condições e deve ser comunicado visualmente. |
+| Capacidade de interação | Aptidão determinística de um ator para executar determinado tipo/requisito de interação do cenário. Quando compatível, a ação possui um tempo de execução definido. |
+| Confrontando | Comportamento em que um larápio enfrenta outro ator para atender a um objetivo concreto; não é uma reação aleatória a dano. |
+| Habilidade especial | Comportamento próprio de um arquétipo acionado por condições explícitas; não depende de uma barra universal de SP. |
 | Incapacitado | Estado temporário em que o larápio não pode agir e pode ser colocado sob custódia antes de se recuperar. |
 | Em transporte | Estado de um larápio incapacitado sob custódia de um jogador a caminho da sala de detenção. |
 | Detido / Capturado | Resolução final em que o larápio foi entregue à sala de detenção e deixa o assalto. |
@@ -749,5 +769,6 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.3.0 | 2026-09-25 | Consolidado o princípio PERSEGUIR e simplificados confronto, captura, IA, capacidades de interação e habilidades especiais; removida a dependência conceitual de ficha universal de atributos. |
 | 0.2.1 | 2026-07-08 | Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários. |
 | 0.2.0 | 2026-07-08 | Recriação em Markdown a partir do GDD Word, com organização ampliada, componentes do framework e foco em GDD melhorado. |
