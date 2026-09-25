@@ -26,6 +26,24 @@ O jogo coloca um ou dois jogadores em missões de segurança por diferentes pont
 **Estado:** ativo
 :::
 
+### Intenção central de design
+
+:::decision
+**Palavra-chave:** `PERSEGUIR`
+
+**Princípio:** PEGA é sobre perseguir.
+
+Queremos criar a experiência de identificar um alvo, persegui-lo através de um ambiente dinâmico, perder e recuperar contato, antecipar sua rota, superar obstáculos e finalmente interceptá-lo.
+
+Os sistemas de movimento, inimigos, cenários, objetos, armadilhas, informação e cooperação devem contribuir para criar perseguições interessantes, variadas e legíveis.
+
+**Mantra de design:** **Capturar é a recompensa. Perseguir é a experiência.**
+
+**Critério de decisão:** quando houver dúvida sobre adicionar, remover ou alterar uma mecânica, a primeira pergunta deve ser: **“Isso torna a perseguição mais interessante?”** Se a resposta for não, a mecânica precisa justificar sua existência por outro papel essencial no jogo.
+
+**Consequência:** perseguição não deve ser tratada apenas como uma mecânica ou como um pilar entre outros. Ela é a experiência central que orienta o gameplay moment-to-moment; os pilares de design abaixo devem sustentar diferentes aspectos dessa experiência.
+:::
+
 ### Pilares de design
 
 | Pilar | Descrição | Consequência prática |
