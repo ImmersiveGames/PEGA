@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LoggingConfig
   m_EditorClassIdentifier: Immersive.Logging.Unity::Immersive.Logging.Unity.LoggingConfigAsset
   globalEnabled: 1
-  defaultMinimumLevel: 2
+  defaultMinimumLevel: 3
   honorLogLevelAttributes: 1
   includeTimestamp: 0
   useRichText: 0

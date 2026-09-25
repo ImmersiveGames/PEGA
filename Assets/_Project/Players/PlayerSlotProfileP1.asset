@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSlotProfile
   playerSlotId: player.1
   displayName: Player 1
-  description: 
+  description: Ascento para o Player 01
   accentColor: {r: 1, g: 1, b: 1, a: 1}
   icon: {fileID: 0}
   displayOrder: 0

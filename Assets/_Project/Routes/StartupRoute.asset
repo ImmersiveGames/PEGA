@@ -17,7 +17,7 @@ MonoBehaviour:
   primaryScenePath: Assets/Scenes/SampleScene.unity
   primarySceneName: SampleScene
   routeContentProfile: {fileID: 0}
-  startupActivity: {fileID: 0}
+  startupActivity: {fileID: 11400000, guid: e7daf8e5bc374924184763eece93c098, type: 2}
   playerSpatialEntryPolicy: 0
   cameraPresentations: []
   transitionGateMode: 30

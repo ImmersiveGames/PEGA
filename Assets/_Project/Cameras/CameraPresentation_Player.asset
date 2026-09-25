@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f462e826b8420997d5f1292d8fe2d9, type: 3}
-  m_Name: CameraMainPresentation
+  m_Name: CameraPresentation_Player
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.CameraAuthoring.CameraPresentationDefinition
-  stableId: 7b53141b30484469aeca01e3ca6d94c2
+  stableId: 723a1c3350134565af9929dd011543da
   description: 
   outputDefinition: {fileID: 11400000, guid: 9c06b3d044fb2ea4c8a8fa5163015750, type: 2}
-  rigPrefab: {fileID: 6102830329239094849, guid: 305691ab7af6e444c99d9059ec31afb7, type: 3}
+  rigPrefab: {fileID: 7159804551325340078, guid: 56b35fd521ed2104e9bd9e0ebfeab2c2, type: 3}
   transitionMode: 10
   subjectPolicy: 10
-  requestPrecedence: 0
+  requestPrecedence: 300

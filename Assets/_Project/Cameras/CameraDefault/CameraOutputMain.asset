@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: CameraOutputMain
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.CameraAuthoring.CameraOutputDefinition
   stableId: cc94290c9968424e80f34170f3d1facf
-  description: 
+  description: "Saida de camera Padr\xE3o"
