@@ -221,17 +221,17 @@ Personagens podem se mover em todas as direções enquanto estiverem no solo. A 
 
 ### Impulso
 
-O impulso aumenta temporariamente a velocidade em `1.5x`. Para executar a ação, o personagem precisa ter ao menos `1` ponto de **Vigor** e respeitar um tempo de resfriamento.
+O impulso aumenta temporariamente a velocidade em `1.5x` e respeita um tempo de resfriamento. O vínculo anterior com **Vigor** deixa de ser regra consolidada e deve ser revisto junto da simplificação dos atributos.
 
 :::configuration
-**Fórmula de referência:** `tempo base (2) - (Vigor / Agilidade)`
+**Referência herdada:** `tempo base (2) - (Vigor / Agilidade)`
 
-**Observação:** a fórmula vem do GDD original e deve ser validada em protótipo, porque pode gerar valores baixos demais dependendo da escala de atributos.
+**Estado:** não consolidada. A fórmula depende de Vigor e deve ser reavaliada antes da implementação.
 :::
 
 ### Salto
 
-O salto permite alcançar áreas elevadas até `1.3x` a altura do personagem, sem troca de andar. A altura pode variar com a **Força**, adicionando `Força * 0.1` à altura base. Exemplo: um personagem com `3` de Força salta `1.6x` sua altura.
+O salto permite alcançar áreas elevadas sem troca de andar. A referência original de altura baseada em **Força** não é mais uma regra consolidada, porque o atributo está sendo removido do modelo-base de confronto. A altura e a função do salto devem ser reavaliadas como ferramenta de mobilidade e perseguição.
 
 :::risk
 **Risco:** salto em jogo top-down pode gerar problemas de leitura de altura, colisão e navegação.
@@ -320,21 +320,26 @@ O GDD original sugere múltiplos locais de Larópolis. Para organização de pro
 
 ## Sistemas do jogador
 
-### Atributos
+### Propriedades de gameplay
 
-| Atributo | Função provável |
+PEGA não usa um modelo tradicional de pontos de vida e dano acumulativo como base para incapacitação. O confronto serve à perseguição: criar ou aproveitar uma oportunidade para impedir temporariamente o alvo e concluir sua captura.
+
+| Propriedade | Função |
 |---|---|
-| Vigor | Energia, resistência a dano e custo mínimo para ações como impulso. |
-| Agilidade | Velocidade de movimento e influência no resfriamento do impulso. |
-| Força | Influência em salto, empurrões, ataques e interação com obstáculos. |
-| Presença | Pode afetar percepção, intimidação, detecção ou testes de reação. |
-| Proficiência | Pode afetar uso de objetos, armadilhas, portas e ações técnicas. |
-| Especial SP | Recurso limitado para habilidades especiais. |
+| Capacidade de ataque | Valor atual usado para determinar se um ataque pode incapacitar o alvo. Pode receber vantagens temporárias de itens, power-ups ou outras condições. |
+| Resistência | Limiar atual necessário para incapacitar um ator. Deve ser legível antes do confronto e pode ser reduzido temporariamente por armadilhas, objetos ou condições do cenário. |
+| Agilidade | Referência para velocidade e mobilidade. Seu uso exato no impulso permanece sujeito a protótipo. |
+
+:::decision
+**Decisão:** `Capacidade de ataque` e `Resistência` são propriedades de confronto, não barras de dano. Se a Capacidade de ataque do agressor for igual ou superior à Resistência atual do alvo, um ataque válido o incapacita. Se for inferior, o ataque não acumula dano nem reduz Resistência por si só.
+
+A Resistência deve possuir feedback visual legível — barra, segmentos, ícones ou solução equivalente — para que o jogador possa reconhecer antecipadamente se possui capacidade para incapacitar aquele alvo.
+:::
 
 :::open-question
-**Pergunta:** os atributos pertencem apenas aos inimigos, aos jogadores ou a todos os personagens?
+**Pergunta:** quais propriedades adicionais, como Agilidade, precisam permanecer como atributos numéricos após a simplificação do sistema?
 
-**Recomendação:** padronizar a ficha de personagem para jogadores e inimigos, mesmo que nem todos usem todos os atributos no MVP.
+**Impacto:** afeta movimento, impulso, salto, power-ups e fichas de personagens.
 :::
 
 ### Estados gerais
@@ -422,34 +427,24 @@ Inimigos possuem área de visão e podem realizar testes de presença para decid
 
 Personagens do mesmo grupo devem ter consciência mais confiável uns dos outros. Personagens de grupos diferentes podem ter percepção parcial.
 
-### Reação ao perder inventário
+### Posse, desejo e inversão da perseguição
 
-Quando um inimigo é atingido e possui itens, seu inventário cai no chão. Após isso, ele deve tomar uma decisão de comportamento. O GDD sugere pesos como:
+:::decision
+**Decisão:** todo ataque válido contra um ator que esteja carregando itens faz esses itens caírem no chão, independentemente de o ataque conseguir incapacitá-lo.
 
-| Reação | Peso de referência |
-|---|---:|
-| Fugindo | 50% |
-| Escapando | 20% |
-| Furtando | 15% |
-| Agressivo | 10% |
-| Perseguindo | 5% |
+- Se `Capacidade de ataque >= Resistência atual`, o alvo larga os itens e fica incapacitado.
+- Se `Capacidade de ataque < Resistência atual`, o alvo larga os itens, mas permanece ativo. O ataque não causa desgaste acumulativo de Resistência.
+- Um larápio resistente pode perder tempo tentando recuperar o item derrubado, dando ao jogador oportunidade para mudar de rota, usar o cenário, obter uma vantagem ou recuperar o item.
+:::
 
-### Reação a dano
+A posse dos itens de desejo participa diretamente da IA. Quando o jogador recolhe um item desejado por um larápio, a relação pode se inverter: o larápio passa de perseguido a perseguidor e tenta recuperar o item do jogador. `Agressivo` não deve representar uma escolha aleatória de entrar em combate, mas uma intenção de confronto associada a um objetivo concreto, como recuperar um item desejado ou remover um personagem que bloqueia sua ação.
 
-Quando um inimigo sofre dano em seu vigor, ele também pode mudar de comportamento. O GDD sugere pesos como:
-
-| Reação | Peso de referência |
-|---|---:|
-| Agressivo | 50% |
-| Fugindo | 20% |
-| Perseguindo | 15% |
-| Escapando | 10% |
-| Furtando | 5% |
+Como regra de leitura para o MVP, a IA deve reavaliar prioridades a partir do estado do assalto, posse e desejo, em vez de tabelas probabilísticas de reação a dano. Exemplos: buscar item disponível, fugir quando estiver com o item, recuperar item derrubado, perseguir o portador de um item desejado e priorizar saída durante a Fuga Final.
 
 :::risk
-**Risco:** IA com muitos estados, pesos e exceções pode ficar difícil de depurar.
+**Risco:** comportamentos com muitas exceções podem tornar a perseguição imprevisível.
 
-**Mitigação:** implementar primeiro uma máquina de estados reduzida para o MVP: `Furtando`, `Fugindo`, `Agressivo`, `Atordoado/Caído` e `Capturado`.
+**Mitigação:** priorizar regras determinísticas e legíveis baseadas em posse, desejo, estado do assalto e oportunidade de fuga.
 :::
 
 ## Habilidades
@@ -462,10 +457,10 @@ Quando um inimigo sofre dano em seu vigor, ele também pode mudar de comportamen
 | Escondendo | Usa objetos com característica de esconderijo. |
 | Tocaia | Esconde-se e ataca quando o jogador se aproxima. |
 | Invisibilidade | Fica difícil de perceber por tempo limitado. |
-| Ataque corpo a corpo | Causa dano usando arma ou objeto próximo. |
-| Ataque de média distância | Causa dano com alcance intermediário. |
-| Ataque de longa distância | Arremessa ou dispara objeto contra alvo. |
-| Imobilizar | Força estado caído ou incapacitado. |
+| Ataque corpo a corpo | Impacta o alvo; derruba itens transportados e incapacita quando a Capacidade de ataque é suficiente para superar a Resistência atual. |
+| Ataque de média distância | Aplica um impacto a alcance intermediário; não implica dano acumulativo. |
+| Ataque de longa distância | Arremessa ou dispara objeto para produzir um efeito de impacto configurado; não implica dano acumulativo. |
+| Imobilizar | Produz ou facilita incapacitação conforme a regra específica da habilidade. |
 | Desativar armadilhas | Interage com armadilha para torná-la inativa. |
 | Roubar outro larapio | Toma item desejado de outro inimigo. |
 | Arrombar portas | Destrói ou inutiliza portas usando força. |
@@ -489,7 +484,7 @@ Quando um inimigo sofre dano em seu vigor, ele também pode mudar de comportamen
 | Sísmico | Cria ondas de choque que empurram e podem derrubar o jogador. | Papagaio na armadura. |
 | Múltiplo | Cria cópias falsas durante fuga. | Inimigo ilusionista. |
 | Terror | Incapacita imediatamente o jogador. | Amon-ha assusta o jogador. |
-| Transformação | Vampiro vira morcego com mais agilidade ao ficar com pouco vigor. | Vampiro. |
+| Transformação | Vampiro assume forma de morcego sob uma condição própria, ganhando mobilidade. | Vampiro. |
 | Transpor | Atravessa portas e paredes. | Fantasma. |
 | Arremessar tortas | Ataque à distância que suja a tela e reduz visibilidade. | Palhaço. |
 | Parede invisível | Cria obstáculo transparente temporário. | Mímico. |
@@ -534,7 +529,7 @@ A sala de controle contém uma interface simples com cerca de seis monitores. Ca
 
 ## Power-ups
 
-Power-ups são modificadores temporários que alteram atributos ou concedem vantagem situacional. O HUD do personagem deve mostrar quando um power-up é recebido ou perdido, com barra temporária próxima ao personagem, cubos preenchendo ou esvaziando, cor associada ao atributo e nome abreviado.
+Power-ups são modificadores temporários que alteram propriedades de gameplay ou concedem vantagem situacional. O HUD do personagem deve mostrar quando um power-up é recebido ou perdido, com barra temporária próxima ao personagem, cubos preenchendo ou esvaziando, cor associada ao atributo e nome abreviado.
 
 ### Regras de design
 
@@ -542,12 +537,12 @@ Power-ups são modificadores temporários que alteram atributos ou concedem vant
 - O efeito deve ser comunicado imediatamente.
 - A duração precisa ser legível.
 - A coleta não deve interromper o fluxo de perseguição.
-- O efeito deve conversar com atributos como Vigor, Agilidade, Força, Presença ou Proficiência.
+- O efeito deve criar uma vantagem legível de perseguição, como mobilidade, aumento temporário de Capacidade de ataque ou redução/contorno de Resistência.
 
 :::open-question
 **Pergunta:** quais power-ups existem na primeira versão?
 
-**Recomendação:** começar com três efeitos simples: velocidade, força e recuperação de vigor.
+**Recomendação:** começar com poucos efeitos diretamente ligados à perseguição: velocidade/mobilidade e vantagem temporária de Capacidade de ataque. Efeitos sobre Resistência podem ser introduzidos por armadilhas e interações do cenário.
 :::
 
 ## Modos de jogo e progressão
@@ -653,7 +648,7 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Cenário | Armazém completo. |
 | Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
 | Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
-| IA | Furtar, fugir, perseguir, atacar e reagir a dano. |
+| IA | Furtar, fugir, recuperar itens, perseguir portadores de itens desejados e confrontar quando houver objetivo concreto. |
 | Sistemas | Movimento, impulso, interação, carregar/soltar, prisão, cofre. |
 | Interface | HUD, minimapa, tempo e resultado. |
 | Progressão | Classificação simples ao fim do assalto. |
@@ -703,7 +698,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 :::open-question
 **Pergunta:** como funciona derrota total em uma missão?
 
-**Possibilidades:** tempo acaba, todos os itens são roubados, jogadores ficam incapacitados ou classificação `F`.
+**Observação:** o fim do cronômetro já foi definido como início da Fuga Final, portanto não constitui derrota automática. Ainda é necessário decidir se existe derrota total ou se todo assalto termina em classificação conforme o resultado.
 :::
 
 :::open-question
@@ -732,7 +727,11 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Fuga final | Estado iniciado quando o tempo do assalto termina; todos os larápios ainda ativos priorizam escapar do cenário. |
 | Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
-| Especial SP | Recurso usado para habilidades especiais. |
+| Capacidade de ataque | Limiar ofensivo atual usado para verificar se um ataque pode incapacitar o alvo. Não representa dano acumulado. |
+| Resistência | Limiar atual que deve ser alcançado pela Capacidade de ataque para incapacitar um ator. Pode ser modificado por condições e deve ser comunicado visualmente. |
+| Incapacitado | Estado temporário em que o larápio não pode agir e pode ser colocado sob custódia antes de se recuperar. |
+| Em transporte | Estado de um larápio incapacitado sob custódia de um jogador a caminho da sala de detenção. |
+| Detido / Capturado | Resolução final em que o larápio foi entregue à sala de detenção e deixa o assalto. |
 
 ## Documentos relacionados
 
