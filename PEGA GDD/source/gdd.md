@@ -3,9 +3,9 @@
 **Projeto:** `PEGA`  
 **Tipo de documento:** Game Design Document  
 **Status:** Rascunho reorganizado  
-**Versão:** 0.2.0  
+**Versão:** 0.3.1  
 **Fonte principal:** `Exemplos/GDD PEGA.docx`  
-**Última atualização:** 2026-07-08
+**Última atualização:** 2026-09-25
 
 ---
 
@@ -115,14 +115,15 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 :::flow
 1. O jogador escolhe uma missão no mapa/HUB de Larópolis.
 2. O jogo apresenta o cenário, pontos de entrada, saídas, itens valiosos, armadilhas e novidades da fase.
-3. O jogador recebe um curto período de exploração inicial.
-4. Um grupo de larápios invade o local.
-5. Os inimigos procuram itens de desejo e executam comportamentos de roubo, fuga, sabotagem ou ataque.
-6. O jogador persegue, captura, recupera itens e usa ferramentas do ambiente.
-7. Quando o tempo do assalto termina, todos os larápios ainda ativos entram em modo de fuga e tentam deixar o cenário com o que conseguiram roubar.
-8. O jogador recebe uma última oportunidade de perseguir, incapacitar e deter os larápios restantes antes que escapem.
-9. O assalto termina quando não existem mais larápios ativos no cenário: cada larápio foi detido ou conseguiu fugir.
-10. O jogo calcula classificação, créditos e progresso.
+3. Começa a **Preparação**: durante um tempo limitado, o jogador usa o orçamento e as ferramentas oferecidas pelo cenário para esconder ou reposicionar bens, escolher onde proteger o objetivo principal, melhorar defesas e preparar armadilhas.
+4. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal e possuem informações aproximadas sobre possíveis locais e pontos relevantes, mas não conhecem as decisões tomadas pelo jogador.
+5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
+6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
+7. Quando o objetivo principal é localizado, a informação pode alterar imediatamente as prioridades dos grupos e concentrar a perseguição sobre seu portador.
+8. Quando o tempo do assalto termina, todos os larápios ainda ativos entram em **Fuga Final** e tentam deixar o cenário com o que conseguiram roubar.
+9. O jogador recebe uma última oportunidade de perseguir, incapacitar e deter os larápios restantes antes que escapem.
+10. O assalto termina quando não existem mais larápios ativos no cenário: cada larápio foi detido ou conseguiu fugir.
+11. O jogo calcula classificação, créditos e progresso.
 :::
 
 ### Estrutura de uma missão
@@ -130,7 +131,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 | Etapa | Função |
 |---|---|
 | Apresentação do cenário | Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas. |
-| Exploração inicial | Jogador controla o personagem por um curto período antes da invasão. |
+| Preparação | Antes da invasão, o jogador recebe tempo limitado, orçamento e ferramentas próprias do cenário para decidir como proteger os bens e preparar a segurança. |
 | Entrada dos larápios | Splash screen apresenta grupo inimigo, representantes e indicação de dificuldade. |
 | Janela de entrada | Inimigos podem entrar em grupos diferentes durante aproximadamente um minuto. |
 | Assalto ativo | Contagem regressiva principal, captura, roubo e recuperação. |
@@ -143,6 +144,48 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 **Motivo:** o GDD original usa "assalto", "fase" e "missão" em contextos próximos. Para produção, `Assalto` deve representar o evento jogável completo, enquanto `Missão` pode representar o contrato escolhido no mapa.
 
 **Consequência:** documentação técnica, UI e narrativa devem padronizar esses termos.
+:::
+
+## Preparação do assalto
+
+:::decision
+**Decisão:** a antiga exploração inicial evolui para uma **fase de Preparação** com duração limitada antes da invasão.
+
+A Preparação é limitada por três fatores complementares:
+
+- **Tempo:** o jogador não consegue executar todas as ações disponíveis e precisa priorizar.
+- **Orçamento:** melhorias e recursos de segurança competem por uma quantidade limitada de recursos financeiros.
+- **Ferramentas do cenário:** cada local oferece possibilidades próprias; o jogador não constrói livremente qualquer defesa.
+
+Durante a Preparação, o jogador pode, conforme a missão e os recursos disponíveis, reposicionar ou esconder bens valiosos, escolher onde proteger o objetivo principal, melhorar cofres e outras defesas e posicionar ou ativar armadilhas.
+
+O objetivo é permitir que o jogador altere o problema que os larápios encontrarão durante a invasão. As decisões de Preparação devem sustentar blefe, distribuição de risco, rotas de defesa e uso criativo do cenário sem transformar PEGA em um jogo de construção.
+:::
+
+### Objetivo principal e valores secundários
+
+:::decision
+**Decisão:** o assalto pode distinguir um **objetivo principal** de **valores secundários roubáveis**.
+
+Os larápios sabem qual é o objetivo principal da vez, mas não conhecem automaticamente sua localização. Eles podem conhecer aproximadamente os possíveis pontos de proteção, como regiões ou cofres, e precisam investigar para reduzir a incerteza.
+
+O jogador pode usar essa incerteza estrategicamente. O objetivo pode estar protegido em um cofre válido ou, quando a missão permitir, permanecer em posse do jogador. Cofres vazios, valores secundários e defesas preparadas podem funcionar como distração ou blefe.
+
+Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apenas uma das maneiras possíveis de obter informação. Capacidades próprias e soluções do cenário — como terminais, energia, ferramentas ou outras interações — podem permitir descobrir ou superar proteções por caminhos diferentes.
+:::
+
+### Descoberta e adaptação do plano inimigo
+
+:::decision
+**Decisão:** larápios constroem e revisam seu plano durante o assalto em vez de receber uma solução perfeita no início.
+
+Ao encontrar uma proteção, o larápio descobre suas dificuldades e avalia soluções compatíveis com suas capacidades. Se não puder superar diretamente o obstáculo, pode procurar uma solução no cenário, mudar de alvo ou recalcular sua rota.
+
+O fluxo conceitual é:
+
+**conhecimento incompleto → investigar → descobrir → avaliar → adaptar → localizar → roubar → perseguir/fugir**
+
+Informação sobre cofres vazios, proteções e soluções pode permanecer restrita ao grupo que a descobriu. Isso permite que grupos rivais repitam erros, disputem oportunidades e mantenham planos parcialmente independentes.
 :::
 
 ## Narrativa e mundo
@@ -209,34 +252,42 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 | Ação | Entrada | Descrição |
 |---|---|---|
 | Mover | Eixo esquerdo ou D-Pad | Movimento em todas as direções no solo. |
-| Impulso | Botão oeste (`X`) | Aumento temporário de velocidade. |
-| Saltar | Botão a definir no mapeamento final | Salto direcional com altura baseada em força. |
+| Esquivar | Botão a definir no mapeamento final | Deslocamento curto e rápido com breve janela de invulnerabilidade e cooldown. |
+| Saltar | Botão a definir no mapeamento final | Salto livre usado para mobilidade e para evitar ameaças explicitamente compatíveis com salto. |
 | Interagir / atacar / soltar | Botão leste (`B`) | Interage com inimigos, objetos ou executa ataque se não houver alvo interativo. |
 | Confirmar | Botão sul (`A`) | Confirmação em menus. |
 | Pausar | `Start` | Abre ou fecha menu de pausa. |
 
 ### Movimento
 
-Personagens podem se mover em todas as direções enquanto estiverem no solo. A velocidade é definida pelo atributo **Agilidade** e pode ser modificada durante a partida. O movimento é bloqueado por objetos comuns, exceto interações de mobilidade e objetos explicitamente configurados para permitir passagem.
+:::decision
+**Decisão:** o jogador não possui estados separados de andar e correr. Seu movimento-base já representa a corrida de gameplay e possui velocidade constante, salvo modificadores externos como itens, power-ups ou efeitos.
 
-### Impulso
+Larápios possuem pelo menos dois regimes de velocidade: **velocidade de movimentação**, usada durante navegação e investigação, e **velocidade de perseguição**, usada quando sua intenção exige perseguir um portador ou fugir com um objetivo. A seleção entre essas velocidades decorre do comportamento atual, não de um atributo genérico de Agilidade.
+:::
 
-O impulso aumenta temporariamente a velocidade em `1.5x` e respeita um tempo de resfriamento. O vínculo anterior com **Vigor** deixa de ser regra consolidada e deve ser revisto junto da simplificação dos atributos.
+### Esquiva
 
-:::configuration
-**Referência herdada:** `tempo base (2) - (Vigor / Agilidade)`
+:::decision
+**Decisão:** a esquiva é um deslocamento curto e rápido na direção escolhida, acompanhado de uma breve janela de invulnerabilidade. Após o uso, entra em cooldown e não pode ser repetida até ficar novamente disponível.
 
-**Estado:** não consolidada. A fórmula depende de Vigor e deve ser reavaliada antes da implementação.
+A esquiva não altera permanentemente a velocidade-base e não depende de Vigor ou stamina.
 :::
 
 ### Salto
 
-O salto permite alcançar áreas elevadas sem troca de andar. A referência original de altura baseada em **Força** não é mais uma regra consolidada, porque o atributo está sendo removido do modelo-base de confronto. A altura e a função do salto devem ser reavaliadas como ferramenta de mobilidade e perseguição.
+:::decision
+**Decisão:** o jogador possui salto livre. O salto é uma ferramenta de mobilidade e não concede invulnerabilidade.
+
+Ameaças explicitamente compatíveis podem ser evitadas pelo estado aéreo ou pela posição física do personagem — por exemplo, obstáculos baixos, ataques rasteiros ou armadilhas de solo. Ataques que alcançam o personagem no ar continuam válidos.
+
+O salto livre pode superar geometria e pequenas diferenças físicas compatíveis. Mudanças de **nível estrutural** do cenário, como atravessar uma janela para outro nível, usam transposições/interações especiais configuradas pelo cenário em vez de depender automaticamente do salto livre.
+:::
 
 :::risk
-**Risco:** salto em jogo top-down pode gerar problemas de leitura de altura, colisão e navegação.
+**Risco:** salto e diferenças de altura podem gerar problemas de leitura, colisão e navegação.
 
-**Mitigação:** prototipar cedo a leitura visual do salto e definir claramente quais obstáculos podem ser vencidos.
+**Mitigação:** prototipar cedo a leitura visual do salto e separar claramente altura física local de mudanças de nível estrutural.
 :::
 
 ### Interação
@@ -249,9 +300,19 @@ A interação depende do objeto diretamente à frente do personagem e dentro de 
 - Se o personagem estiver carregando outro personagem, a interação solta o carregado.
 - Cada interação tem cadência base de `1` segundo.
 
+### Restrições ao transportar larápios
+
+:::decision
+**Decisão:** transportar um larápio é uma dificuldade baseada em restrição de ações, não em redução de velocidade.
+
+Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal, mas **não pode atacar, interagir com objetos, esquivar ou saltar**. Ele pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
+
+Essa restrição cria custo de oportunidade: durante o transporte, o jogador fica menos capaz de responder aos demais larápios, e no cooperativo o segundo jogador pode assumir proteção e interceptação.
+:::
+
 ## Câmera e apresentação
 
-A câmera é top-down, fixa em distância determinada e acompanha o personagem. Em multiplayer local, a tela é dividida horizontalmente. A apresentação deve manter leitura clara de:
+A câmera usa uma visão elevada oblíqua, próxima de um top-down inclinado, fixa em distância determinada e acompanha o personagem. Em multiplayer local, a tela é dividida horizontalmente. A apresentação deve manter leitura clara de:
 
 - Rotas e obstáculos.
 - Inimigos próximos.
@@ -328,7 +389,6 @@ PEGA não usa um modelo tradicional de pontos de vida e dano acumulativo como ba
 |---|---|
 | Capacidade de ataque | Valor atual usado para determinar se um ataque pode incapacitar o alvo. Pode receber vantagens temporárias de itens, power-ups ou outras condições. |
 | Resistência | Limiar atual necessário para incapacitar um ator. Deve ser legível antes do confronto e pode ser reduzido temporariamente por armadilhas, objetos ou condições do cenário. |
-| Agilidade | Referência para velocidade e mobilidade. Seu uso exato no impulso permanece sujeito a protótipo. |
 
 :::decision
 **Decisão:** `Capacidade de ataque` e `Resistência` são propriedades de confronto, não barras de dano. Se a Capacidade de ataque do agressor for igual ou superior à Resistência atual do alvo, um ataque válido o incapacita. Se for inferior, o ataque não acumula dano nem reduz Resistência por si só.
@@ -336,10 +396,8 @@ PEGA não usa um modelo tradicional de pontos de vida e dano acumulativo como ba
 A Resistência deve possuir feedback visual legível — barra, segmentos, ícones ou solução equivalente — para que o jogador possa reconhecer antecipadamente se possui capacidade para incapacitar aquele alvo.
 :::
 
-:::open-question
-**Pergunta:** quais propriedades de movimento precisam permanecer numéricas após a simplificação do sistema?
-
-**Impacto:** velocidade/corrida, impulso, salto, esquiva/rolagem e diferenças de mobilidade entre atores serão redefinidos em etapa própria. O modelo antigo de ficha universal (`Vigor`, `Agilidade`, `Força`, `Presença`, `Proficiência` e `Especial SP`) não é mais obrigatório.
+:::decision
+**Decisão:** movimento não depende de uma ficha universal de atributos. Velocidades, distância de esquiva, janela de invulnerabilidade, cooldown, parâmetros de salto e demais valores necessários são configurações diretas dos respectivos sistemas ou arquétipos.
 :::
 
 ### Estados gerais
@@ -414,14 +472,34 @@ O inimigo pode priorizar:
 - Reagir ao jogador se for detectado.
 - Mudar de rota durante o tempo crítico.
 
-### Percepção e decisão
+### Percepção, conhecimento e decisão
 
 :::decision
-**Decisão:** percepção e decisão são sistemas distintos. A percepção determina **o que o larápio sabe**; a decisão determina **o que ele faz com essa informação**.
+**Decisão:** percepção, conhecimento e decisão são camadas distintas.
 
-A detecção deve ser baseada em condições objetivas e legíveis, e não em testes abstratos de `Presença` ou probabilidades. O modelo concreto de percepção — alcance, campo de visão, linha de visão, memória da última posição conhecida, compartilhamento de informação e outros estímulos — será definido em etapa própria.
+- **Conhecimento de objetivo:** o larápio entra sabendo **o que** procura e recebe informações iniciais aproximadas sobre possíveis locais relevantes, mas não conhece automaticamente a posição real do objetivo nem as decisões tomadas pelo jogador na Preparação.
+- **Percepção local:** identifica atores, ameaças, oportunidades, objetos e interações ao redor por condições objetivas e legíveis. Perceber algo não obriga uma ação específica.
+- **Decisão:** escolhe o que fazer a partir do conhecimento disponível, estado do assalto, posse, desejo, capacidades e oportunidades.
 
-A decisão de comportamento deve ser determinística a partir do conhecimento disponível, do estado do assalto, da posse e do desejo. Aleatoriedade pode existir para variedade, mas não deve substituir as regras principais de prioridade.
+A IA não deve depender de testes abstratos de `Presença`. A imperfeição pode surgir de **informação incompleta**, **percepção limitada** e **decisões comportamentais imperfeitas**, sem transformar a percepção básica em uma rolagem probabilística.
+
+O modelo concreto de alcance, campo de visão, linha de visão e memória ainda será definido.
+:::
+
+### Escopos de informação
+
+:::decision
+**Decisão:** informações possuem escopo e não são automaticamente compartilhadas entre grupos rivais.
+
+| Escopo | Regra |
+|---|---|
+| Individual / transitório | Representa percepção imediata daquele larápio, como ameaça ou objeto atualmente visível. |
+| Grupo | Descobertas relevantes são automaticamente conhecidas pelos integrantes do mesmo grupo: cofres investigados, proteções encontradas, soluções descobertas ou o fato de um jogador estar carregando algo ainda não identificado. |
+| Global | Informações críticas podem ser anunciadas para todos os grupos, especialmente a posição anunciada do jogador e a localização/identificação do objetivo principal. |
+
+Um anúncio global comunica um fato ou posição observada; ele **não cria rastreamento mágico permanente**. Se o alvo mudar de posição e deixar de ser percebido, a informação pode ficar desatualizada.
+
+Compartilhar informação também não significa compartilhar objetivo: grupos continuam rivais e podem competir pelo mesmo item. A comunicação global pode ser apresentada como grito, sinal sonoro ou outro feedback legível sem exigir simulação detalhada de transmissão.
 :::
 
 ### Posse, desejo e inversão da perseguição
@@ -434,7 +512,7 @@ A decisão de comportamento deve ser determinística a partir do conhecimento di
 - Um larápio resistente pode perder tempo tentando recuperar o item derrubado, dando ao jogador oportunidade para mudar de rota, usar o cenário, obter uma vantagem ou recuperar o item.
 :::
 
-A posse dos itens de desejo participa diretamente da IA. Quando o jogador recolhe um item desejado por um larápio, a relação pode se inverter: o larápio passa de perseguido a perseguidor e tenta recuperar o item do jogador. `Agressivo` não deve representar uma escolha aleatória de entrar em combate, mas uma intenção de confronto associada a um objetivo concreto, como recuperar um item desejado ou remover um personagem que bloqueia sua ação.
+A posse dos itens de desejo participa diretamente da IA. Quando o jogador recolhe um item desejado por um larápio, a relação pode se inverter: o larápio passa de perseguido a perseguidor e tenta recuperar o item do jogador. Um larápio pode perceber que o jogador carrega **algum item** sem identificar imediatamente seu conteúdo; essa descoberta permanece informação do grupo. Quando o item principal é exposto e identificado — por exemplo, após o jogador ser incapacitado e derrubá-lo — sua localização torna-se informação global. `Confrontando` representa uma intenção associada a um objetivo concreto, como recuperar um item desejado ou remover um personagem que bloqueia sua ação.
 
 Como regra de leitura para o MVP, a IA deve reavaliar prioridades a partir do estado do assalto, posse e desejo, em vez de tabelas probabilísticas de reação a dano. Exemplos: buscar item disponível, fugir quando estiver com o item, recuperar item derrubado, perseguir o portador de um item desejado e priorizar saída durante a Fuga Final.
 
@@ -518,7 +596,7 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 | Objetos seguráveis | Podem ser carregados, soltos, roubados ou usados para bloquear caminho. |
 | Portas | Podem ser abertas, fechadas, trancadas, arrombadas ou hackeadas. |
 | Câmeras | Informam posição e permitem ativar armadilhas em áreas monitoradas. |
-| Cofres | Recebem itens recuperados. |
+| Cofres | Podem proteger bens durante a Preparação e o assalto; suas proteções podem exigir capacidades ou soluções de cenário para serem superadas. Também podem receber itens recuperados quando configurados para isso. |
 | Prisões | Recebem inimigos capturados. |
 | Interações de mobilidade | Atalhos, passagens, carrinhos ou objetos que mudam deslocamento. |
 
@@ -666,7 +744,7 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
 | Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
 | IA | Furtar, fugir, recuperar itens, perseguir portadores de itens desejados e confrontar quando houver objetivo concreto. |
-| Sistemas | Movimento, impulso, interação, carregar/soltar, prisão, cofre. |
+| Sistemas | Movimento-base, esquiva, salto, interação, carregar/soltar, prisão, cofres e Preparação. |
 | Interface | HUD, minimapa, tempo e resultado. |
 | Progressão | Classificação simples ao fim do assalto. |
 | Multiplayer | Tela dividida local, se tecnicamente viável no primeiro protótipo. |
@@ -740,7 +818,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Larápios | Criminosos/inimigos do jogo. |
 | Assalto | Unidade principal de gameplay dentro de uma fase ou missão. |
 | Item de desejo | Item valioso que inimigos querem roubar. |
-| Cofre | Local onde itens recuperados devem ser depositados. |
+| Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Fuga final | Estado iniciado quando o tempo do assalto termina; todos os larápios ainda ativos priorizam escapar do cenário. |
 | Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
@@ -769,6 +847,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.3.1 | 2026-09-25 | Consolidada a Preparação do assalto, movimento, esquiva, salto, transporte, conhecimento dos larápios, informação por grupo/global e descoberta progressiva do objetivo principal. |
 | 0.3.0 | 2026-09-25 | Consolidado o princípio PERSEGUIR e simplificados confronto, captura, IA, capacidades de interação e habilidades especiais; removida a dependência conceitual de ficha universal de atributos. |
 | 0.2.1 | 2026-07-08 | Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários. |
 | 0.2.0 | 2026-07-08 | Recriação em Markdown a partir do GDD Word, com organização ampliada, componentes do framework e foco em GDD melhorado. |
