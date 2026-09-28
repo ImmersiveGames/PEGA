@@ -3,9 +3,9 @@
 **Projeto:** `PEGA`  
 **Tipo de documento:** Game Design Document  
 **Status:** Rascunho reorganizado  
-**Versão:** 0.3.1  
+**Versão:** 0.4.0  
 **Fonte principal:** `Exemplos/GDD PEGA.docx`  
-**Última atualização:** 2026-09-25
+**Última atualização:** 2026-09-28
 
 ---
 
@@ -119,7 +119,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 4. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal e possuem informações aproximadas sobre possíveis locais e pontos relevantes, mas não conhecem as decisões tomadas pelo jogador.
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
-7. Quando o objetivo principal é localizado, a informação pode alterar imediatamente as prioridades dos grupos e concentrar a perseguição sobre seu portador.
+7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Goals conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
 8. Quando o tempo do assalto termina, todos os larápios ainda ativos entram em **Fuga Final** e tentam deixar o cenário com o que conseguiram roubar.
 9. O jogador recebe uma última oportunidade de perseguir, incapacitar e deter os larápios restantes antes que escapem.
 10. O assalto termina quando não existem mais larápios ativos no cenário: cada larápio foi detido ou conseguiu fugir.
@@ -132,8 +132,8 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 |---|---|
 | Apresentação do cenário | Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas. |
 | Preparação | Antes da invasão, o jogador recebe tempo limitado, orçamento e ferramentas próprias do cenário para decidir como proteger os bens e preparar a segurança. |
-| Entrada dos larápios | Splash screen apresenta grupo inimigo, representantes e indicação de dificuldade. |
-| Janela de entrada | Inimigos podem entrar em grupos diferentes durante aproximadamente um minuto. |
+| Entrada dos larápios | Splash screen apresenta as gangues inimigas, representantes e indicação de dificuldade. |
+| Invasão por Spawn Points | Cada Spawn Point executa sua própria receita temporal, definindo quando, quantos e quais arquétipos de uma gangue entram no cenário. |
 | Assalto ativo | Contagem regressiva principal, captura, roubo e recuperação. |
 | Fuga final | Quando o tempo termina, todos os larápios ainda ativos passam a priorizar a fuga com o que tiverem. O assalto continua até que todos sejam detidos ou escapem. |
 | Encerramento | Classificação, créditos, desbloqueios e retorno ao fluxo de progressão. |
@@ -174,18 +174,58 @@ O jogador pode usar essa incerteza estrategicamente. O objetivo pode estar prote
 Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apenas uma das maneiras possíveis de obter informação. Capacidades próprias e soluções do cenário — como terminais, energia, ferramentas ou outras interações — podem permitir descobrir ou superar proteções por caminhos diferentes.
 :::
 
-### Descoberta e adaptação do plano inimigo
+### Planejamento inimigo por GOAP
 
 :::decision
-**Decisão:** larápios constroem e revisam seu plano durante o assalto em vez de receber uma solução perfeita no início.
+**Decisão:** a IA dos larápios usa **GOAP — Goal-Oriented Action Planning** como arquitetura de planejamento desde a primeira implementação.
 
-Ao encontrar uma proteção, o larápio descobre suas dificuldades e avalia soluções compatíveis com suas capacidades. Se não puder superar diretamente o obstáculo, pode procurar uma solução no cenário, mudar de alvo ou recalcular sua rota.
+O modelo separa quatro responsabilidades:
 
-O fluxo conceitual é:
+- **Goal:** define o estado que o larápio deseja alcançar.
+- **Conhecimento:** limita os fatos que podem ser usados pelo planner. GOAP não concede informação que o larápio ou sua gangue ainda não possuam.
+- **Capacidades:** determinam quais Actions aquele arquétipo pode executar.
+- **Actions:** possuem precondições e efeitos e podem ser encadeadas pelo planner para satisfazer um Goal.
 
-**conhecimento incompleto → investigar → descobrir → avaliar → adaptar → localizar → roubar → perseguir/fugir**
+O princípio é: **Goal define o que o larápio quer alcançar; conhecimento define aquilo sobre o qual ele pode planejar; capacidades definem quais Actions estão disponíveis; o planner constrói uma sequência válida para satisfazer o Goal.**
 
-Informação sobre cofres vazios, proteções e soluções pode permanecer restrita ao grupo que a descobriu. Isso permite que grupos rivais repitam erros, disputem oportunidades e mantenham planos parcialmente independentes.
+Goals possuem condições de ativação e prioridades configuráveis/dinâmicas. Um Goal de prioridade alta só pode ser escolhido quando existir um plano válido com o conhecimento e as capacidades atuais. Se não houver solução conhecida, outro Goal pode ser executado até que o estado ou o conhecimento mude.
+
+Necessidades intermediárias normalmente são Actions ou etapas do plano, não novos Goals de alto nível. Exemplo: para obter o objetivo principal atrás de uma porta trancada, o plano pode encadear **obter chave → abrir porta → alcançar objetivo → pegar objetivo**.
+
+O fluxo conceitual passa a ser:
+
+**conhecimento incompleto → escolher Goal viável → planejar → agir → descobrir/alterar estado → replanejar quando necessário**
+:::
+
+### Replanejamento e interrupção de Actions
+
+:::decision
+**Decisão:** o GOAP é reavaliado por **eventos e mudanças relevantes de estado**, e não por polling periódico obrigatório.
+
+O plano atual permanece enquanto continuar válido. Um replanejamento pode ocorrer quando uma Action termina ou falha, surge informação relevante, um estado dinâmico muda, o Goal atual deixa de ser viável, um Goal de maior prioridade torna-se viável, o jogador interfere, um alvo é perdido, um ator é incapacitado/recuperado ou a Fuga Final começa.
+
+Informação nova que não afeta o plano ou as prioridades não precisa provocar replanejamento.
+
+Actions temporizadas mantêm suas precondições durante a execução. Se uma mudança conhecida de World State invalidar uma precondição, a Action é cancelada e o GOAP replana.
+
+**Regra atual:** quando uma Action temporizada é interrompida ou abandonada antes da conclusão, seu progresso é perdido e uma nova tentativa começa do zero, salvo exceção explicitamente documentada.
+:::
+
+### Áreas, POIs e investigação
+
+:::decision
+**Decisão:** o cenário é organizado em **Áreas** que funcionam como unidades de exploração e em **POIs (Points of Interest)** relevantes ao planejamento, como cofres, terminais, chaves e portas especiais.
+
+Cofres candidatos são POIs conhecidos inicialmente. A invasão pode começar tentando alcançar e investigar um desses pontos. Se o objetivo não for encontrado ou uma solução necessária não for conhecida, o GOAP pode escolher outra oportunidade conhecida ou investigar uma Área ainda não explorada.
+
+Existem duas formas principais de adquirir informação:
+
+- **Aquisição visual passiva:** durante deslocamentos e outras Actions, a Área de Visão registra automaticamente informação visível e relevante, sem custo adicional de tempo.
+- **Investigação ativa de Área:** quando o plano necessita de informação ainda desconhecida, o larápio pode navegar até uma Área e executar uma investigação temporizada. A animação pode representar procura física, mas mecanicamente basta permanecer na Área durante o tempo configurado. Ao concluir, a informação compatível é adquirida e compartilhada com a gangue.
+
+Uma investigação comum não esgota necessariamente toda a informação existente. Conteúdo especializado só é revelado quando o arquétipo possui a capacidade apropriada. Assim, uma Área já investigada por um larápio comum pode continuar oferecendo uma oportunidade relevante para um especialista.
+
+O especialista pode saber que existe naquela Área uma **oportunidade compatível com sua capacidade** sem conhecer antecipadamente o conteúdo oculto que será revelado pela Action.
 :::
 
 ## Narrativa e mundo
@@ -346,6 +386,8 @@ Cada cenário é uma arena de perseguição com identidade própria. Um bom cen�
 - Objetos seguráveis.
 - Pontos de power up.
 - Elementos de mobilidade e bloqueio.
+- Áreas de exploração e POIs relevantes ao GOAP.
+- Spawn Points seguros com receitas independentes de invasão.
 
 ### Armazém
 
@@ -460,80 +502,137 @@ Os larápios são os principais inimigos de PEGA. Eles são organizados em gangu
 
 ## Inteligência artificial
 
-### Desejo
+### Goals e prioridades por arquétipo
 
-Cada inimigo pode ter uma lista de itens de desejo. Quando há um item desejado no cenário, o comportamento muda conforme distância, tempo de assalto, posse do item por outro personagem e pressão do jogador.
+Cada arquétipo possui Goals, condições e prioridades próprias. Informação compartilhada não obriga todos os membros de uma gangue a reagirem da mesma forma.
 
-O inimigo pode priorizar:
+Quando o objetivo principal é encontrado, sua identificação/posição torna-se informação global, mas a reação continua dependente do arquétipo. Alguns larápios podem tentar retirar o objetivo do cenário, alguns podem persegui-lo ou disputá-lo e outros podem continuar roubando valores secundários.
 
-- Ir até o item.
-- Roubar item de outro larapio.
-- Fugir se já estiver com o item.
-- Reagir ao jogador se for detectado.
-- Mudar de rota durante o tempo crítico.
+Larápios de gangues rivais **só entram em confronto entre si por causa do objetivo principal**. Valores secundários, cofres, chaves, terminais e outras oportunidades podem gerar competição, mas não justificam por si só combate entre gangues.
 
-### Percepção, conhecimento e decisão
+### Percepção determinística
 
 :::decision
-**Decisão:** percepção, conhecimento e decisão são camadas distintas.
+**Decisão:** percepção básica é determinística e dividida em **Área Percebida** e **Área de Visão**.
 
-- **Conhecimento de objetivo:** o larápio entra sabendo **o que** procura e recebe informações iniciais aproximadas sobre possíveis locais relevantes, mas não conhece automaticamente a posição real do objetivo nem as decisões tomadas pelo jogador na Preparação.
-- **Percepção local:** identifica atores, ameaças, oportunidades, objetos e interações ao redor por condições objetivas e legíveis. Perceber algo não obriga uma ação específica.
-- **Decisão:** escolhe o que fazer a partir do conhecimento disponível, estado do assalto, posse, desejo, capacidades e oportunidades.
+- **Área Percebida:** permite saber que um ator ou elemento relevante está presente ao redor do larápio, inclusive fora de sua visão frontal. Essa consciência não equivale a confirmação visual e não determina automaticamente a reação.
+- **Área de Visão:** fornece confirmação visual direta e permite respostas mais imediatas.
+- **Obstrução:** paredes e outros obstáculos configurados para bloquear percepção impedem essa consciência através deles.
 
-A IA não deve depender de testes abstratos de `Presença`. A imperfeição pode surgir de **informação incompleta**, **percepção limitada** e **decisões comportamentais imperfeitas**, sem transformar a percepção básica em uma rolagem probabilística.
+A IA não utiliza rolagem de audição, medidor de ruído, porcentagem de detecção, barra genérica de suspeita ou atributo universal de Presença para perceber atores próximos. A Área Percebida substitui a necessidade de simular audição convencional.
 
-O modelo concreto de alcance, campo de visão, linha de visão e memória ainda será definido.
+Power-ups e itens exclusivos do jogador são irrelevantes para os larápios e são ignorados por sua tomada de decisão.
+
+Perceber uma interação não significa conseguir executá-la. Portas, fechaduras, cofres e terminais podem ser conhecidos, mas só produzem Actions utilizáveis quando o arquétipo possui uma capacidade compatível.
 :::
 
-### Escopos de informação
+### Armadilhas: detecção e desarme
 
 :::decision
-**Decisão:** informações possuem escopo e não são automaticamente compartilhadas entre grupos rivais.
+**Decisão:** armadilhas são uma exceção à percepção comum. **Detectar Armadilhas** e **Desarmar Armadilhas** são capacidades separadas.
+
+A detecção não é passiva. Um arquétipo com capacidade de detecção precisa escolher uma Action temporizada em um momento/POI previsto por seu comportamento. Ao concluir, revela armadilhas compatíveis de nível igual ou inferior. Não existe regra automática de um aliado cair em uma armadilha fazer todos procurarem armadilhas.
+
+Uma armadilha revelada torna-se conhecimento da gangue. Outros membros podem evitá-la mesmo sem capacidade de detecção, mas precisam de sua própria capacidade de desarme compatível para desarmá-la.
+
+A investigação normal de uma Área não substitui a Action especializada de detectar armadilhas.
+:::
+
+### Memória e validade da informação
+
+:::decision
+**Decisão:** conhecimento estrutural persiste durante todo o assalto; informação dinâmica é atualizada conforme o mundo muda. Não existe um sistema genérico de esquecimento.
+
+Conhecimento estrutural inclui requisitos de portas, combinações chave/porta já testadas, cofres investigados, armadilhas reveladas e existência de POIs. Informação dinâmica inclui posição de atores, posse de itens, estado aberto/fechado de portas, incapacitação e Fuga Final.
+
+A IA pode trabalhar com informação dinâmica desatualizada. Quando um larápio encontra evidência do novo estado, a gangue atualiza o fato e os planos afetados são reavaliados. Falhas também podem gerar conhecimento; uma chave já testada e incompatível com determinada porta não deve ser repetidamente tentada.
+:::
+
+### Perda de alvo
+
+:::decision
+**Decisão:** ao perder a percepção de um alvo perseguido, o larápio guarda apenas sua **última posição conhecida**.
+
+Ele segue até essa posição enquanto tenta readquirir o alvo pela percepção normal. Não há extrapolação de direção/velocidade, trilha, busca inteligente por salas vizinhas ou simulação de audição. Se o alvo não for readquirido, após o intervalo/reavaliação configurado ele é considerado **despistado** e o larápio retorna ao planejamento normal.
+:::
+
+### Conhecimento da gangue e informação global
+
+:::decision
+**Decisão:** **Gangue** é a unidade de cooperação e conhecimento. Não existe uma entidade separada de grupo de entrada.
+
+Todos os membros de uma gangue compartilham automaticamente descobertas relevantes, independentemente do Spawn Point ou do momento em que entraram. Um larápio criado posteriormente recebe imediatamente todo o conhecimento acumulado por sua gangue.
 
 | Escopo | Regra |
 |---|---|
-| Individual / transitório | Representa percepção imediata daquele larápio, como ameaça ou objeto atualmente visível. |
-| Grupo | Descobertas relevantes são automaticamente conhecidas pelos integrantes do mesmo grupo: cofres investigados, proteções encontradas, soluções descobertas ou o fato de um jogador estar carregando algo ainda não identificado. |
-| Global | Informações críticas podem ser anunciadas para todos os grupos, especialmente a posição anunciada do jogador e a localização/identificação do objetivo principal. |
+| Individual / transitório | Percepção imediata e estados locais daquele larápio. |
+| Gangue | Descobertas, POIs investigados, obstáculos, soluções, armadilhas reveladas, saídas conhecidas, reservas de Actions e demais fatos compartilháveis. |
+| Global | Fatos críticos explicitamente anunciados a todas as gangues, especialmente identificação/localização conhecida do objetivo principal. |
 
-Um anúncio global comunica um fato ou posição observada; ele **não cria rastreamento mágico permanente**. Se o alvo mudar de posição e deixar de ser percebido, a informação pode ficar desatualizada.
+Gangues diferentes mantêm conhecimento e reservas independentes, salvo fatos explicitamente globais. Compartilhar informação não significa compartilhar Goals. Informação dinâmica global também pode ficar desatualizada até nova percepção.
+:::
 
-Compartilhar informação também não significa compartilhar objetivo: grupos continuam rivais e podem competir pelo mesmo item. A comunicação global pode ser apresentada como grito, sinal sonoro ou outro feedback legível sem exigir simulação detalhada de transmissão.
+### Reservas de Actions
+
+:::decision
+**Decisão:** Actions podem declarar uma **reserva exclusiva por gangue** para evitar trabalho duplicado.
+
+Investigação de Área, abertura de fechadura, desarme de armadilha e hacking de terminal são exemplos de Actions reserváveis. Ataque, perseguição, deslocamento, roubo e procura de item podem permanecer livres quando configurados dessa forma.
+
+A reserva pertence à gangue, não ao cenário global. Gangues rivais podem executar simultaneamente uma Action sobre o mesmo recurso. Se uma delas concluir primeiro e alterar o World State, a Action rival é cancelada caso suas precondições deixem de ser válidas.
+
+Múltiplos larápios não somam progresso nem aceleram uma Action temporizada. Se o responsável abandona a Action, é incapacitado ou perde a validade do plano, sua reserva é liberada.
 :::
 
 ### Posse, desejo e inversão da perseguição
 
 :::decision
-**Decisão:** todo ataque válido contra um ator que esteja carregando itens faz esses itens caírem no chão, independentemente de o ataque conseguir incapacitá-lo.
+**Decisão:** todo ataque válido contra um ator carregando itens faz esses itens caírem, independentemente de o ataque conseguir incapacitá-lo.
 
-- Se `Capacidade de ataque >= Resistência atual`, o alvo larga os itens e fica incapacitado.
-- Se `Capacidade de ataque < Resistência atual`, o alvo larga os itens, mas permanece ativo. O ataque não causa desgaste acumulativo de Resistência.
-- Um larápio resistente pode perder tempo tentando recuperar o item derrubado, dando ao jogador oportunidade para mudar de rota, usar o cenário, obter uma vantagem ou recuperar o item.
+- Se Capacidade de ataque >= Resistência atual, o alvo larga os itens e fica incapacitado.
+- Se Capacidade de ataque < Resistência atual, o alvo larga os itens, mas permanece ativo. O ataque não causa desgaste acumulativo de Resistência.
 :::
 
-A posse dos itens de desejo participa diretamente da IA. Quando o jogador recolhe um item desejado por um larápio, a relação pode se inverter: o larápio passa de perseguido a perseguidor e tenta recuperar o item do jogador. Um larápio pode perceber que o jogador carrega **algum item** sem identificar imediatamente seu conteúdo; essa descoberta permanece informação do grupo. Quando o item principal é exposto e identificado — por exemplo, após o jogador ser incapacitado e derrubá-lo — sua localização torna-se informação global. `Confrontando` representa uma intenção associada a um objetivo concreto, como recuperar um item desejado ou remover um personagem que bloqueia sua ação.
+Um larápio pode perceber que o jogador carrega **algum item** sem identificar imediatamente seu conteúdo. Quando o objetivo principal é exposto e identificado, essa informação torna-se global.
 
-Como regra de leitura para o MVP, a IA deve reavaliar prioridades a partir do estado do assalto, posse e desejo, em vez de tabelas probabilísticas de reação a dano. Exemplos: buscar item disponível, fugir quando estiver com o item, recuperar item derrubado, perseguir o portador de um item desejado e priorizar saída durante a Fuga Final.
+Antes da Fuga Final, a posse do objetivo principal pode alterar Goals por arquétipo: o portador pode tentar retirá-lo, rivais configurados para disputá-lo podem persegui-lo e outros larápios podem continuar procurando valores secundários. Se o objetivo for derrubado ou mudar de portador, os planners afetados reavaliam o novo estado.
 
-:::risk
-**Risco:** comportamentos com muitas exceções podem tornar a perseguição imprevisível.
+### Fuga e escolha de saída
 
-**Mitigação:** priorizar regras determinísticas e legíveis baseadas em posse, desejo, estado do assalto e oportunidade de fuga.
+:::decision
+**Decisão:** uma gangue conhece como saída potencial toda entrada já utilizada por qualquer um de seus membros e toda saída adicional descoberta durante exploração.
+
+Quando um larápio precisa fugir, procura a **saída conhecida, alcançável e mais próxima**. Se a saída escolhida estiver bloqueada, atualiza o conhecimento da gangue e replana.
+
+Se nenhuma saída conhecida estiver alcançável, o planner primeiro tenta superar o bloqueio de uma saída conhecida usando suas capacidades. Se não existir plano válido, pode investigar Áreas ainda desconhecidas para encontrar outra saída.
+:::
+
+### Fuga Final
+
+:::decision
+**Decisão:** quando o cronômetro chega a zero, **Fugir** torna-se o Goal dominante de todos os larápios ativos, independentemente de arquétipo ou gangue.
+
+Durante a Fuga Final:
+
+- cada larápio tenta sair individualmente pela melhor saída conhecida;
+- não há disputa entre gangues pelo objetivo principal;
+- não há continuidade do roubo de valores secundários;
+- não há escolta ou ajuda obrigatória a aliados;
+- um larápio foge com o que estiver carregando;
+- um larápio sem item também foge;
+- se o jogador ou uma gangue rival possuir o objetivo principal, os demais ignoram sua recuperação e priorizam escapar.
+
+O assalto continua até que todos os larápios ativos estejam **Detidos/Capturados** ou tenham **Escapado**.
 :::
 
 ### Capacidades de interação
 
 :::decision
-**Decisão:** `Proficiência` deixa de ser um atributo numérico genérico. Sua intenção é preservada por **capacidades determinísticas de interação**.
+**Decisão:** Proficiência deixa de ser um atributo numérico genérico. Sua intenção é preservada por **capacidades determinísticas de interação**.
 
-Objetos do cenário podem exigir um tipo e um requisito de interação. Cada arquétipo possui capacidades explícitas que determinam se consegue executar aquela interação e, quando consegue, quanto tempo precisa para concluí-la.
+Objetos do cenário podem exigir um tipo e requisito de interação. Cada arquétipo possui capacidades explícitas que determinam se consegue executar a interação e, quando consegue, quanto tempo precisa para concluí-la.
 
-O princípio é: **consegue ou não consegue; se consegue, existe um custo de tempo legível**. Esse tempo cria oportunidades de perseguição, aproximação e interceptação.
-
-Exemplos provisórios, não nomenclatura final: uma trava pode exigir uma capacidade de abertura de determinado nível; um larápio pode possuir `Lockpick`, `Hack` ou `Arrombar` compatível e um tempo próprio de execução. Tipos, níveis, nomes e valores serão definidos posteriormente.
-
-Se o ator não possuir uma capacidade compatível, deve buscar outra solução ou recalcular sua rota em vez de realizar um teste probabilístico de Proficiência.
+O princípio é: **consegue ou não consegue; se consegue, existe um custo de tempo legível**. Se o ator não possuir capacidade compatível, deve buscar outra solução ou recalcular seu plano em vez de realizar um teste probabilístico.
 :::
 
 ## Habilidades
@@ -604,6 +703,34 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 **Requisito:** todo objeto interativo precisa comunicar estado atual.
 
 **Exemplos:** ativo, inativo, trancado, hackeado, quebrado, disponível, ocupado, carregável, escondível.
+:::
+
+### Spawn Points e receitas de invasão
+
+:::decision
+**Decisão:** a missão não utiliza um pool abstrato de larápios. A invasão é autorada por **Spawn Points**, e cada Spawn Point possui sua própria receita temporal.
+
+Cada receita define, para cada disparo, **quando entram, quantos entram e quais arquétipos de uma gangue são criados**. Spawn Points diferentes executam suas receitas de forma independente; não existe uma onda global obrigatória.
+
+Um Spawn Point está associado a uma gangue, mas não cria um grupo separado. Todos os membros daquela gangue, inclusive os que entram posteriormente ou por outro Spawn Point, compartilham conhecimento e reservas.
+
+Quando um Spawn Point é utilizado, sua entrada passa a ser conhecida por toda a gangue como uma **saída potencial**. Um larápio não precisa fugir pelo mesmo ponto por onde entrou.
+
+O Level Design deve dimensionar a duração normal do assalto e as receitas para que todas as entradas previstas ocorram antes da Fuga Final. Como fallback, se a Fuga Final começar com receitas ainda não executadas, essas entradas pendentes são canceladas e novos larápios não são gerados.
+:::
+
+### Spawn Seguro e entrada no cenário
+
+:::decision
+**Decisão:** cada Spawn Point pode possuir uma área segura fora do espaço normal de gameplay. A leva é criada nesse **Spawn Seguro** antes de atravessar a entrada física do cenário.
+
+O jogador não bloqueia fisicamente o Spawn Point com objetos e não melhora defensivamente a entrada. Pode no máximo **fechar e trancar** a porta de entrada para atrasar a invasão.
+
+A entrada pelo Spawn Seguro usa uma regra especial e **sempre permitida**, independente das capacidades normais dos arquétipos. Uma porta fechada/trancada adiciona um atraso configurado, mas nunca torna a invasão impossível. Ao terminar o atraso, a entrada é aberta e permanece aberta para entradas seguintes até que o jogador volte a fechá-la/trancá-la.
+
+Quando uma receita cria vários larápios ao mesmo tempo, todos sofrem o mesmo atraso de entrada e atravessam juntos; não é necessário escolher um NPC específico para executar a abertura.
+
+O larápio integra sua gangue desde o momento em que é criado no Spawn Seguro e recebe imediatamente todo o conhecimento compartilhado existente, mesmo antes de atravessar a entrada.
 :::
 
 ### Sala de controle
@@ -743,7 +870,7 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Cenário | Armazém completo. |
 | Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
 | Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
-| IA | Furtar, fugir, recuperar itens, perseguir portadores de itens desejados e confrontar quando houver objetivo concreto. |
+| IA | GOAP com Goals por arquétipo, conhecimento incompleto, percepção determinística, investigação de Áreas/POIs, capacidades, reservas por gangue e replanejamento por eventos. |
 | Sistemas | Movimento-base, esquiva, salto, interação, carregar/soltar, prisão, cofres e Preparação. |
 | Interface | HUD, minimapa, tempo e resultado. |
 | Progressão | Classificação simples ao fim do assalto. |
@@ -820,11 +947,17 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Item de desejo | Item valioso que inimigos querem roubar. |
 | Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
-| Fuga final | Estado iniciado quando o tempo do assalto termina; todos os larápios ainda ativos priorizam escapar do cenário. |
+| Fuga final | Estado iniciado quando o tempo do assalto termina; Fugir torna-se o Goal dominante de todos os larápios ativos e receitas de spawn ainda pendentes são canceladas como fallback. |
 | Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
 | Capacidade de ataque | Limiar ofensivo atual usado para verificar se um ataque pode incapacitar o alvo. Não representa dano acumulado. |
 | Resistência | Limiar atual que deve ser alcançado pela Capacidade de ataque para incapacitar um ator. Pode ser modificado por condições e deve ser comunicado visualmente. |
 | Capacidade de interação | Aptidão determinística de um ator para executar determinado tipo/requisito de interação do cenário. Quando compatível, a ação possui um tempo de execução definido. |
+| GOAP | Goal-Oriented Action Planning; arquitetura em que Goals, conhecimento, capacidades, Actions, precondições e efeitos formam planos dinâmicos. |
+| Área | Unidade espacial de exploração e aquisição de informação usada pela IA. |
+| POI | Point of Interest relevante ao planejamento, como cofre, terminal, chave ou porta especial. |
+| Gangue | Unidade de cooperação, compartilhamento de conhecimento e reservas entre larápios. |
+| Spawn Point | Ponto de invasão com receita temporal própria que define quantos e quais arquétipos de uma gangue entram em cada disparo. |
+| Spawn Seguro | Área técnica protegida fora do gameplay normal onde uma leva é criada antes de sua entrada garantida no cenário. |
 | Confrontando | Comportamento em que um larápio enfrenta outro ator para atender a um objetivo concreto; não é uma reação aleatória a dano. |
 | Habilidade especial | Comportamento próprio de um arquétipo acionado por condições explícitas; não depende de uma barra universal de SP. |
 | Incapacitado | Estado temporário em que o larápio não pode agir e pode ser colocado sob custódia antes de se recuperar. |
@@ -847,6 +980,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.4.0 | 2026-09-28 | Consolidada a arquitetura GOAP, percepção determinística, investigação por Áreas/POIs, memória, armadilhas, reservas e conhecimento por gangue, reação ao objetivo principal, Fuga Final, saídas e autoria de invasão por Spawn Points/receitas. |
 | 0.3.1 | 2026-09-25 | Consolidada a Preparação do assalto, movimento, esquiva, salto, transporte, conhecimento dos larápios, informação por grupo/global e descoberta progressiva do objetivo principal. |
 | 0.3.0 | 2026-09-25 | Consolidado o princípio PERSEGUIR e simplificados confronto, captura, IA, capacidades de interação e habilidades especiais; removida a dependência conceitual de ficha universal de atributos. |
 | 0.2.1 | 2026-07-08 | Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários. |
