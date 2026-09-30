@@ -3,9 +3,9 @@
 **Projeto:** `PEGA`  
 **Tipo de documento:** Game Design Document  
 **Status:** Rascunho reorganizado  
-**Versão:** 0.4.0  
+**Versão:** 0.5.0  
 **Fonte principal:** `Exemplos/GDD PEGA.docx`  
-**Última atualização:** 2026-09-28
+**Última atualização:** 2026-09-30
 
 ---
 
@@ -120,10 +120,10 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
 7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Goals conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
-8. Quando o tempo do assalto termina, todos os larápios ainda ativos entram em **Fuga Final** e tentam deixar o cenário com o que conseguiram roubar.
-9. O jogador recebe uma última oportunidade de perseguir, incapacitar e deter os larápios restantes antes que escapem.
-10. O assalto termina quando não existem mais larápios ativos no cenário: cada larápio foi detido ou conseguiu fugir.
-11. O jogo calcula classificação, créditos e progresso.
+8. Quando o **Tempo de Assalto** termina, começa o **Tempo de Fuga** e o contexto global muda para **Fuga Final**. Os larápios reavaliam seus desejos e passam a operar com as prioridades configuradas para esse contexto.
+9. Durante o Tempo de Fuga, o jogador recebe a última oportunidade de perseguir, recuperar itens, incapacitar e deter larápios antes que escapem.
+10. Quando o Tempo de Fuga termina, o gameplay é encerrado. Larápios ainda presentes recebem a resolução **Não escapou**; itens que ainda permanecem no cenário são considerados recuperados.
+11. O jogo muda de atividade para a tela de resultados, onde calcula classificação, créditos e progresso.
 :::
 
 ### Estrutura de uma missão
@@ -134,9 +134,9 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 | Preparação | Antes da invasão, o jogador recebe tempo limitado, orçamento e ferramentas próprias do cenário para decidir como proteger os bens e preparar a segurança. |
 | Entrada dos larápios | Splash screen apresenta as gangues inimigas, representantes e indicação de dificuldade. |
 | Invasão por Spawn Points | Cada Spawn Point executa sua própria receita temporal, definindo quando, quantos e quais arquétipos de uma gangue entram no cenário. |
-| Assalto ativo | Contagem regressiva principal, captura, roubo e recuperação. |
-| Fuga final | Quando o tempo termina, todos os larápios ainda ativos passam a priorizar a fuga com o que tiverem. O assalto continua até que todos sejam detidos ou escapem. |
-| Encerramento | Classificação, créditos, desbloqueios e retorno ao fluxo de progressão. |
+| Assalto ativo | Usa um **Tempo de Assalto** configurado por partida. Captura, roubo, investigação e recuperação acontecem normalmente; a Janela de Invasão ocupa seu período inicial. |
+| Fuga final | Ao terminar o Tempo de Assalto, inicia um **Tempo de Fuga** também configurado por partida. O contexto global muda para Fuga Final e os larápios reavaliam seus desejos. |
+| Encerramento | Ao terminar o Tempo de Fuga, o gameplay é encerrado, os estados restantes são resolvidos e o jogo muda de atividade para a tela de resultados. |
 
 :::decision
 **Decisão recomendada:** tratar `Assalto` como a unidade principal de gameplay.
@@ -179,22 +179,49 @@ Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apena
 :::decision
 **Decisão:** a IA dos larápios usa **GOAP — Goal-Oriented Action Planning** como arquitetura de planejamento desde a primeira implementação.
 
-O modelo separa quatro responsabilidades:
+O modelo separa cinco responsabilidades:
 
-- **Goal:** define o estado que o larápio deseja alcançar.
-- **Conhecimento:** limita os fatos que podem ser usados pelo planner. GOAP não concede informação que o larápio ou sua gangue ainda não possuam.
+- **Desejo (Goal):** declara o estado que o larápio quer alcançar, sem prescrever a sequência de comportamento.
+- **Contexto de Desejos:** define, para cada arquétipo, quais desejos e pesos estão ativos em uma etapa macro do assalto.
+- **Conhecimento:** limita os fatos usados pelo planner. O GOAP calcula sobre o mundo conhecido, nunca sobre estado real oculto.
 - **Capacidades:** determinam quais Actions aquele arquétipo pode executar.
-- **Actions:** possuem precondições e efeitos e podem ser encadeadas pelo planner para satisfazer um Goal.
+- **Actions:** possuem precondições, efeitos e custos e podem ser encadeadas para satisfazer um Desejo.
 
-O princípio é: **Goal define o que o larápio quer alcançar; conhecimento define aquilo sobre o qual ele pode planejar; capacidades definem quais Actions estão disponíveis; o planner constrói uma sequência válida para satisfazer o Goal.**
+O princípio é: **Desejo define o que o larápio quer alcançar; Contexto e arquétipo definem sua importância; conhecimento define aquilo sobre o qual ele pode planejar; capacidades definem quais Actions estão disponíveis; o planner encontra e avalia sequências válidas.**
 
-Goals possuem condições de ativação e prioridades configuráveis/dinâmicas. Um Goal de prioridade alta só pode ser escolhido quando existir um plano válido com o conhecimento e as capacidades atuais. Se não houver solução conhecida, outro Goal pode ser executado até que o estado ou o conhecimento mude.
+A decisão considera conjuntamente **peso do Desejo e custo do plano disponível**. No MVP, o custo é deliberadamente concreto: **deslocamento estimado + duração das Actions temporizadas necessárias**. Uma Action impossível não recebe apenas custo alto: ela torna aquele plano inválido. Dois larápios com os mesmos pesos podem escolher planos diferentes por posição, conhecimento, capacidades e reservas da gangue.
 
-Necessidades intermediárias normalmente são Actions ou etapas do plano, não novos Goals de alto nível. Exemplo: para obter o objetivo principal atrás de uma porta trancada, o plano pode encadear **obter chave → abrir porta → alcançar objetivo → pegar objetivo**.
+A arquitetura-alvo também deve aceitar **risco, perigo e probabilidade** como componentes futuros da avaliação. Eles não entram no primeiro corte do MVP. RNG não é desempate padrão; só participa quando existir uma mecânica probabilística explicitamente configurada. Empates no MVP são determinísticos.
+
+Necessidades intermediárias normalmente são Actions ou etapas do plano, não novos Desejos de alto nível. Exemplo: para obter o objetivo principal atrás de uma porta trancada, o plano pode encadear **obter chave → abrir porta → alcançar objetivo → pegar objetivo**.
+
+**Investigar** é um Desejo normal e configurável do arquétipo, não um fallback automático. Ele possui plano válido enquanto existir uma oportunidade conhecida, relevante e compatível de investigação. Cada Área/oportunidade gera planos candidatos avaliados pela mesma regra de custo dos demais desejos.
 
 O fluxo conceitual passa a ser:
 
-**conhecimento incompleto → escolher Goal viável → planejar → agir → descobrir/alterar estado → replanejar quando necessário**
+**Contexto global → desejos/pesos do arquétipo → conhecimento incompleto → planos candidatos → avaliação → agir → descobrir/alterar estado → reavaliar**
+:::
+
+### Contextos e satisfação dos Desejos
+
+:::decision
+**Decisão:** existe exatamente **um Contexto de Desejos global ativo por vez**. Para a arquitetura atual, os contextos são exclusivos e seguem uma progressão simples:
+
+**Normal → Item Principal em Jogo → Fuga Final**
+
+A descoberta do objetivo principal é um evento global e irreversível naquele assalto: todos os IAs passam para **Item Principal em Jogo**. Perder o item, trocar seu portador ou perder sua posição não retorna o contexto para Normal. O início do Tempo de Fuga é o segundo evento global especial e muda todos para **Fuga Final**.
+
+O Contexto é global, mas os desejos são configurados por **arquétipo**. O mesmo contexto pode fazer um arquétipo priorizar recuperação/confronto enquanto outro continua valorizando itens secundários. A Fuga Final não apaga o GOAP nem os demais desejos: ela troca o conjunto/pesos configurados para esse contexto, e fugir continua exigindo planejamento, rotas e solução de obstáculos.
+
+Larápios criados posteriormente recebem imediatamente o Contexto global vigente e o conhecimento atual compartilhado de sua gangue; não reproduzem transições anteriores.
+
+Cada Desejo declara, no mínimo, **identificador, Contexto, peso base, condições de aplicabilidade e condição de satisfação**. O Desejo não contém uma sequência fixa de Actions.
+
+Desejos podem ser reexecutáveis. Cada larápio mantém uma **Satisfação individual acumulada** por Desejo durante todo o assalto, inclusive através de mudanças de Contexto. A satisfação só aumenta quando uma Action concluída realmente produz um estado que satisfaz o Desejo; tentativas, planos abandonados e Actions interrompidas não contam.
+
+O ganho de satisfação é configurável e não precisa ser sempre +1. Uma mesma Action concluída pode satisfazer vários Desejos se seu resultado cumprir as condições de todos eles. Perder posteriormente a condição que produziu a satisfação não reduz o histórico acumulado.
+
+Cada Desejo pode configurar como a satisfação modifica seu peso e quantas **execuções concluídas** são permitidas: execução única, quantidade limitada ou repetição sem limite. Não existe necessidade de uma satisfação máxima global. Por padrão a satisfação é individual; satisfação compartilhada por gangue fica reservada para avaliação futura.
 :::
 
 ### Replanejamento e interrupção de Actions
@@ -202,13 +229,23 @@ O fluxo conceitual passa a ser:
 :::decision
 **Decisão:** o GOAP é reavaliado por **eventos e mudanças relevantes de estado**, e não por polling periódico obrigatório.
 
-O plano atual permanece enquanto continuar válido. Um replanejamento pode ocorrer quando uma Action termina ou falha, surge informação relevante, um estado dinâmico muda, o Goal atual deixa de ser viável, um Goal de maior prioridade torna-se viável, o jogador interfere, um alvo é perdido, um ator é incapacitado/recuperado ou a Fuga Final começa.
+Um larápio reavalia desejos e plano quando recebe uma mudança de World State **conhecida por ele e relevante** para seus desejos, plano atual ou Actions disponíveis. Não existe replanejamento global apenas porque qualquer elemento do cenário mudou.
 
-Informação nova que não afeta o plano ou as prioridades não precisa provocar replanejamento.
+Há dois eventos globais especiais que chegam a todos os IAs e forçam reavaliação: **descoberta do objetivo principal** e **início da Fuga Final**.
 
-Actions temporizadas mantêm suas precondições durante a execução. Se uma mudança conhecida de World State invalidar uma precondição, a Action é cancelada e o GOAP replana.
+Actions temporizadas também participam da reavaliação. Quando o mundo muda:
 
-**Regra atual:** quando uma Action temporizada é interrompida ou abandonada antes da conclusão, seu progresso é perdido e uma nova tentativa começa do zero, salvo exceção explicitamente documentada.
+- se a mesma Action continua válida e permanece selecionada pelo novo plano, ela **mantém o progresso acumulado**;
+- se o Desejo/plano muda, se as precondições deixam de existir ou se o próprio alvo da Action torna-se inválido, a Action é cancelada e **perde todo o progresso**;
+- uma interrupção externa explicitamente válida, como um ataque do jogador ou incapacitação, também cancela e reseta a Action;
+- se a Action voltar a ser necessária depois de cancelada, começa novamente do zero;
+- toda conclusão de Action temporizada aplica seus efeitos e provoca nova avaliação dos Desejos.
+
+Portanto, **reavaliar não significa resetar**. O reset acontece somente quando a Action é efetivamente abandonada, invalidada ou interrompida.
+
+Reservas de Actions são adquiridas quando o larápio está em condição de **iniciar a Action reservável**, não quando apenas escolhe um plano que futuramente chegará até ela. Assim, vários membros podem navegar para a mesma oportunidade; quem chegar e assumir a Action primeiro obtém a reserva da gangue, e os demais reavaliam. Ao abandonar/interromper a Action, a reserva é liberada e seu progresso individual não é transferido.
+
+Reservas são locais à gangue. Gangues rivais podem executar a mesma interação simultaneamente; se uma terminar primeiro e alterar o World State, a Action rival é reavaliada e cancelada quando deixar de ser válida. Isso não gera confronto entre larápios por si só.
 :::
 
 ### Áreas, POIs e investigação
@@ -710,7 +747,9 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 :::decision
 **Decisão:** a missão não utiliza um pool abstrato de larápios. A invasão é autorada por **Spawn Points**, e cada Spawn Point possui sua própria receita temporal.
 
-Cada receita define, para cada disparo, **quando entram, quantos entram e quais arquétipos de uma gangue são criados**. Spawn Points diferentes executam suas receitas de forma independente; não existe uma onda global obrigatória.
+Cada receita define, para cada disparo, **quando entram, quantos entram e quais arquétipos de uma gangue são criados**. Os disparos usam **tempo absoluto contado desde o início do Assalto Ativo**. Spawn Points diferentes executam suas receitas de forma independente; não existe uma onda global obrigatória.
+
+A **Janela de Invasão** é o período inicial do Assalto Ativo em que ainda existem eventos de spawn previstos. Sua duração é uma informação de autoria/balanceamento derivada do maior timestamp entre as receitas da partida, e não uma fase de gameplay separada. Atrasos físicos de entrada não estendem essa janela: o evento já ocorreu e os larápios aguardam no Spawn Seguro.
 
 Um Spawn Point está associado a uma gangue, mas não cria um grupo separado. Todos os membros daquela gangue, inclusive os que entram posteriormente ou por outro Spawn Point, compartilham conhecimento e reservas.
 
@@ -728,7 +767,7 @@ O jogador não bloqueia fisicamente o Spawn Point com objetos e não melhora def
 
 A entrada pelo Spawn Seguro usa uma regra especial e **sempre permitida**, independente das capacidades normais dos arquétipos. Uma porta fechada/trancada adiciona um atraso configurado, mas nunca torna a invasão impossível. Ao terminar o atraso, a entrada é aberta e permanece aberta para entradas seguintes até que o jogador volte a fechá-la/trancá-la.
 
-Quando uma receita cria vários larápios ao mesmo tempo, todos sofrem o mesmo atraso de entrada e atravessam juntos; não é necessário escolher um NPC específico para executar a abertura.
+Quando uma receita cria vários larápios ao mesmo tempo, todos sofrem o mesmo atraso de entrada e atravessam juntos; não é necessário escolher um NPC específico para executar a abertura. Se outro evento do mesmo Spawn Point disparar enquanto a entrada já está atrasada/em abertura, os novos larápios **se juntam à entrada em andamento**, herdam o tempo restante e entram junto dos demais; o temporizador não reinicia nem recebe tempo adicional.
 
 O larápio integra sua gangue desde o momento em que é criado no Spawn Seguro e recebe imediatamente todo o conhecimento compartilhado existente, mesmo antes de atravessar a entrada.
 :::
@@ -877,13 +916,21 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Multiplayer | Tela dividida local, se tecnicamente viável no primeiro protótipo. |
 
 :::decision
-**Decisão:** o fim do cronômetro não encerra imediatamente o assalto.
+**Decisão:** a partida possui dois tempos de gameplay configurados separadamente: **Tempo de Assalto** e **Tempo de Fuga**.
 
-Quando o tempo chega a zero, inicia-se a **Fuga Final**: todos os larápios ainda ativos passam a priorizar a saída do cenário com os itens que estiverem carregando. O jogador ainda pode persegui-los, incapacitá-los e concluir capturas durante essa etapa.
+O Tempo de Assalto cobre a atividade normal; a Janela de Invasão ocupa seu período inicial. Ao terminar, o contexto global muda para **Fuga Final** e começa o Tempo de Fuga. Para apresentação, a UI pode exibir os dois valores como um único tempo total contínuo, mas internamente o Game State muda entre as etapas.
 
-O assalto termina somente quando não existem mais larápios ativos no cenário. Cada larápio deve ter alcançado uma resolução final: **Detido/Capturado** ou **Escapou**.
+Durante o Tempo de Assalto, um larápio também pode fugir antecipadamente quando seus Desejos e prioridades levarem a **Escapar**; carregar loot não é uma precondição universal. Na Fuga Final, todos passam para o contexto correspondente, mas continuam usando GOAP para resolver portas, rotas, itens perdidos, interferência do jogador e outros estados.
 
-**Consequência:** o cronômetro funciona como gatilho para o clímax da perseguição, e não como encerramento automático da partida.
+Quando o **Tempo de Fuga termina**, o gameplay acaba imediatamente e a atividade muda para a tela de resultados. Cada larápio recebe uma resolução final:
+
+- **Capturado:** captura efetivamente concluída pelo jogador durante o gameplay.
+- **Escapou:** atravessou uma saída válida antes do fim do Tempo de Fuga.
+- **Não escapou:** ainda permanecia no assalto quando o Tempo de Fuga terminou; não conta automaticamente como captura efetiva.
+
+Um item só é considerado **Roubado** quando atravessa uma saída válida com um larápio que escapou. Itens ainda presentes no cenário ao fim do Tempo de Fuga, inclusive carregados por larápios que não escaparam, são considerados **Recuperados**.
+
+A tela de resultados pode considerar itens recuperados/não roubados, tempo e quantidade/tipos de larápios efetivamente capturados. Fórmula e pesos de classificação permanecem para definição específica posterior.
 :::
 
 :::risk
@@ -947,8 +994,13 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Item de desejo | Item valioso que inimigos querem roubar. |
 | Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
-| Fuga final | Estado iniciado quando o tempo do assalto termina; Fugir torna-se o Goal dominante de todos os larápios ativos e receitas de spawn ainda pendentes são canceladas como fallback. |
-| Larápio ativo | Larápio que ainda participa do assalto e pode executar comportamentos. Um larápio deixa de estar ativo quando é detido ou escapa. |
+| Janela de Invasão | Período inicial do Assalto Ativo coberto pelos timestamps absolutos das receitas de Spawn Points; informação principalmente de autoria e balanceamento. |
+| Contexto de Desejos | Estado macro global e exclusivo que seleciona as configurações de desejos/pesos dos arquétipos. Na arquitetura atual: Normal, Item Principal em Jogo e Fuga Final. |
+| Desejo / Goal | Intenção declarativa da IA: define aplicabilidade, estado desejado, peso e satisfação, sem prescrever uma sequência fixa de Actions. |
+| Satisfação | Histórico individual acumulado de realizações de um Desejo; persiste entre Contextos e pode modificar seu peso conforme configuração. |
+| Fuga final | Contexto iniciado ao fim do Tempo de Assalto e mantido durante o Tempo de Fuga; altera desejos/prioridades, mas não substitui o GOAP. Receitas de spawn ainda pendentes são canceladas como fallback. |
+| Larápio ativo | Larápio que ainda participa do gameplay e pode executar comportamentos. Ao fim do Tempo de Fuga, larápios remanescentes recebem a resolução Não escapou. |
+| Não escapou | Resolução de um larápio ainda presente quando o Tempo de Fuga termina. Não equivale a uma captura efetivamente concluída pelo jogador. |
 | Capacidade de ataque | Limiar ofensivo atual usado para verificar se um ataque pode incapacitar o alvo. Não representa dano acumulado. |
 | Resistência | Limiar atual que deve ser alcançado pela Capacidade de ataque para incapacitar um ator. Pode ser modificado por condições e deve ser comunicado visualmente. |
 | Capacidade de interação | Aptidão determinística de um ator para executar determinado tipo/requisito de interação do cenário. Quando compatível, a ação possui um tempo de execução definido. |
@@ -980,6 +1032,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.5.0 | 2026-09-30 | Consolidados Contextos de Desejos, pesos e custos do GOAP, satisfação individual, replanejamento de Actions, investigação como Desejo, tempos separados de Assalto/Fuga, resoluções finais e timestamps absolutos/agrupamento de entradas dos Spawn Points. |
 | 0.4.0 | 2026-09-28 | Consolidada a arquitetura GOAP, percepção determinística, investigação por Áreas/POIs, memória, armadilhas, reservas e conhecimento por gangue, reação ao objetivo principal, Fuga Final, saídas e autoria de invasão por Spawn Points/receitas. |
 | 0.3.1 | 2026-09-25 | Consolidada a Preparação do assalto, movimento, esquiva, salto, transporte, conhecimento dos larápios, informação por grupo/global e descoberta progressiva do objetivo principal. |
 | 0.3.0 | 2026-09-25 | Consolidado o princípio PERSEGUIR e simplificados confronto, captura, IA, capacidades de interação e habilidades especiais; removida a dependência conceitual de ficha universal de atributos. |
