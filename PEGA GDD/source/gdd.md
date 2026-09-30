@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`  
 **Tipo de documento:** Game Design Document  
 **Status:** Rascunho reorganizado  
-**Versão:** 0.5.0  
+**Versão:** 0.6.0  
 **Fonte principal:** `Exemplos/GDD PEGA.docx`  
 **Última atualização:** 2026-09-30
 
@@ -119,7 +119,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 4. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal e possuem informações aproximadas sobre possíveis locais e pontos relevantes, mas não conhecem as decisões tomadas pelo jogador.
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
-7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Goals conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
+7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Desejos conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
 8. Quando o **Tempo de Assalto** termina, começa o **Tempo de Fuga** e o contexto global muda para **Fuga Final**. Os larápios reavaliam seus desejos e passam a operar com as prioridades configuradas para esse contexto.
 9. Durante o Tempo de Fuga, o jogador recebe a última oportunidade de perseguir, recuperar itens, incapacitar e deter larápios antes que escapem.
 10. Quando o Tempo de Fuga termina, o gameplay é encerrado. Larápios ainda presentes recebem a resolução **Não escapou**; itens que ainda permanecem no cenário são considerados recuperados.
@@ -179,27 +179,64 @@ Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apena
 :::decision
 **Decisão:** a IA dos larápios usa **GOAP — Goal-Oriented Action Planning** como arquitetura de planejamento desde a primeira implementação.
 
-O modelo separa cinco responsabilidades:
+O sistema segue um princípio de **modularidade por padrão, especificidade quando necessária**. Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
 
-- **Desejo (Goal):** declara o estado que o larápio quer alcançar, sem prescrever a sequência de comportamento.
-- **Contexto de Desejos:** define, para cada arquétipo, quais desejos e pesos estão ativos em uma etapa macro do assalto.
-- **Conhecimento:** limita os fatos usados pelo planner. O GOAP calcula sobre o mundo conhecido, nunca sobre estado real oculto.
-- **Capacidades:** determinam quais Actions aquele arquétipo pode executar.
-- **Actions:** possuem precondições, efeitos e custos e podem ser encadeadas para satisfazer um Desejo.
+A cadeia causal do planejamento é:
 
-O princípio é: **Desejo define o que o larápio quer alcançar; Contexto e arquétipo definem sua importância; conhecimento define aquilo sobre o qual ele pode planejar; capacidades definem quais Actions estão disponíveis; o planner encontra e avalia sequências válidas.**
+**Contexto global → configuração do arquétipo → conhecimento atual → Desejos aplicáveis → Actions e Targets conhecidos compatíveis → planos válidos → peso efetivo + custo temporal → escolha → execução → Effects/conhecimento → reavaliação quando algo relevante muda**
 
-A decisão considera conjuntamente **peso do Desejo e custo do plano disponível**. No MVP, o custo é deliberadamente concreto: **deslocamento estimado + duração das Actions temporizadas necessárias**. Uma Action impossível não recebe apenas custo alto: ela torna aquele plano inválido. Dois larápios com os mesmos pesos podem escolher planos diferentes por posição, conhecimento, capacidades e reservas da gangue.
+As responsabilidades são separadas:
 
-A arquitetura-alvo também deve aceitar **risco, perigo e probabilidade** como componentes futuros da avaliação. Eles não entram no primeiro corte do MVP. RNG não é desempate padrão; só participa quando existir uma mecânica probabilística explicitamente configurada. Empates no MVP são determinísticos.
+- **Desejo (Goal):** declara intenção, aplicabilidade e predicados de conclusão; não prescreve uma sequência fixa.
+- **Contexto de Desejos:** seleciona a configuração de Desejos disponível ao arquétipo em uma etapa macro do assalto.
+- **Conhecimento:** representa aquilo que o agente/gangue sabe; o planner nunca consulta estado real oculto para obter vantagem.
+- **Capacidades:** desbloqueiam quais soluções/Actions o agente consegue executar e podem modificar seus parâmetros.
+- **Actions:** transformam estados através de precondições e Effects e podem ser encadeadas para satisfazer qualquer Desejo compatível.
+- **Targets:** são resolvidos em runtime entre candidatos conhecidos e compatíveis; não são escolhidos por uma heurística separada do plano.
+- **Modificadores:** podem alterar valores resolvidos a partir de arquétipo, Action, alvo, estado, Contexto ou efeitos especiais. A ordem/operação matemática deve ser determinística e configurável na implementação.
 
-Necessidades intermediárias normalmente são Actions ou etapas do plano, não novos Desejos de alto nível. Exemplo: para obter o objetivo principal atrás de uma porta trancada, o plano pode encadear **obter chave → abrir porta → alcançar objetivo → pegar objetivo**.
+Métodos diferentes para obter o mesmo resultado são **Actions diferentes**. 'Usar Chave', 'Lockpick', 'Hackear' e 'Arrombar', por exemplo, podem produzir o mesmo estado 'Porta Aberta' com capacidades, precondições, duração, reserva e interrupções próprias. Adicionar uma nova Action pode criar novas soluções para Desejos existentes sem alterar esses Desejos.
 
-**Investigar** é um Desejo normal e configurável do arquétipo, não um fallback automático. Ele possui plano válido enquanto existir uma oportunidade conhecida, relevante e compatível de investigação. Cada Área/oportunidade gera planos candidatos avaliados pela mesma regra de custo dos demais desejos.
+Precondições representam estados que o plano pode tentar produzir; capacidades ausentes tornam a Action indisponível para aquele agente. Capacidades podem possuir níveis. A composição entre **dificuldade/requisito do alvo + nível/capacidade do agente + modificadores aplicáveis** resolve se a Action está disponível e qual sua duração. Níveis superiores podem tanto desbloquear interações mais difíceis quanto executá-las mais rapidamente quando configurado.
 
-O fluxo conceitual passa a ser:
+Desejos e condições podem usar **predicados componíveis** (por exemplo AND, OR e NOT) sobre a fonte de dados apropriada. Todo predicado precisa deixar claro se consulta conhecimento, World State real, capacidade ou outro domínio. O planner normalmente trabalha sobre o **Knowledge State**; a execução física valida o **World State real**.
 
-**Contexto global → desejos/pesos do arquétipo → conhecimento incompleto → planos candidatos → avaliação → agir → descobrir/alterar estado → reavaliar**
+O planner pode construir cadeias com quantas Actions forem necessárias ao design. Não existe limite fixo de tamanho de plano no GDD. A implementação pode usar um orçamento de busca configurável por performance e deve distinguir em debug **sem solução conhecida** de **busca esgotada antes de encontrar solução**.
+:::
+
+### Peso, oportunidade e custo dos planos
+
+:::decision
+**Decisão:** **peso do Desejo e custo do plano são dimensões independentes que participam conjuntamente da escolha**. Um Desejo de peso menor pode vencer quando possuir uma oportunidade muito mais barata, permitindo comportamentos oportunistas como roubar rapidamente um valor secundário acessível.
+
+No MVP, a unidade-base de custo é **tempo estimado em segundos**:
+
+**Custo do plano = tempo estimado de deslocamento + soma das durações resolvidas das Actions**
+
+A 'Duration' é custo intrínseco/resolvido da Action; deslocamento é contextual e calculado pelo planejamento/navegação. A mesma Action sobre o mesmo Target pode portanto ter custo diferente conforme posição, rota, capacidade e modificadores do agente.
+
+O GDD **não fixa uma fórmula matemática** entre peso e custo. A relação deve permanecer configurável para balanceamento de implementação. A arquitetura-alvo também aceita risco, perigo e probabilidade como dimensões futuras, sem incorporá-las ao primeiro corte do MVP. RNG não é desempate padrão; só participa quando uma mecânica probabilística estiver explicitamente configurada. Empates do MVP são determinísticos.
+
+O tempo restante do Assalto/Fuga **não invalida automaticamente** um plano apenas porque seu custo estimado ultrapassa a janela disponível. A pressão temporal emerge do custo, dos Contextos e dos pesos configurados. Quando uma mudança relevante de conhecimento ou estado altera uma rota, requisito ou oportunidade, os planos afetados são reconstruídos/reavaliados e seus custos recalculados.
+
+Cada combinação válida de **Action + Target conhecido** pode originar alternativas de plano. O Target escolhido é consequência da avaliação do plano completo, não de uma regra isolada como “sempre escolher o mais próximo”.
+
+Necessidades intermediárias normalmente são Actions/estados dentro da cadeia, não novos Desejos de alto nível. O sistema preserva **resultados de Actions no estado**, não planos anteriores: ao replanejar, Effects já concluídos podem ser naturalmente aproveitados por qualquer novo plano.
+:::
+
+### Contrato de Actions
+
+:::decision
+**Decisão:** uma Action é uma unidade modular de solução. Conforme sua necessidade, pode declarar **precondições, Effects de conclusão, Target compatível, Duration, capacidades requeridas, reserva, condições de interrupção e modificadores**.
+
+- Preconditions necessárias devem continuar válidas durante a execução. Se deixarem de ser válidas, a Action torna-se 'Invalid', é cancelada e perde o progresso.
+- Effects declarativos do GOAP são aplicados **somente na conclusão bem-sucedida**. Progresso parcial não produz o Effect final.
+- Comportamentos que realmente produzem efeitos durante execução devem declarar isso explicitamente, sem confundi-los com o Effect de conclusão usado pelo planner.
+- Uma Action determinística não possui falha aleatória genérica. Seus resultados básicos são **Success**, **Invalid** ou **Interrupted**. Probabilidade só existe quando configurada explicitamente por uma mecânica.
+- 'Success' aplica Effects; 'Invalid' indica que a realidade/precondições já não permitem a Action; 'Interrupted' indica que um evento configurado interrompeu uma Action válida.
+- Planejamento usa conhecimento; execução valida realidade. Um plano pode estar correto para o conhecimento do larápio e errado diante do mundo real. Ao descobrir a divergência, o conhecimento é atualizado e os sistemas afetados reavaliam.
+
+Effects devem ser modulares quando houver benefício de reutilização/composição, mas lógica específica é válida quando generalizá-la não traz vantagem. **Modularidade é ferramenta, não obrigação de transformar todo comportamento em um sistema genérico.**
 :::
 
 ### Contextos e satisfação dos Desejos
@@ -217,6 +254,12 @@ Larápios criados posteriormente recebem imediatamente o Contexto global vigente
 
 Cada Desejo declara, no mínimo, **identificador, Contexto, peso base, condições de aplicabilidade e condição de satisfação**. O Desejo não contém uma sequência fixa de Actions.
 
+Desejos podem ter predicados de conclusão compostos; qualquer cadeia de Actions que produza o estado exigido pode satisfazê-los. O Desejo não precisa conhecer qual caminho foi usado para chegar à conclusão.
+
+Existe ainda uma **camada individual de Contingência**, sem criar um novo Contexto global. Se nenhum Desejo normal do Contexto vigente possuir plano válido, tornam-se elegíveis Desejos de Contingência configurados para o arquétipo, como 'Vagar', 'Esconder-se', 'Manter Distância', 'Reagrupar' ou 'Esperar'. Eles usam exatamente o mesmo sistema de peso, custo, satisfação, predicados e Actions. Assim que qualquer Desejo normal volta a possuir plano válido, a contingência deixa de ser elegível. Se nem mesmo um Desejo de Contingência possuir plano, a IA entra em **Idle técnico** como proteção operacional, não como intenção de gameplay.
+
+Um Desejo pode ser aplicável e ainda assim não participar da escolha se nenhum plano válido puder ser construído com o conhecimento e as Actions disponíveis. Novas informações ou mudanças de estado podem torná-lo planejável novamente.
+
 Desejos podem ser reexecutáveis. Cada larápio mantém uma **Satisfação individual acumulada** por Desejo durante todo o assalto, inclusive através de mudanças de Contexto. A satisfação só aumenta quando uma Action concluída realmente produz um estado que satisfaz o Desejo; tentativas, planos abandonados e Actions interrompidas não contam.
 
 O ganho de satisfação é configurável e não precisa ser sempre +1. Uma mesma Action concluída pode satisfazer vários Desejos se seu resultado cumprir as condições de todos eles. Perder posteriormente a condição que produziu a satisfação não reduz o histórico acumulado.
@@ -224,28 +267,43 @@ O ganho de satisfação é configurável e não precisa ser sempre +1. Uma mesma
 Cada Desejo pode configurar como a satisfação modifica seu peso e quantas **execuções concluídas** são permitidas: execução única, quantidade limitada ou repetição sem limite. Não existe necessidade de uma satisfação máxima global. Por padrão a satisfação é individual; satisfação compartilhada por gangue fica reservada para avaliação futura.
 :::
 
-### Replanejamento e interrupção de Actions
+### Replanejamento, tempo e execução
 
 :::decision
-**Decisão:** o GOAP é reavaliado por **eventos e mudanças relevantes de estado**, e não por polling periódico obrigatório.
+**Decisão:** o GOAP é **event-driven**. Não existe polling periódico de decisão como regra de gameplay.
 
-Um larápio reavalia desejos e plano quando recebe uma mudança de World State **conhecida por ele e relevante** para seus desejos, plano atual ou Actions disponíveis. Não existe replanejamento global apenas porque qualquer elemento do cenário mudou.
+Um larápio reavalia Desejos e plano somente quando ocorre uma mudança determinística relevante em conhecimento, World State conhecido, capacidades, reservas, Contexto ou outro dado que possa alterar sua decisão. Se as entradas relevantes não mudaram, não há motivo de gameplay para recalcular o mesmo problema.
 
-Há dois eventos globais especiais que chegam a todos os IAs e forçam reavaliação: **descoberta do objetivo principal** e **início da Fuga Final**.
+Passagem de tempo também não exige polling. Marcos temporais são **eventos agendados determinísticos**: conclusão de Action, fim de espera, recuperação de incapacitação, spawn absoluto, fim do Tempo de Assalto, início/fim do Tempo de Fuga e equivalentes. Quando o marco é atingido, o evento altera dados e provoca reavaliação apenas onde for relevante.
 
-Actions temporizadas também participam da reavaliação. Quando o mundo muda:
+Há dois eventos globais especiais já definidos que alcançam todos os IAs: **descoberta do objetivo principal** e **início da Fuga Final**.
 
-- se a mesma Action continua válida e permanece selecionada pelo novo plano, ela **mantém o progresso acumulado**;
-- se o Desejo/plano muda, se as precondições deixam de existir ou se o próprio alvo da Action torna-se inválido, a Action é cancelada e **perde todo o progresso**;
-- uma interrupção externa explicitamente válida, como um ataque do jogador ou incapacitação, também cancela e reseta a Action;
-- se a Action voltar a ser necessária depois de cancelada, começa novamente do zero;
-- toda conclusão de Action temporizada aplica seus efeitos e provoca nova avaliação dos Desejos.
+**Reavaliar não significa resetar.** Quando uma mudança relevante ocorre:
 
-Portanto, **reavaliar não significa resetar**. O reset acontece somente quando a Action é efetivamente abandonada, invalidada ou interrompida.
+- se a mesma Action temporizada continua válida e permanece selecionada, mantém o progresso acumulado;
+- se o plano/Desejo muda e a Action é abandonada, seu progresso é perdido;
+- se uma precondição necessária ou Target deixa de ser válido, a Action torna-se 'Invalid', cancela e perde progresso;
+- se um evento listado em sua configuração de interrupção ocorrer, torna-se 'Interrupted', cancela e perde progresso;
+- se a mesma Action voltar a ser necessária posteriormente, começa novamente do zero;
+- ao concluir com 'Success', aplica seus Effects, atualiza os dados afetados, atualiza satisfação quando cabível e dispara a reavaliação decorrente dessas mudanças.
 
-Reservas de Actions são adquiridas quando o larápio está em condição de **iniciar a Action reservável**, não quando apenas escolhe um plano que futuramente chegará até ela. Assim, vários membros podem navegar para a mesma oportunidade; quem chegar e assumir a Action primeiro obtém a reserva da gangue, e os demais reavaliam. Ao abandonar/interromper a Action, a reserva é liberada e seu progresso individual não é transferido.
+Interrupções são configuráveis por Action/composição. **Invalidação lógica por perda de precondição permanece distinta de interrupção por evento.**
 
-Reservas são locais à gangue. Gangues rivais podem executar a mesma interação simultaneamente; se uma terminar primeiro e alterar o World State, a Action rival é reavaliada e cancelada quando deixar de ser válida. Isso não gera confronto entre larápios por si só.
+O sistema deve permitir rastrear em debug a cadeia **evento → dado alterado → decisão afetada → reavaliação → manutenção ou troca de plano**.
+:::
+
+### Reservas como dados de coordenação
+
+:::decision
+**Decisão:** reserva também segue o princípio modular. Uma Action pode declarar se necessita reserva e qual **recurso/chave lógica** precisa reservar; a reserva não é apenas um booleano associado à identidade da Action.
+
+Actions diferentes podem disputar o mesmo recurso. 'Lockpick Cofre' e 'Hackear Cofre', por exemplo, podem reservar o mesmo 'Cofre X'.
+
+A reserva é adquirida somente quando o larápio está em condição de **iniciar** a Action reservável, nunca apenas por ter escolhido um plano. Vários membros podem navegar para a mesma oportunidade; quem inicia primeiro adquire a reserva e a mudança de estado faz os demais reavaliarem.
+
+O escopo padrão atual é a **Gangue**. Gangues rivais mantêm reservas independentes e podem agir simultaneamente sobre o mesmo recurso. Se uma concluir primeiro e alterar o World State, a Action rival é invalidada quando suas precondições deixarem de valer.
+
+Ao abandonar, invalidar ou interromper a Action, a reserva é liberada. Progresso é individual, não é transferido e múltiplos larápios não somam progresso. A arquitetura pode aceitar outras políticas de reserva no futuro quando houver necessidade de design.
 :::
 
 ### Áreas, POIs e investigação
@@ -575,14 +633,34 @@ Uma armadilha revelada torna-se conhecimento da gangue. Outros membros podem evi
 A investigação normal de uma Área não substitui a Action especializada de detectar armadilhas.
 :::
 
-### Memória e validade da informação
+### Conhecimento modular, memória e validade da informação
 
 :::decision
-**Decisão:** conhecimento estrutural persiste durante todo o assalto; informação dinâmica é atualizada conforme o mundo muda. Não existe um sistema genérico de esquecimento.
+**Decisão:** conhecimento é um conjunto modular de **fatos independentes** sobre entidades, relações e estados. Diferentes fontes podem produzir ou atualizar fatos distintos sobre o mesmo Target; conhecer uma entidade não implica conhecer todas as suas propriedades.
 
-Conhecimento estrutural inclui requisitos de portas, combinações chave/porta já testadas, cofres investigados, armadilhas reveladas e existência de POIs. Informação dinâmica inclui posição de atores, posse de itens, estado aberto/fechado de portas, incapacitação e Fuga Final.
+A cadeia é:
 
-A IA pode trabalhar com informação dinâmica desatualizada. Quando um larápio encontra evidência do novo estado, a gangue atualiza o fato e os planos afetados são reavaliados. Falhas também podem gerar conhecimento; uma chave já testada e incompatível com determinada porta não deve ser repetidamente tentada.
+**Fonte → informação/fato → política de resolução → Knowledge State atual → consumidores (GOAP, Actions, Desires, UI/debug ou outros sistemas)**
+
+Fontes podem incluir percepção, visão, investigação, resultado de Action, compartilhamento da Gangue e Eventos Globais. Produção da informação e consequências dessa informação permanecem desacopladas.
+
+O sistema distingue:
+
+- **World State real:** o que efetivamente acontece no cenário.
+- **Knowledge State atual:** melhor representação atualmente conhecida pelo agente/gangue e usada pelo planner.
+- **Histórico/estado acumulado:** preservado somente quando possui função de gameplay ou rastreio, como Satisfação; não existe obrigação de manter um log completo de tudo.
+
+Knowledge Data pode representar fatos **positivos ou negativos**. 'Não sei se o objetivo está no Cofre A' é diferente de 'Sei que o objetivo não está no Cofre A'. Ausência de conhecimento não equivale a conhecimento de ausência.
+
+Cada tipo de informação define sua própria política de **validade, atualização, invalidação, conflito e propagação**. Não existe esquecimento genérico. Conhecimento estrutural pode persistir por todo o assalto; informação dinâmica pode ficar desatualizada até surgir evidência nova.
+
+Para estados atuais exclusivos, o padrão é manter a informação válida mais atual **sobre o fato**, não simplesmente a mensagem recebida por último. Uma informação recebida agora pode descrever uma observação antiga e não deve sobrescrever automaticamente uma observação mais recente do mesmo fato.
+
+Informações podem carregar metadados de rastreio como **origem, observador/fonte, momento ou revisão do fato e escopo**. Esses metadados não precisam alterar a pontuação do GOAP no MVP, mas devem permitir explicar por que o agente acredita em determinado estado.
+
+Conhecimentos podem se combinar por regras/predicados determinísticos explícitos para permitir novas conclusões ou possibilidades de planejamento. Não existe necessidade de um sistema genérico de inferência: o comportamento inteligente deve emergir da composição dos fatos, predicados, Actions, capacidades e Desejos.
+
+O planner só resolve Targets a partir de candidatos conhecidos e compatíveis. A existência oculta de um objeto no cenário não pode ser descoberta pelo simples fato de o GOAP procurar uma solução.
 :::
 
 ### Perda de alvo
@@ -598,27 +676,15 @@ Ele segue até essa posição enquanto tenta readquirir o alvo pela percepção 
 :::decision
 **Decisão:** **Gangue** é a unidade de cooperação e conhecimento. Não existe uma entidade separada de grupo de entrada.
 
-Todos os membros de uma gangue compartilham automaticamente descobertas relevantes, independentemente do Spawn Point ou do momento em que entraram. Um larápio criado posteriormente recebe imediatamente todo o conhecimento acumulado por sua gangue.
+Cada Knowledge Data possui escopo/política de propagação configurável. Para fatos de escopo **Gangue**, a propagação padrão atual é imediata, sem simulação de rádio, distância ou atraso. Um larápio criado posteriormente recebe imediatamente o conhecimento compartilhado vigente.
 
 | Escopo | Regra |
 |---|---|
-| Individual / transitório | Percepção imediata e estados locais daquele larápio. |
-| Gangue | Descobertas, POIs investigados, obstáculos, soluções, armadilhas reveladas, saídas conhecidas, reservas de Actions e demais fatos compartilháveis. |
-| Global | Fatos críticos explicitamente anunciados a todas as gangues, especialmente identificação/localização conhecida do objetivo principal. |
+| Individual / transitório | Informação mantida apenas pelo agente conforme a política daquele dado. |
+| Gangue | Fatos compartilháveis propagados imediatamente entre membros da mesma gangue. |
+| Global | Fatos críticos explicitamente distribuídos a todas as gangues, como os Eventos Globais definidos pelo assalto. |
 
-Gangues diferentes mantêm conhecimento e reservas independentes, salvo fatos explicitamente globais. Compartilhar informação não significa compartilhar Goals. Informação dinâmica global também pode ficar desatualizada até nova percepção.
-:::
-
-### Reservas de Actions
-
-:::decision
-**Decisão:** Actions podem declarar uma **reserva exclusiva por gangue** para evitar trabalho duplicado.
-
-Investigação de Área, abertura de fechadura, desarme de armadilha e hacking de terminal são exemplos de Actions reserváveis. Ataque, perseguição, deslocamento, roubo e procura de item podem permanecer livres quando configurados dessa forma.
-
-A reserva pertence à gangue, não ao cenário global. Gangues rivais podem executar simultaneamente uma Action sobre o mesmo recurso. Se uma delas concluir primeiro e alterar o World State, a Action rival é cancelada caso suas precondições deixem de ser válidas.
-
-Múltiplos larápios não somam progresso nem aceleram uma Action temporizada. Se o responsável abandona a Action, é incapacitado ou perde a validade do plano, sua reserva é liberada.
+Gangues diferentes mantêm Knowledge State e reservas independentes salvo dados explicitamente globais. Compartilhar informação não significa compartilhar Desejos nem produzir a mesma reação. Informação global dinâmica também pode posteriormente ser atualizada conforme sua política de validade.
 :::
 
 ### Posse, desejo e inversão da perseguição
@@ -647,29 +713,27 @@ Se nenhuma saída conhecida estiver alcançável, o planner primeiro tenta super
 ### Fuga Final
 
 :::decision
-**Decisão:** quando o cronômetro chega a zero, **Fugir** torna-se o Goal dominante de todos os larápios ativos, independentemente de arquétipo ou gangue.
+**Decisão:** a **Fuga Final** é um Contexto de Desejos global iniciado quando termina o Tempo de Assalto e começa o Tempo de Fuga. Ela **não substitui o GOAP por uma ordem rígida de fugir**.
 
-Durante a Fuga Final:
+Cada arquétipo usa sua configuração de Desejos e pesos para esse Contexto. 'Escapar' tende a receber grande importância, mas outros Desejos — como recuperar o objetivo principal ou confrontar o jogador — podem permanecer prioritários quando configurados dessa forma.
 
-- cada larápio tenta sair individualmente pela melhor saída conhecida;
-- não há disputa entre gangues pelo objetivo principal;
-- não há continuidade do roubo de valores secundários;
-- não há escolta ou ajuda obrigatória a aliados;
-- um larápio foge com o que estiver carregando;
-- um larápio sem item também foge;
-- se o jogador ou uma gangue rival possuir o objetivo principal, os demais ignoram sua recuperação e priorizam escapar.
+Durante o Tempo de Fuga, os larápios continuam planejando e replanejando normalmente para resolver rotas, portas, itens perdidos, interferência do jogador e demais mudanças conhecidas.
 
-O assalto continua até que todos os larápios ativos estejam **Detidos/Capturados** ou tenham **Escapado**.
+Quando o **Tempo de Fuga termina**, o gameplay é encerrado imediatamente, independentemente de ainda existirem larápios ativos no cenário. Os remanescentes recebem a resolução **Não escapou**; somente quem atravessou uma saída válida antes desse marco recebe **Escapou**, e somente detenções efetivamente concluídas pelo jogador contam como **Capturado**.
 :::
 
 ### Capacidades de interação
 
 :::decision
-**Decisão:** Proficiência deixa de ser um atributo numérico genérico. Sua intenção é preservada por **capacidades determinísticas de interação**.
+**Decisão:** Proficiência deixa de ser um atributo numérico genérico. Sua intenção é preservada por **capacidades determinísticas e modulares de interação**.
 
-Objetos do cenário podem exigir um tipo e requisito de interação. Cada arquétipo possui capacidades explícitas que determinam se consegue executar a interação e, quando consegue, quanto tempo precisa para concluí-la.
+Capacidades funcionam como desbloqueios de soluções: se o agente não possui a capacidade necessária, aquela Action não faz parte de seu espaço de soluções. Preconditions, por outro lado, são estados que o planner pode tentar produzir por outras Actions.
 
-O princípio é: **consegue ou não consegue; se consegue, existe um custo de tempo legível**. Se o ator não possuir capacidade compatível, deve buscar outra solução ou recalcular seu plano em vez de realizar um teste probabilístico.
+Capacidades podem possuir níveis. Objetos/Targets podem declarar dificuldade ou requisito, e a composição entre **requisito do Target + capacidade/nível do agente + Action + modificadores** determina se a interação é possível e qual Duration é resolvida. Níveis maiores podem desbloquear requisitos superiores e/ou reduzir duração quando configurado.
+
+Arquétipos são composições de dados e podem aplicar modificadores sobre definições compartilhadas sem duplicá-las. Dois arquétipos podem usar a mesma Action 'Hackear' com tempos diferentes, ou compartilhar o mesmo Desejo com pesos/modificadores distintos.
+
+O princípio permanece: **consegue ou não consegue; se consegue, existe um custo de tempo legível e configurável**. Não há teste probabilístico genérico de Proficiência.
 :::
 
 ## Habilidades
@@ -909,7 +973,7 @@ O GDD original descreve um projeto amplo, com várias gangues, habilidades, cen�
 | Cenário | Armazém completo. |
 | Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
 | Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
-| IA | GOAP com Goals por arquétipo, conhecimento incompleto, percepção determinística, investigação de Áreas/POIs, capacidades, reservas por gangue e replanejamento por eventos. |
+| IA | GOAP com Desejos por arquétipo, conhecimento incompleto, percepção determinística, investigação de Áreas/POIs, capacidades, reservas por gangue e replanejamento por eventos. |
 | Sistemas | Movimento-base, esquiva, salto, interação, carregar/soltar, prisão, cofres e Preparação. |
 | Interface | HUD, minimapa, tempo e resultado. |
 | Progressão | Classificação simples ao fim do assalto. |
@@ -996,7 +1060,12 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Janela de Invasão | Período inicial do Assalto Ativo coberto pelos timestamps absolutos das receitas de Spawn Points; informação principalmente de autoria e balanceamento. |
 | Contexto de Desejos | Estado macro global e exclusivo que seleciona as configurações de desejos/pesos dos arquétipos. Na arquitetura atual: Normal, Item Principal em Jogo e Fuga Final. |
-| Desejo / Goal | Intenção declarativa da IA: define aplicabilidade, estado desejado, peso e satisfação, sem prescrever uma sequência fixa de Actions. |
+| Desejo / Goal | Intenção declarativa da IA: define aplicabilidade, predicados de conclusão, peso e satisfação, sem prescrever uma sequência fixa de Actions. |
+| Desejo de Contingência | Desejo normal habilitado apenas quando nenhum Desejo normal do Contexto vigente possui plano válido; usa o mesmo sistema de peso, custo, satisfação e Actions. |
+| Action | Unidade modular de solução do GOAP, com precondições, Effects, Target, Duration, capacidades, reservas/interrupções e modificadores conforme necessário. |
+| Knowledge State | Melhor representação atualmente conhecida pelo agente/gangue; é a realidade usada pelo planner e pode divergir temporariamente do World State real. |
+| Predicado | Condição componível avaliada sobre uma fonte de dados explícita, usada em aplicabilidade, precondições, Targets, conclusão de Desejos e outras validações. |
+| Custo do plano | Estimativa temporal do MVP: deslocamento estimado + durações resolvidas das Actions necessárias. |
 | Satisfação | Histórico individual acumulado de realizações de um Desejo; persiste entre Contextos e pode modificar seu peso conforme configuração. |
 | Fuga final | Contexto iniciado ao fim do Tempo de Assalto e mantido durante o Tempo de Fuga; altera desejos/prioridades, mas não substitui o GOAP. Receitas de spawn ainda pendentes são canceladas como fallback. |
 | Larápio ativo | Larápio que ainda participa do gameplay e pode executar comportamentos. Ao fim do Tempo de Fuga, larápios remanescentes recebem a resolução Não escapou. |
@@ -1032,6 +1101,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.6.0 | 2026-09-30 | Consolidado contrato modular do GOAP: Actions/Targets/Capabilities, custo temporal e oportunidade, predicados, Knowledge State modular, contingência, reservas, resultados de Action e replanejamento totalmente orientado a eventos; removidas regras antigas conflitantes da Fuga Final. |
 | 0.5.0 | 2026-09-30 | Consolidados Contextos de Desejos, pesos e custos do GOAP, satisfação individual, replanejamento de Actions, investigação como Desejo, tempos separados de Assalto/Fuga, resoluções finais e timestamps absolutos/agrupamento de entradas dos Spawn Points. |
 | 0.4.0 | 2026-09-28 | Consolidada a arquitetura GOAP, percepção determinística, investigação por Áreas/POIs, memória, armadilhas, reservas e conhecimento por gangue, reação ao objetivo principal, Fuga Final, saídas e autoria de invasão por Spawn Points/receitas. |
 | 0.3.1 | 2026-09-25 | Consolidada a Preparação do assalto, movimento, esquiva, salto, transporte, conhecimento dos larápios, informação por grupo/global e descoberta progressiva do objetivo principal. |
