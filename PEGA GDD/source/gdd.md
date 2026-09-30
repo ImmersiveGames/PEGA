@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`  
 **Tipo de documento:** Game Design Document  
 **Status:** Rascunho reorganizado  
-**Versão:** 0.6.0  
+**Versão:** 0.7.0  
 **Fonte principal:** `Exemplos/GDD PEGA.docx`  
 **Última atualização:** 2026-09-30
 
@@ -181,16 +181,28 @@ Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apena
 
 O sistema segue um princípio de **modularidade por padrão, especificidade quando necessária**. Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
 
+A composição de gameplay respeita a separação entre **Actor**, suas **mecânicas** e o **arquétipo**. O Actor é a entidade/ocorrência sobre a qual o gameplay opera; sua composição concreta determina quais mecânicas existem. O arquétipo não materializa, adiciona nem remove componentes ou mecânicas da ocorrência. Ele configura e especializa as possibilidades oferecidas pelas mecânicas já presentes, habilitando, restringindo ou modificando capacidades, Actions, Desejos, parâmetros e modificadores.
+
+Essa fronteira preserva a diretriz arquitetural do Immersive Framework: identidade, ocorrência, composição física e lifecycle do Actor não são consequência de configuração de gameplay. Em PEGA, o arquétipo é inicialmente uma abstração do jogo; contratos só devem ser promovidos ao framework quando demonstrarem utilidade independente do GOAP e das necessidades específicas de PEGA.
+
+A relação conceitual é:
+
+**Actor → composição de mecânicas → configuração de arquétipo → capacidades e decisões efetivas**
+
+Exemplos: possuir `Hack N3` não cria a mecânica de interação; habilita/especializa soluções que usam uma interação já existente. Da mesma forma, possuir Desejos não cria o planner GOAP; um agente que utiliza GOAP já possui essa mecânica/sistema decisório, e o arquétipo fornece sua configuração.
+
 A cadeia causal do planejamento é:
 
-**Contexto global → configuração do arquétipo → conhecimento atual → Desejos aplicáveis → Actions e Targets conhecidos compatíveis → planos válidos → peso efetivo + custo temporal → escolha → execução → Effects/conhecimento → reavaliação quando algo relevante muda**
+**Contexto global → composição mecânica do Actor + configuração do arquétipo → conhecimento atual → Desejos aplicáveis → Actions e Targets conhecidos compatíveis → planos válidos → peso efetivo + custo temporal → escolha → execução → Effects/conhecimento → reavaliação quando algo relevante muda**
 
 As responsabilidades são separadas:
 
 - **Desejo (Goal):** declara intenção, aplicabilidade e predicados de conclusão; não prescreve uma sequência fixa.
 - **Contexto de Desejos:** seleciona a configuração de Desejos disponível ao arquétipo em uma etapa macro do assalto.
 - **Conhecimento:** representa aquilo que o agente/gangue sabe; o planner nunca consulta estado real oculto para obter vantagem.
-- **Capacidades:** desbloqueiam quais soluções/Actions o agente consegue executar e podem modificar seus parâmetros.
+- **Mecânicas do Actor:** são sistemas presentes na composição concreta da ocorrência — como movimento, percepção, interação, confronto ou decisão — e fornecem a infraestrutura pela qual o gameplay é executado; nem todo Actor precisa possuir todas as mecânicas.
+- **Arquétipo:** é a composição/configuração mecânica e decisória aplicada sobre essas mecânicas existentes; não é identidade, ocorrência, lifecycle nem autoridade de materialização do Actor.
+- **Capacidades:** especializam o repertório disponível ao agente, desbloqueando quais soluções/Actions suas mecânicas existentes conseguem executar e podendo modificar seus parâmetros.
 - **Actions:** transformam estados através de precondições e Effects e podem ser encadeadas para satisfazer qualquer Desejo compatível.
 - **Targets:** são resolvidos em runtime entre candidatos conhecidos e compatíveis; não são escolhidos por uma heurística separada do plano.
 - **Modificadores:** podem alterar valores resolvidos a partir de arquétipo, Action, alvo, estado, Contexto ou efeitos especiais. A ordem/operação matemática deve ser determinística e configurável na implementação.
@@ -731,7 +743,7 @@ Capacidades funcionam como desbloqueios de soluções: se o agente não possui a
 
 Capacidades podem possuir níveis. Objetos/Targets podem declarar dificuldade ou requisito, e a composição entre **requisito do Target + capacidade/nível do agente + Action + modificadores** determina se a interação é possível e qual Duration é resolvida. Níveis maiores podem desbloquear requisitos superiores e/ou reduzir duração quando configurado.
 
-Arquétipos são composições de dados e podem aplicar modificadores sobre definições compartilhadas sem duplicá-las. Dois arquétipos podem usar a mesma Action 'Hackear' com tempos diferentes, ou compartilhar o mesmo Desejo com pesos/modificadores distintos.
+Arquétipos são composições/configurações de gameplay aplicadas a Actors e podem habilitar capacidades, referenciar repertórios de Actions e Desejos e aplicar modificadores sobre definições compartilhadas sem duplicá-las. Eles **não adicionam nem removem as mecânicas/componentes da ocorrência**: a composição concreta do Actor determina quais sistemas existem, e o arquétipo especializa o que esses sistemas conseguem fazer. Dois arquétipos podem usar a mesma Action 'Hackear' com tempos diferentes, ou compartilhar o mesmo Desejo com pesos/modificadores distintos.
 
 O princípio permanece: **consegue ou não consegue; se consegue, existe um custo de tempo legível e configurável**. Não há teste probabilístico genérico de Proficiência.
 :::
@@ -1060,6 +1072,9 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Janela de Invasão | Período inicial do Assalto Ativo coberto pelos timestamps absolutos das receitas de Spawn Points; informação principalmente de autoria e balanceamento. |
 | Contexto de Desejos | Estado macro global e exclusivo que seleciona as configurações de desejos/pesos dos arquétipos. Na arquitetura atual: Normal, Item Principal em Jogo e Fuga Final. |
+| Actor | Entidade/ocorrência sobre a qual o gameplay opera. Sua composição concreta determina quais mecânicas existem; identidade, ocorrência, composição física e lifecycle não são definidos pelo arquétipo. |
+| Mecânica do Actor | Sistema presente na composição concreta do Actor que executa uma família de comportamento, como movimento, percepção, interação, confronto ou decisão. Nem todo Actor precisa possuir todas as mecânicas. |
+| Arquétipo | Composição/configuração de gameplay que especializa as mecânicas existentes de um Actor por meio de capacidades, Actions, Desejos, modificadores e parâmetros; não materializa nem remove mecânicas/componentes da ocorrência. |
 | Desejo / Goal | Intenção declarativa da IA: define aplicabilidade, predicados de conclusão, peso e satisfação, sem prescrever uma sequência fixa de Actions. |
 | Desejo de Contingência | Desejo normal habilitado apenas quando nenhum Desejo normal do Contexto vigente possui plano válido; usa o mesmo sistema de peso, custo, satisfação e Actions. |
 | Action | Unidade modular de solução do GOAP, com precondições, Effects, Target, Duration, capacidades, reservas/interrupções e modificadores conforme necessário. |
