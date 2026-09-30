@@ -597,11 +597,11 @@ Os larápios são os principais inimigos de PEGA. Eles são organizados em gangu
 
 ## Inteligência artificial
 
-### Goals e prioridades por arquétipo
+### Desejos e prioridades por arquétipo
 
-Cada arquétipo possui Goals, condições e prioridades próprias. Informação compartilhada não obriga todos os membros de uma gangue a reagirem da mesma forma.
+Cada arquétipo possui Desejos, condições e prioridades próprias. Informação compartilhada não obriga todos os membros de uma gangue a reagirem da mesma forma.
 
-Quando o objetivo principal é encontrado, sua identificação/posição torna-se informação global, mas a reação continua dependente do arquétipo. Alguns larápios podem tentar retirar o objetivo do cenário, alguns podem persegui-lo ou disputá-lo e outros podem continuar roubando valores secundários.
+Quando o objetivo principal é identificado pela primeira vez, **a descoberta de que ele entrou em jogo** torna-se um Evento Global e muda o Contexto para **Item Principal em Jogo**. Isso não cria rastreamento mágico permanente: posição e posse atuais continuam sendo fatos dinâmicos atualizados pelas fontes de conhecimento apropriadas. A reação depende do arquétipo; alguns larápios podem tentar retirar o objetivo do cenário, alguns podem persegui-lo ou disputá-lo e outros podem continuar roubando valores secundários.
 
 Larápios de gangues rivais **só entram em confronto entre si por causa do objetivo principal**. Valores secundários, cofres, chaves, terminais e outras oportunidades podem gerar competição, mas não justificam por si só combate entre gangues.
 
@@ -698,16 +698,16 @@ Gangues diferentes mantêm Knowledge State e reservas independentes salvo dados 
 
 Um larápio pode perceber que o jogador carrega **algum item** sem identificar imediatamente seu conteúdo. Quando o objetivo principal é exposto e identificado, essa informação torna-se global.
 
-Antes da Fuga Final, a posse do objetivo principal pode alterar Goals por arquétipo: o portador pode tentar retirá-lo, rivais configurados para disputá-lo podem persegui-lo e outros larápios podem continuar procurando valores secundários. Se o objetivo for derrubado ou mudar de portador, os planners afetados reavaliam o novo estado.
+Antes da Fuga Final, a posse conhecida do objetivo principal pode alterar Desejos por arquétipo: o portador pode tentar retirá-lo, rivais configurados para disputá-lo podem persegui-lo e outros larápios podem continuar procurando valores secundários. Se o objetivo for derrubado ou mudar de portador e essa mudança entrar no conhecimento relevante, os planners afetados reavaliam o novo estado.
 
 ### Fuga e escolha de saída
 
 :::decision
 **Decisão:** uma gangue conhece como saída potencial toda entrada já utilizada por qualquer um de seus membros e toda saída adicional descoberta durante exploração.
 
-Quando um larápio precisa fugir, procura a **saída conhecida, alcançável e mais próxima**. Se a saída escolhida estiver bloqueada, atualiza o conhecimento da gangue e replana.
+Quando um larápio possui um Desejo de escapar, as saídas conhecidas e compatíveis entram como Targets candidatos. O GOAP avalia os planos completos e seus custos temporais; por isso, uma saída próxima tende a ser atraente, mas não existe uma heurística separada de **sempre escolher a mais próxima**.
 
-Se nenhuma saída conhecida estiver alcançável, o planner primeiro tenta superar o bloqueio de uma saída conhecida usando suas capacidades. Se não existir plano válido, pode investigar Áreas ainda desconhecidas para encontrar outra saída.
+Se uma rota ou saída conhecida estiver bloqueada, a nova informação atualiza o Knowledge State e os planos afetados são recalculados. Se nenhum plano de escape puder ser construído, esse Desejo deixa de participar da escolha naquele ciclo. **Investigar não é acionado automaticamente**: só ocorrerá se o próprio Desejo `Investigar` estiver elegível e produzir o melhor plano entre os Desejos normais; se nenhum Desejo normal tiver plano, aplicam-se os Desejos de Contingência.
 :::
 
 ### Fuga Final
@@ -1073,7 +1073,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Capacidade de ataque | Limiar ofensivo atual usado para verificar se um ataque pode incapacitar o alvo. Não representa dano acumulado. |
 | Resistência | Limiar atual que deve ser alcançado pela Capacidade de ataque para incapacitar um ator. Pode ser modificado por condições e deve ser comunicado visualmente. |
 | Capacidade de interação | Aptidão determinística de um ator para executar determinado tipo/requisito de interação do cenário. Quando compatível, a ação possui um tempo de execução definido. |
-| GOAP | Goal-Oriented Action Planning; arquitetura em que Goals, conhecimento, capacidades, Actions, precondições e efeitos formam planos dinâmicos. |
+| GOAP | Goal-Oriented Action Planning; arquitetura em que Desejos, conhecimento, capacidades, Actions, precondições e Effects formam planos dinâmicos. |
 | Área | Unidade espacial de exploração e aquisição de informação usada pela IA. |
 | POI | Point of Interest relevante ao planejamento, como cofre, terminal, chave ou porta especial. |
 | Gangue | Unidade de cooperação, compartilhamento de conhecimento e reservas entre larápios. |
