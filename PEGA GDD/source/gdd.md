@@ -1116,6 +1116,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.7.0 | 2026-09-30 | Definida a fronteira entre Actor, mecânicas do Actor e arquétipo: arquétipos configuram capacidades, Actions, Desejos e modificadores sobre mecânicas já existentes, sem definir identidade, ocorrência ou lifecycle do Actor. |
 | 0.6.0 | 2026-09-30 | Consolidado contrato modular do GOAP: Actions/Targets/Capabilities, custo temporal e oportunidade, predicados, Knowledge State modular, contingência, reservas, resultados de Action e replanejamento totalmente orientado a eventos; removidas regras antigas conflitantes da Fuga Final. |
 | 0.5.0 | 2026-09-30 | Consolidados Contextos de Desejos, pesos e custos do GOAP, satisfação individual, replanejamento de Actions, investigação como Desejo, tempos separados de Assalto/Fuga, resoluções finais e timestamps absolutos/agrupamento de entradas dos Spawn Points. |
 | 0.4.0 | 2026-09-28 | Consolidada a arquitetura GOAP, percepção determinística, investigação por Áreas/POIs, memória, armadilhas, reservas e conhecimento por gangue, reação ao objetivo principal, Fuga Final, saídas e autoria de invasão por Spawn Points/receitas. |
