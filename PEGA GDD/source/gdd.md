@@ -402,7 +402,6 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 | Esquivar | Botão a definir no mapeamento final | Deslocamento curto e rápido com breve janela de invulnerabilidade e cooldown. |
 | Saltar | Botão a definir no mapeamento final | Salto livre usado para mobilidade e para evitar ameaças explicitamente compatíveis com salto. |
 | Interagir / atacar / soltar | Botão leste (`B`) | Interage com inimigos, objetos ou executa ataque se não houver alvo interativo. |
-| Arremessar item | Botão a definir no mapeamento final | Arremessa um item do inventário na direção do personagem. |
 | Confirmar | Botão sul (`A`) | Confirmação em menus. |
 | Pausar | `Start` | Abre ou fecha menu de pausa. |
 
@@ -449,25 +448,22 @@ A interação depende do objeto diretamente à frente do personagem e dentro de 
 - Se o personagem estiver carregando outro personagem, a interação solta o carregado.
 - Cada interação tem cadência base de `1` segundo.
 
-### Itens: segurar, soltar e arremessar
+### Itens: segurar e soltar
 
 :::decision
-**Decisão:** itens de desejo **nunca são destruídos nem danificados**, em nenhum momento. Eles só mudam de posse ou de lugar: podem ser segurados, soltos, arremessados, guardados, roubados e recuperados.
+**Decisão:** itens de desejo **nunca são destruídos nem danificados**, em nenhum momento. Eles só mudam de posse ou de lugar: podem ser segurados, soltos, guardados, roubados e recuperados.
 
 - **Segurar:** pegar um item o coloca no **inventário** do personagem que o pegou.
 - **Soltar:** o personagem pode soltar um item do inventário no chão ou guardá-lo em um **armário** do cenário.
-- **Arremessar:** o personagem pode arremessar um item do inventário. O item continua inteiro e fica no ponto onde cai, disponível para ser pego de novo.
 - **Ataque:** um ataque válido faz o personagem atingido derrubar **todos** os itens que carrega (ver seção "Posse, desejo e inversão da perseguição").
 
-O jogador pode pegar itens do chão e de armários, soltá-los no chão, guardá-los em armários e arremessá-los.
+O jogador pode pegar itens do chão e de armários, soltá-los no chão e guardá-los em armários. **Não existe mecânica de arremessar itens**: a única forma de se desfazer de um item é soltá-lo.
 
 **Motivo:** a única perda possível de um item é ele sair do cenário com um larápio que escapou. Isso mantém todo item sempre disputável e simplifica pontuação, feedback e comportamento da IA.
 :::
 
 :::open-question
-**Pergunta:** quais são os parâmetros do arremesso e do inventário?
-
-**Pendências:** limite de itens no inventário, distância e alcance do arremesso, se um item arremessado pode ser apanhado no ar e se larápios também arremessam itens.
+**Pergunta:** existe limite de itens no inventário?
 :::
 
 ### Restrições ao transportar larápios
@@ -828,8 +824,8 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 |---|---|
 | Armadilhas comuns | Podem capturar, atrasar, empurrar ou derrubar inimigos. |
 | Armadilhas específicas | Relacionadas ao tema do cenário. |
-| Objetos seguráveis | Podem ser carregados, soltos, arremessados, roubados ou usados para bloquear caminho. Nunca são destruídos. |
-| Armários | Recebem itens soltos pelo personagem e permitem pegá-los de novo. |
+| Objetos seguráveis | Podem ser carregados, soltos, roubados ou usados para bloquear caminho. Nunca são destruídos. |
+| Armários | Recebem itens soltos pelo personagem e permitem pegá-los de novo. São diferentes dos cofres. |
 | Portas | Podem ser abertas, fechadas, trancadas, arrombadas ou hackeadas. |
 | Câmeras | Informam posição e permitem ativar armadilhas em áreas monitoradas. |
 | Cofres | Podem proteger bens durante a Preparação e o assalto; suas proteções podem exigir capacidades ou soluções de cenário para serem superadas. Também podem receber itens recuperados quando configurados para isso. |
@@ -1087,7 +1083,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Assalto | Unidade principal de gameplay dentro de uma fase ou missão. |
 | Item de desejo | Item valioso que inimigos querem roubar. |
 | Inventário | Itens que um personagem está segurando. Um ataque válido faz o personagem derrubar todo o inventário. |
-| Armário | Ponto do cenário onde o personagem pode guardar e pegar itens. |
+| Armário | Ponto do cenário onde o personagem pode guardar e pegar itens; não é um cofre. |
 | Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Janela de Invasão | Período inicial do Assalto Ativo coberto pelos timestamps absolutos das receitas de Spawn Points; informação principalmente de autoria e balanceamento. |
@@ -1136,7 +1132,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 
 | Versão | Data | Alteração |
 |---|---|---|
-| 0.7.1 | 2026-10-01 | Fechada a pergunta sobre destruição de itens: itens de desejo nunca são destruídos nem danificados. Documentados inventário, soltar no chão ou em armários e arremesso de itens; ataque derruba todos os itens carregados. |
+| 0.7.1 | 2026-10-01 | Fechada a pergunta sobre destruição de itens: itens de desejo nunca são destruídos nem danificados. Documentados inventário e soltar itens no chão ou em armários (não há arremesso; armários são diferentes de cofres); ataque derruba todos os itens carregados. |
 | 0.7.0 | 2026-09-30 | Definida a fronteira entre Actor, mecânicas do Actor e arquétipo: arquétipos configuram capacidades, Actions, Desejos e modificadores sobre mecânicas já existentes, sem definir identidade, ocorrência ou lifecycle do Actor. |
 | 0.6.0 | 2026-09-30 | Consolidado contrato modular do GOAP: Actions/Targets/Capabilities, custo temporal e oportunidade, predicados, Knowledge State modular, contingência, reservas, resultados de Action e replanejamento totalmente orientado a eventos; removidas regras antigas conflitantes da Fuga Final. |
 | 0.5.0 | 2026-09-30 | Consolidados Contextos de Desejos, pesos e custos do GOAP, satisfação individual, replanejamento de Actions, investigação como Desejo, tempos separados de Assalto/Fuga, resoluções finais e timestamps absolutos/agrupamento de entradas dos Spawn Points. |
