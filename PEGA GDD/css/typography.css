@@ -4,6 +4,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--docs-layout-topbar-height) + var(--docs-spacing-md));
 }
 
 body {
