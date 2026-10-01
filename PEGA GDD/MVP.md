@@ -146,7 +146,6 @@ O jogo é tratado como uma empresa (P.E.G.A. Larópolis). Como a Demo só tem um
 
 - Valor exato do custo operacional por turno e limite de bancarrota (ver acima).
 - Persistência de save (ver acima).
-- Itens de desejo podem ser destruídos, ou só roubados/recuperados? (herdada do GDD, ainda sem resposta)
 
 ## Documentos relacionados
 

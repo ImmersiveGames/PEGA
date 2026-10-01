@@ -1,12 +1,19 @@
 (function () {
   const root = document.documentElement;
   const topbar = document.querySelector(".docs-topbar");
+  const footer = document.querySelector(".docs-footer");
   const sidebar = document.querySelector("#docs-sidebar");
 
   function updateTopbarHeight() {
     if (!topbar) return;
     const height = Math.ceil(topbar.getBoundingClientRect().height);
     root.style.setProperty("--docs-layout-topbar-height", `${height}px`);
+  }
+
+  function updateFooterHeight() {
+    if (!footer) return;
+    const height = Math.ceil(footer.getBoundingClientRect().height);
+    root.style.setProperty("--docs-layout-footer-height", `${height}px`);
   }
 
   function safeGetTheme() {
@@ -88,11 +95,18 @@
   }
 
   updateTopbarHeight();
+  updateFooterHeight();
   window.addEventListener("resize", updateTopbarHeight);
+  window.addEventListener("resize", updateFooterHeight);
 
   if ("ResizeObserver" in window && topbar) {
     const topbarObserver = new ResizeObserver(updateTopbarHeight);
     topbarObserver.observe(topbar);
+  }
+
+  if ("ResizeObserver" in window && footer) {
+    const footerObserver = new ResizeObserver(updateFooterHeight);
+    footerObserver.observe(footer);
   }
 
   setupCodeCopyButtons();
