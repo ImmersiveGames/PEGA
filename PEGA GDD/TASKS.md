@@ -19,7 +19,6 @@ Perguntas que precisam ser fechadas antes de virarem tarefa de desenvolvimento (
 
 - Definir valor final do custo operacional por turno e limite de bancarrota (validar a recomendação inicial de 150/-1000 créditos)
 - Definir formato de persistência do save da carreira
-- Decidir se itens de desejo podem ser destruídos ou só roubados/recuperados
 
 ## 🔵 Programação (Renato)
 
