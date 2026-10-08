@@ -14,17 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.GameApplicationAsset
   applicationName: Game Application
   startupRoute: {fileID: 11400000, guid: 27fc0d3ef264a4d46a268a6c860a6277, type: 2}
-  playerSessionEnabled: 0
-  defaultPlayerSessionProfile: {fileID: 0}
+  playerSessionEnabled: 1
+  defaultPlayerSessionProfile: {fileID: 11400000, guid: 558bce424dbe4ba08c3ef9a70f264481, type: 2}
   playerActorSelectionDuplicatePolicy: 10
   progressionSaveEnabled: 0
   defaultProgressionSaveProfile: {fileID: 0}
   cameraSession:
     outputPrefabs:
     - {fileID: 6102830329239094849, guid: 305691ab7af6e444c99d9059ec31afb7, type: 3}
-    playerOutputBindings: []
-    playerPresentationBindings: []
-  sessionCameraPresentations: []
+  startupCameraAssignments:
+  - {fileID: 11400000, guid: 4c38c13bf7de42bd9f0a30cdbce833df, type: 2}
   persistentContent:
     containerScene: {fileID: 102900000, guid: cc8ab7bf9a0ea5245846792185627a14, type: 3}
   validationMode: 1

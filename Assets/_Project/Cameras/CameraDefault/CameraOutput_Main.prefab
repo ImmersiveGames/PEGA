@@ -237,7 +237,7 @@ MonoBehaviour:
   outputDefinition: {fileID: 11400000, guid: 9c06b3d044fb2ea4c8a8fa5163015750, type: 2}
   unityCamera: {fileID: 6685609404694847845}
   cinemachineBrain: {fileID: 7236560156313747551}
-  defaultCameraRig: {fileID: 2275418814692075001}
+  fallbackCameraRig: {fileID: 2275418814692075001}
   initializeOnAwake: 1
   logDiagnostics: 1
   lastStatus: NotInitialized

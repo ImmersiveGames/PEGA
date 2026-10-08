@@ -24,6 +24,4 @@ MonoBehaviour:
   playerRelocationPolicy: 0
   activityEntryReadinessPolicy: 0
   visualTransitionMode: 0
-  cameraPresentations:
-  - {fileID: 11400000, guid: a746bb709f84eda47b436b9d3a5345c8, type: 2}
   transitionGateMode: 10

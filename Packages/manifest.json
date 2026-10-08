@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "com.immersive.audio": "https://github.com/ImmersiveGames/com.immersive.audio.git",
-    "com.immersive.framework": "1.0.2",
+    "com.immersive.audio": "0.2.3",
+    "com.immersive.framework": "1.1.0-preview.5",
     "com.unity.ai.navigation": "2.0.15",
     "com.unity.cinemachine": "3.1.7",
     "com.unity.collab-proxy": "2.12.4",

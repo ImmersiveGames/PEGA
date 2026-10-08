@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77252ac8d7db46d0b832aeecc4e42c67, type: 3}
+  m_Name: SessionCameraAssignment_PlayerP1
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.CameraAuthoring.SessionCameraAssignmentAsset
+  assignmentId: 2698a93076f34d43bf8c34e8afc9bc03
+  rigPrefab: {fileID: 7159804551325340078, guid: 56b35fd521ed2104e9bd9e0ebfeab2c2, type: 3}
+  occurrenceMode: 2
+  membershipPolicy: 2
+  targetPolicy: 3
+  memberSlots:
+  - {fileID: 11400000, guid: 7713b3abfe848c44b86aadd09d264136, type: 2}
+  outputDefinitions:
+  - {fileID: 11400000, guid: 9c06b3d044fb2ea4c8a8fa5163015750, type: 2}
+  individualMemberOutputMappings:
+  - playerSlotProfile: {fileID: 11400000, guid: 7713b3abfe848c44b86aadd09d264136, type: 2}
+    outputDefinition: {fileID: 11400000, guid: 9c06b3d044fb2ea4c8a8fa5163015750, type: 2}

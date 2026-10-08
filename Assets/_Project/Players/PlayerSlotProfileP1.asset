@@ -18,4 +18,4 @@ MonoBehaviour:
   accentColor: {r: 1, g: 1, b: 1, a: 1}
   icon: {fileID: 0}
   displayOrder: 0
-  defaultActorProfile: {fileID: 0}
+  defaultActorProfile: {fileID: 11400000, guid: 60cabd5cd3f6edc4d9a3e6b175cff2ec, type: 2}

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96d30c71a4254f65b8e9d1f3072ac648, type: 3}
+  m_Name: PlayerSessionProfile_PEGA
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionProfile
+  supportedSlots:
+  - {fileID: 11400000, guid: 7713b3abfe848c44b86aadd09d264136, type: 2}
+  initialJoiningOpen: 0
+  hostProvisioning: 20
+  actorResolutionPolicy: 10
