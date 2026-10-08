@@ -4,6 +4,8 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--docs-layout-topbar-height) + var(--docs-spacing-md));
+  scroll-padding-bottom: var(--docs-layout-footer-height);
 }
 
 body {
@@ -13,6 +15,7 @@ body {
   font-family: var(--docs-font-sans);
   font-size: 16px;
   line-height: 1.6;
+  padding-bottom: var(--docs-layout-footer-height);
 }
 
 h1,
