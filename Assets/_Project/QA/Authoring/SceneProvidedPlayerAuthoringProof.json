@@ -1,0 +1,297 @@
+{
+    "schemaVersion": 2,
+    "toolSourceSha256": "A31DD28F4148E8F7631A44E158019F1A58C671C5C8C8943B58536836189F0BC4",
+    "unityVersion": "6000.5.0f1",
+    "frameworkVersion": "1.1.0-preview.5",
+    "gitBranch": "Pega-V0.0.1",
+    "gitHead": "280a7c3f1437592167984f93ea1adc35fd790f58",
+    "proofScenePath": "Assets/_Project/QA/Authoring/SceneProvidedPlayerAuthoringProof.unity",
+    "structuralOutcome": "PASS",
+    "runtimeOutcome": "NOT_RUN",
+    "recoveryState": "COMPLETED",
+    "recoveryDiagnostic": "",
+    "recoverySceneSha256": "",
+    "lastAttemptOutcome": "COMPLETED",
+    "lastAttemptDiagnostic": "",
+    "sceneActivationSetterReturned": true,
+    "activeSceneRestorationSucceeded": true,
+    "selectionRestorationSucceeded": true,
+    "proofSceneLifecycleRestored": true,
+    "loadedSceneContextRestorationSucceeded": true,
+    "restorationDiagnostic": "",
+    "requestedSceneBeforeActivation": {
+        "handle": 568105589213754086,
+        "name": "SceneProvidedPlayerAuthoringProof",
+        "path": "Assets/_Project/QA/Authoring/SceneProvidedPlayerAuthoringProof.unity",
+        "isValid": true,
+        "isLoaded": true,
+        "isPreview": false,
+        "isDirty": false,
+        "isActive": false
+    },
+    "activeSceneAfterActivation": {
+        "handle": 568105589213754086,
+        "name": "SceneProvidedPlayerAuthoringProof",
+        "path": "Assets/_Project/QA/Authoring/SceneProvidedPlayerAuthoringProof.unity",
+        "isValid": true,
+        "isLoaded": true,
+        "isPreview": false,
+        "isDirty": false,
+        "isActive": true
+    },
+    "creatorRootScene": {
+        "handle": 568105589213754086,
+        "name": "SceneProvidedPlayerAuthoringProof",
+        "path": "Assets/_Project/QA/Authoring/SceneProvidedPlayerAuthoringProof.unity",
+        "isValid": true,
+        "isLoaded": true,
+        "isPreview": false,
+        "isDirty": false,
+        "isActive": true
+    },
+    "lastSceneContextBefore": {
+        "sceneCount": 1,
+        "loadedScenes": [
+            {
+                "handle": 568105589213755736,
+                "name": "SampleScene",
+                "path": "Assets/Scenes/SampleScene.unity",
+                "isValid": true,
+                "isLoaded": true,
+                "isPreview": false,
+                "isDirty": false,
+                "isActive": true
+            }
+        ],
+        "activeScene": {
+            "handle": 568105589213755736,
+            "name": "SampleScene",
+            "path": "Assets/Scenes/SampleScene.unity",
+            "isValid": true,
+            "isLoaded": true,
+            "isPreview": false,
+            "isDirty": false,
+            "isActive": true
+        }
+    },
+    "lastSceneContextAfter": {
+        "sceneCount": 1,
+        "loadedScenes": [
+            {
+                "handle": 568105589213755736,
+                "name": "SampleScene",
+                "path": "Assets/Scenes/SampleScene.unity",
+                "isValid": true,
+                "isLoaded": true,
+                "isPreview": false,
+                "isDirty": false,
+                "isActive": true
+            }
+        ],
+        "activeScene": {
+            "handle": 568105589213755736,
+            "name": "SampleScene",
+            "path": "Assets/Scenes/SampleScene.unity",
+            "isValid": true,
+            "isLoaded": true,
+            "isPreview": false,
+            "isDirty": false,
+            "isActive": true
+        }
+    },
+    "compositionInitiallyAbsent": true,
+    "runCount": 2,
+    "initialComposition": {
+        "gameObjectCount": 0,
+        "playerInputCount": 0,
+        "sceneProvidedAuthoringCount": 0,
+        "localPlayerHostCount": 0,
+        "actorRuntimeHostCount": 0,
+        "actorDeclarationCount": 0,
+        "cameraSubjectCount": 0
+    },
+    "lastRunUtc": "2026-10-09T02:45:49.1925807Z",
+    "lastRunOutcome": "STRUCTURAL_PASS",
+    "secondExecutionEquivalent": true,
+    "idempotenceVerified": true,
+    "firstSnapshot": {
+        "gameObjectCount": 4,
+        "playerInputCount": 1,
+        "sceneProvidedAuthoringCount": 1,
+        "localPlayerHostCount": 1,
+        "actorRuntimeHostCount": 1,
+        "actorDeclarationCount": 1,
+        "cameraSubjectCount": 1,
+        "cameraOutputAuthoringCount": 0,
+        "gameObjectIds": [
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145112-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294941-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031964-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157185-0"
+        ],
+        "componentIds": [
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145113-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294942-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294943-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294944-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294945-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031965-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031966-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031967-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031969-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157186-0"
+        ],
+        "serializedReferences": [
+            "actor.actorId=",
+            "authoring.actorProfile=60cabd5cd3f6edc4d9a3e6b175cff2ec:11400000",
+            "authoring.host=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031967-0",
+            "authoring.slot=7713b3abfe848c44b86aadd09d264136:11400000",
+            "gate.actionMapId=df70fa95-8a34-4494-b137-73ab6b9c7d37",
+            "gate.actions=052faaac586de48259a63d0c4782560b:-944628639613478452",
+            "gate.playerInput=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "host.actorMount=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157186-0",
+            "host.playerInput=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "host.runtimePrefab=<none>",
+            "playerInput.actions=052faaac586de48259a63d0c4782560b:-944628639613478452",
+            "runtimeHost.declaration=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294945-0",
+            "subject.observation=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145113-0"
+        ],
+        "sceneFileSha256": "B18C1B5AC8E137840EB697B5193F66616B40FCA849844D463F44D01634B24C51",
+        "structureFingerprint": "C3179F2AB087D47EA8EF83DEEBDE014F5959EC00FE08B5AA2D6AAFC00621A07D"
+    },
+    "lastSnapshot": {
+        "gameObjectCount": 4,
+        "playerInputCount": 1,
+        "sceneProvidedAuthoringCount": 1,
+        "localPlayerHostCount": 1,
+        "actorRuntimeHostCount": 1,
+        "actorDeclarationCount": 1,
+        "cameraSubjectCount": 1,
+        "cameraOutputAuthoringCount": 0,
+        "gameObjectIds": [
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145112-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294941-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031964-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157185-0"
+        ],
+        "componentIds": [
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145113-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294942-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294943-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294944-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294945-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031965-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031966-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031967-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031969-0",
+            "GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157186-0"
+        ],
+        "serializedReferences": [
+            "actor.actorId=",
+            "authoring.actorProfile=60cabd5cd3f6edc4d9a3e6b175cff2ec:11400000",
+            "authoring.host=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031967-0",
+            "authoring.slot=7713b3abfe848c44b86aadd09d264136:11400000",
+            "gate.actionMapId=df70fa95-8a34-4494-b137-73ab6b9c7d37",
+            "gate.actions=052faaac586de48259a63d0c4782560b:-944628639613478452",
+            "gate.playerInput=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "host.actorMount=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-722157186-0",
+            "host.playerInput=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-2059031968-0",
+            "host.runtimePrefab=<none>",
+            "playerInput.actions=052faaac586de48259a63d0c4782560b:-944628639613478452",
+            "runtimeHost.declaration=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-1802294945-0",
+            "subject.observation=GlobalObjectId_V1-2-0936788d05159394d8ef97241bcb3d3f-102145113-0"
+        ],
+        "sceneFileSha256": "B18C1B5AC8E137840EB697B5193F66616B40FCA849844D463F44D01634B24C51",
+        "structureFingerprint": "C3179F2AB087D47EA8EF83DEEBDE014F5959EC00FE08B5AA2D6AAFC00621A07D"
+    },
+    "currentValidators": [],
+    "lastValidators": [
+        {
+            "name": "Resolved Framework package",
+            "status": "PASS",
+            "diagnostic": "1.1.0-preview.5",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "GameApplication and Player Session Profile",
+            "status": "PASS",
+            "diagnostic": "Application references this enabled, structurally valid Session Profile.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Player Slot and Actor Profile",
+            "status": "PASS",
+            "diagnostic": "P1 is the sole supported Slot and references a Player Protagonist Actor Profile.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Input Actions authoring map",
+            "status": "PASS",
+            "diagnostic": "The Player Action Map is selected by name only during authoring; runtime resolution uses its GUID.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Session Camera Assignment and Camera Output",
+            "status": "PASS",
+            "diagnostic": "Individual P1 Actor targeting, rig/output mapping, physical Output definition, and fallback reference are valid.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Player Session Profile",
+            "status": "PASS",
+            "diagnostic": "",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Player Slot / Actor Profile",
+            "status": "PASS",
+            "diagnostic": "Expected explicit P1 and Player Protagonist profile references.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Unity PlayerInput Gate Adapter",
+            "status": "PASS",
+            "diagnostic": "",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Local Player Host Scene-Provided admission",
+            "status": "PASS",
+            "diagnostic": "",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Player Actor Runtime Host",
+            "status": "PASS",
+            "diagnostic": "",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Actor Camera Subject",
+            "status": "PASS",
+            "diagnostic": "",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Scene-Provided Local Player Authoring Utility",
+            "status": "PASS",
+            "diagnostic": "Scene-Provided Local Player authored composition and prefab provenance are valid.",
+            "mayWriteSerializedState": true
+        },
+        {
+            "name": "Local Player Host Custom Editor aggregate validator",
+            "status": "BLOCKED",
+            "diagnostic": "This aggregate validator is internal to the Framework Editor assembly. Its public Scene-Provided admission validator ran instead; reflection was not used.",
+            "mayWriteSerializedState": false
+        },
+        {
+            "name": "Actor Declaration runtime identity validation",
+            "status": "BLOCKED",
+            "diagnostic": "Descriptor validation was not invoked because ActorId is intentionally empty; this proof does not fabricate runtime occurrence identity.",
+            "mayWriteSerializedState": false
+        }
+    ],
+    "lastAttemptValidators": []
+}

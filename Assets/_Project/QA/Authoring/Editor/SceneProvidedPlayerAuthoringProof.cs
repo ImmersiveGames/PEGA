@@ -24,7 +24,7 @@ namespace Immersive.PEGA.AuthoringProof
     /// Isolated, repeatable authoring proof for the installed Scene-Provided Player contracts.
     /// This command never changes SampleScene, application assets, package files, or Build Settings.
     /// </summary>
-    internal static class SceneProvidedPlayerAuthoringProof
+    public static class SceneProvidedPlayerAuthoringProof
     {
         private const string MenuPath =
             "Tools/Immersive/QA/Build Scene-Provided Player Proof";
@@ -37,6 +37,19 @@ namespace Immersive.PEGA.AuthoringProof
 
         private const string ReportPath =
             ProofFolder + "/SceneProvidedPlayerAuthoringProof.json";
+
+        private const int ReportSchemaVersion = 2;
+
+        private const string ToolSourcePath =
+            "Assets/_Project/QA/Authoring/Editor/SceneProvidedPlayerAuthoringProof.cs";
+
+        private const string ExpectedBlockedHostEditorValidator =
+            "Local Player Host Custom Editor aggregate validator";
+
+        private const string ExpectedBlockedActorIdentityValidator =
+            "Actor Declaration runtime identity validation";
+
+        private const string RuntimeValidationNotRun = "NOT_RUN";
 
         private const string FrameworkPackageName =
             "com.immersive.framework";
@@ -65,6 +78,64 @@ namespace Immersive.PEGA.AuthoringProof
         private const string CameraOutputPrefabPath =
             "Assets/_Project/Cameras/CameraDefault/CameraOutput_Main.prefab";
 
+        public static void ExecuteBatch()
+        {
+            try
+            {
+                int previousRunCount = 0;
+                string reportAbsolutePath = ToAbsolutePath(ReportPath);
+                if (File.Exists(reportAbsolutePath))
+                {
+                    ProofReport previousReport = JsonUtility.FromJson<ProofReport>(
+                        File.ReadAllText(reportAbsolutePath));
+                    previousRunCount = previousReport == null ? 0 : previousReport.runCount;
+                }
+
+                BuildProof();
+
+                if (!File.Exists(reportAbsolutePath))
+                {
+                    throw new InvalidOperationException(
+                        "The proof command did not create its report.");
+                }
+
+                ProofReport report = JsonUtility.FromJson<ProofReport>(
+                    File.ReadAllText(reportAbsolutePath));
+                if (report == null ||
+                    report.runCount != previousRunCount + 1 ||
+                    !string.Equals(
+                        report.lastRunOutcome,
+                        "STRUCTURAL_PASS",
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        report.structuralOutcome,
+                        "PASS",
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        report.runtimeOutcome,
+                        RuntimeValidationNotRun,
+                        StringComparison.Ordinal) ||
+                    report.lastValidators == null ||
+                    !HasOnlyExpectedBatchValidatorStatuses(report.lastValidators))
+                {
+                    throw new InvalidOperationException(
+                        "The proof command did not record one successful run with passing applicable validators.");
+                }
+
+                Debug.Log(
+                    $"SCENE_PROVIDED_PLAYER_PROOF_RESULT=PASS runCount='{report.runCount}' " +
+                    $"idempotenceVerified='{report.idempotenceVerified}'.");
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "SCENE_PROVIDED_PLAYER_PROOF_RESULT=FAIL " +
+                    exception.GetType().Name + ": " + exception.Message);
+                EditorApplication.Exit(1);
+            }
+        }
+
         [MenuItem(MenuPath, false, 100)]
         private static void BuildProof()
         {
@@ -80,33 +151,71 @@ namespace Immersive.PEGA.AuthoringProof
             Scene originalActiveScene = SceneManager.GetActiveScene();
             UnityEngine.Object[] originalSelection = Selection.objects;
             List<LoadedSceneState> originalScenes = CaptureLoadedScenes();
+            SceneContextSnapshot sceneContextBefore = CaptureSceneContext();
+            string toolSourceSha256 = ComputeToolSourceSha256();
             Scene proofScene = default;
             bool sceneWasLoadedBeforeCommand = false;
-            bool sceneWasCreatedInMemory = false;
-            bool sceneWasSaved = false;
+            bool proofSceneOpenedByCommand = false;
+            bool proofScenePersisted = false;
+            bool proofCompositionSaved = false;
+            bool sceneActivationSetterReturned = false;
+            bool runStartedWithCompletedProof = false;
             int undoGroup = -1;
+            ProofReport report = null;
 
             try
             {
-                ProofConfiguration configuration = LoadAndValidateSharedAssets();
-                ProofReport report = LoadOrCreateReport();
-                report.currentValidators = configuration.preflightChecks;
+                EnsureProofFolder();
+                bool proofSceneExists = File.Exists(ToAbsolutePath(ProofScenePath));
+                report = LoadOrCreateReport(proofSceneExists);
+                if (report.schemaVersion != ReportSchemaVersion)
+                {
+                    throw new InvalidOperationException(
+                        "The proof report schema is unsupported; preserve it and inspect it before continuing.");
+                }
+
+                if (!string.IsNullOrEmpty(report.toolSourceSha256) &&
+                    !string.Equals(report.toolSourceSha256, toolSourceSha256, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "The proof tool source changed since the recorded run. Preserve the report and start a new isolated proof deliberately.");
+                }
+
+                report.toolSourceSha256 = toolSourceSha256;
+                runStartedWithCompletedProof = report.runCount > 0;
+                report.lastAttemptOutcome = string.Empty;
+                report.lastAttemptDiagnostic = string.Empty;
+                report.lastAttemptValidators = Array.Empty<ValidatorResult>();
+                report.runtimeOutcome = RuntimeValidationNotRun;
                 bool firstExecution = report.runCount == 0;
                 string currentBranch = ReadGitValue("branch --show-current");
                 string currentHead = ReadGitValue("rev-parse HEAD");
-                if (!firstExecution &&
+                if ((!string.IsNullOrEmpty(report.gitBranch) || !string.IsNullOrEmpty(report.gitHead)) &&
                     (report.gitBranch != currentBranch || report.gitHead != currentHead))
                 {
                     throw new InvalidOperationException(
                         "Branch or HEAD changed since the first proof run. Start a new isolated proof before continuing.");
                 }
-                string proofSceneAbsolutePath = ToAbsolutePath(ProofScenePath);
-                bool proofSceneExists = File.Exists(proofSceneAbsolutePath);
 
-                if (firstExecution && proofSceneExists)
+                report.gitBranch = currentBranch;
+                report.gitHead = currentHead;
+                report.lastSceneContextBefore = sceneContextBefore;
+                string proofSceneAbsolutePath = ToAbsolutePath(ProofScenePath);
+                proofSceneExists = File.Exists(proofSceneAbsolutePath);
+
+                ProofConfiguration configuration = LoadAndValidateSharedAssets();
+                report.currentValidators = configuration.preflightChecks;
+
+                if (string.Equals(report.recoveryState, "ORPHANED_SCENE", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
-                        "The proof scene exists without a completed proof report. It will not be adopted or overwritten.");
+                        "A proof scene exists without trustworthy creation evidence. It will not be adopted, overwritten, or deleted.");
+                }
+
+                if (string.Equals(report.recoveryState, "PARTIAL_COMPOSITION_SAVED", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "A saved composition has no successful proof report. It is preserved for manual inspection and will not be rebuilt automatically.");
                 }
 
                 if (!firstExecution && !proofSceneExists)
@@ -115,7 +224,7 @@ namespace Immersive.PEGA.AuthoringProof
                         "The proof report exists but its scene is missing. Restore the proof scene before running again.");
                 }
 
-                if (!firstExecution)
+                if (proofSceneExists && report.runCount > 0)
                 {
                     string currentSceneHash = ComputeFileSha256(proofSceneAbsolutePath);
                     if (!string.Equals(
@@ -128,11 +237,37 @@ namespace Immersive.PEGA.AuthoringProof
                     }
                 }
 
-                EnsureProofFolder();
-                proofScene = GetOrOpenProofScene(
+                bool recoveringPersistedEmptyScene = string.Equals(
+                    report.recoveryState,
+                    "PARTIAL_SCENE_PERSISTED",
+                    StringComparison.Ordinal);
+                if (recoveringPersistedEmptyScene)
+                {
+                    if (!proofSceneExists ||
+                        string.IsNullOrWhiteSpace(report.recoverySceneSha256) ||
+                        !string.Equals(
+                            ComputeFileSha256(proofSceneAbsolutePath),
+                            report.recoverySceneSha256,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "The persisted partial proof scene differs from its recovery hash. It will not be adopted or overwritten.");
+                    }
+                }
+
+                if (proofSceneExists && report.runCount == 0 && !recoveringPersistedEmptyScene)
+                {
+                    throw new InvalidOperationException(
+                        "A proof scene exists without a recognized partial-run record. Preserve it and inspect the recovery report.");
+                }
+
+                GetOrOpenProofScene(
                     proofSceneExists,
+                    recoveringPersistedEmptyScene,
+                    ref proofScene,
                     out sceneWasLoadedBeforeCommand,
-                    out sceneWasCreatedInMemory);
+                    out proofSceneOpenedByCommand,
+                    out proofScenePersisted);
 
                 if (proofSceneExists && proofScene.isDirty)
                 {
@@ -150,9 +285,10 @@ namespace Immersive.PEGA.AuthoringProof
                         "The new proof scene is not empty. No composition will be added to an unrecognized scene.");
                 }
 
-                if (firstExecution)
+                if (firstExecution && report.initialComposition == null)
                 {
                     report.initialComposition = CaptureInitialComposition(proofScene);
+                    report.compositionInitiallyAbsent = compositionWasAbsent;
                 }
 
                 if (!firstExecution && compositionWasAbsent)
@@ -172,10 +308,19 @@ namespace Immersive.PEGA.AuthoringProof
                     ValidateExistingProofComposition(proofScene, configuration);
                 }
 
-                if (!SceneManager.SetActiveScene(proofScene))
+                VerifyPersistedProofScene(proofScene);
+                report.requestedSceneBeforeActivation = CaptureSceneIdentity(proofScene);
+                sceneActivationSetterReturned = EditorSceneManager.SetActiveScene(proofScene);
+                report.sceneActivationSetterReturned = sceneActivationSetterReturned;
+                Scene activeAfterActivation = SceneManager.GetActiveScene();
+                report.activeSceneAfterActivation = CaptureSceneIdentity(activeAfterActivation);
+                if (!sceneActivationSetterReturned ||
+                    !SameSceneIdentity(activeAfterActivation, proofScene) ||
+                    !SameSceneIdentity(SceneManager.GetActiveScene(), proofScene))
                 {
                     throw new InvalidOperationException(
-                        "Unity could not make the isolated proof scene active for the official creator API.");
+                        "The persisted proof scene did not become the active scene. " +
+                        DescribeScene(proofScene) + "; active=" + DescribeScene(activeAfterActivation));
                 }
 
                 Undo.IncrementCurrentGroup();
@@ -186,6 +331,14 @@ namespace Immersive.PEGA.AuthoringProof
                     compositionWasAbsent
                         ? CreateProofComposition(configuration)
                         : GetSingleInScene<SceneProvidedLocalPlayerAuthoring>(proofScene);
+
+                if (!SameSceneIdentity(authoring.gameObject.scene, proofScene))
+                {
+                    throw new InvalidOperationException(
+                        "The official creator produced its Local Player root outside the proof scene. " +
+                        "The composition will not be saved.");
+                }
+                report.creatorRootScene = CaptureSceneIdentity(authoring.gameObject.scene);
 
                 ValidatePlayerComposition(proofScene, authoring, configuration, report);
 
@@ -202,7 +355,8 @@ namespace Immersive.PEGA.AuthoringProof
                         "Unity did not save the isolated proof scene.");
                 }
 
-                sceneWasSaved = true;
+                proofCompositionSaved = true;
+                proofScenePersisted = true;
                 ProofSnapshot snapshot = CaptureSnapshot(proofScene);
                 string previousSceneHash =
                     firstExecution ? string.Empty : report.lastSnapshot.sceneFileSha256;
@@ -215,6 +369,11 @@ namespace Immersive.PEGA.AuthoringProof
                 report.runCount++;
                 report.lastRunUtc = DateTime.UtcNow.ToString("O");
                 report.lastRunOutcome = "STRUCTURAL_PASS";
+                report.structuralOutcome = "PASS";
+                report.runtimeOutcome = RuntimeValidationNotRun;
+                report.recoveryState = "COMPLETED";
+                report.recoveryDiagnostic = string.Empty;
+                report.recoverySceneSha256 = string.Empty;
                 report.lastSnapshot = snapshot;
                 report.lastValidators = report.currentValidators.ToArray();
                 report.currentValidators = Array.Empty<ValidatorResult>();
@@ -248,10 +407,8 @@ namespace Immersive.PEGA.AuthoringProof
                     report.idempotenceVerified = report.secondExecutionEquivalent;
                 }
 
-                WriteReport(report);
-
                 Debug.Log(
-                    $"Scene-Provided Player proof run {report.runCount} completed. " +
+                    $"Scene-Provided Player proof run {report.runCount} passed structural checks; finalizing evidence. " +
                     $"Scene='{ProofScenePath}', validators='{report.lastValidators.Length}', " +
                     $"secondExecutionEquivalent='{report.secondExecutionEquivalent}', " +
                     $"idempotenceVerified='{report.idempotenceVerified}', " +
@@ -259,29 +416,147 @@ namespace Immersive.PEGA.AuthoringProof
             }
             catch (Exception exception)
             {
-                if (!sceneWasSaved && undoGroup >= 0)
+                if (!proofCompositionSaved && undoGroup >= 0)
                 {
                     Undo.RevertAllDownToGroup(undoGroup);
+                }
+
+                if (report != null)
+                {
+                    bool orphanedScene = string.Equals(
+                        report.recoveryState,
+                        "ORPHANED_SCENE",
+                        StringComparison.Ordinal);
+                    report.lastAttemptOutcome = orphanedScene
+                        ? "ORPHANED_SCENE"
+                        : proofCompositionSaved && !runStartedWithCompletedProof
+                            ? "PARTIAL_COMPOSITION_SAVED"
+                            : proofScenePersisted
+                                ? "PARTIAL_SCENE_PERSISTED"
+                                : "FAILED_BEFORE_PERSISTENCE";
+                    report.lastAttemptDiagnostic = exception.GetType().Name + ": " + exception.Message;
+                    report.lastAttemptValidators = report.currentValidators ?? Array.Empty<ValidatorResult>();
+                    report.currentValidators = Array.Empty<ValidatorResult>();
+                    report.recoveryState = orphanedScene
+                        ? "ORPHANED_SCENE"
+                        : runStartedWithCompletedProof
+                            ? "COMPLETED_WITH_FAILED_ATTEMPT"
+                            : proofCompositionSaved
+                                ? "PARTIAL_COMPOSITION_SAVED"
+                                : proofScenePersisted
+                                    ? "PARTIAL_SCENE_PERSISTED"
+                                    : "FAILED_BEFORE_PERSISTENCE";
+                    report.recoveryDiagnostic = report.lastAttemptDiagnostic;
+                    if (!runStartedWithCompletedProof && proofScenePersisted && File.Exists(ToAbsolutePath(ProofScenePath)))
+                    {
+                        report.recoverySceneSha256 = ComputeFileSha256(ToAbsolutePath(ProofScenePath));
+                    }
                 }
 
                 Debug.LogError(
                     "Scene-Provided Player authoring proof stopped safely. " +
                     exception.GetType().Name + ": " + exception.Message);
 
-                if (sceneWasCreatedInMemory && !sceneWasSaved && proofScene.IsValid())
-                {
-                    EditorSceneManager.CloseScene(proofScene, true);
-                }
             }
             finally
             {
+                bool activeSceneRestored = false;
+                string restorationDiagnostic = string.Empty;
                 if (originalActiveScene.IsValid() && originalActiveScene.isLoaded)
                 {
-                    SceneManager.SetActiveScene(originalActiveScene);
+                    bool setterReturned = SameSceneIdentity(
+                        SceneManager.GetActiveScene(),
+                        originalActiveScene) || EditorSceneManager.SetActiveScene(originalActiveScene);
+                    Scene activeAfterRestore = SceneManager.GetActiveScene();
+                    activeSceneRestored = setterReturned && SameSceneIdentity(activeAfterRestore, originalActiveScene);
+                    if (!activeSceneRestored)
+                    {
+                        restorationDiagnostic = "Original active scene restoration failed: " +
+                            DescribeScene(originalActiveScene) + "; active=" + DescribeScene(activeAfterRestore);
+                    }
+                }
+                else
+                {
+                    restorationDiagnostic = "The original active scene is no longer valid and loaded.";
                 }
 
                 Selection.objects = originalSelection;
-                RestoreLoadedSceneSet(originalScenes, proofScene, sceneWasLoadedBeforeCommand);
+                bool selectionRestored = Selection.objects.SequenceEqual(originalSelection);
+                bool proofSceneLifecycleRestored = RestoreLoadedSceneSet(
+                    originalScenes,
+                    proofScene,
+                    sceneWasLoadedBeforeCommand,
+                    proofSceneOpenedByCommand,
+                    activeSceneRestored,
+                    proofCompositionSaved,
+                    out string closeDiagnostic);
+                if (!string.IsNullOrEmpty(closeDiagnostic))
+                {
+                    restorationDiagnostic = string.IsNullOrEmpty(restorationDiagnostic)
+                        ? closeDiagnostic
+                        : restorationDiagnostic + " " + closeDiagnostic;
+                }
+
+                if (report != null)
+                {
+                    report.activeSceneRestorationSucceeded = activeSceneRestored;
+                    report.selectionRestorationSucceeded = selectionRestored;
+                    report.proofSceneLifecycleRestored = proofSceneLifecycleRestored;
+                    report.restorationDiagnostic = restorationDiagnostic;
+                    report.lastSceneContextAfter = CaptureSceneContext();
+                    bool loadedSceneContextRestored = SameSceneContext(
+                        sceneContextBefore,
+                        report.lastSceneContextAfter);
+                    report.loadedSceneContextRestorationSucceeded = loadedSceneContextRestored;
+                    if (!loadedSceneContextRestored)
+                    {
+                        string contextDiagnostic = "Loaded scene set/order or active scene differs from the preflight snapshot.";
+                        restorationDiagnostic = string.IsNullOrEmpty(restorationDiagnostic)
+                            ? contextDiagnostic
+                            : restorationDiagnostic + " " + contextDiagnostic;
+                        report.restorationDiagnostic = restorationDiagnostic;
+                    }
+
+                    if (proofCompositionSaved &&
+                        (!activeSceneRestored || !selectionRestored || !proofSceneLifecycleRestored ||
+                         !loadedSceneContextRestored))
+                    {
+                        report.lastAttemptOutcome = "RESTORATION_FAILED";
+                        report.lastAttemptDiagnostic = restorationDiagnostic;
+                        report.structuralOutcome = "FAIL";
+                        report.lastRunOutcome = "RESTORATION_FAILED";
+                        report.recoveryState = "COMPLETED_WITH_FAILED_ATTEMPT";
+                        report.recoveryDiagnostic = restorationDiagnostic;
+                    }
+
+                    if (string.IsNullOrEmpty(report.lastAttemptOutcome))
+                    {
+                        report.lastAttemptOutcome = "COMPLETED";
+                        report.lastAttemptDiagnostic = string.Empty;
+                    }
+
+                    try
+                    {
+                        WriteReport(report);
+                        Debug.Log(
+                            $"Scene-Provided Player proof report saved: runCount='{report.runCount}', " +
+                            $"structural='{report.structuralOutcome}', runtime='{report.runtimeOutcome}', " +
+                            $"toolSha256='{report.toolSourceSha256}'.");
+                    }
+                    catch (Exception reportException)
+                    {
+                        Debug.LogError(
+                            "Scene-Provided Player proof could not persist its evidence report. " +
+                            reportException.GetType().Name + ": " + reportException.Message);
+                    }
+                }
+
+                if (!activeSceneRestored || !selectionRestored || !proofSceneLifecycleRestored ||
+                    (report != null && !report.loadedSceneContextRestorationSucceeded))
+                {
+                    Debug.LogError(
+                        "Scene-Provided Player proof context restoration was incomplete. " + restorationDiagnostic);
+                }
             }
         }
 
@@ -873,31 +1148,57 @@ namespace Immersive.PEGA.AuthoringProof
                    CountInScene<UnityPlayerInputGateAdapter>(scene) > 0;
         }
 
-        private static ProofReport LoadOrCreateReport()
+        private static ProofReport LoadOrCreateReport(bool proofSceneExists)
         {
             string absolutePath = ToAbsolutePath(ReportPath);
             if (!File.Exists(absolutePath))
             {
-                if (File.Exists(ToAbsolutePath(ProofScenePath)))
+                if (proofSceneExists)
                 {
-                    throw new InvalidOperationException(
-                        "A proof scene already exists without its evidence report. It will not be modified.");
+                    return new ProofReport
+                    {
+                        schemaVersion = ReportSchemaVersion,
+                        proofScenePath = ProofScenePath,
+                        recoveryState = "ORPHANED_SCENE",
+                        lastAttemptOutcome = "ORPHANED_SCENE",
+                        lastAttemptDiagnostic = "A proof scene exists without a report identifying its creation and expected hash."
+                    };
                 }
 
-                return new ProofReport();
+                return new ProofReport
+                {
+                    schemaVersion = ReportSchemaVersion,
+                    proofScenePath = ProofScenePath,
+                    recoveryState = "NEW"
+                };
             }
 
             ProofReport report = JsonUtility.FromJson<ProofReport>(File.ReadAllText(absolutePath));
             if (report == null ||
-                report.runCount < 1 ||
-                report.firstSnapshot == null ||
-                report.lastSnapshot == null ||
-                report.lastValidators == null ||
-                !string.Equals(report.proofScenePath, ProofScenePath, StringComparison.Ordinal) ||
-                !report.compositionInitiallyAbsent)
+                report.schemaVersion != ReportSchemaVersion ||
+                report.runCount < 0 ||
+                !string.Equals(report.proofScenePath, ProofScenePath, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "Existing proof report is incomplete or belongs to a different proof setup.");
+                    "Existing proof report is malformed, from another schema, or belongs to another proof setup. Preserve it before continuing.");
+            }
+
+            bool completedReportValid = report.runCount > 0 &&
+                report.firstSnapshot != null &&
+                report.lastSnapshot != null &&
+                report.lastValidators != null &&
+                report.compositionInitiallyAbsent;
+            bool partialReportValid = report.runCount == 0 &&
+                (string.Equals(report.recoveryState, "FAILED_BEFORE_PERSISTENCE", StringComparison.Ordinal) ||
+                 string.Equals(report.recoveryState, "PARTIAL_SCENE_PERSISTED", StringComparison.Ordinal) ||
+                 string.Equals(report.recoveryState, "PARTIAL_COMPOSITION_SAVED", StringComparison.Ordinal) ||
+                 string.Equals(report.recoveryState, "ORPHANED_SCENE", StringComparison.Ordinal));
+            bool failedAttemptReportValid = report.runCount > 0 && completedReportValid &&
+                string.Equals(report.recoveryState, "COMPLETED_WITH_FAILED_ATTEMPT", StringComparison.Ordinal);
+            if (!completedReportValid && !partialReportValid && !failedAttemptReportValid)
+            {
+                throw new InvalidOperationException(
+                    "Existing proof report is incomplete or has no recognized recovery state. Preserve it before continuing.");
             }
 
             return report;
@@ -974,6 +1275,149 @@ namespace Immersive.PEGA.AuthoringProof
             string absolutePath = ToAbsolutePath(ReportPath);
             File.WriteAllText(absolutePath, JsonUtility.ToJson(report, true));
             AssetDatabase.ImportAsset(ReportPath, ImportAssetOptions.ForceUpdate);
+        }
+
+        private static bool HasOnlyExpectedBatchValidatorStatuses(ValidatorResult[] validators)
+        {
+            if (validators == null || validators.Any(result => result == null))
+            {
+                return false;
+            }
+
+            string[] blockedNames = validators
+                .Where(result => string.Equals(result.status, "BLOCKED", StringComparison.Ordinal))
+                .Select(result => result.name)
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray();
+            string[] expectedBlockedNames =
+            {
+                ExpectedBlockedActorIdentityValidator,
+                ExpectedBlockedHostEditorValidator
+            };
+            Array.Sort(expectedBlockedNames, StringComparer.Ordinal);
+
+            return validators.All(result =>
+                       string.Equals(result.status, "PASS", StringComparison.Ordinal) ||
+                       string.Equals(result.status, "BLOCKED", StringComparison.Ordinal)) &&
+                   blockedNames.SequenceEqual(expectedBlockedNames, StringComparer.Ordinal);
+        }
+
+        private static string ComputeToolSourceSha256() =>
+            ComputeFileSha256(ToAbsolutePath(ToolSourcePath));
+
+        private static void VerifyPersistedProofScene(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded || EditorSceneManager.IsPreviewScene(scene))
+            {
+                throw new InvalidOperationException(
+                    "The proof scene must be valid, loaded, and not a preview scene before authoring: " +
+                    DescribeScene(scene));
+            }
+
+            if (!string.Equals(NormalizeScenePath(scene.path), ProofScenePath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The loaded scene path does not identify the authorized proof scene: " + DescribeScene(scene));
+            }
+
+            Scene resolvedByPath = SceneManager.GetSceneByPath(ProofScenePath);
+            if (!resolvedByPath.IsValid() || !resolvedByPath.isLoaded ||
+                resolvedByPath.handle.GetRawData() != scene.handle.GetRawData() ||
+                !File.Exists(ToAbsolutePath(ProofScenePath)))
+            {
+                throw new InvalidOperationException(
+                    "The proof scene could not be resolved back to the same loaded scene handle by its persisted path. " +
+                    "requested=" + DescribeScene(scene) + "; resolved=" + DescribeScene(resolvedByPath));
+            }
+        }
+
+        private static string NormalizeScenePath(string path) =>
+            (path ?? string.Empty).Replace('\\', '/');
+
+        private static bool SameSceneIdentity(Scene left, Scene right) =>
+            left.IsValid() && right.IsValid() &&
+            left.isLoaded && right.isLoaded &&
+            left.handle.GetRawData() == right.handle.GetRawData() &&
+            string.Equals(NormalizeScenePath(left.path), NormalizeScenePath(right.path), StringComparison.Ordinal);
+
+        private static string DescribeScene(Scene scene) =>
+            $"handle='{scene.handle}', name='{scene.name}', path='{NormalizeScenePath(scene.path)}', " +
+            $"valid='{scene.IsValid()}', loaded='{scene.isLoaded}', preview='{scene.IsValid() && EditorSceneManager.IsPreviewScene(scene)}', " +
+            $"active='{scene.IsValid() && SameSceneIdentity(SceneManager.GetActiveScene(), scene)}'";
+
+        private static SceneIdentitySnapshot CaptureSceneIdentity(Scene scene)
+        {
+            return new SceneIdentitySnapshot
+            {
+                handle = scene.handle.GetRawData(),
+                name = scene.name ?? string.Empty,
+                path = NormalizeScenePath(scene.path),
+                isValid = scene.IsValid(),
+                isLoaded = scene.IsValid() && scene.isLoaded,
+                isPreview = scene.IsValid() && EditorSceneManager.IsPreviewScene(scene),
+                isDirty = scene.IsValid() && scene.isDirty,
+                isActive = scene.IsValid() && SameSceneIdentity(SceneManager.GetActiveScene(), scene)
+            };
+        }
+
+        private static SceneContextSnapshot CaptureSceneContext()
+        {
+            var loadedScenes = new List<SceneIdentitySnapshot>();
+            for (int index = 0; index < SceneManager.sceneCount; index++)
+            {
+                Scene scene = SceneManager.GetSceneAt(index);
+                if (scene.IsValid() && scene.isLoaded)
+                {
+                    loadedScenes.Add(CaptureSceneIdentity(scene));
+                }
+            }
+
+            return new SceneContextSnapshot
+            {
+                sceneCount = SceneManager.sceneCount,
+                loadedScenes = loadedScenes.ToArray(),
+                activeScene = CaptureSceneIdentity(SceneManager.GetActiveScene())
+            };
+        }
+
+        private static bool SameSceneContext(
+            SceneContextSnapshot expected,
+            SceneContextSnapshot actual)
+        {
+            if (expected == null || actual == null ||
+                expected.sceneCount != actual.sceneCount ||
+                expected.loadedScenes == null || actual.loadedScenes == null ||
+                expected.loadedScenes.Length != actual.loadedScenes.Length ||
+                expected.activeScene == null || actual.activeScene == null)
+            {
+                return false;
+            }
+
+            if (expected.activeScene.handle != actual.activeScene.handle ||
+                !string.Equals(expected.activeScene.path, actual.activeScene.path, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < expected.loadedScenes.Length; index++)
+            {
+                SceneIdentitySnapshot left = expected.loadedScenes[index];
+                SceneIdentitySnapshot right = actual.loadedScenes[index];
+                if (left == null || right == null ||
+                    left.handle != right.handle ||
+                    !string.Equals(left.name, right.name, StringComparison.Ordinal) ||
+                    !string.Equals(left.path, right.path, StringComparison.Ordinal) ||
+                    left.isValid != right.isValid ||
+                    left.isLoaded != right.isLoaded ||
+                    left.isPreview != right.isPreview ||
+                    left.isDirty != right.isDirty ||
+                    left.isActive != right.isActive)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static ProofSnapshot CaptureSnapshot(Scene scene)
@@ -1066,30 +1510,82 @@ namespace Immersive.PEGA.AuthoringProof
                 : "<unresolved-asset-id>";
         }
 
-        private static Scene GetOrOpenProofScene(
+        private static void GetOrOpenProofScene(
             bool sceneExists,
+            bool recoveringPersistedEmptyScene,
+            ref Scene proofScene,
             out bool wasLoadedBeforeCommand,
-            out bool wasCreatedInMemory)
+            out bool openedByCommand,
+            out bool persisted)
         {
             Scene scene = SceneManager.GetSceneByPath(ProofScenePath);
             wasLoadedBeforeCommand = scene.IsValid() && scene.isLoaded;
-            wasCreatedInMemory = false;
+            openedByCommand = false;
+            persisted = sceneExists;
 
             if (wasLoadedBeforeCommand)
             {
-                return scene;
+                proofScene = scene;
+                VerifyPersistedProofScene(scene);
+                return;
             }
 
             if (sceneExists)
             {
-                return EditorSceneManager.OpenScene(ProofScenePath, OpenSceneMode.Additive);
+                scene = EditorSceneManager.OpenScene(ProofScenePath, OpenSceneMode.Additive);
+                openedByCommand = true;
+                proofScene = scene;
+                VerifyPersistedProofScene(scene);
+                return;
             }
 
             scene = EditorSceneManager.NewScene(
                 NewSceneSetup.EmptyScene,
                 NewSceneMode.Additive);
-            wasCreatedInMemory = true;
-            return scene;
+            openedByCommand = true;
+            proofScene = scene;
+            if (!scene.IsValid() || !scene.isLoaded || EditorSceneManager.IsPreviewScene(scene) || scene.rootCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "Unity did not create a valid empty non-preview scene for the proof: " + DescribeScene(scene));
+            }
+
+            if (!EditorSceneManager.SaveScene(scene, ProofScenePath))
+            {
+                throw new InvalidOperationException(
+                    "Unity did not persist the empty proof scene at its authorized path: " + DescribeScene(scene));
+            }
+
+            persisted = File.Exists(ToAbsolutePath(ProofScenePath));
+            if (!persisted)
+            {
+                throw new InvalidOperationException(
+                    "SaveScene returned success but the proof scene file is absent at the authorized path.");
+            }
+
+            VerifyPersistedProofScene(scene);
+            if (!EditorSceneManager.CloseScene(scene, true))
+            {
+                throw new InvalidOperationException(
+                    "The initial empty proof scene was persisted, but Unity could not close it before reopening. " +
+                    DescribeScene(scene));
+            }
+
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                throw new InvalidOperationException(
+                    "CloseScene reported success but the initial proof scene remains loaded: " + DescribeScene(scene));
+            }
+
+            proofScene = default;
+            scene = EditorSceneManager.OpenScene(ProofScenePath, OpenSceneMode.Additive);
+            proofScene = scene;
+            VerifyPersistedProofScene(scene);
+            if (!recoveringPersistedEmptyScene && scene.rootCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "The reopened first-run proof scene was not empty. It will not be modified.");
+            }
         }
 
         private static void EnsureProofFolder()
@@ -1116,7 +1612,12 @@ namespace Immersive.PEGA.AuthoringProof
                 Scene scene = SceneManager.GetSceneAt(index);
                 if (scene.IsValid() && scene.isLoaded)
                 {
-                    result.Add(new LoadedSceneState(scene, scene.path, scene.isDirty));
+                    result.Add(new LoadedSceneState(
+                        scene,
+                        NormalizeScenePath(scene.path),
+                        scene.name,
+                        EditorSceneManager.IsPreviewScene(scene),
+                        scene.isDirty));
                 }
             }
 
@@ -1127,6 +1628,12 @@ namespace Immersive.PEGA.AuthoringProof
             IReadOnlyList<LoadedSceneState> before,
             Scene proofScene)
         {
+            var expectedHandles = before.Select(state => state.scene.handle.GetRawData()).ToList();
+            if (!expectedHandles.Contains(proofScene.handle.GetRawData()))
+            {
+                expectedHandles.Add(proofScene.handle.GetRawData());
+            }
+
             foreach (LoadedSceneState original in before)
             {
                 if (original.scene == proofScene)
@@ -1135,30 +1642,69 @@ namespace Immersive.PEGA.AuthoringProof
                 }
 
                 if (!original.scene.IsValid() || !original.scene.isLoaded ||
-                    original.scene.isDirty != original.wasDirty)
+                    original.scene.isDirty != original.wasDirty ||
+                    !string.Equals(NormalizeScenePath(original.scene.path), original.path, StringComparison.Ordinal) ||
+                    !string.Equals(original.scene.name, original.name, StringComparison.Ordinal) ||
+                    EditorSceneManager.IsPreviewScene(original.scene) != original.isPreview)
                 {
                     return false;
                 }
             }
 
-            return true;
+            var actualHandles = new List<ulong>();
+            for (int index = 0; index < SceneManager.sceneCount; index++)
+            {
+                Scene scene = SceneManager.GetSceneAt(index);
+                if (scene.IsValid() && scene.isLoaded)
+                {
+                    actualHandles.Add(scene.handle.GetRawData());
+                }
+            }
+
+            return actualHandles.SequenceEqual(expectedHandles);
         }
 
-        private static void RestoreLoadedSceneSet(
+        private static bool RestoreLoadedSceneSet(
             IReadOnlyList<LoadedSceneState> originalScenes,
             Scene proofScene,
-            bool sceneWasLoadedBeforeCommand)
+            bool sceneWasLoadedBeforeCommand,
+            bool proofSceneOpenedByCommand,
+            bool activeSceneRestored,
+            bool proofCompositionSaved,
+            out string diagnostic)
         {
-            if (sceneWasLoadedBeforeCommand || !proofScene.IsValid() || !proofScene.isLoaded)
+            diagnostic = string.Empty;
+            if (sceneWasLoadedBeforeCommand)
             {
-                return;
+                return proofScene.IsValid() && proofScene.isLoaded;
             }
 
-            bool wasOriginal = originalScenes.Any(state => state.scene == proofScene);
-            if (!wasOriginal)
+            if (!proofSceneOpenedByCommand || !proofScene.IsValid() || !proofScene.isLoaded)
             {
-                EditorSceneManager.CloseScene(proofScene, true);
+                return true;
             }
+
+            if (!activeSceneRestored)
+            {
+                diagnostic = "Proof scene remains loaded because the original active scene could not be restored safely.";
+                return false;
+            }
+
+            if (!proofCompositionSaved && proofScene.isDirty)
+            {
+                diagnostic = "Proof scene remains loaded with unsaved state after rollback; it was not discarded.";
+                return false;
+            }
+
+            bool closed = EditorSceneManager.CloseScene(proofScene, true);
+            bool isClosed = !proofScene.IsValid() || !proofScene.isLoaded;
+            if (!closed || !isClosed)
+            {
+                diagnostic = "Temporary proof scene closure was not confirmed: " + DescribeScene(proofScene);
+                return false;
+            }
+
+            return true;
         }
 
         private static string ToAbsolutePath(string assetPath)
@@ -1255,11 +1801,31 @@ namespace Immersive.PEGA.AuthoringProof
         [Serializable]
         private sealed class ProofReport
         {
+            public int schemaVersion;
+            public string toolSourceSha256;
             public string unityVersion;
             public string frameworkVersion;
             public string gitBranch;
             public string gitHead;
             public string proofScenePath;
+            public string structuralOutcome;
+            public string runtimeOutcome;
+            public string recoveryState;
+            public string recoveryDiagnostic;
+            public string recoverySceneSha256;
+            public string lastAttemptOutcome;
+            public string lastAttemptDiagnostic;
+            public bool sceneActivationSetterReturned;
+            public bool activeSceneRestorationSucceeded;
+            public bool selectionRestorationSucceeded;
+            public bool proofSceneLifecycleRestored;
+            public bool loadedSceneContextRestorationSucceeded;
+            public string restorationDiagnostic;
+            public SceneIdentitySnapshot requestedSceneBeforeActivation;
+            public SceneIdentitySnapshot activeSceneAfterActivation;
+            public SceneIdentitySnapshot creatorRootScene;
+            public SceneContextSnapshot lastSceneContextBefore;
+            public SceneContextSnapshot lastSceneContextAfter;
             public bool compositionInitiallyAbsent;
             public int runCount;
             public InitialComposition initialComposition;
@@ -1271,6 +1837,28 @@ namespace Immersive.PEGA.AuthoringProof
             public ProofSnapshot lastSnapshot;
             public ValidatorResult[] currentValidators = Array.Empty<ValidatorResult>();
             public ValidatorResult[] lastValidators = Array.Empty<ValidatorResult>();
+            public ValidatorResult[] lastAttemptValidators = Array.Empty<ValidatorResult>();
+        }
+
+        [Serializable]
+        private sealed class SceneContextSnapshot
+        {
+            public int sceneCount;
+            public SceneIdentitySnapshot[] loadedScenes;
+            public SceneIdentitySnapshot activeScene;
+        }
+
+        [Serializable]
+        private sealed class SceneIdentitySnapshot
+        {
+            public ulong handle;
+            public string name;
+            public string path;
+            public bool isValid;
+            public bool isLoaded;
+            public bool isPreview;
+            public bool isDirty;
+            public bool isActive;
         }
 
         [Serializable]
@@ -1361,12 +1949,16 @@ namespace Immersive.PEGA.AuthoringProof
         {
             public readonly Scene scene;
             public readonly string path;
+            public readonly string name;
+            public readonly bool isPreview;
             public readonly bool wasDirty;
 
-            public LoadedSceneState(Scene scene, string path, bool wasDirty)
+            public LoadedSceneState(Scene scene, string path, string name, bool isPreview, bool wasDirty)
             {
                 this.scene = scene;
                 this.path = path;
+                this.name = name;
+                this.isPreview = isPreview;
                 this.wasDirty = wasDirty;
             }
         }
