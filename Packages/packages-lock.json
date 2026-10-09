@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.immersive.audio": {
-      "version": "0.2.3",
+      "version": "0.2.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -10,8 +10,8 @@
       "url": "https://package.openupm.com"
     },
     "com.immersive.foundation": {
-      "version": "0.2.2",
-      "depth": 1,
+      "version": "0.2.3",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
@@ -29,15 +29,15 @@
       "url": "https://package.openupm.com"
     },
     "com.immersive.logging": {
-      "version": "0.2.3",
-      "depth": 1,
+      "version": "0.2.4",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
     "com.immersive.pooling": {
-      "version": "0.2.2",
-      "depth": 1,
+      "version": "0.2.3",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
