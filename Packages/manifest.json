@@ -2,7 +2,7 @@
   "dependencies": {
     "com.immersive.audio": "0.2.4",
     "com.immersive.foundation": "0.2.3",
-    "com.immersive.framework": "1.1.0-preview.5",
+    "com.immersive.framework": "1.1.0-preview.6",
     "com.immersive.logging": "0.2.4",
     "com.immersive.pooling": "0.2.3",
     "com.unity.ai.navigation": "2.0.15",
