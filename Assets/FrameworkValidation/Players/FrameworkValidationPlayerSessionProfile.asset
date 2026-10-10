@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 96d30c71a4254f65b8e9d1f3072ac648, type: 3}
-  m_Name: PlayerSessionProfile_PEGA
+  m_Name: FrameworkValidationPlayerSessionProfile
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionProfile
   supportedSlots:
   - {fileID: 11400000, guid: 7713b3abfe848c44b86aadd09d264136, type: 2}

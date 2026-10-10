@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ce6d27d442ac76449f283afbc33d04f, type: 3}
-  m_Name: GameApplication
+  m_Name: FrameworkValidationApplication
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.GameApplicationAsset
   applicationName: Game Application
   startupRoute: {fileID: 11400000, guid: 27fc0d3ef264a4d46a268a6c860a6277, type: 2}

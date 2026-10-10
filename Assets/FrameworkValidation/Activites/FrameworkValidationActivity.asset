@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6d702c1ba364e70ad76a85eb5f1b842, type: 3}
-  m_Name: StartupActivity
+  m_Name: FrameworkValidationActivity
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityAsset
   activityId: 2176b682e9824e94a11f842c57b01fa9
   activityName: Activity
