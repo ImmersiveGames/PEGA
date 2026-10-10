@@ -1,12 +1,12 @@
 # PEGA - Art Book
 
-**Projeto:** `PEGA`  
-**Tipo de documento:** Art Book / Character Bible  
-**Status:** Rascunho inicial  
-**Versão:** 0.1.0  
-**Fonte principal:** `Exemplos/GDD PEGA.docx`  
-**Documento relacionado:** [Game Design Document](GDD.md)  
-**Última atualização:** 2026-07-08
+**Projeto:** `PEGA`
+**Tipo de documento:** Art Book / Character Bible
+**Status:** Fonte ativa de direção visual
+**Versão:** 0.2.0
+**Fonte principal:** conceitos e referências visuais mantidos em `assets/documents/art-book/`
+**Documento relacionado:** [Game Design Document](GDD.md)
+**Última atualização:** 2026-10-10
 
 ---
 
@@ -17,7 +17,7 @@ O Art Book de **PEGA** documenta a intenção visual do jogo, os conceitos de pe
 PEGA tem uma identidade cartunesca: personagens exagerados, gangues temáticas, humor visual, silhuetas fortes e leitura rápida durante perseguições top-down. A arte deve ajudar o jogador a reconhecer função, perigo, personalidade e grupo de cada personagem mesmo em movimento.
 
 > [!NOTE] Escopo deste documento
-> Esta primeira versão usa as informações e imagens presentes no GDD original em Word. As seções de cenário já foram criadas para receber arte futura, mesmo quando ainda não há conceito visual extraído.
+> Este documento registra direção visual e referências disponíveis no repositório. O GDD é a fonte normativa para regras e escopo; a presença de uma imagem aqui não comprova autoria, aprovação ou conclusão de um asset.
 
 :::objective
 **Objetivo:** criar uma base autoral para documentar personagens, gangues, conceitos e modelos visuais de PEGA.
@@ -57,7 +57,7 @@ Rick Ronda é um jovem aspirante à **P.G.A. Larópolis** que não passa nos tes
 | Relação com gameplay | Deve funcionar em perseguição, carregamento de itens, combate leve e interação com cenário. |
 
 :::open-question
-**Pergunta:** Rick já possui modelo/concept final fora do GDD Word?
+**Pergunta:** Rick já possui modelo/concept final fora das referências registradas neste Art Book?
 
 **Uso futuro:** inserir frente, costas, expressões, paleta, proporções e variações de roupa.
 :::
@@ -74,9 +74,9 @@ Petra Patrol é parceira de Rick e cofundadora da **P.E.G.A. Larópolis**. O GDD
 | Relação com gameplay | Deve funcionar tanto em modo solo quanto em multiplayer local. |
 
 :::open-question
-**Pergunta:** Petra terá diferenças visuais que também indicam diferenças mecânicas?
+**Pergunta:** Petra possui concept/modelo final fora das referências registradas neste Art Book?
 
-**Recomendação inicial:** documentar primeiro a identidade visual própria e só depois atrelar diferenças de atributos, se o design confirmar essa necessidade.
+**Nota:** Rick e Petra são mecanicamente equivalentes na Demo; a identidade visual pode ser própria sem implicar diferença mecânica.
 :::
 
 ## Gangues de Larópolis
@@ -362,7 +362,7 @@ O Armazém é um centro de distribuição com característica de galpão, caixas
 | Objetos importantes | Baú de ouro, caixas, malotes, carrinhos, portas, cofre, prisão e câmeras. |
 
 :::open-question
-**Pergunta:** já existem concepts ou modelos do Armazém fora do GDD Word?
+**Pergunta:** já existem concepts ou modelos do Armazém fora das referências registradas neste Art Book?
 
 **Uso futuro:** inserir layout visual, moodboard, mapa top-down, props principais e variações de iluminação.
 :::
@@ -372,7 +372,7 @@ O Armazém é um centro de distribuição com característica de galpão, caixas
 Larópolis é uma cidade fictícia cartunesca marcada por criminalidade exagerada. No Art Book, esta seção deve reunir referências de arquitetura, mapa/HUB, bairros, identidade urbana, placas, veículos, lojas e linguagem visual da cidade.
 
 :::open-question
-**Pergunta:** o mapa de Larópolis será representado como ilustração 2D, mapa interativo ou ambiente navegável?
+**Pergunta:** como Larópolis será representada visualmente após o HUB estático previsto para a Demo?
 
 **Impacto visual:** define escala de produção, detalhamento dos bairros e estilo do HUB.
 :::
@@ -420,21 +420,15 @@ Imagem de referência: `assets/documents/art-book/nome-do-asset.png`
 ## Pendências visuais
 
 :::open-question
-**Pergunta:** quais imagens extraídas do Word são concepts próprios, referências externas ou modelos finais?
+**Pergunta:** quais imagens deste Art Book são concepts próprios, referências externas ou modelos finais?
 
 **Impacto:** o Art Book precisa diferenciar autoria, referência e asset final para evitar uso indevido em produção.
 :::
 
 :::open-question
-**Pergunta:** Rick e Petra possuem concepts visuais no arquivo original ou em outro local do projeto?
+**Pergunta:** quais gangues e cenários serão priorizados depois dos Trapalhões do Crime e do Armazém?
 
-**Impacto:** os protagonistas ainda estão descritos por intenção, mas sem imagem documentada nesta versão.
-:::
-
-:::open-question
-**Pergunta:** quais gangues fazem parte da primeira entrega jogável?
-
-**Impacto:** a prioridade de arte deve seguir o escopo de MVP e não a lista completa de gangues.
+**Impacto:** priorização de produção visual após o conteúdo da Demo.
 :::
 
 ## Documentos relacionados
@@ -442,14 +436,11 @@ Imagem de referência: `assets/documents/art-book/nome-do-asset.png`
 | Documento | Uso |
 |---|---|
 | [Game Design Document](GDD.md) | Documento principal de regras, sistemas e loop de jogo. |
-| `Exemplos/GDD PEGA.docx` | Fonte original do conteúdo e das imagens extraídas. |
 | `assets/documents/art-book/` | Pasta local com imagens extraídas para este documento. |
-| `skills/immersive-documentation-framework/SKILL.md` | Especificação operacional da documentação. |
-| `guidelines/ComponentLibrary.md` | Componentes usados neste Markdown. |
-| `guidelines/AssetSystem.md` | Organização e referências de assets locais. |
 
 ## Histórico de revisão
 
 | Versão | Data | Alteração |
 |---|---|---|
-| 0.1.0 | 2026-07-08 | Criação do Art Book com direção visual, fichas de gangues, imagens extraídas do GDD Word e seções iniciais de cenários. |
+| 0.2.0 | 2026-10-10 | Fonte visual ativa, separada dos contratos do GDD; perguntas de escopo resolvidas removidas e referências inexistentes atualizadas. |
+| 0.1.0 | 2026-07-08 | Criação do Art Book com direção visual, fichas de gangues, imagens de referência e seções iniciais de cenários. |

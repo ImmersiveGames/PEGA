@@ -1,165 +1,105 @@
-# PEGA - Plano de MVP (Demo)
+# PEGA — Escopo do vertical slice e da Demo
 
 **Projeto:** `PEGA`
-**Tipo de documento:** Plano de MVP / Demo
-**Status:** Rascunho ativo
-**Versão:** 0.3.0
-**Documento base:** [GDD](GDD.md)
-**Última atualização:** 2026-09-24
+**Tipo de documento:** Escopo de implementação
+**Status:** Ativo
+**Versão:** 0.4.0
+**Última atualização:** 2026-10-10
+**Fonte de regras:** [GDD](GDD.md)
 
 ---
 
-> [!NOTE] Objetivo
->
-> **Objetivo do documento:** definir o escopo mínimo jogável de PEGA — um vertical slice que prove o loop de perseguição, captura e recuperação de itens, com uma economia de carreira simples entre partidas.
->
-> **Critério de sucesso:** qualquer pessoa da equipe deve conseguir olhar este documento e saber exatamente o que entra na Demo, o que fica de fora, e quais números já estão validados versus quais ainda são estimativa.
->
-> **Estado:** ativo
+## Propósito e categorias
 
-## HUB de Carreira (escritório da PEGA)
+Este documento recorta as regras do GDD em duas entregas. O GDD é a fonte normativa de gameplay; este arquivo define **quando** cada parte entra. A presença de uma tarefa ou sistema no escopo não comprova que já esteja implementado.
 
-> [!IMPORTANT] Decisão
->
-> **Decisão:** o HUB é uma tela temática estática com hotspots, não um espaço navegável. Resolve, para a Demo, a pergunta aberta do GDD sobre o HUB ser "apenas uma tela de seleção de fases ou um espaço navegável".
->
-> **Cena:** a sala do escritório da P.E.G.A. Larópolis, com dois pontos de interação:
->
-> - **Quadro com mapa da cidade** → abre a seleção de missão (mesmo com uma única missão disponível na Demo, já estabelece o padrão visual e de interação para quando houver mais contratos).
-> - **Escrivaninha com PC** → abre a "saúde da empresa": saldo acumulado da carreira (tipo extrato/dashboard) e uma inbox de emails com o resultado do último turno, elogios ou reclamações do cliente, e novos contratos desbloqueados (ainda sem função na Demo, já que só existe uma missão, mas o espaço fica reservado no fluxo).
->
-> **Motivo:** entrega a mesma informação da proposta original (mapa, saúde da empresa, emails, contratos) sem o custo de produção de um espaço 3D/2D navegável com colisão e câmera própria — evita expandir escopo antes de validar o loop principal, como o próprio GDD já recomendava.
->
-> **Evolução futura (fora da Demo):** transformar o escritório num espaço navegável, com o personagem andando até o quadro e a escrivaninha fisicamente. Registrado aqui para não se perder, mas fica para depois da Demo.
-
-> [!NOTE] Fora de escopo — todo o jogo, não só a Demo
->
-> Multiplayer online não está nos planos para PEGA. O HUB navegável ganharia muito mais força com online, mas essa direção fica reservada para um possível próximo jogo, caso a decisão não mude. PEGA trabalha apenas com multiplayer local (tela dividida).
-
-## Telas da Demo
-
-Fluxo completo de telas, incluindo as que já existiam implícitas no GDD (briefing de cenário, splash de gangue, menu de pausa) e as novas que o Sistema de Carreira exige:
-
-1. Splash/logo inicial
-2. Menu principal
-3. Opções/configurações (submenu, acessível também no menu de pausa)
-4. HUB de Carreira (escritório) — ponto central de retorno entre turnos
-5. A partir do HUB: entrada de jogadores + seleção de personagem
-6. A partir do HUB: seleção de missão (quadro/mapa da cidade)
-7. Briefing/apresentação do cenário (câmera mostra entradas, saídas, itens valiosos, armadilhas)
-8. Splash de entrada da gangue (apresenta grupo inimigo e dificuldade)
-9. Gameplay (HUD in-game, com menu de pausa acessível a qualquer momento)
-10. Fim de missão / Classificação (F a S+)
-11. Resumo do turno (crédito, custo operacional, saldo líquido, saldo acumulado da carreira)
-12. Retorno ao HUB de Carreira — **ou** Game Over por bancarrota, se o saldo acumulado passou do limite, com opção de reiniciar a carreira do zero
-
-## Escopo da Demo
-
-| Área | Escopo do MVP |
+| Categoria | Significado |
 |---|---|
-| Personagens | Rick e Petra jogáveis, **mecanicamente equivalentes** (ver decisão abaixo). |
-| Cenário | Armazém completo (ver [GDD § Armazém](GDD.md#armazém)). |
-| Inimigos | Uma gangue: **Os Trapalhões do Crime**, 4 arquétipos. |
-| Sistemas core | Movimento, impulso, salto, interação, carregar/soltar, prisão, cofre. |
-| IA | Regras legíveis por posse e desejo: furtar, fugir, recuperar item, perseguir portador e confrontar quando necessário. |
-| Confronto | Capacidade de ataque × Resistência; sem HP ou dano acumulativo como base da incapacitação. |
-| Power-ups | Poucos efeitos ligados à perseguição, priorizando mobilidade e vantagem temporária para incapacitar. |
-| Interface | HUD, minimapa, tempo, resultado da missão. |
-| Classificação | `F` a `S+`, com créditos por faixa (ver [GDD § Dificuldade](GDD.md#dificuldade)). |
-| **Carreira** | Saldo acumulado entre partidas, com condição de bancarrota (novo — ver seção própria). |
-| Multiplayer | Tela dividida local: stretch goal, não bloqueante. |
+| **Obrigatório no vertical slice** | Necessário para provar o ciclo jogável técnico mínimo. |
+| **Obrigatório na Demo** | Necessário para a entrega demonstrável, além do slice. |
+| **Posterior à Demo** | Parte possível do jogo completo, fora da Demo. |
+| **Opcional / sujeito a playtest** | Só entra se escopo e evidência de playtest justificarem. |
 
-Fora de escopo por enquanto: outras gangues, habilidades especiais, HUB navegável, modo Endless, empréstimos como mecânica de continue.
+## A. Primeiro vertical slice técnico
 
-## Gangue da Demo: Os Trapalhões do Crime
+**Objetivo:** comprovar um ciclo jogável de Preparação, invasão, perseguição, roubo, recuperação/captura, fuga e resultado. Pode funcionar com um Player local. Os larápios usam GOAP desde este corte; não há IA alternativa baseada em máquina de estados.
 
-Os valores da `Tabela de Atributos e Habilidades.xlsx` permanecem como material histórico de balanceamento, mas as colunas de dano, golpes para imobilizar, Defesa e demais fórmulas derivadas do modelo antigo **não são mais contrato de gameplay**.
+| Área | Recorte obrigatório |
+|---|---|
+| Immersive Framework | Configurar apenas as superfícies necessárias na versão resolvida do projeto. O projeto declara `com.immersive.framework` **1.1.0-preview.6**; a API pública instalada deve ser consultada em `Documentation~/API/Public-API.md` e validada antes de cada uso. Esse número e os assets existentes não provam funcionamento integrado. |
+| Player e Actor | Um Player controlável, solo. Movimento e mecânicas de gameplay pertencem ao PEGA; ActorProfile e alguns caminhos de Player do framework são experimentais. Usar e validar o caminho de autoria suportado pela instalação atual. |
+| Cenário | Armazém compacto, com rotas, pelo menos dois cofres válidos, item principal, prisão, Spawn Point e Spawn Seguro. Completar leitura do mapa e interações necessárias ao ciclo. |
+| Preparação | Duração fixa da missão; escolha gratuita entre cofres; um cofre padrão válido. O tempo encerra a fase. Não existe `Pronto` nem skip no jogo normal; antecipação é apenas ferramenta de debug. |
+| Invasão | Receita temporal de Spawn Point começa no Assalto Ativo. Preparação e receitas são relógios separados. Manter o modelo de receitas independentes e o Spawn Seguro do GDD, mesmo que o cenário de teste autorize apenas um Spawn Point. |
+| IA dos larápios | Um grupo inicial e pelo menos um arquétipo usando o contrato GOAP do GDD: conhecimento sem acesso a fatos ocultos, Desejos, Actions com execução e resultados explícitos, replanejamento por eventos, roubo e tentativa de fuga. |
+| Percepção e conhecimento | Área radial percebida e cone de visão configuráveis, com obstruções. Preservar escopos Individual, Gangue e Global; só propagar os dados cuja política de Knowledge Data permitir. |
+| Perseguição e captura | Movimento, ataque, Capacidade de ataque × Resistência, incapacitação temporária, recuperação, transporte e entrega efetiva na prisão. Só a entrega conclui a captura. |
+| Itens e armazenamento | Inventário configurável por Actor, uma unidade por item, comando separado para soltar todos os itens, ataque que derruba todos os itens do alvo e depósito no cofre. Exercitar capacidade insuficiente com depósito parcial determinístico. |
+| Encerramento | Tempo de Assalto, Fuga Final com GOAP ativo, Tempo de Fuga, estados Capturado/Escapou/Não escapou, classificação/resultados básicos e itens Roubados/Recuperados conforme o GDD. Não exigir métricas temporais no slice. |
+| UI de prova | Controles e feedback suficientes para observar Preparação, cofre selecionado, inventário, incapacitação/transporte, temporizadores e resultado. Não exige acabamento da UI da Demo. |
 
-O balanceamento da Demo deve ser reconciliado para o novo modelo: cada arquétipo recebe uma **Resistência** legível e valores/comportamentos fixos necessários à perseguição. O jogador utiliza sua **Capacidade de ataque** atual e pode obter vantagens por itens, power-ups, armadilhas ou interações do cenário.
+### Não confundir com o vertical slice
 
-> [!IMPORTANT] Decisão
->
-> Não existe desgaste de HP como requisito para incapacitar. Um ataque válido sempre derruba os itens transportados pelo alvo. Se `Capacidade de ataque >= Resistência atual`, o alvo também fica incapacitado; caso contrário, permanece ativo e sua Resistência não é consumida pelo golpe.
+Testes temporários de Restart Point, Scene-Provided Player, composição do Framework ou uma cena de prova são experimentos técnicos. Não são funcionalidades de PEGA, conteúdo de carreira, menu ou critério de conclusão do jogo. Só entram no escopo quando a evidência do teste for aplicada a uma configuração real do PEGA.
 
-## Captura vs. Derrubada (Incapacitação)
+## B. Demo completa
 
-> [!IMPORTANT] Decisão
->
-> **Decisão:** derrubar (incapacitar) e capturar são estados diferentes.
->
-> - **Caído/Incapacitado:** o larápio apanhou o suficiente para ficar desmaiado ou tonto. Não se move, mas **não está sob custódia** do jogador. Um temporizador de recuperação começa a contar (já existe na planilha: linha "Tempo de recuperação de incapacidade em segundos", 4,0s a 4,6s para os Trapalhões).
-> - **Capturado:** o jogador prende o larápio, ou o carrega em direção à prisão até deixá-lo lá retido. A partir do momento em que o jogador começa a carregar, o inimigo sai do estado `Caído` e entra em `Capturado` (ou um estado intermediário de "sendo carregado").
->
-> **Consequência de gameplay:** se o jogador demorar demais pra chegar até o inimigo caído, o temporizador de recuperação zera e ele volta a `Fugindo`/`Agressivo` — essa é a fonte principal de tensão da perseguição.
->
-> **Motivo:** resposta à pergunta aberta do GDD sobre a diferença mecânica entre capturar e derrubar.
+**Objetivo:** entregar uma experiência demonstrável com fluxo de carreira, interface integrada e cooperativo local em tela dividida para dois Players. Cooperativo local é requisito desta entrega, não stretch goal.
 
-## Rick e Petra
+| Área | Acréscimo obrigatório à Demo |
+|---|---|
+| Players | Rick e Petra selecionáveis e mecanicamente equivalentes. Dois Players locais com tela dividida, cada um com entrada, Actor e apresentação corretos. |
+| Framework | Fluxo entre telas e atividades, autoria dos Players, câmera, Pause, transições e persistência compostos pelas capacidades existentes e compatíveis do Framework. Não duplicar autoridade já pertencente ao pacote. |
+| Armazém | Cenário inicial completo, incluindo level design, conteúdos, caminhos, Spawn Points, Spawn Seguro, objetos e condições de captura/escape legíveis. |
+| Inimigos | Uma gangue da Demo, Os Trapalhões do Crime, com seus quatro arquétipos configurados sobre mecânicas disponíveis. Os comportamentos usam o GOAP compartilhado do PEGA, não uma implementação diferente por arquétipo. |
+| Preparação cooperativa | Ambos os Players podem mudar a seleção do cofre; a última escolha válida prevalece. Ambos recebem a seleção atual e ela não é divulgada automaticamente aos larápios. |
+| UI/UX | Fluxo de menus, HUB da Demo como escritório estático com hotspots, briefing, splash, HUD, feedback de critérios e resultados, resumo do turno, Pause e telas de bancarrota. |
+| Carreira | Repetir a missão do Armazém na Demo, acumular créditos líquidos (créditos da classificação menos custo operacional provisório de 150), bancarrota apenas com saldo estritamente menor que -1000, e reinício explícito da carreira com saldo zero. Configurar os valores para playtest. |
+| Persistência | Salvar carreira entre assaltos. Não salvar nem retomar gameplay em andamento. Configurar e validar o backend escolhido no Framework; a documentação instalada classifica perfil e backend JSON como experimentais. |
+| Classificação | Critérios e pesos por missão, sem critério universalmente dominante; comunicar ao jogador os fatores considerados. Configurar a classificação da missão da Demo. |
+| Arte e áudio | Assets, animações e identidade visual necessários para a Demo, apoiados pelo Art Book e pelos pacotes instalados. A lista completa de ativos pertence à produção, não a este contrato de gameplay. |
+| Verificação | Cenários manuais de um e dois Players, preparação concorrente, fluxo completo de assalto, captura, escape, resultado, save entre missões, Pause e encerramento de carreira. Registrar resultados reais; não inferir validação pela presença de assets. |
 
-> [!IMPORTANT] Decisão
->
-> **Decisão:** Rick e Petra são mecanicamente equivalentes na Demo — mesmos atributos, mesmas habilidades.
->
-> **Motivo:** simplifica balanceamento e implementação inicial. Diferenças cosméticas ficam livres.
->
-> **Reavaliação:** se playtests indicarem que diferenças mecânicas melhoram a cooperação em multiplayer local, isso pode ser revisto pós-Demo.
+### Apresentação e fluxo de telas da Demo
 
-## Sistema de Carreira (novo para a Demo)
+O HUB é o escritório estático da P.E.G.A. Larópolis, sem navegação livre. O quadro com o mapa abre a seleção de missão; a escrivaninha/PC apresenta o saldo da carreira e a inbox de resultados, mensagens de clientes e contratos desbloqueados. Como a Demo tem uma missão, contratos futuros aparecem apenas como espaço de apresentação, sem função de desbloqueio. A forma navegável do HUB permanece posterior à Demo.
 
-O jogo é tratado como uma empresa (P.E.G.A. Larópolis). Como a Demo só tem uma fase disponível, a progressão de "novos contratos" do GDD completo não se aplica ainda — em vez disso, a Demo simula a carreira através de repetição da mesma missão, com saldo acumulado entre tentativas.
+O fluxo de apresentação cobre splash/logo, menu principal, opções, HUB, entrada e seleção de Players/personagem, seleção de missão, briefing do cenário, apresentação da gangue, gameplay com Pause, classificação, resumo financeiro do turno e retorno ao HUB ou encerramento/reinício da carreira após bancarrota.
 
-1. O jogador escolhe jogar um "turno" (uma partida do Armazém).
-2. Ao final do turno, o jogo calcula a classificação (`F` a `S+`) e o crédito correspondente (0 a 800, já definido na planilha de classificação).
-3. Um custo operacional fixo do turno é descontado do crédito ganho (aluguel, salário da dupla, manutenção do equipamento).
-4. O saldo líquido do turno (crédito − custo) é somado ao saldo acumulado da carreira.
-5. Se o saldo acumulado cair abaixo do limite de bancarrota, o jogo entra em Game Over de carreira.
-6. Em caso de Game Over, o jogador reinicia a carreira do zero (saldo acumulado volta a 0).
+O escopo de PEGA prevê cooperativo local em tela dividida; multiplayer online não está planejado para este jogo.
 
-> [!CAUTION] Pergunta em aberto
->
-> **Pergunta:** qual o valor do custo operacional por turno e qual o limite de bancarrota?
->
-> **Impacto:** define o ritmo de risco/recompensa da Demo — custo alto demais frustra, custo baixo demais remove a tensão da carreira.
->
-> **Recomendação inicial (a validar em playtest):** custo operacional fixo de **150 créditos por turno** (uma missão `C` já cobre o custo; `F` ou `D` geram prejuízo); limite de bancarrota em **-1000 créditos** acumulados (equivalente a ~6-7 turnos ruins seguidos antes do Game Over).
+## C. Posterior à Demo
 
-> [!CAUTION] Pergunta em aberto
->
-> **Pergunta:** o saldo de carreira persiste entre sessões de jogo (save em disco) ou só dentro da mesma sessão?
->
-> **Impacto:** afeta escopo técnico — save persistente exige serialização e tela de carregamento.
->
-> **Recomendação inicial:** para a Demo, persistir localmente (save simples), já que a "carreira" só faz sentido se sobreviver ao fechar o jogo.
+- HUB navegável ou outro formato além do escritório estático da Demo.
+- Novos cenários, contratos, gangues, campanha expandida e progressão de desbloqueios.
+- Modo Endless.
+- Habilidades e conteúdos não necessários à gangue e ao Armazém da Demo.
+- Novos backends de progressão ou políticas de persistência, se necessários.
 
-> [!NOTE] Fora de escopo, documentado para o futuro
-> Empréstimos como mecânica de "continue" após bancarrota são uma ideia já levantada para o jogo completo, mas **não entram na Demo**. Ficam registrados aqui para não se perderem.
+## D. Opcional ou sujeito a playtest
 
-## Derrota total (fim de missão)
+- Power-ups: não entram no primeiro MVP; inclusão e efeitos em entregas posteriores dependem de escopo e playtests.
+- Métricas temporais na classificação do primeiro vertical slice; fazem parte do modelo completo, mas podem não pontuar nesse corte.
+- Ordem estável atual de depósito parcial; manter substituível e revisar com playtests.
+- Ajustes de custo operacional, limite de bancarrota, pesos de classificação, duração de Preparação, Assalto e Fuga, e balanceamento por arquétipo.
 
-> [!IMPORTANT] Decisão
->
-> **Decisão:** a missão sempre termina quando o tempo (turno de serviço) acaba — não há derrota "instantânea" por outros motivos (ex: todos os itens roubados). O que muda é a classificação (`F` a `S+`) resultante, e essa classificação alimenta o Sistema de Carreira acima.
->
-> **Motivo:** resposta à pergunta aberta do GDD sobre derrota total. Mantém o jogo sempre jogável até o fim do turno, empurrando a "derrota real" para o nível da carreira (bancarrota), não da missão individual.
+## Dependências e decisões técnicas pendentes
 
-## Perguntas ainda em aberto
-
-- Valor exato do custo operacional por turno e limite de bancarrota (ver acima).
-- Persistência de save (ver acima).
+- Player/Actor, ActorProfile, configuração de câmera e Progression Save possuem maturidades diferentes no `1.1.0-preview.6`; confirmar a composição e as limitações pelas superfícies instaladas antes de assumir cobertura.
+- A configuração do projeto tem `GameApplication`, Route e Activity, mas não tem `ProgressionSaveProfile` atribuído ao GameApplication. A tarefa de save exige autoria e validação no PEGA.
+- O contrato de Pause instalado documenta escopo single-player; a política de Pause para dois Players na Demo requer verificar o suporte atual e tomar decisão de produto se a API não cobrir o comportamento desejado.
+- Tempos, critérios, pesos e curva de crédito específicos da missão continuam sendo dados de balanceamento a definir e testar.
 
 ## Documentos relacionados
 
 | Documento | Uso |
 |---|---|
-| [GDD](GDD.md) | Documento de design completo, fonte das regras gerais. |
-| [Art Book](ArtBook.md) | Referência visual de personagens, gangues e cenários. |
-| `Tabela de Atributos e Habilidades.xlsx` | Números de balanceamento validados dos inimigos. |
-| [Tarefas](TASKS.md) | Backlog de tarefas por área, derivado deste documento. |
+| [GDD](GDD.md) | Regras, contratos e arquitetura conceitual; fonte normativa. |
+| [TASKS](TASKS.md) | Backlog executável e critérios de aceitação derivados deste escopo. |
+| [Art Book](ArtBook.md) | Direção visual e referências. |
 
 ## Histórico de revisão
 
 | Versão | Data | Alteração |
 |---|---|---|
-| 0.3.0 | 2026-09-24 | Convertidos os blocos customizados (`:::objective` etc.) para blockquotes de alerta padrão (`> [!NOTE]` etc.), compatíveis com o visualizador do chat e com GitHub. Adicionada decisão sobre multiplayer online (fora de escopo para todo o jogo). |
-| 0.2.0 | 2026-09-24 | Adicionado HUB de Carreira (escritório com hotspots), resolvendo a pergunta aberta do GDD sobre navegabilidade do HUB, e seção de fluxo completo de telas da Demo. |
-| 0.1.0 | 2026-09-24 | Criação do documento: escopo da Demo, números validados dos Trapalhões do Crime, decisões sobre captura/derrubada, Rick e Petra, sistema de carreira e derrota total. |
+| 0.4.0 | 2026-10-10 | Separados o primeiro vertical slice técnico e a Demo completa; atualizado escopo do multiplayer, GOAP, preparação, inventário, carreira, framework e níveis de entrega. |

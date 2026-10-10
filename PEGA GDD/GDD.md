@@ -1,11 +1,10 @@
 # PEGA - Game Design Document
 
-**Projeto:** `PEGA`  
-**Tipo de documento:** Game Design Document  
-**Status:** Rascunho reorganizado  
-**Versão:** 0.7.1  
-**Fonte principal:** `Exemplos/GDD PEGA.docx`  
-**Última atualização:** 2026-10-01
+**Projeto:** `PEGA`
+**Tipo de documento:** Game Design Document
+**Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
+**Versão:** 0.8.0
+**Última atualização:** 2026-10-10
 
 ---
 
@@ -16,14 +15,14 @@
 O jogo coloca um ou dois jogadores em missões de segurança por diferentes pontos da cidade. Cada missão apresenta um local invadido por larápios, itens valiosos em risco, rotas de fuga, armadilhas, câmeras, power-ups e inimigos com comportamentos próprios. O objetivo central é impedir que os criminosos escapem com os itens, capturar o maior número possível de inimigos e proteger os bens do cliente antes do fim do assalto.
 
 > [!NOTE] Tratamento da fonte
-> Este documento reorganiza e detalha o GDD original em Word. A intenção não é substituir decisões de design ainda não validadas, mas transformar o material existente em uma base mais clara para produção, prototipação e discussão.
+> Este documento é a fonte normativa das regras, contratos e arquitetura de gameplay do PEGA. O MVP recorta o que será construído em cada entrega; o Art Book documenta direção visual. A presença de uma regra aqui não significa que ela já esteja implementada.
 
 :::objective
 **Objetivo do documento:** consolidar a visão, os sistemas e as regras principais de PEGA em uma versão de GDD mais legível, navegável e pronta para evolução.
 
 **Critério de sucesso:** uma pessoa de design, programação, arte ou produção deve conseguir entender a fantasia do jogo, o loop principal, os modos, os inimigos, as interações de cenário, a progressão e os pontos que ainda precisam de definição.
 
-**Estado:** ativo
+**Estado:** fonte canônica
 :::
 
 ### Intenção central de design
@@ -51,7 +50,7 @@ Os sistemas de movimento, inimigos, cenários, objetos, armadilhas, informação
 | Perseguição cartunesca | A graça principal está em correr atrás de ladrões por cenários cheios de obstáculos. | Os mapas precisam ter rotas alternativas, atalhos, esconderijos, objetos interativos e momentos de quase captura. |
 | Segurança improvisada | Rick e Petra não são policiais perfeitos; eles resolvem problemas com ferramentas disponíveis no local. | Carrinhos, armadilhas, portas, câmeras, cofres e objetos seguráveis devem fazer parte do combate e da estratégia. |
 | Caos legível | O jogo pode ser frenético, mas o jogador precisa entender o que está acontecendo. | HUD, minimapa, feedback de estado, ícones de item e leitura visual dos inimigos são críticos. |
-| Cooperação local | O jogo foi pensado para um ou dois jogadores locais. | A experiência deve funcionar em modo solo e em multiplayer local com tela dividida horizontalmente. |
+| Cooperação local | A Demo completa exige dois jogadores locais. | O primeiro vertical slice pode ser solo; a Demo deve funcionar em tela dividida horizontalmente. |
 | Escalada de contratos | A agência PEGA cresce conforme assume locais mais perigosos. | Novos cenários, gangues, dificuldades e modos devem aparecer como progressão de carreira. |
 
 ### Experiência alvo
@@ -115,7 +114,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 :::flow
 1. O jogador escolhe uma missão no mapa/HUB de Larópolis.
 2. O jogo apresenta o cenário, pontos de entrada, saídas, itens valiosos, armadilhas e novidades da fase.
-3. Começa a **Preparação**: durante um tempo limitado, o jogador usa o orçamento e as ferramentas oferecidas pelo cenário para esconder ou reposicionar bens, escolher onde proteger o objetivo principal, melhorar defesas e preparar armadilhas.
+3. Começa a **Preparação**: por uma duração fixa configurada pela missão, os Players escolhem onde proteger o objetivo principal entre os cofres válidos. O tempo representa a espera pela chegada dos larápios.
 4. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal e possuem informações aproximadas sobre possíveis locais e pontos relevantes, mas não conhecem as decisões tomadas pelo jogador.
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
@@ -131,7 +130,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 | Etapa | Função |
 |---|---|
 | Apresentação do cenário | Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas. |
-| Preparação | Antes da invasão, o jogador recebe tempo limitado, orçamento e ferramentas próprias do cenário para decidir como proteger os bens e preparar a segurança. |
+| Preparação | Durante uma duração fixa da missão, os Players escolhem o cofre que protegerá o objetivo principal; o assalto começa quando o tempo acaba. |
 | Entrada dos larápios | Splash screen apresenta as gangues inimigas, representantes e indicação de dificuldade. |
 | Invasão por Spawn Points | Cada Spawn Point executa sua própria receita temporal, definindo quando, quantos e quais arquétipos de uma gangue entram no cenário. |
 | Assalto ativo | Usa um **Tempo de Assalto** configurado por partida. Captura, roubo, investigação e recuperação acontecem normalmente; a Janela de Invasão ocupa seu período inicial. |
@@ -139,35 +138,29 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 | Encerramento | Ao terminar o Tempo de Fuga, o gameplay é encerrado, os estados restantes são resolvidos e o jogo muda de atividade para a tela de resultados. |
 
 :::decision
-**Decisão recomendada:** tratar `Assalto` como a unidade principal de gameplay.
+**Decisão:** `Assalto` é a unidade principal de gameplay; `Missão` é o contrato escolhido no mapa.
 
-**Motivo:** o GDD original usa "assalto", "fase" e "missão" em contextos próximos. Para produção, `Assalto` deve representar o evento jogável completo, enquanto `Missão` pode representar o contrato escolhido no mapa.
-
-**Consequência:** documentação técnica, UI e narrativa devem padronizar esses termos.
+**Consequência:** documentação técnica, UI e narrativa usam os termos com esses significados.
 :::
 
 ## Preparação do assalto
 
 :::decision
-**Decisão:** a antiga exploração inicial evolui para uma **fase de Preparação** com duração limitada antes da invasão.
+**Decisão:** a Preparação tem duração fixa configurável por missão e termina quando o tempo acaba. Ela representa narrativamente o tempo até a chegada dos larápios. No gameplay normal, não há encerramento antecipado nem confirmação de `Pronto`; antecipar o fim é permitido apenas por ferramenta de debug.
 
-A Preparação é limitada por três fatores complementares:
+A ação central da Preparação inicial é escolher em qual cofre válido proteger o objetivo principal. No primeiro MVP há pelo menos dois cofres válidos, um deles selecionado como padrão. A escolha não tem custo; orçamento, investimentos e outras preparações ficam para etapas posteriores.
 
-- **Tempo:** o jogador não consegue executar todas as ações disponíveis e precisa priorizar.
-- **Orçamento:** melhorias e recursos de segurança competem por uma quantidade limitada de recursos financeiros.
-- **Ferramentas do cenário:** cada local oferece possibilidades próprias; o jogador não constrói livremente qualquer defesa.
+Em cooperativo, ambos os Players podem alterar a seleção. A última escolha válida prevalece e o estado selecionado é comunicado aos dois Players, sem revelar automaticamente a localização aos larápios. A missão pode definir alternativas adicionais no jogo completo, inclusive iniciar o objetivo em posse do Player.
 
-Durante a Preparação, o jogador pode, conforme a missão e os recursos disponíveis, reposicionar ou esconder bens valiosos, escolher onde proteger o objetivo principal, melhorar cofres e outras defesas e posicionar ou ativar armadilhas.
-
-O objetivo é permitir que o jogador altere o problema que os larápios encontrarão durante a invasão. As decisões de Preparação devem sustentar blefe, distribuição de risco, rotas de defesa e uso criativo do cenário sem transformar PEGA em um jogo de construção.
+A Preparação e as receitas dos Spawn Points são sistemas temporais distintos. O tempo das receitas começa no início do Assalto Ativo, não durante a Preparação.
 :::
 
 ### Objetivo principal e valores secundários
 
 :::decision
-**Decisão:** o assalto pode distinguir um **objetivo principal** de **valores secundários roubáveis**.
+**Decisão:** o assalto distingue um **objetivo principal** de **valores secundários roubáveis**.
 
-Os larápios sabem qual é o objetivo principal da vez, mas não conhecem automaticamente sua localização. Eles podem conhecer aproximadamente os possíveis pontos de proteção, como regiões ou cofres, e precisam investigar para reduzir a incerteza.
+Os larápios sabem qual é o objetivo principal da vez, mas não conhecem automaticamente sua localização. No primeiro MVP, o objetivo começa em um de pelo menos dois cofres válidos, nunca no inventário do Player; um cofre padrão válido já está selecionado ao iniciar a Preparação. Os larápios podem conhecer os cofres candidatos e precisam investigar para reduzir a incerteza. Missões futuras podem definir outras posições iniciais, inclusive a posse do Player.
 
 O jogador pode usar essa incerteza estrategicamente. O objetivo pode estar protegido em um cofre válido ou, quando a missão permitir, permanecer em posse do jogador. Cofres vazios, valores secundários e defesas preparadas podem funcionar como distração ou blefe.
 
@@ -177,9 +170,9 @@ Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apena
 ### Planejamento inimigo por GOAP
 
 :::decision
-**Decisão:** a IA dos larápios usa **GOAP — Goal-Oriented Action Planning** como arquitetura de planejamento desde a primeira implementação.
+**Decisão:** somente os larápios usam **GOAP — Goal-Oriented Action Planning**, desde o primeiro corte do MVP. Rick e Petra são controlados pelos Players; não recebem uma IA nem uma máquina de estados substituta do GOAP.
 
-O sistema segue um princípio de **modularidade por padrão, especificidade quando necessária**. Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
+O sistema segue um princípio de **modularidade por padrão, especificidade quando necessária**. Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. Planejamento e execução são fases separadas. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
 
 A composição de gameplay respeita a separação entre **Actor**, suas **mecânicas** e o **arquétipo**. O Actor é a entidade/ocorrência sobre a qual o gameplay opera; sua composição concreta determina quais mecânicas existem. O arquétipo não materializa, adiciona nem remove componentes ou mecânicas da ocorrência. Ele configura e especializa as possibilidades oferecidas pelas mecânicas já presentes, habilitando, restringindo ou modificando capacidades, Actions, Desejos, parâmetros e modificadores.
 
@@ -199,13 +192,13 @@ As responsabilidades são separadas:
 
 - **Desejo (Goal):** declara intenção, aplicabilidade e predicados de conclusão; não prescreve uma sequência fixa.
 - **Contexto de Desejos:** seleciona a configuração de Desejos disponível ao arquétipo em uma etapa macro do assalto.
-- **Conhecimento:** representa aquilo que o agente/gangue sabe; o planner nunca consulta estado real oculto para obter vantagem.
+- **Conhecimento:** representa fatos conhecidos no escopo Individual, Gangue ou Global; o planner nunca consulta estado real oculto para obter vantagem. Percepção individual não se torna automaticamente conhecimento compartilhado.
 - **Mecânicas do Actor:** são sistemas presentes na composição concreta da ocorrência — como movimento, percepção, interação, confronto ou decisão — e fornecem a infraestrutura pela qual o gameplay é executado; nem todo Actor precisa possuir todas as mecânicas.
 - **Arquétipo:** é a composição/configuração mecânica e decisória aplicada sobre essas mecânicas existentes; não é identidade, ocorrência, lifecycle nem autoridade de materialização do Actor.
 - **Capacidades:** especializam o repertório disponível ao agente, desbloqueando quais soluções/Actions suas mecânicas existentes conseguem executar e podendo modificar seus parâmetros.
 - **Actions:** transformam estados através de precondições e Effects e podem ser encadeadas para satisfazer qualquer Desejo compatível.
 - **Targets:** são resolvidos em runtime entre candidatos conhecidos e compatíveis; não são escolhidos por uma heurística separada do plano.
-- **Modificadores:** podem alterar valores resolvidos a partir de arquétipo, Action, alvo, estado, Contexto ou efeitos especiais. A ordem/operação matemática deve ser determinística e configurável na implementação.
+- **Modificadores:** alteram valores por estágios globais de resolução, a partir de arquétipo, Action, alvo, estado, Contexto ou efeitos especiais. A composição é determinística; modificadores da mesma categoria são independentes da ordem quando a operação permitir. A fórmula definitiva permanece configurável e não é fixada nesta versão.
 
 Métodos diferentes para obter o mesmo resultado são **Actions diferentes**. 'Usar Chave', 'Lockpick', 'Hackear' e 'Arrombar', por exemplo, podem produzir o mesmo estado 'Porta Aberta' com capacidades, precondições, duração, reserva e interrupções próprias. Adicionar uma nova Action pode criar novas soluções para Desejos existentes sem alterar esses Desejos.
 
@@ -215,6 +208,10 @@ Desejos e condições podem usar **predicados componíveis** (por exemplo AND, O
 
 O planner pode construir cadeias com quantas Actions forem necessárias ao design. Não existe limite fixo de tamanho de plano no GDD. A implementação pode usar um orçamento de busca configurável por performance e deve distinguir em debug **sem solução conhecida** de **busca esgotada antes de encontrar solução**.
 :::
+
+### Resolução de modificadores
+
+Valores sujeitos a modificadores passam por estágios globais de resolução, em ordem definida pelo contrato da propriedade. Dentro de uma mesma categoria, a composição deve ser independente da ordem quando matematicamente possível. A configuração identifica categoria, escopo e valor de cada modificador. Nenhuma fórmula global de empilhamento, limite ou precedência entre categorias é imposta nesta versão; esses parâmetros devem ser explícitos e determinísticos quando uma mecânica os exigir.
 
 ### Peso, oportunidade e custo dos planos
 
@@ -239,13 +236,14 @@ Necessidades intermediárias normalmente são Actions/estados dentro da cadeia, 
 ### Contrato de Actions
 
 :::decision
-**Decisão:** uma Action é uma unidade modular de solução. Conforme sua necessidade, pode declarar **precondições, Effects de conclusão, Target compatível, Duration, capacidades requeridas, reserva, condições de interrupção e modificadores**.
+**Decisão:** uma Action é uma unidade modular de solução. Conforme sua necessidade, declara **precondições, Effects de conclusão, Target compatível, Duration, capacidades requeridas, reserva, condições de interrupção e modificadores**. Planejamento seleciona a Action e seus Targets; execução é um lifecycle separado, com início, manutenção, conclusão ou término explícito.
 
 - Preconditions necessárias devem continuar válidas durante a execução. Se deixarem de ser válidas, a Action torna-se 'Invalid', é cancelada e perde o progresso.
 - Effects declarativos do GOAP são aplicados **somente na conclusão bem-sucedida**. Progresso parcial não produz o Effect final.
 - Comportamentos que realmente produzem efeitos durante execução devem declarar isso explicitamente, sem confundi-los com o Effect de conclusão usado pelo planner.
-- Uma Action determinística não possui falha aleatória genérica. Seus resultados básicos são **Success**, **Invalid** ou **Interrupted**. Probabilidade só existe quando configurada explicitamente por uma mecânica.
-- 'Success' aplica Effects; 'Invalid' indica que a realidade/precondições já não permitem a Action; 'Interrupted' indica que um evento configurado interrompeu uma Action válida.
+- Uma Action determinística não possui falha aleatória genérica. Seus resultados básicos são **Success**, **Invalid**, **Interrupted** ou **Cancelled**. Probabilidade só existe quando configurada explicitamente por uma mecânica.
+- `Success` aplica Effects; `Invalid` indica que realidade, precondições ou Target já não permitem a Action; `Interrupted` indica que um evento configurado interrompeu uma Action válida; `Cancelled` indica que o plano ou proprietário encerrou explicitamente a execução.
+- Invalidar, interromper ou cancelar encerra a execução e descarta seu progresso. Qualquer reserva adquirida pela Action é liberada em todo caminho de término. Efeitos durante execução só ocorrem quando declarados como tais; Effects de conclusão continuam exclusivos de `Success`.
 - Planejamento usa conhecimento; execução valida realidade. Um plano pode estar correto para o conhecimento do larápio e errado diante do mundo real. Ao descobrir a divergência, o conhecimento é atualizado e os sistemas afetados reavaliam.
 
 Effects devem ser modulares quando houver benefício de reutilização/composição, mas lógica específica é válida quando generalizá-la não traz vantagem. **Modularidade é ferramenta, não obrigação de transformar todo comportamento em um sistema genérico.**
@@ -309,13 +307,13 @@ O sistema deve permitir rastrear em debug a cadeia **evento → dado alterado �
 :::decision
 **Decisão:** reserva também segue o princípio modular. Uma Action pode declarar se necessita reserva e qual **recurso/chave lógica** precisa reservar; a reserva não é apenas um booleano associado à identidade da Action.
 
-Actions diferentes podem disputar o mesmo recurso. 'Lockpick Cofre' e 'Hackear Cofre', por exemplo, podem reservar o mesmo 'Cofre X'.
+Actions diferentes podem disputar o mesmo recurso quando suas execuções forem incompatíveis. 'Lockpick Cofre' e 'Hackear Cofre', por exemplo, podem declarar exclusividade sobre o mesmo 'Cofre X'. Operações compatíveis não adquirem reserva exclusiva automaticamente.
 
 A reserva é adquirida somente quando o larápio está em condição de **iniciar** a Action reservável, nunca apenas por ter escolhido um plano. Vários membros podem navegar para a mesma oportunidade; quem inicia primeiro adquire a reserva e a mudança de estado faz os demais reavaliarem.
 
-O escopo padrão atual é a **Gangue**. Gangues rivais mantêm reservas independentes e podem agir simultaneamente sobre o mesmo recurso. Se uma concluir primeiro e alterar o World State, a Action rival é invalidada quando suas precondições deixarem de valer.
+Uma reserva declara recurso, política de exclusividade e escopo; o padrão de escopo para coordenação entre larápios é a **Gangue**. A reserva pertence à instância da Action em execução e ao larápio que a iniciou. Gangues rivais mantêm reservas independentes e podem agir simultaneamente sobre o mesmo recurso. Se uma concluir primeiro e alterar o World State, a Action rival é invalidada quando suas precondições deixarem de valer.
 
-Ao abandonar, invalidar ou interromper a Action, a reserva é liberada. Progresso é individual, não é transferido e múltiplos larápios não somam progresso. A arquitetura pode aceitar outras políticas de reserva no futuro quando houver necessidade de design.
+Ao concluir, cancelar, invalidar ou interromper a Action, seu proprietário libera a reserva. Progresso é individual, não é transferido e múltiplos larápios não somam progresso. A arquitetura pode aceitar outras políticas de reserva quando houver necessidade de design.
 :::
 
 ### Áreas, POIs e investigação
@@ -343,24 +341,16 @@ Larópolis é uma cidade fictícia dominada por crimes cartunescos. O setor de s
 
 ### Larópolis
 
-Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecível. O tom é de desenho animado: gangues têm temas visuais fortes, comportamentos teatrais e métodos de roubo absurdos. A polícia oficial existe, mas aparece de forma limitada, principalmente para levar criminosos capturados à prisão da cidade.
+Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecível. O tom é de desenho animado: gangues têm temas visuais fortes, comportamentos teatrais e métodos de roubo absurdos. A polícia oficial/P.G.A. participa da narrativa e das transições, mas não atua como NPC policial durante os assaltos. A entrega na prisão é parte da resolução de gameplay do PEGA.
 
 ### HUB
 
-O HUB é a cidade de Larópolis representada como mapa de progressão. O GDD original indica pontos fixos distribuídos em uma lógica de avanço, com áreas mais avançadas escondidas por nuvens. O HUB deve permitir:
+O HUB organiza contratos e progressão na cidade de Larópolis. A Demo usa o escritório da PEGA como uma tela temática estática com hotspots para o mapa de missões e a carreira. A forma do HUB após a Demo permanece em aberto. O HUB deve permitir:
 
 - Selecionar fases liberadas.
 - Visualizar progressão.
 - Retornar ao menu inicial.
 - Esconder conteúdos futuros até o jogador cumprir requisitos.
-
-:::open-question
-**Pergunta:** o HUB será apenas uma tela de seleção de fases ou um espaço navegável?
-
-**Impacto:** essa decisão afeta escopo de arte, UI, câmera, save, tutorial e ritmo entre missões.
-
-**Recomendação inicial:** para MVP, usar HUB como mapa interativo simples, sem navegação livre.
-:::
 
 ## Personagens principais
 
@@ -373,15 +363,7 @@ Rick é um jovem aspirante à PGA Larópolis. Depois de ser reprovado, funda a P
 
 ### Petra Patrol
 
-Petra é parceira de Rick e cofundadora da PEGA. O GDD a apresenta como parte da dupla protagonista e jogável. A documentação futura deve detalhar se Petra tem atributos, animações ou habilidades distintas de Rick.
-
-:::open-question
-**Pergunta:** Rick e Petra terão diferenças mecânicas ou apenas diferenças cosméticas?
-
-**Opções:** personagens equivalentes para facilitar balanceamento; ou personagens com atributos próprios para reforçar cooperação.
-
-**Recomendação inicial:** começar com equivalência mecânica no MVP e reservar diferenças para evolução.
-:::
+Petra é parceira de Rick e cofundadora da PEGA. Ela é jogável e mecanicamente equivalente a Rick na Demo; sua identidade visual é própria. Diferenças mecânicas posteriores dependem de playtests e decisão futura.
 
 ### NPCs
 
@@ -389,7 +371,7 @@ Petra é parceira de Rick e cofundadora da PEGA. O GDD a apresenta como parte da
 |---|---|
 | Larapolitanos | NPCs civis ou figurantes que dão vida aos cenários. |
 | Larápios | Inimigos principais, organizados em gangues temáticas. |
-| Polícia oficial | Presença limitada, relacionada ao destino dos criminosos capturados. |
+| Polícia oficial / P.G.A. | Participação narrativa e nas transições; não é NPC durante os assaltos. |
 | Clientes | Donos ou responsáveis pelos locais protegidos, úteis para briefing narrativo. |
 
 ## Controles
@@ -401,16 +383,17 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 | Mover | Eixo esquerdo ou D-Pad | Movimento em todas as direções no solo. |
 | Esquivar | Botão a definir no mapeamento final | Deslocamento curto e rápido com breve janela de invulnerabilidade e cooldown. |
 | Saltar | Botão a definir no mapeamento final | Salto livre usado para mobilidade e para evitar ameaças explicitamente compatíveis com salto. |
-| Interagir / atacar / soltar | Botão leste (`B`) | Interage com inimigos, objetos ou executa ataque se não houver alvo interativo. |
+| Interagir / atacar | Botão contextual (`B`) | Interage com alvo válido ou ataca quando não houver alvo interativo. |
+| Soltar itens | Comando próprio a definir | Solta simultaneamente todos os itens carregados. |
 | Confirmar | Botão sul (`A`) | Confirmação em menus. |
 | Pausar | `Start` | Abre ou fecha menu de pausa. |
 
 ### Movimento
 
 :::decision
-**Decisão:** o jogador não possui estados separados de andar e correr. Seu movimento-base já representa a corrida de gameplay e possui velocidade constante, salvo modificadores externos como itens, power-ups ou efeitos.
+**Decisão:** o jogador não possui estados separados de andar e correr. Seu movimento-base já representa a corrida de gameplay e possui velocidade definida pela mecânica de movimento do Actor, com modificadores configurados quando aplicáveis.
 
-Larápios possuem pelo menos dois regimes de velocidade: **velocidade de movimentação**, usada durante navegação e investigação, e **velocidade de perseguição**, usada quando sua intenção exige perseguir um portador ou fugir com um objetivo. A seleção entre essas velocidades decorre do comportamento atual, não de um atributo genérico de Agilidade.
+Larápios possuem pelo menos dois regimes de velocidade: **velocidade de movimentação**, usada durante navegação e investigação, e **velocidade de perseguição**, usada quando sua intenção exige perseguir um portador ou fugir com um objetivo. Esses valores pertencem à mecânica de movimento do Actor e podem ser especializados pela configuração de arquétipo e por modificadores. Não existe atributo universal de Agilidade.
 :::
 
 ### Esquiva
@@ -442,28 +425,27 @@ O salto livre pode superar geometria e pequenas diferenças físicas compatívei
 A interação depende do objeto diretamente à frente do personagem e dentro de sua área de ação. Se houver mais de um objeto interativo, a prioridade vai para o objeto mais próximo, indicado visualmente por linha, contorno ou efeito.
 
 - Interagir com inimigo executa ação conforme tipo e estado do inimigo.
-- Interagir com objeto segurável pega, solta ou manipula o objeto.
-- Interagir com um armário compatível guarda nele o item carregado.
+- Interagir com objeto segurável pega ou manipula o objeto, respeitando a capacidade disponível.
+- Interagir com armazenamento compatível transfere itens conforme as regras de depósito.
 - Sem objeto válido, a interação vira ataque.
 - Se o personagem estiver carregando outro personagem, a interação solta o carregado.
 - Cada interação tem cadência base de `1` segundo.
 
-### Itens: segurar e soltar
+### Inventário, transferência e soltura de itens
 
 :::decision
 **Decisão:** itens de desejo **nunca são destruídos nem danificados**, em nenhum momento. Eles só mudam de posse ou de lugar: podem ser segurados, soltos, guardados, roubados e recuperados.
 
-- **Segurar:** pegar um item o coloca no **inventário** do personagem que o pegou.
-- **Soltar:** o personagem pode soltar um item do inventário no chão ou guardá-lo em um **armário** do cenário.
+- **Capacidade:** a capacidade é configurada pela mecânica de inventário do Actor e pode variar por tipo de Actor. Não há atributo universal obrigatório. Cada item ocupa uma unidade inteira.
+- **Segurar:** pegar um item o coloca no inventário se houver capacidade disponível.
+- **Soltura voluntária:** um comando próprio, separado de interagir/atacar, solta simultaneamente todos os itens do inventário no chão. Não há seleção individual nem arremesso.
+- **Depósito:** uma interação com armazenamento compatível transfere todos os itens elegíveis. Cofres e armários compartilham regras básicas de transferência, mas mantêm funções distintas. Armários não concedem bônus de proteção por padrão; o primeiro MVP pode implementar apenas cofres.
+- **Capacidade insuficiente no armazenamento:** o depósito é parcial e determinístico. Os itens elegíveis que couberem são transferidos; os excedentes permanecem no inventário. A ordem inicial usa a ordem estável do inventário e pode ser substituída após playtests.
 - **Ataque:** um ataque válido faz o personagem atingido derrubar **todos** os itens que carrega (ver seção "Posse, desejo e inversão da perseguição").
 
-O jogador pode pegar itens do chão e de armários, soltá-los no chão e guardá-los em armários. **Não existe mecânica de arremessar itens**: a única forma de se desfazer de um item é soltá-lo.
+O jogador pode pegar itens do chão e do armazenamento, soltá-los no chão e depositá-los. O armazém compatível define quais itens pode receber.
 
 **Motivo:** a única perda possível de um item é ele sair do cenário com um larápio que escapou. Isso mantém todo item sempre disputável e simplifica pontuação, feedback e comportamento da IA.
-:::
-
-:::open-question
-**Pergunta:** existe limite de itens no inventário?
 :::
 
 ### Restrições ao transportar larápios
@@ -471,7 +453,7 @@ O jogador pode pegar itens do chão e de armários, soltá-los no chão e guard�
 :::decision
 **Decisão:** transportar um larápio é uma dificuldade baseada em restrição de ações, não em redução de velocidade.
 
-Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal, mas **não pode atacar, interagir com objetos, esquivar ou saltar**. Ele pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
+Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal. Os itens que já estavam em seu inventário permanecem lá, mas sua manipulação fica bloqueada. O larápio transportado não ocupa capacidade de inventário. O Player **não pode atacar, saltar, esquivar ou usar interações comuns**; pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
 
 Essa restrição cria custo de oportunidade: durante o transporte, o jogador fica menos capaz de responder aos demais larápios, e no cooperativo o segundo jogador pode assumir proteção e interceptação.
 :::
@@ -529,23 +511,11 @@ O armazém é o cenário inicial mais detalhado no GDD. Ele funciona como centro
 | Cofre | Local para depositar itens recuperados. |
 | Prisão | Local para depositar inimigos capturados. |
 
-:::objective
-**Objetivo do MVP:** usar o armazém como primeiro cenário jogável completo.
-
-**Escopo mínimo:** uma gangue, itens de desejo, rotas de fuga, prisão, cofre, minimapa, uma sala de controle, armadilhas básicas e classificação ao final do assalto.
-
-**Motivo:** o armazém concentra as mecânicas fundamentais sem exigir variedade excessiva de biomas.
-:::
+O Armazém é o cenário inicial de referência. O recorte técnico e de conteúdo de cada entrega está definido em [MVP](MVP.md), sem tornar esta ficha uma afirmação de que o cenário já foi implementado.
 
 ### Catálogo de cenários
 
 O GDD original sugere múltiplos locais de Larópolis. Para organização de produção, cada cenário futuro deve ser documentado com a mesma estrutura: tema, itens de desejo, gangue dominante, armadilhas específicas, gimmick principal e requisito de desbloqueio.
-
-:::open-question
-**Pergunta:** quais cenários além do armazém estão confirmados para a primeira versão?
-
-**Recomendação:** definir uma lista curta para produção e manter os demais como backlog de expansão.
-:::
 
 ## Sistemas do jogador
 
@@ -565,7 +535,7 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 :::
 
 :::decision
-**Decisão:** movimento não depende de uma ficha universal de atributos. Velocidades, distância de esquiva, janela de invulnerabilidade, cooldown, parâmetros de salto e demais valores necessários são configurações diretas dos respectivos sistemas ou arquétipos.
+**Decisão:** movimento não depende de uma ficha universal de atributos. Velocidade pertence à mecânica de movimento do Actor e é especializada por arquétipos e modificadores. Distância de esquiva, janela de invulnerabilidade, cooldown, parâmetros de salto e demais valores necessários são configurações diretas das respectivas mecânicas.
 :::
 
 ### Estados gerais
@@ -589,7 +559,7 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 ## Inimigos e gangues
 
 > [!INFO]
-> As fichas visuais, conceitos extraídos do Word e observações de direção artística das gangues ficam no [Art Book](ArtBook.md#gangues-de-larópolis).
+> As fichas visuais, conceitos e observações de direção artística das gangues ficam no [Art Book](ArtBook.md#gangues-de-larópolis).
 
 ### Larápios
 
@@ -639,15 +609,15 @@ Larápios de gangues rivais **só entram em confronto entre si por causa do obje
 ### Percepção determinística
 
 :::decision
-**Decisão:** percepção básica é determinística e dividida em **Área Percebida** e **Área de Visão**.
+**Decisão:** percepção básica é determinística e dividida em uma **Área Percebida radial** e um **cone frontal de Visão**, ambos com parâmetros configuráveis e bloqueados por obstáculos configurados.
 
-- **Área Percebida:** permite saber que um ator ou elemento relevante está presente ao redor do larápio, inclusive fora de sua visão frontal. Essa consciência não equivale a confirmação visual e não determina automaticamente a reação.
-- **Área de Visão:** fornece confirmação visual direta e permite respostas mais imediatas.
+- **Área Percebida:** permite detectar a presença de um ator ou elemento relevante no raio configurado ao redor do larápio, inclusive fora de sua visão frontal. Essa consciência não equivale a confirmação visual e não determina automaticamente a reação.
+- **Cone de Visão:** fornece confirmação visual direta dentro de seu alcance e ângulo configurados e permite respostas mais imediatas.
 - **Obstrução:** paredes e outros obstáculos configurados para bloquear percepção impedem essa consciência através deles.
 
 A IA não utiliza rolagem de audição, medidor de ruído, porcentagem de detecção, barra genérica de suspeita ou atributo universal de Presença para perceber atores próximos. A Área Percebida substitui a necessidade de simular audição convencional.
 
-Power-ups e itens exclusivos do jogador são irrelevantes para os larápios e são ignorados por sua tomada de decisão.
+Power-ups e itens exclusivos do jogador são irrelevantes para os larápios e são ignorados por sua tomada de decisão. Um fato percebido individualmente só se propaga quando sua política de Knowledge Data autorizar o escopo Gangue ou Global.
 
 Perceber uma interação não significa conseguir executá-la. Portas, fechaduras, cofres e terminais podem ser conhecidos, mas só produzem Actions utilizáveis quando o arquétipo possui uma capacidade compatível.
 :::
@@ -673,7 +643,7 @@ A cadeia é:
 
 **Fonte → informação/fato → política de resolução → Knowledge State atual → consumidores (GOAP, Actions, Desires, UI/debug ou outros sistemas)**
 
-Fontes podem incluir percepção, visão, investigação, resultado de Action, compartilhamento da Gangue e Eventos Globais. Produção da informação e consequências dessa informação permanecem desacopladas.
+Fontes podem incluir percepção, visão, investigação, resultado de Action, compartilhamento autorizado da Gangue e Eventos Globais. Cada Knowledge Data define escopo, validade, atualização, invalidação, conflito e propagação. Percepção individual não se torna automaticamente conhecimento compartilhado. Produção da informação e consequências dessa informação permanecem desacopladas.
 
 O sistema distingue:
 
@@ -707,13 +677,13 @@ Ele segue até essa posição enquanto tenta readquirir o alvo pela percepção 
 :::decision
 **Decisão:** **Gangue** é a unidade de cooperação e conhecimento. Não existe uma entidade separada de grupo de entrada.
 
-Cada Knowledge Data possui escopo/política de propagação configurável. Para fatos de escopo **Gangue**, a propagação padrão atual é imediata, sem simulação de rádio, distância ou atraso. Um larápio criado posteriormente recebe imediatamente o conhecimento compartilhado vigente.
+Cada Knowledge Data possui política de escopo e propagação configurável. Fatos de escopo **Individual** não se propagam; dados de escopo **Gangue** seguem a política configurada, que pode ser imediata; fatos **Globais** são distribuídos às gangues explicitamente definidas. Um larápio criado posteriormente recebe somente os fatos que sua política de escopo lhe disponibilizar.
 
 | Escopo | Regra |
 |---|---|
-| Individual / transitório | Informação mantida apenas pelo agente conforme a política daquele dado. |
-| Gangue | Fatos compartilháveis propagados imediatamente entre membros da mesma gangue. |
-| Global | Fatos críticos explicitamente distribuídos a todas as gangues, como os Eventos Globais definidos pelo assalto. |
+| Individual | Informação mantida pelo agente conforme a política daquele dado; percepção individual permanece aqui salvo propagação explícita. |
+| Gangue | Fatos propagados aos membros da mesma gangue conforme a política configurada para aquele dado. |
+| Global | Fatos explicitamente distribuídos às gangues definidas, incluindo os Eventos Globais do assalto. |
 
 Gangues diferentes mantêm Knowledge State e reservas independentes salvo dados explicitamente globais. Compartilhar informação não significa compartilhar Desejos nem produzir a mesma reação. Informação global dinâmica também pode posteriormente ser atualizada conforme sua política de validade.
 :::
@@ -797,7 +767,7 @@ O princípio permanece: **consegue ou não consegue; se consegue, existe um cust
 ### Habilidades especiais
 
 :::decision
-**Decisão:** habilidades especiais não dependem de um recurso universal `Especial SP`. Cada especial pertence ao arquétipo e é acionado por condições explícitas de gameplay.
+**Decisão:** habilidades especiais não dependem de um recurso universal `Especial SP`. Cada habilidade pertence ao repertório reutilizável do jogo; sua disponibilidade e exclusividade decorrem da configuração de arquétipos. Não há uma arquitetura paralela obrigatória para Boss Skills. A habilidade é acionada por condições explícitas de gameplay.
 
 O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo de execução e cooldown são adicionados apenas quando necessários para a habilidade específica. As condições concretas de cada especial ainda precisam ser revisadas para garantir que a habilidade crie ou altere uma situação de perseguição.
 :::
@@ -896,13 +866,9 @@ Power-ups são modificadores temporários que alteram propriedades de gameplay o
 - A coleta não deve interromper o fluxo de perseguição.
 - O efeito deve criar uma vantagem legível de perseguição, como mobilidade, aumento temporário de Capacidade de ataque ou redução/contorno de Resistência.
 
-:::open-question
-**Pergunta:** quais power-ups existem na primeira versão?
-
-**Recomendação:** começar com poucos efeitos diretamente ligados à perseguição: velocidade/mobilidade e vantagem temporária de Capacidade de ataque. Efeitos sobre Resistência podem ser introduzidos por armadilhas e interações do cenário.
-:::
-
 ## Modos de jogo e progressão
+
+O modo principal pode ser jogado por um ou dois Players em cooperativo local com tela dividida. Multiplayer online não está planejado para PEGA.
 
 ### Campanha
 
@@ -935,10 +901,16 @@ Cada cenário possui três níveis de dificuldade. O layout permanece reconhecí
 | Tempo | Mede velocidade e eficiência do assalto. |
 
 :::decision
-**Decisão recomendada:** no MVP, calcular classificação com poucos critérios e pesos claros.
+**Decisão:** critérios e pesos são configuráveis por missão; nenhum critério domina universalmente. A missão comunica ao jogador os critérios relevantes. Tempo faz parte do modelo completo, mas pode ficar fora do primeiro recorte do MVP.
 
-**Motivo:** a classificação precisa ser previsível para o jogador entender como melhorar.
+Métricas temporais derivam de eventos relevantes de gameplay e dos intervalos entre eles; seus pesos são configurados por missão. A fórmula exata de cada missão é conteúdo de balanceamento, não uma regra global do GDD.
 :::
+
+### Estado final dos itens e bônus de proteção
+
+No fim do Tempo de Fuga, itens que ainda estão no cenário são **Recuperados**, inclusive os carregados por larápios que não escaparam. Itens que cruzaram uma saída válida com um larápio que escapou são **Roubados**. Itens depositados em cofres válidos podem receber bônus de proteção configurado pela missão; armários não concedem esse bônus por padrão.
+
+O bônus é calculado uma única vez a partir do estado final de cada item ao encerrar o assalto. Transferências ou depósitos repetidos não acumulam bônus. Item retirado do cofre ou roubado não recebe bônus de proteção.
 
 ## Interface e HUD
 
@@ -983,50 +955,35 @@ O minimapa segue padrão quadriculado, com a posição atual do jogador no centr
 #### Menu de pausa
 
 - Continuar.
-- Salvar.
-- Carregar.
 - Opções.
-- Retornar à tela inicial.
+- Sair do assalto conforme o fluxo de confirmação definido pela UI.
 
-:::open-question
-**Pergunta:** haverá salvamento durante a missão ou apenas entre missões?
+### Carreira e persistência
 
-**Recomendação:** para MVP, salvar apenas fora do assalto para reduzir complexidade e evitar problemas de estado.
-:::
+A carreira é persistida entre assaltos; não há salvamento nem retomada de um assalto em andamento. Ao concluir um assalto, os créditos concedidos pela classificação menos o custo operacional formam o saldo líquido do turno, que é somado ao saldo acumulado da carreira. Se o saldo acumulado ficar abaixo do limite de bancarrota, a carreira termina; reiniciar a carreira começa com saldo zero. Um único assalto de resultado ruim não encerra o jogo por si só.
 
-## Escopo recomendado de MVP
+**Economia provisória para playtest:** custo operacional fixo de 150 créditos por assalto. Há bancarrota quando o saldo acumulado fica estritamente abaixo de -1000 créditos; saldo exatamente igual a -1000 não encerra a carreira. Ambos os valores são configuráveis por balanceamento.
 
-O GDD original descreve um projeto amplo, com várias gangues, habilidades, cenários, modos e sistemas. Para validar a experiência central, o MVP deve reduzir escopo e provar primeiro o loop de perseguição.
+A ideia de empréstimos como opção de continue após bancarrota apareceu em material anterior, mas não foi aprovada nem faz parte do escopo atual. Sua eventual inclusão no jogo completo permanece sem decisão.
 
-| Área | MVP recomendado |
-|---|---|
-| Personagens | Rick e Petra jogáveis, sem diferenças mecânicas obrigatórias. |
-| Modo | Campanha ou missão única estruturada. |
-| Cenário | Armazém completo. |
-| Inimigos | Uma gangue inicial com três ou quatro arquétipos. |
-| Objetivos | Proteger itens, recuperar roubos e capturar inimigos. |
-| IA | GOAP com Desejos por arquétipo, conhecimento incompleto, percepção determinística, investigação de Áreas/POIs, capacidades, reservas por gangue e replanejamento por eventos. |
-| Sistemas | Movimento-base, esquiva, salto, interação, carregar/soltar, prisão, cofres e Preparação. |
-| Interface | HUD, minimapa, tempo e resultado. |
-| Progressão | Classificação simples ao fim do assalto. |
-| Multiplayer | Tela dividida local, se tecnicamente viável no primeiro protótipo. |
+## Encerramento do assalto
 
 :::decision
-**Decisão:** a partida possui dois tempos de gameplay configurados separadamente: **Tempo de Assalto** e **Tempo de Fuga**.
+**Decisão:** cada missão configura separadamente o **Tempo de Assalto** e o **Tempo de Fuga**.
 
 O Tempo de Assalto cobre a atividade normal; a Janela de Invasão ocupa seu período inicial. Ao terminar, o contexto global muda para **Fuga Final** e começa o Tempo de Fuga. Para apresentação, a UI pode exibir os dois valores como um único tempo total contínuo, mas internamente o Game State muda entre as etapas.
 
 Durante o Tempo de Assalto, um larápio também pode fugir antecipadamente quando seus Desejos e prioridades levarem a **Escapar**; carregar loot não é uma precondição universal. Na Fuga Final, todos passam para o contexto correspondente, mas continuam usando GOAP para resolver portas, rotas, itens perdidos, interferência do jogador e outros estados.
 
-Quando o **Tempo de Fuga termina**, o gameplay acaba imediatamente e a atividade muda para a tela de resultados. Cada larápio recebe uma resolução final:
+Quando o **Tempo de Fuga termina**, o gameplay acaba imediatamente e o jogo passa aos resultados; não há Game Over imediato por desempenho ruim em um único assalto. Cada larápio recebe uma resolução final:
 
 - **Capturado:** captura efetivamente concluída pelo jogador durante o gameplay.
 - **Escapou:** atravessou uma saída válida antes do fim do Tempo de Fuga.
 - **Não escapou:** ainda permanecia no assalto quando o Tempo de Fuga terminou; não conta automaticamente como captura efetiva.
 
-Um item só é considerado **Roubado** quando atravessa uma saída válida com um larápio que escapou. Itens nunca são destruídos, então essa é a única forma de um item ser perdido; os itens roubados entram no cálculo do resultado. Itens ainda presentes no cenário ao fim do Tempo de Fuga, inclusive carregados por larápios que não escaparam, são considerados **Recuperados**.
+Um item só é considerado **Roubado** quando atravessa uma saída válida com um larápio que escapou. Itens nunca são destruídos, então essa é a única forma de um item ser perdido. Itens ainda presentes no cenário ao fim do Tempo de Fuga, inclusive os carregados por larápios que não escaparam, são considerados **Recuperados**.
 
-A tela de resultados pode considerar itens recuperados/não roubados, tempo e quantidade/tipos de larápios efetivamente capturados. Fórmula e pesos de classificação permanecem para definição específica posterior.
+A classificação avalia captura, recuperação/proteção de itens e métricas temporais segundo os critérios e pesos configurados pela missão. Só detenções concluídas contam como Capturado; remanescentes recebem Não escapou. A carreira recebe o resultado após a conclusão do assalto.
 :::
 
 :::risk
@@ -1037,39 +994,22 @@ A tela de resultados pode considerar itens recuperados/não roubados, tempo e qu
 **Mitigação:** validar primeiro uma fase vertical slice com armazém, uma gangue e classificação.
 :::
 
-## Perguntas abertas
+## Questões abertas
 
-:::decision
-**Decisão:** incapacitar e capturar são etapas diferentes da resolução de um larápio.
-
-O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar → deter**.
-
-- **Incapacitar:** impede temporariamente o larápio de continuar roubando, fugindo ou executando outras ações. A incapacitação inicia um temporizador de recuperação definido por arquétipo.
-- **Recuperação:** se o larápio não entrar em custódia antes do fim do temporizador, ele recupera a capacidade de agir e retorna ao comportamento ativo apropriado.
-- **Transportar:** ao recolher um larápio incapacitado, o jogador assume sua custódia e deve levá-lo até a sala de detenção. Estar em transporte ainda não significa que a captura foi concluída.
-- **Deter/Capturar:** a captura só é concluída quando o larápio é entregue à sala de detenção. Nesse momento ele deixa definitivamente o assalto.
-
-**Consequência de gameplay:** incapacitar um larápio cria uma janela limitada para concluir a captura. Transportá-lo até a detenção consome tempo e atenção enquanto os demais larápios continuam suas atividades, criando custo de oportunidade e pressão de perseguição.
-
-**Referência de balanceamento do MVP:** os tempos de recuperação são definidos por arquétipo; os valores atuais dos Trapalhões do Crime ficam aproximadamente entre 4,0 s e 4,6 s e devem permanecer configuráveis para balanceamento.
+:::open-question
+**Questão de escopo:** o HUB da Demo é o escritório estático com hotspots descrito no MVP. A forma do HUB após a Demo ainda não foi definida.
 :::
 
 :::open-question
-**Pergunta:** como funciona derrota total em uma missão?
-
-**Observação:** o fim do cronômetro já foi definido como início da Fuga Final, portanto não constitui derrota automática. Ainda é necessário decidir se existe derrota total ou se todo assalto termina em classificação conforme o resultado.
+**Questão de conteúdo:** Rick e Petra são mecanicamente equivalentes na Demo. Diferenças mecânicas após a Demo dependem de playtests e decisão futura.
 :::
 
 :::open-question
-**Pergunta:** a polícia oficial aparece visualmente durante o gameplay ou apenas em transições?
-
-**Impacto:** afeta narrativa, animação, final de missão e tom.
+**Questão de produção:** quais cenários além do Armazém entram em entregas posteriores? O Armazém é o primeiro cenário de referência.
 :::
 
 :::open-question
-**Pergunta:** quais habilidades são exclusivas de chefes e quais podem aparecer em inimigos comuns?
-
-**Impacto:** afeta balanceamento e clareza da progressão.
+**Questão de conteúdo:** quais power-ups, se houver, serão incluídos depois do primeiro MVP? Efeitos e configurações devem servir à perseguição e dependem de playtests.
 :::
 
 ## Glossário
@@ -1082,7 +1022,7 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Larápios | Criminosos/inimigos do jogo. |
 | Assalto | Unidade principal de gameplay dentro de uma fase ou missão. |
 | Item de desejo | Item valioso que inimigos querem roubar. |
-| Inventário | Itens que um personagem está segurando. Um ataque válido faz o personagem derrubar todo o inventário. |
+| Inventário | Itens que um personagem está segurando. Capacidade é configurada pela mecânica do Actor; cada item ocupa uma unidade inteira. Um ataque válido faz o personagem derrubar todo o inventário. |
 | Armário | Ponto do cenário onde o personagem pode guardar e pegar itens; não é um cofre. |
 | Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
@@ -1114,30 +1054,20 @@ O fluxo de captura é: **perseguir → alcançar → incapacitar → transportar
 | Habilidade especial | Comportamento próprio de um arquétipo acionado por condições explícitas; não depende de uma barra universal de SP. |
 | Incapacitado | Estado temporário em que o larápio não pode agir e pode ser colocado sob custódia antes de se recuperar. |
 | Em transporte | Estado de um larápio incapacitado sob custódia de um jogador a caminho da sala de detenção. |
-| Detido / Capturado | Resolução final em que o larápio foi entregue à sala de detenção e deixa o assalto. |
+| Detido / Capturado | Resolução final em que o larápio foi entregue à sala de detenção. Incapacitação e transporte são estados intermediários, não capturas concluídas. |
+| Cancelled | Resultado explícito de Action cuja execução foi encerrada pelo plano ou proprietário; progresso é descartado e reservas são liberadas. |
 
 ## Documentos relacionados
 
 | Documento | Uso |
 |---|---|
-| `Exemplos/GDD PEGA.docx` | Fonte principal do conteúdo. |
-| [Art Book](ArtBook.md) | Documentação visual de personagens, gangues, conceitos, modelos e cenários. |
-| `skills/immersive-documentation-framework/SKILL.md` | Especificação operacional da documentação. |
-| `skills/immersive-documentation-framework/guidelines/ComponentLibrary.md` | Componentes usados neste Markdown. |
-| `skills/immersive-documentation-framework/guidelines/ContentSystem.md` | Organização editorial e hierarquia de conteúdo. |
-| `skills/immersive-documentation-framework/guidelines/Terminology.md` | Diretrizes de termos e consistência. |
-| `skills/immersive-documentation-framework/guidelines/DocumentationStandards.md` | Padrões gerais de documentação. |
+| [MVP](MVP.md) | Recorta as regras deste GDD no primeiro vertical slice e na Demo completa. |
+| [TASKS](TASKS.md) | Tarefas executáveis derivadas do escopo do MVP. |
+| [Art Book](ArtBook.md) | Direção visual e referências de personagens, gangues e cenários. |
+| [Tabela de Atributos e Habilidades.xlsx](Tabela%20de%20Atributos%20e%20Habilidades.xlsx) | Referência auxiliar histórica para ideias de distribuição de habilidades por gangue e valores preliminares de classificação/créditos. Agilidade, HP/dano, Defesa, Vigor, fórmulas e valores da planilha não são contratos atuais nem dados validados. |
 
 ## Histórico de revisão
 
 | Versão | Data | Alteração |
 |---|---|---|
-| 0.7.1 | 2026-10-01 | Fechada a pergunta sobre destruição de itens: itens de desejo nunca são destruídos nem danificados. Documentados inventário e soltar itens no chão ou em armários (não há arremesso; armários são diferentes de cofres); ataque derruba todos os itens carregados. |
-| 0.7.0 | 2026-09-30 | Definida a fronteira entre Actor, mecânicas do Actor e arquétipo: arquétipos configuram capacidades, Actions, Desejos e modificadores sobre mecânicas já existentes, sem definir identidade, ocorrência ou lifecycle do Actor. |
-| 0.6.0 | 2026-09-30 | Consolidado contrato modular do GOAP: Actions/Targets/Capabilities, custo temporal e oportunidade, predicados, Knowledge State modular, contingência, reservas, resultados de Action e replanejamento totalmente orientado a eventos; removidas regras antigas conflitantes da Fuga Final. |
-| 0.5.0 | 2026-09-30 | Consolidados Contextos de Desejos, pesos e custos do GOAP, satisfação individual, replanejamento de Actions, investigação como Desejo, tempos separados de Assalto/Fuga, resoluções finais e timestamps absolutos/agrupamento de entradas dos Spawn Points. |
-| 0.4.0 | 2026-09-28 | Consolidada a arquitetura GOAP, percepção determinística, investigação por Áreas/POIs, memória, armadilhas, reservas e conhecimento por gangue, reação ao objetivo principal, Fuga Final, saídas e autoria de invasão por Spawn Points/receitas. |
-| 0.3.1 | 2026-09-25 | Consolidada a Preparação do assalto, movimento, esquiva, salto, transporte, conhecimento dos larápios, informação por grupo/global e descoberta progressiva do objetivo principal. |
-| 0.3.0 | 2026-09-25 | Consolidado o princípio PERSEGUIR e simplificados confronto, captura, IA, capacidades de interação e habilidades especiais; removida a dependência conceitual de ficha universal de atributos. |
-| 0.2.1 | 2026-07-08 | Adicionados links contextuais para o Art Book nas seções de personagens, inimigos e cenários. |
-| 0.2.0 | 2026-07-08 | Recriação em Markdown a partir do GDD Word, com organização ampliada, componentes do framework e foco em GDD melhorado. |
+| 0.8.0 | 2026-10-10 | Consolidada a fonte normativa; incorporados os contratos aprovados de GOAP, Actor, preparação, inventário, captura, classificação, carreira e encerramento. Removidas referências a fontes e perguntas resolvidas. |
