@@ -35,9 +35,9 @@ ready and gameplay input is available. No parallel device polling or action map
 ownership is introduced. WASD and the action's other existing bindings move on
 world X/Z; diagonal input is normalized; speed defaults to 4 units per second.
 
-## SampleScene: Scene-Provided
+## FrameworkValidationScene: Scene-Provided
 
-`Assets/Scenes/SampleScene.unity` keeps the original Scene-Provided authoring,
+`Assets/FrameworkValidation/Scenes/FrameworkValidationScene.unity` keeps the original Scene-Provided authoring,
 Local Player Host, co-located `PlayerInput`, Input Gate, P1 Slot Profile,
 `ActorProfile` and Activity/camera configuration. Its one Actor is a connected
 instance of this prefab under the Host's explicit `ActorMount`. The Host's
@@ -51,7 +51,7 @@ assignment/output identities and the pre-conversion Actor/Subject object IDs.
 ## Editor authoring tool
 
 `Editor/PlayerActorPlaceholderAuthoringMenu.cs` provides
-**PEGA > Player Placeholder > Build or Validate SampleScene Actor**. It is a
+**Immersive > Framework Validation > Player Placeholder > Build or Validate Actor**. It is a
 project-specific rebuild/validation tool, not runtime infrastructure. It checks
 the active scene and existing contracts, verifies the P1 camera assignment and
 Output references, and asks before first authoring. It uses Unity Prefab/Scene

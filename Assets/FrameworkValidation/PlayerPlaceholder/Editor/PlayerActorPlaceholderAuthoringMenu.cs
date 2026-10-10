@@ -17,18 +17,18 @@ using UnityEngine.SceneManagement;
 
 internal static class PlayerActorPlaceholderAuthoringMenu
 {
-    private const string ScenePath = "Assets/Scenes/SampleScene.unity";
-    private const string RootPath = "Assets/_Project/Prototyping/PlayerPlaceholder";
+    private const string ScenePath = "Assets/FrameworkValidation/Scenes/FrameworkValidationScene.unity";
+    private const string RootPath = "Assets/FrameworkValidation/PlayerPlaceholder";
     private const string PrefabPath = RootPath + "/PlayerActorPlaceholder.prefab";
     private const string MaterialPath = RootPath + "/PlayerVisualPlaceholder.mat";
     private const string MoveReferencePath = RootPath + "/PlayerMoveActionReference.asset";
     private const string RecordPath = RootPath + "/OriginalComposition.json";
     private const string ActionsPath = "Assets/InputSystem_Actions.inputactions";
-    private const string CameraAssignmentPath = "Assets/_Project/Cameras/SessionCameraAssignment_PlayerP1.asset";
-    private const string CameraOutputPath = "Assets/_Project/Cameras/CameraDefault/CameraOutputMain.asset";
-    private const string CameraOutputPrefabPath = "Assets/_Project/Cameras/CameraDefault/CameraOutput_Main.prefab";
+    private const string CameraAssignmentPath = "Assets/FrameworkValidation/Cameras/SessionCameraAssignment_PlayerP1.asset";
+    private const string CameraOutputPath = "Assets/FrameworkValidation/Cameras/CameraDefault/CameraOutputMain.asset";
+    private const string CameraOutputPrefabPath = "Assets/FrameworkValidation/Cameras/CameraDefault/CameraOutput_Main.prefab";
 
-    [MenuItem("PEGA/Player Placeholder/Build or Validate SampleScene Actor")]
+    [MenuItem("Immersive/Framework Validation/Player Placeholder/Build or Validate Actor")]
     private static void BuildOrValidate()
     {
         try
@@ -55,7 +55,7 @@ internal static class PlayerActorPlaceholderAuthoringMenu
                     $"[Player Placeholder] Existing prefab and Scene-Provided occurrence are valid. No changes made. Prefab='{PrefabPath}', ActorMount='{GlobalObjectId.GetGlobalObjectIdSlow(composition.Host.ActorMount)}'.");
                 EditorUtility.DisplayDialog(
                     "Player Placeholder",
-                    "The prefab and SampleScene Actor occurrence are already composed and valid. No changes were made.",
+                    "The prefab and FrameworkValidationScene Actor occurrence are already composed and valid. No changes were made.",
                     "OK");
                 return;
             }
@@ -87,7 +87,7 @@ internal static class PlayerActorPlaceholderAuthoringMenu
         if (authorings.Length != 1)
         {
             throw new InvalidOperationException(
-                $"Expected exactly one Scene-Provided authoring in the active SampleScene; found {authorings.Length}.");
+                $"Expected exactly one Scene-Provided authoring in the active FrameworkValidationScene; found {authorings.Length}.");
         }
 
         SceneProvidedLocalPlayerAuthoring authoring = authorings[0];
