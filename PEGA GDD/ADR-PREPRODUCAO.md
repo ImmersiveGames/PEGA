@@ -162,6 +162,61 @@ O cartão `[PLANO] Microciclo 01 — Linha de base de cronograma` no Trello (`ht
 
 Para acompanhamento operacional da simulação e de seus cartões derivados, a referência é o cartão de plano do Trello acima. Esta anotação preserva a linha de base como registro operacional, sem substituir nem sobrescrever o histórico de estimativas e decisões deste ADR.
 
+### Adendo v2 — fundação da aplicação antes do MC-01 (2026-10-10)
+
+Este adendo complementa PP-01 a PP-35 e preserva as estimativas e a linha de base anteriores. GDD e MVP continuam normativos; TASKS continua sendo a decomposição executável. A auditoria estática do consumidor confirmou que a aplicação ativa ainda aponta para os assets e cenas isolados em `Assets/FrameworkValidation`; a composição de produção PEGA precisa ser criada e validada antes da integração Player/Actor.
+
+**Decisões complementares de arquitetura e produção:**
+
+- O vertical slice inicia diretamente na **Mission Route**, sem menu inicial nem HUB.
+- Um GameApplication próprio do PEGA seleciona essa Route como Startup Route.
+- A Route contém duas Activities distintas: **Mission** e **Result**.
+- Preparação, Assalto e Fuga são fases/estados internos da Mission Activity, não Activities separadas.
+- **FOUND-01** é o pré-requisito técnico de composição e validação da aplicação antes do cartão #75; deriva da tarefa de fluxo já existente em TASKS e não cria requisito de gameplay adicional.
+- FrameworkValidation permanece isolado como ambiente técnico de validação. Nenhum asset ou cena dali se torna conteúdo de produção por simples troca de referência.
+- O cartão #75 passa a cobrir somente integração Player/Actor, Player Slot, ActorProfile, Scene-Provided, Input Gate e validação de lifecycle. Câmera definitiva e movimento permanecem nos cartões #29 e #34.
+- Retry/reset definitivo, menu, HUB, carreira e gameplay não pertencem ao FOUND-01.
+
+**Estimativas do plano v2 — hipótese, não esforço realizado:**
+
+| ID | Estimativa v2 | Nota |
+|---|---:|---|
+| FOUND-01 | **10 h** | Hipótese inicial dentro da faixa investigada de 8–12 h. |
+| MC-01 | **19 h** | #75 revisado para 4 h; #29, #34, #37 e #38 mantêm suas estimativas. FOUND-01 é pré-requisito separado e não integra este subtotal. |
+| MC-02 | **70 h** | Mantida. |
+| MC-03 | **35 h** | Mantida. |
+| MC-04 | **28 h** | Mantida. |
+| LD-01 | **23,5 h** | Mantida. |
+| **Total v2** | **185,5 h** | Acréscimo líquido de 9 h sobre a linha de base de 176,5 h; hipótese, sem medição. |
+
+A linha de base histórica permanece **176,5 h, 13/10/2026–04/12/2026**. O plano v2 estima 185,5 h e prevê término em **08/12/2026**, usando apenas como simulação Programação 20 h/semana (4 h/dia útil) e Arte/Level Design 10 h/semana (2 h/dia útil). Essas capacidades continuam hipotéticas; as datas não são compromisso nem registro de trabalho executado.
+
+**Cronograma simulado v2 dos 17 cartões executáveis:**
+
+| ID / cartão | Frente | Esforço | Início planejado | Término previsto |
+|---|---|---:|---|---|
+| FOUND-01 | Programação | 10 h | 13/10/2026 | 15/10/2026 |
+| #75 | Programação | 4 h | 15/10/2026 | 16/10/2026 |
+| #29 | Programação | 3 h | 16/10/2026 | 19/10/2026 |
+| #34 | Programação | 5 h | 19/10/2026 | 20/10/2026 |
+| #37 | Programação | 3 h | 20/10/2026 | 21/10/2026 |
+| #38 | Programação | 4 h | 21/10/2026 | 22/10/2026 |
+| #68 | Programação | 10 h | 22/10/2026 | 26/10/2026 |
+| #69 | Programação | 9 h | 26/10/2026 | 28/10/2026 |
+| #53 (LD-01) | Arte / Level Design | 23,5 h | 13/10/2026 | 28/10/2026 |
+| #63 | Programação | 9 h | 28/10/2026 | 02/11/2026 |
+| #64 | Programação | 7 h | 02/11/2026 | 03/11/2026 |
+| #76 | Programação | 20 h | 03/11/2026 | 10/11/2026 |
+| #70 | Programação | 8 h | 10/11/2026 | 12/11/2026 |
+| #72 | Programação | 5 h | 12/11/2026 | 16/11/2026 |
+| #66 | Programação | 2 h | 16/11/2026 | 16/11/2026 |
+| #40 | Programação | 35 h | 16/11/2026 | 27/11/2026 |
+| #77 | Programação | 28 h | 27/11/2026 | 08/12/2026 |
+
+O escalonamento respeita a capacidade simulada de uma frente de Programação a 4 h por dia útil, permite tarefas no mesmo dia quando resta capacidade, mantém LD-01 em paralelo e conserva as dependências MC-01 → MC-03 → MC-04 e MC-02 → MC-04 já registradas nos cartões. A sequência datada aloca #68 após #38 por capacidade, sem declarar dependência lógica nova entre eles. #70 está calendarizado após #76, mas sua descrição atual registra como dependências #69, #63 e LD-01; não se cria dependência lógica adicional. #40 permanece após #38; #77 após MC-01/02/03 e LD-01.
+
+As datas de início do Trello/GanttFlow não são gravadas por esta integração; o campo nativo disponível para gravação é o vencimento. A tabela é a previsão v2 registrada neste adendo e no cartão de plano. Isso, por si só, não significa que o GanttFlow esteja atualizado.
+
 ## 7. Política de evolução pós-Demo
 
 **Decisão:** desenvolvimento das capacidades de gameplay permanece inicialmente no PEGA. Somente após concluir a Demo avaliaremos, sem compromisso de extração, se alguma capacidade está suficientemente madura para:

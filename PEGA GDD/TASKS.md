@@ -10,7 +10,14 @@ Este backlog transforma o recorte de [MVP.md](MVP.md) em entregas verificáveis.
 ## Dependências técnicas e autoria no Immersive Framework
 
 - [ ] **VS** Auditar as superfícies públicas do `com.immersive.framework` já instalado (`1.1.0-preview.6`) que o slice realmente usará e registrar contratos, maturidade e limites aplicáveis antes da integração. **Aceite:** nenhuma capacidade já fornecida pelo pacote é reimplementada pelo PEGA e nenhuma superfície experimental é tratada como validada sem confirmação no Editor.
-- [ ] **VS** Configurar o fluxo mínimo de `GameApplication`, `Route` e `Activity` para iniciar a missão e alcançar o resultado, usando assets e APIs públicas existentes. **Aceite:** fluxo percorre Preparação, Assalto, Fuga e resultado sem criar um sistema PEGA paralelo de navegação.
+- [ ] **FOUND-01 · VS · pré-requisito do cartão [#75](https://trello.com/c/EfPEV4Ip/75-mc-01-integrar-player-actor-do-framework-na-miss%C3%A3o)** Compor a fundação da aplicação PEGA e validar a navegação até Result sem Player.
+  - **Aceite:** GameApplication próprio do PEGA referencia a Mission Route como Startup Route.
+  - **Aceite:** Mission Activity permite zero Players; Result é uma Activity distinta.
+  - **Aceite:** Persistent Content e perfis de conteúdo são próprios do PEGA; cenas de produção estão declaradas no Build Profile ativo.
+  - **Aceite:** inicialização e navegação funcionam sem depender de cenas, assets ou protótipos de FrameworkValidation.
+  - **Aceite:** diagnóstico temporário permite percorrer Preparação, Assalto e Fuga e solicitar Result. O diagnóstico demonstra somente composição e navegação, não gameplay funcional nem regras definitivas.
+  - **Aceite:** evidências no Unity Editor registram importação do pacote resolvido, validação da configuração/autoria e execução do fluxo Mission → Result.
+  - **Fora de escopo:** menu, HUB, carreira, retry/reset definitivo, gameplay funcional e integração Player/Actor.
 - [ ] **VS** Inspecionar maturidade e contratos das APIs públicas de Game Flow, Actor/Player, Pause, Camera e Progression Save antes de integrar cada superfície. **Aceite:** decisões de integração registram a API pública concreta, limites documentados e qualquer bloqueio experimental; nenhum recurso é marcado como validado sem confirmação de importação/execução no Editor.
 - [ ] **Demo** Configurar participação de dois Players locais e câmera/apresentação compatível com tela dividida usando a superfície pública disponível; desenhar solução explícita para limitações atuais de Pause/API single-player. **Aceite:** ambos entram, controlam Rick ou Petra, mantêm câmera/UX legíveis e pausa não produz estado inconsistente.
 - [ ] **Demo** Integrar Save de Progression para persistência entre assaltos após verificar o perfil exigido e o contrato do backend. **Aceite:** saldo e progressão sobrevivem a reinício do jogo; nenhum assalto em andamento é salvo ou retomado.
