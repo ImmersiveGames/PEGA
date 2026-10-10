@@ -43,7 +43,7 @@ Leia GDD, MVP, TASKS e ADR relevantes; inspecione código, package resolution e 
 
 ### Prepare Task
 
-Aceite URL ou ID estável do cartão. Leia cartão, lista/estado e checklists; siga referências até entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
+Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada cartão, consulte também a ferramenta especializada `trelloReadChecklist` (`list_by_card`), paginando até o fim. Não conclua que não há checklists a partir de `checklists: []` em `trelloReadCard/get`; só declare ausência após a consulta especializada retornar completa e vazia. Se a consulta especializada falhar ou não estiver disponível, marque checklists como não verificados. Siga as referências até entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
 
 1. cartão/URL, estado, responsável/estimativa/progresso se disponíveis e itens de checklist incompletos;
 2. entregável/TASKS/requisito/decisão e rastreabilidade ausente;

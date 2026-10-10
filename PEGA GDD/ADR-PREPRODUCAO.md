@@ -156,6 +156,12 @@ Estimativas **hipotéticas de esforço humano**, não compromissos, velocidade c
 
 Para cada entregável acompanhar, quando houver execução: estimativa inicial congelada, revisões datadas e motivadas, horas humanas efetivas por frente, esforço restante e desvio absoluto/percentual no encerramento. Tempo de revisão ou integração de resultados de IA conta como esforço humano; tempo de execução do agente não é uma terceira jornada fictícia. Não otimizar apenas horas: aceite funcional continua obrigatório.
 
+### Adendo de planejamento — linha de base simulada do Trello (2026-10-10)
+
+O cartão `[PLANO] Microciclo 01 — Linha de base de cronograma` no Trello (`https://trello.com/c/hO3uDL1F`) registra uma **simulação de planejamento** para o período de **13/10/2026 a 04/12/2026**, usando as premissas de **20 h/semana para Programação** e **10 h/semana para Arte/Level Design**. Essas capacidades são parâmetros da simulação, **não disponibilidade comprovada nem nova decisão de capacidade semanal**. A capacidade real continua a definir conforme PP-35 e as diretrizes complementares após PP-35; as estimativas da seção permanecem esforço hipotético, não compromisso de duração.
+
+Para acompanhamento operacional da simulação e de seus cartões derivados, a referência é o cartão de plano do Trello acima. Esta anotação preserva a linha de base como registro operacional, sem substituir nem sobrescrever o histórico de estimativas e decisões deste ADR.
+
 ## 7. Política de evolução pós-Demo
 
 **Decisão:** desenvolvimento das capacidades de gameplay permanece inicialmente no PEGA. Somente após concluir a Demo avaliaremos, sem compromisso de extração, se alguma capacidade está suficientemente madura para:
