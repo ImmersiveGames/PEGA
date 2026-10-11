@@ -174,7 +174,7 @@ Este adendo complementa PP-01 a PP-35 e preserva as estimativas e a linha de bas
 - Preparação, Assalto e Fuga são fases/estados internos da Mission Activity, não Activities separadas.
 - **FOUND-01** é o pré-requisito técnico de composição e validação da aplicação antes do cartão #75; deriva da tarefa de fluxo já existente em TASKS e não cria requisito de gameplay adicional.
 - FrameworkValidation permanece isolado como ambiente técnico de validação. Nenhum asset ou cena dali se torna conteúdo de produção por simples troca de referência.
-- O cartão #75 passa a cobrir somente integração Player/Actor, Player Slot, ActorProfile, Scene-Provided, Input Gate e validação de lifecycle. Câmera definitiva e movimento permanecem nos cartões #29 e #34.
+- O cartão #75 passa a cobrir somente integração Player/Actor Manager-Provisioned, Player Slot, ActorProfile com seleção padrão sem UI, Input Gate e validação de lifecycle. Câmera definitiva e movimento permanecem nos cartões #29 e #34. A composição Scene-Provided descrita no registro de protótipo permanece histórica e não define o fluxo de produção de #75.
 - Retry/reset definitivo, menu, HUB, carreira e gameplay não pertencem ao FOUND-01.
 
 **Estimativas do plano v2 — hipótese, não esforço realizado:**
@@ -257,3 +257,28 @@ Este adendo registra uma composição de consumidor observada no `com.immersive.
 **Estado após a revisão final (2026-10-10):** o Editor.log local registra importação do pacote resolvido, boot PEGA/Mission bem-sucedido, Camera Output inicializado, sequência diagnóstica Preparation → Assault → Escape, solicitação Mission → Result concluída com Result Ready e liberação do conteúdo anterior sem bloqueios. A execução dos Inspectors/validadores e a Scene List com as quatro cenas PEGA habilitadas foram confirmadas manualmente pelo usuário; essa evidência é informada, não uma captura anexada. A política UniqueAcrossJoinedSlots foi escolhida para o PEGA e o GameApplication passou a Valid; a política é compatível com o contrato instalado, sem ser regra geral para consumidores.
 
 **Estado da errata e do aceite:** a errata Camera Output do item 2 e seu comentário já foram aplicados ao cartão FOUND-01, preservando o histórico. A revisão final classificou os nove critérios como atendidos, com os limites de proveniência descritos no relatório de validação vinculado. FOUND-01 está tecnicamente aprovado; este adendo não altera nem conclui o estado operacional do cartão Trello.
+
+## 10. Lifecycle da missão e consolidação de resultados (2026-10-10)
+
+Este adendo consolida a auditoria estática de Route, Activity e preservação de estado registrada no [relatório de lifecycle](../../ImmersivePackages/docs/superpowers/reports/2026-10-10-pega-activity-lifecycle-audit.md). Os contratos de Framework abaixo são específicos ao `com.immersive.framework` `1.1.0-preview.6` efetivamente resolvido no PEGA (`Packages/manifest.json`, `packages-lock.json` e cache instalado). Não generalizar para outra versão sem verificar sua instalação. A auditoria não executou Unity ou testes.
+
+### Decisões de composição e ownership
+
+- **Manter uma única Mission Activity** para as fases internas Preparação, Assalto Ativo e Fuga Final, com a Result Activity separada dentro da Mission Route. Esta decisão, já estabelecida no adendo v2, é reafirmada com base na continuidade exigida pelo assalto: Actors, cenário, objetos, conhecimento, posse, relógios e GOAP pertencem à mesma ocorrência de gameplay no desenho do PEGA. As fases não devem provocar transições de Activity sem uma necessidade arquitetural concreta.
+- A escolha por uma Activity única é de adequação ao gameplay do PEGA; não é limitação do Framework. Activities independentes são tecnicamente viáveis, mas cada troca estabelece novo contexto Activity e traz fronteiras adicionais de lifecycle, admission, readiness e bindings. O modelo híbrido continua possível se uma etapa futura exigir contexto, apresentação ou lifecycle realmente independente.
+- A **Mission Route é a fronteira candidata de lifecycle** para o estado compartilhado de uma ocorrência da missão. O Framework controla o lifecycle da Route; o PEGA continua responsável por criar, manter consistente e encerrar o estado de gameplay. Route Content, serviços de escopo Route e dados associados à ocorrência são possibilidades a avaliar na implementação, não uma decisão fechada de ownership físico ou mecanismo. Route não gerencia nem preserva automaticamente o estado de gameplay.
+
+### Contratos do Framework comprovados na versão resolvida
+
+- `Seamless` seleciona a apresentação sem Transition Surface/Loading Surface; não garante retenção de cena, GameObject, componentes ou estado.
+- `KeepOnActivityChange` pode manter carregada uma cena declarada como Activity Content durante a troca interna. Isso preserva os objetos enquanto a cena ficar carregada, mas não transfere por si só ownership semântico nem estado lógico. O conteúdo de Route persiste nas trocas de Activities daquela Route.
+- Player Session e a ocorrência física admitida do Player podem continuar entre Activities enquanto a Session/ocorrência permanecer ativa, sem Leave ou substituição. Participação, admission, bindings, readiness e relocation continuam contextuais e podem ser reavaliados na Activity de destino.
+- A continuidade física do Player não comprova continuidade de NPCs, Actor lifecycle dos larápios ou GOAP. Esses contratos permanecem sob responsabilidade PEGA e não são inferidos da API de Player.
+
+Esses pontos descrevem o contrato e a implementação inspecionados no `.6`; não são evidência de validação Unity de três Activities no PEGA. A auditoria encontrou teste de sequência Exit/Enter e fontes de testes Player, mas nenhum teste executado que prove continuidade integrada de mundo, NPC ou GOAP entre Preparação, Assalto Ativo e Fuga Final.
+
+### Encerramento e Result Activity
+
+Ao terminar a Fuga Final, o PEGA deve resolver os estados finais de larápios e itens e **consolidar os dados necessários ao cálculo do resultado antes de liberar o conteúdo de gameplay requerido por esse cálculo**. A Result Activity consome dados já consolidados e não depende de Actors ou cenas de gameplay que possam ter sido descarregados na transição.
+
+Formato do resultado, owners concretos dos dados e mecanismo explícito de transferência para Result permanecem para a implementação do encerramento no VS-15. Este registro não escolhe uma solução técnica nem cria tarefa nova; mantém a cadeia do entregável VS-15 existente. A confirmação FOUND-01 de transição Mission → Result comprova somente o fluxo observado naquela composição, não este contrato de dados ou um encerramento de missão já implementado.

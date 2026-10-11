@@ -5,7 +5,7 @@ description: Audita, prepara, reconcilia e revisa trabalho de produção do PEGA
 
 # Governança de Produção do PEGA
 
-Use somente para pedidos de produção do PEGA. Escolha o fluxo pedido pelo usuário; não execute os quatro automaticamente. A instrução é o procedimento: use as ferramentas GitHub/Trello já conectadas pelo host e nunca crie cliente, serviço, credencial, MCP, banco, automação ou dependência.
+Use somente quando o artefato solicitado pertence à produção do PEGA; o workspace inicial PEGA não torna uma tarefa de QAFramework/Framework uma tarefa PEGA. Para rotear tarefas entre repositórios, siga `immersive-ecosystem`. Escolha o fluxo pedido pelo usuário; não execute os quatro automaticamente. A instrução é o procedimento: use as ferramentas GitHub/Trello já conectadas pelo host e nunca crie cliente, serviço, credencial, MCP, banco, automação ou dependência.
 
 ## Fontes, precedência e evidência
 
