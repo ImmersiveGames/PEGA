@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce6d27d442ac76449f283afbc33d04f, type: 3}
+  m_Name: PEGAApplication
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.GameApplicationAsset
+  applicationName: PEGA
+  startupRoute: {fileID: 11400000, guid: 9e000000000000000000000000000001, type: 2}
+  playerSessionEnabled: 0
+  defaultPlayerSessionProfile: {fileID: 0}
+  playerActorSelectionDuplicatePolicy: 20
+  progressionSaveEnabled: 0
+  defaultProgressionSaveProfile: {fileID: 0}
+  cameraSession:
+    outputPrefabs:
+    - {fileID: 6102830329239094849, guid: 0ca791f6adb34b5dae6abfd216ec7e64, type: 3}
+  startupCameraAssignments: []
+  persistentContent:
+    containerScene: {fileID: 102900000, guid: b0000000000000000000000000000004, type: 3}
+  validationMode: 1

@@ -236,3 +236,24 @@ GOAP, percepção/conhecimento e inventário/posse são **exemplos de candidatos
 5. Ao incorporar no repositório, conferir que IDs, links e termos são consistentes com GDD/MVP/TASKS; não alterar as fontes normativas por implicação silenciosa.
 
 **Estado de execução no momento deste ADR:** planejamento somente. Este documento não implica tarefas iniciadas, cenas criadas, testes de Unity executados, alterações de pacote nem cronograma aprovado.
+
+## 9. FOUND-01 — Camera Output técnico e validação Unity (2026-10-10)
+
+Este adendo registra uma composição de consumidor observada no `com.immersive.framework` resolvido em `1.1.0-preview.6`. Ele complementa o adendo v2 sem reescrever seu histórico de planejamento.
+
+**Decisão de composição PEGA:**
+
+- O `PEGAApplication` mantém Player Session e Progression Save desabilitados e configura um único Camera Output técnico com Unity Camera, Cinemachine Brain e Fallback Camera Rig, conforme o contrato instalado de `CameraSessionConfiguration`.
+- O Output é infraestrutura necessária ao bootstrap desta versão resolvida. Ele não configura Startup Camera Assignment, associação a Player, Actor, alvo ou câmera de gameplay.
+- A câmera top-down definitiva continua no cartão #29. FOUND-01 não antecipa movimento nem gameplay.
+- O diagnóstico de Preparação, Assalto e Fuga continua sendo somente observabilidade e navegação temporária. Alterar a fase pelo Inspector não prova regras, timer ou gameplay.
+
+**Base técnica observada:** `FrameworkBootValidator.Validate` chama `GameApplicationAsset.CameraSession.TryValidate` sem condicionar a validação à Player Session. `CameraSessionConfiguration.TryValidate` rejeita a lista vazia e valida cada Output quanto à definição explícita, Unity Camera, Cinemachine Brain e Fallback Camera Rig. As localizações e a versão estão registradas no [relatório de validação FOUND-01](../docs/superpowers/reports/2026-10-10-found-01-unity-validation.md). Esta evidência descreve o contrato da versão inspecionada; não prova que o Framework deva exigir esse Output em todas as aplicações ou versões.
+
+**Documentação do Framework a investigar:** o Getting Started descreve uma aplicação navegável sem Player e apresenta Camera entre as features adicionáveis depois do fluxo de navegação. O boot da versão resolvida, porém, valida `CameraSessionConfiguration` incondicionalmente, e essa configuração rejeita zero Outputs. Registrar a divergência como questão de documentação/contrato; não classificá-la como bug antes de o owner do Framework confirmar se Camera Session deve ser obrigatória ou opcional em aplicações sem Player.
+
+**Registro inicial de evidência:** a primeira revisão deste adendo recebeu o relato de bootstrap PEGA, Mission sem Player, Output técnico, diagnóstico no Inspector e transição para Result. Naquele momento, importação/versionamento, validadores e enumeração das fases ainda não estavam comprovados, e a errata Trello estava apenas proposta. Esse retrato é histórico e foi superado pela revisão final abaixo.
+
+**Estado após a revisão final (2026-10-10):** o Editor.log local registra importação do pacote resolvido, boot PEGA/Mission bem-sucedido, Camera Output inicializado, sequência diagnóstica Preparation → Assault → Escape, solicitação Mission → Result concluída com Result Ready e liberação do conteúdo anterior sem bloqueios. A execução dos Inspectors/validadores e a Scene List com as quatro cenas PEGA habilitadas foram confirmadas manualmente pelo usuário; essa evidência é informada, não uma captura anexada. A política UniqueAcrossJoinedSlots foi escolhida para o PEGA e o GameApplication passou a Valid; a política é compatível com o contrato instalado, sem ser regra geral para consumidores.
+
+**Estado da errata e do aceite:** a errata Camera Output do item 2 e seu comentário já foram aplicados ao cartão FOUND-01, preservando o histórico. A revisão final classificou os nove critérios como atendidos, com os limites de proveniência descritos no relatório de validação vinculado. FOUND-01 está tecnicamente aprovado; este adendo não altera nem conclui o estado operacional do cartão Trello.
