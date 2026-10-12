@@ -25,5 +25,7 @@ MonoBehaviour:
   startupCameraAssignments:
   - {fileID: 11400000, guid: 4c38c13bf7de42bd9f0a30cdbce833df, type: 2}
   persistentContent:
+    scenePath: Assets/FrameworkValidation/Scenes/FrameworkValidationPersistentScene.unity
+    sceneName: FrameworkValidationPersistentScene
     containerScene: {fileID: 102900000, guid: cc8ab7bf9a0ea5245846792185627a14, type: 3}
   validationMode: 1

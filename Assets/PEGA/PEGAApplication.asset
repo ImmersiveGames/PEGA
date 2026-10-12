@@ -24,5 +24,7 @@ MonoBehaviour:
     - {fileID: 6102830329239094849, guid: 0ca791f6adb34b5dae6abfd216ec7e64, type: 3}
   startupCameraAssignments: []
   persistentContent:
+    scenePath: Assets/PEGA/Scenes/PersistentContent.unity
+    sceneName: PersistentContent
     containerScene: {fileID: 102900000, guid: b0000000000000000000000000000004, type: 3}
   validationMode: 1
