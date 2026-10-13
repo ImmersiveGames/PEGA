@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47e212913a96b3b4eb09689019071140, type: 3}
+  m_Name: FA_Blink_Female_Security
+  m_EditorClassIdentifier: Assembly-CSharp::FaceAnimation
+  id: FA_Blink_Female_Security
+  playbackMode: 2
+  interval: 6
+  templateState: {fileID: 11400000, guid: 7ea5804574bcf8b42b916f7a8f66f397, type: 2}
+  spriteLibrary: {fileID: 11400000, guid: 8897e92c821a7284e89f0dfbe4a83171, type: 2}
+  tracks:
+  - trackId: eyes
+    enabled: 1
+    sourceMode: 0
+    stateFrames:
+    - frameId: eye.closed
+      duration: 0.1
+    - frameId: eye.opened
+      duration: 0.1
+    spriteFrames: []
