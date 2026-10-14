@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a238faaae41d5c4b8b152a7f4f7585a, type: 3}
+  m_Name: FS_Sneaking_Stripped_Robber
+  m_EditorClassIdentifier: Assembly-CSharp::FaceState
+  id: FS_Sneaking_Stripped_Robber
+  spriteLibrary: {fileID: 11400000, guid: f88f279e6b109ef488836f2d7830e337, type: 2}
+  trackStates:
+  - trackId: eyes
+    defaultFrameId: eye.opened
+    frames:
+    - frameId: eye.opened
+      spriteId: eyes.astonished
+    - frameId: eye.closed
+      spriteId: eyes.closed
+  - trackId: mouth
+    defaultFrameId: mouth.closed
+    frames:
+    - frameId: mouth.closed
+      spriteId: mouth.surprised
