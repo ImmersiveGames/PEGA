@@ -1,4 +1,4 @@
-"""Algoritmos do PEGA Voxel Tools.
+"""Algoritmos do Voxel Tool.
 
 Fluxo: malha vinda do MagicaVoxel -> células de voxel (uma por face unitária,
 com a cor amostrada) -> greedy meshing em quads -> UV por face no grid de

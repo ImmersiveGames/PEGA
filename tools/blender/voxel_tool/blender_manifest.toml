@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
-id = "pega_voxel_tools"
-version = "0.1.1"
-name = "PEGA Voxel Tools"
-tagline = "Malhas do MagicaVoxel no padrao dos personagens do PEGA"
+id = "voxel_tool"
+version = "0.2.0"
+name = "Voxel Tool"
+tagline = "Otimiza malhas do MagicaVoxel e gera UV e textura base"
 maintainer = "Immersive Games"
 type = "add-on"
 

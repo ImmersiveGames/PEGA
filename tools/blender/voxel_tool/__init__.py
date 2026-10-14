@@ -1,14 +1,14 @@
-"""PEGA Voxel Tools: malhas do MagicaVoxel no padrão dos personagens do PEGA.
+"""Voxel Tool (Immersive Games): malhas do MagicaVoxel prontas para pintar e exportar.
 
-Painel: View3D > Sidebar (N) > PEGA.
+Painel: View3D > Sidebar (N) > Voxel Tool.
 """
 
 bl_info = {
-    "name": "PEGA Voxel Tools",
+    "name": "Voxel Tool",
     "author": "Immersive Games",
-    "version": (0, 1, 1),
+    "version": (0, 2, 0),
     "blender": (4, 0, 0),
-    "location": "View3D > Sidebar > PEGA",
+    "location": "View3D > Sidebar > Voxel Tool",
     "description": "Otimiza malhas do MagicaVoxel, abre UV no grid de pixels e gera a textura base para pintura",
     "category": "Mesh",
 }
@@ -23,7 +23,7 @@ from mathutils import Matrix
 from . import core
 
 
-class PEGA_VoxelSettings(bpy.types.PropertyGroup):
+class VOXELTOOL_Settings(bpy.types.PropertyGroup):
     base_name: StringProperty(
         name="Nome",
         description="Prefixo dos objetos, material e texturas gerados (vazio = nome do objeto ativo)",
@@ -103,7 +103,7 @@ class PEGA_VoxelSettings(bpy.types.PropertyGroup):
 
 
 def _settings(context):
-    return context.scene.pega_voxel
+    return context.scene.voxel_tool
 
 
 def _texture_path(directory, name):
@@ -124,9 +124,9 @@ def _save_image(image, directory, report):
     image.save()
 
 
-class PEGA_OT_voxel_to_pega(bpy.types.Operator):
-    bl_idname = "pega.voxel_to_pega"
-    bl_label = "Converter para padrão PEGA"
+class VOXELTOOL_OT_convert(bpy.types.Operator):
+    bl_idname = "voxel_tool.convert"
+    bl_label = "Converter voxel"
     bl_description = ("Otimiza as malhas selecionadas (quads, faces fundidas), aplica escala/origem, "
                       "abre UV no grid de pixels e gera a textura base com as cores dos voxels")
     bl_options = {'REGISTER', 'UNDO'}
@@ -207,9 +207,9 @@ class PEGA_OT_voxel_to_pega(bpy.types.Operator):
         mat = core.make_material(base + "_Main_Mat", image)
 
         # Resultado numa collection própria, separada dos objetos importados.
-        out_col = bpy.data.collections.get(base + "_PEGA")
+        out_col = bpy.data.collections.get(base + "_Voxel")
         if out_col is None:
-            out_col = bpy.data.collections.new(base + "_PEGA")
+            out_col = bpy.data.collections.new(base + "_Voxel")
         if out_col.name not in context.scene.collection.children:
             context.scene.collection.children.link(out_col)
 
@@ -219,7 +219,7 @@ class PEGA_OT_voxel_to_pega(bpy.types.Operator):
         for obj, rects in per_object:
             pos = positions[k:k + len(rects)]
             k += len(rects)
-            name = obj.name + "_PEGA"
+            name = obj.name + "_Voxel"
             old = bpy.data.objects.get(name)
             if old is not None:
                 old_mesh = old.data
@@ -246,8 +246,8 @@ class PEGA_OT_voxel_to_pega(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class PEGA_OT_export_fbx(bpy.types.Operator):
-    bl_idname = "pega.export_fbx"
+class VOXELTOOL_OT_export_fbx(bpy.types.Operator):
+    bl_idname = "voxel_tool.export_fbx"
     bl_label = "Exportar FBX para o Unity"
     bl_description = ("Exporta a seleção como FBX com transformações aplicadas (escala 1, sem rotação no Unity), "
                       "sombreamento flat e sem leaf bones")
@@ -287,11 +287,11 @@ class PEGA_OT_export_fbx(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class PEGA_PT_voxel(bpy.types.Panel):
+class VOXELTOOL_PT_main(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "PEGA"
-    bl_label = "Voxel → PEGA"
+    bl_category = "Voxel Tool"
+    bl_label = "Voxel Tool"
 
     def draw(self, context):
         s = _settings(context)
@@ -319,21 +319,21 @@ class PEGA_PT_voxel(bpy.types.Panel):
 
         layout.prop(s, "overwrite")
         layout.prop(s, "hide_source")
-        layout.operator(PEGA_OT_voxel_to_pega.bl_idname, icon='MOD_REMESH')
+        layout.operator(VOXELTOOL_OT_convert.bl_idname, icon='MOD_REMESH')
         layout.separator()
-        layout.operator(PEGA_OT_export_fbx.bl_idname, icon='EXPORT')
+        layout.operator(VOXELTOOL_OT_export_fbx.bl_idname, icon='EXPORT')
 
 
-_classes = (PEGA_VoxelSettings, PEGA_OT_voxel_to_pega, PEGA_OT_export_fbx, PEGA_PT_voxel)
+_classes = (VOXELTOOL_Settings, VOXELTOOL_OT_convert, VOXELTOOL_OT_export_fbx, VOXELTOOL_PT_main)
 
 
 def register():
     for cls in _classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.pega_voxel = bpy.props.PointerProperty(type=PEGA_VoxelSettings)
+    bpy.types.Scene.voxel_tool = bpy.props.PointerProperty(type=VOXELTOOL_Settings)
 
 
 def unregister():
-    del bpy.types.Scene.pega_voxel
+    del bpy.types.Scene.voxel_tool
     for cls in reversed(_classes):
         bpy.utils.unregister_class(cls)
