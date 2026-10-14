@@ -1,0 +1,15 @@
+schema_version = "1.0.0"
+
+id = "pega_voxel_tools"
+version = "0.1.0"
+name = "PEGA Voxel Tools"
+tagline = "Malhas do MagicaVoxel no padrao dos personagens do PEGA"
+maintainer = "Immersive Games"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+[permissions]
+files = "Salva as texturas PNG geradas e exporta FBX"
