@@ -27,7 +27,7 @@ MonoBehaviour:
       atlasCoordinate: {x: 3, y: 0}
     - id: eyes.angry.closed
       atlasCoordinate: {x: 4, y: 0}
-    - id: eyes.scared.closed
+    - id: eyes.scared.opened
       atlasCoordinate: {x: 0, y: 1}
     - id: eyes.scared.closed
       atlasCoordinate: {x: 1, y: 1}
