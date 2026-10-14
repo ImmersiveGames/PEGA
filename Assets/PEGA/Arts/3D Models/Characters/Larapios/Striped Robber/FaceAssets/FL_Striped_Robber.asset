@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f27d31cf2a23349b7b8bb8e36fbb12, type: 3}
+  m_Name: FL_Striped_Robber
+  m_EditorClassIdentifier: Assembly-CSharp::FaceSpriteLibrary
+  tracks:
+  - trackId: eyes
+    atlas: {fileID: 2800000, guid: 2269aea11bb142247adbc7e006bb6ed3, type: 3}
+    gridSize: {x: 5, y: 5}
+    sprites:
+    - id: eyes.opened
+      atlasCoordinate: {x: 0, y: 0}
+    - id: eyes.closed
+      atlasCoordinate: {x: 1, y: 0}
+    - id: eyes.happy
+      atlasCoordinate: {x: 2, y: 0}
+    - id: eyes.angry.opened
+      atlasCoordinate: {x: 3, y: 0}
+    - id: eyes.angry.closed
+      atlasCoordinate: {x: 4, y: 0}
+    - id: eyes.scared.opened
+      atlasCoordinate: {x: 0, y: 1}
+    - id: eyes.scared.closed
+      atlasCoordinate: {x: 1, y: 1}
+    - id: eyes.sad
+      atlasCoordinate: {x: 2, y: 1}
+    - id: eyes.suspicius
+      atlasCoordinate: {x: 3, y: 1}
+    - id: eyes.tired
+      atlasCoordinate: {x: 4, y: 1}
+    - id: eyes.surprised
+      atlasCoordinate: {x: 0, y: 2}
+    - id: eyes.enchanted
+      atlasCoordinate: {x: 1, y: 2}
+    - id: eyes.crying
+      atlasCoordinate: {x: 2, y: 2}
+    - id: eyes.blink.right
+      atlasCoordinate: {x: 3, y: 2}
+    - id: eyes.blink.left
+      atlasCoordinate: {x: 4, y: 2}
+    - id: eyes.bruised
+      atlasCoordinate: {x: 0, y: 3}
+    - id: eyes.astonished
+      atlasCoordinate: {x: 1, y: 3}
+    - id: eyes.bored
+      atlasCoordinate: {x: 2, y: 3}
+    - id: eyes.looking.up
+      atlasCoordinate: {x: 3, y: 3}
+    - id: eyes.looking.down
+      atlasCoordinate: {x: 4, y: 3}
+    - id: eyes.looking.right
+      atlasCoordinate: {x: 0, y: 4}
+    - id: eyes.looking.left
+      atlasCoordinate: {x: 1, y: 4}
+    - id: eyes.dead
+      atlasCoordinate: {x: 2, y: 4}
+    - id: eyes.no.eyes
+      atlasCoordinate: {x: 3, y: 4}
+  - trackId: mouth
+    atlas: {fileID: 2800000, guid: b1e08281cd932bb468faee09e842ac81, type: 3}
+    gridSize: {x: 2, y: 6}
+    sprites:
+    - id: mouth.normal.closed
+      atlasCoordinate: {x: 0, y: 0}
+    - id: mouth.surprised
+      atlasCoordinate: {x: 1, y: 0}
+    - id: mouth.smile
+      atlasCoordinate: {x: 0, y: 1}
+    - id: mouth.astonished
+      atlasCoordinate: {x: 1, y: 1}
+    - id: mouth.sad
+      atlasCoordinate: {x: 0, y: 2}
+    - id: mouth.naughty
+      atlasCoordinate: {x: 1, y: 2}
+    - id: mouth.opened
+      atlasCoordinate: {x: 0, y: 3}
+    - id: mouth.speak.full
+      atlasCoordinate: {x: 1, y: 3}
+    - id: mouth.smirk
+      atlasCoordinate: {x: 0, y: 4}
+    - id: mouth.speak.mid
+      atlasCoordinate: {x: 1, y: 4}
+    - id: mouth.angry
+      atlasCoordinate: {x: 0, y: 5}
+    - id: mouth.speak.min
+      atlasCoordinate: {x: 1, y: 5}
