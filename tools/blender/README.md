@@ -28,9 +28,10 @@ para pintar por cima.
    referência e esconder antes de salvar.
 6. Faça o rig como de costume e use **Exportar FBX para o Unity** com a seleção.
 
-O resultado é criado como `<objeto>_PEGA`; o original fica escondido e
-intacto. Rodar de novo não apaga uma textura já pintada, a menos que
-*Sobrescrever textura* esteja ligado.
+O resultado é criado como `<objeto>_PEGA` dentro da collection
+`<Nome>_PEGA`; o original fica escondido e intacto. Rodar de novo não
+apaga uma textura já pintada, a menos que *Sobrescrever textura* esteja
+ligado.
 
 ## O padrão (inferido dos FBX no repositório)
 

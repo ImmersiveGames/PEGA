@@ -6,7 +6,7 @@ Painel: View3D > Sidebar (N) > PEGA.
 bl_info = {
     "name": "PEGA Voxel Tools",
     "author": "Immersive Games",
-    "version": (0, 1, 0),
+    "version": (0, 1, 1),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > PEGA",
     "description": "Otimiza malhas do MagicaVoxel, abre UV no grid de pixels e gera a textura base para pintura",
@@ -206,6 +206,13 @@ class PEGA_OT_voxel_to_pega(bpy.types.Operator):
 
         mat = core.make_material(base + "_Main_Mat", image)
 
+        # Resultado numa collection própria, separada dos objetos importados.
+        out_col = bpy.data.collections.get(base + "_PEGA")
+        if out_col is None:
+            out_col = bpy.data.collections.new(base + "_PEGA")
+        if out_col.name not in context.scene.collection.children:
+            context.scene.collection.children.link(out_col)
+
         new_objects = []
         k = 0
         unit_scale = s.voxel_size
@@ -222,8 +229,7 @@ class PEGA_OT_voxel_to_pega(bpy.types.Operator):
             mesh = core.build_mesh(name, rects, pos, tex, ppv, unit_scale, offset)
             mesh.materials.append(mat)
             new_obj = bpy.data.objects.new(name, mesh)
-            for col in obj.users_collection:
-                col.objects.link(new_obj)
+            out_col.objects.link(new_obj)
             new_objects.append(new_obj)
             if s.hide_source:
                 obj.hide_set(True)
