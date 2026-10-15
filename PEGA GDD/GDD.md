@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.9.0
+**Versão:** 0.10.0
 **Última atualização:** 2026-10-15
 
 ---
@@ -112,10 +112,10 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 ## Loop principal
 
 :::flow
-1. O jogador escolhe uma missão no mapa/HUB de Larópolis.
-2. O jogo apresenta o cenário, pontos de entrada, saídas, itens valiosos, armadilhas e novidades da fase.
-3. Começa a **Preparação**: por uma duração fixa configurada pela missão, os Players escolhem onde proteger o objetivo principal entre os cofres válidos. O tempo representa a espera pela chegada dos larápios.
-4. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal e possuem informações aproximadas sobre possíveis locais e pontos relevantes, mas não conhecem as decisões tomadas pelo jogador.
+1. No HUB, o jogador seleciona um **contrato de missão**, sujeito aos requisitos de habilitação e aos fundos/recursos exigidos quando aplicáveis. O **Briefing** pertence à seleção do contrato e apresenta local, objetivo principal e gangues previstas, antes de entrar na missão.
+2. Ao entrar na **Mission Activity**, começa a **Introdução da missão**: uma panorâmica cinematográfica dos pontos de interesse do cenário, seguida da apresentação das gangues participantes. Cada gangue recebe um splash screen; apenas gangues inéditas na carreira recebem, antes do splash, sua animação especial de introdução. Toda a apresentação pode ser saltada por pressão prolongada de Cancelar; pular conta como apresentação das gangues inéditas.
+3. Encerrada ou saltada a introdução, a câmera retorna à área inicial, os Players são materializados e recebem controle, e **então** começa o relógio da **Preparação**. Durante sua duração fixa, os Players podem escolher entre cofres válidos onde proteger o objetivo principal.
+4. Quando a Preparação termina, começa o **Assalto Ativo** e passam a contar as receitas de invasão dos Spawn Points. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal, mas não conhecem automaticamente as escolhas de proteção dos jogadores.
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
 7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Desejos conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
@@ -129,13 +129,30 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 
 | Etapa | Função |
 |---|---|
-| Apresentação do cenário | Apresenta as informações relevantes da missão e, quando previstas no recorte, mostra início, entradas, saídas, ameaças, itens de valor e recursos do cenário. A apresentação funcional não comprova, por si, a compreensão do jogador; legibilidade e compreensão são avaliadas em playtests. |
-| Preparação | Durante uma duração fixa da missão, os Players escolhem o cofre que protegerá o objetivo principal; o assalto começa quando o tempo acaba. |
-| Entrada dos larápios | Splash screen apresenta as gangues inimigas, representantes e indicação de dificuldade. |
-| Invasão por Spawn Points | Cada Spawn Point executa sua própria receita temporal, definindo quando, quantos e quais arquétipos de uma gangue entram no cenário. |
-| Assalto ativo | Usa um **Tempo de Assalto** configurado por partida. Captura, roubo, investigação e recuperação acontecem normalmente; a Janela de Invasão ocupa seu período inicial. |
-| Fuga final | Ao terminar o Tempo de Assalto, inicia um **Tempo de Fuga** também configurado por partida. O contexto global muda para Fuga Final e os larápios reavaliam seus desejos. |
-| Encerramento | Ao terminar o Tempo de Fuga, o gameplay é encerrado, os estados restantes são resolvidos e o jogo muda de atividade para a tela de resultados. |
+| Seleção do contrato e Briefing (HUB) | O jogador seleciona um contrato habilitado e, antes de iniciar a missão, recebe informações sobre local, objetivo principal e gangues previstas. Não é uma fase do assalto. |
+| Introdução cinematográfica (Mission Activity) | Panorâmica dos pontos de interesse do cenário e apresentação das gangues, com splash recorrente e animação especial somente na primeira aparição na carreira. Pode ser saltada. Não é uma fase de gameplay. |
+| Preparação (Mission Activity) | Após a introdução, câmera e Players ficam na área inicial; começa o relógio de Preparação e os Players escolhem onde proteger o objetivo principal entre cofres válidos. |
+| Assalto Ativo e invasão (Mission Activity) | Quando termina a Preparação, começa o Tempo de Assalto. Spawn Points executam suas receitas temporais independentes; investigação, roubo, proteção, confronto e captura acontecem normalmente. |
+| Fuga Final (Mission Activity) | Ao terminar o Tempo de Assalto, começa o Tempo de Fuga e o contexto global muda para Fuga Final, mantendo o GOAP. |
+| Encerramento e resultados | Ao terminar o Tempo de Fuga, o gameplay encerra, os estados são consolidados e os resultados são apresentados em Activity própria. |
+
+### Seleção do contrato, Briefing e introdução da missão
+
+:::decision
+**Decisão de fluxo para o jogo completo:** a **seleção de um novo contrato** acontece no HUB, considerando requisitos de habilitação e fundos/recursos da carreira quando aplicáveis. O **Briefing é uma subdivisão desse fluxo de seleção**, antes da entrada na missão, e informa o jogador sobre o local a proteger, o item/objetivo principal e os grupos de larápios previstos. O contrato e sua disponibilidade não se confundem com o custo operacional calculado no resultado; requisitos concretos, consumo de recursos e valores de acesso ainda precisam de especificação própria.
+
+Depois de entrar na **Mission Activity**, o Player **não aparece imediatamente controlável no mapa**. Primeiro ocorre uma **Introdução cinematográfica**, composta por:
+
+1. **Panorâmica do cenário:** a câmera percorre pontos de interesse relevantes (como entradas, saídas e bens protegidos), preparando a leitura do espaço.
+2. **Apresentação dos grupos de larápios presentes na missão:** cada grupo participante tem um **splash screen exibido em todas as suas participações**, exceto quando a sequência for saltada. Se um grupo ainda não foi apresentado naquela **carreira**, sua **animação especial de estreia** é exibida imediatamente antes do respectivo splash. Um grupo já conhecido recebe somente seu splash. Na mesma missão, grupos conhecidos e inéditos podem ter apresentações diferentes.
+3. **Entrada na Preparação:** ao término da sequência, a câmera retorna à área inicial, os Players são materializados e o controle de gameplay é disponibilizado; **somente nesse momento começa a duração fixa da Preparação**.
+
+**Skip:** manter pressionado o comando **Cancelar** por um intervalo configurável permite saltar **toda a sequência de panorâmica, animações e splashes** e ir diretamente ao início da Preparação. Se a sequência for saltada, **todos os grupos inéditos previstos na apresentação daquela missão passam a contar como já apresentados na carreira**, mesmo sem assistir à sua animação; não são reapresentados como inéditos em contratos posteriores. Não confundir esse skip cinematográfico com a antecipação do relógio de Preparação, que não existe no gameplay normal.
+
+O registro de grupos já apresentados pertence ao **progresso da carreira** e deve sobreviver à continuidade entre sessões. A apresentação cinematográfica não equivale à **invasão física**: não inicia o Tempo de Assalto nem antecipa receitas de Spawn Points. Os detalhes de câmera, duração, mapeamento do comando Cancelar e recursos audiovisuais são configurações de conteúdo/UI a definir.
+
+Essas regras expressam a **intenção do jogo completo**; a presença de cada recurso cinematográfico no microciclo, vertical slice e Demo depende do recorte definido no [MVP](MVP.md). Não se presumem cutscenes completas em recortes de prova técnica.
+:::
 
 :::decision
 **Decisão:** `Assalto` é a unidade principal de gameplay; `Missão` é o contrato escolhido no mapa.
@@ -155,7 +172,7 @@ A validação combina **aceite individual** (cenários de comportamento com IDs 
 ## Preparação do assalto
 
 :::decision
-**Decisão:** a Preparação tem duração fixa configurável por missão e termina quando o tempo acaba. Ela representa narrativamente o tempo até a chegada dos larápios. No gameplay normal, não há encerramento antecipado nem confirmação de `Pronto`; antecipar o fim é permitido apenas por ferramenta de debug.
+**Decisão:** a Preparação inicia **somente após o fim ou skip da Introdução cinematográfica**, com a câmera na área inicial, os Players materializados e o controle de gameplay disponível. Tem duração fixa configurável por missão e termina quando o tempo acaba. Ela representa narrativamente o tempo até a chegada dos larápios. No gameplay normal, não há encerramento antecipado nem confirmação de `Pronto`; antecipar o fim é permitido apenas por ferramenta de debug.
 
 A ação central da Preparação inicial é escolher em qual cofre válido proteger o objetivo principal. No primeiro MVP há pelo menos dois cofres válidos, um deles selecionado como padrão. A escolha não tem custo; orçamento, investimentos e outras preparações ficam para etapas posteriores.
 
@@ -354,7 +371,7 @@ Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecív
 
 ### HUB
 
-O HUB organiza contratos e progressão na cidade de Larópolis. A Demo usa o escritório da PEGA como uma tela temática estática com hotspots para o mapa de missões e a carreira. A forma do HUB após a Demo permanece em aberto. O HUB deve permitir:
+O HUB organiza contratos e progressão na cidade de Larópolis. A **seleção de contrato e seu Briefing ocorrem no HUB antes de entrar na Mission Activity**, incluindo as informações do local, objetivo principal e larápios previstos; a disponibilidade depende dos requisitos e fundos/recursos de acesso configurados para o contrato no jogo completo. A Demo usa o escritório da PEGA como uma tela temática estática com hotspots para o mapa de missões e a carreira. A forma do HUB após a Demo permanece em aberto. O HUB deve permitir:
 
 - Selecionar fases liberadas.
 - Visualizar progressão.
@@ -999,7 +1016,7 @@ Empréstimos como opção de continue após bancarrota apareceram em material an
 
 #### Persistência da carreira
 
-A carreira é preservada **entre assaltos e entre sessões do jogo**. O estado salvo deve restaurar o progresso consolidado, incluindo saldo e situação de continuidade/encerramento. **Não existe salvamento nem retomada de um assalto em andamento**. A validação requer encerrar e reabrir o jogo sem perder o estado de carreira já consolidado.
+A carreira é preservada **entre assaltos e entre sessões do jogo**. O estado salvo deve restaurar o progresso consolidado, incluindo saldo, situação de continuidade/encerramento e **quais grupos de larápios já tiveram sua introdução registrada** (assistida ou saltada). **Não existe salvamento nem retomada de um assalto em andamento**. A validação requer encerrar e reabrir o jogo sem perder o estado de carreira já consolidado.
 
 ## Encerramento do assalto
 
@@ -1120,5 +1137,6 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.10.0 | 2026-10-15 | Clarificado fluxo do contrato no HUB e Briefing antes da missão; estabelecida introdução cinematográfica na Mission Activity com panorâmica, splashes recorrentes e animação inédita por carreira, skip prolongado e registro de grupos apresentados mesmo ao saltar; Preparação começa apenas após introdução e controle disponível. |
 | 0.9.0 | 2026-10-15 | Incorporadas 17 decisões da revisão guiada sobre objetivos e validação, cooperativo, apresentação, cofre, ataque, transporte, prisão, Player, Armazém, mobilidade, perda de contato, Pause e classificação; preservadas pendências condicionadas. |
 | 0.8.0 | 2026-10-10 | Consolidada a fonte normativa; incorporados os contratos aprovados de GOAP, Actor, preparação, inventário, captura, classificação, carreira e encerramento. Removidas referências a fontes e perguntas resolvidas. |
