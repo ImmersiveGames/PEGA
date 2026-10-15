@@ -27,3 +27,5 @@ Give a concise ordered cycle or table of macro world outcomes. Include:
 - material gap or later content/configuration detail, when relevant.
 
 Cover the temporal cycle, NPC/simulation cycle, interactive-world/item outcomes, power-up scope, and mission resolution where the sources define them. Preserve the separation from player activities. Do not prescribe Unity scenes, Framework concepts, APIs, components, scripts, assets, or implementation order.
+
+This analysis describes world-level macro outcomes and supporting rules; it is not a complete behavioral acceptance contract. When a selected macro objective needs precise behavior and verifiable acceptance, hand it to `pega-objective-specification` without replacing or repeating this gameplay analysis.

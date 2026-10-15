@@ -1,11 +1,11 @@
 ---
 name: pega-production-governance
-description: Use when deriving PEGA deliverable activities from GDD goals, diagnosing GDD/MVP/TASKS scope, preparing Trello work, reconciling production sources, or reviewing delivery against evidence.
+description: Use when deriving PEGA macro objectives from GDD goals, specifying game behavior, auditing objective coverage, planning execution, preparing Trello work, reconciling production sources, or reviewing delivery against evidence.
 ---
 
 # Governança de Produção do PEGA
 
-Use somente quando o artefato solicitado pertence à produção do PEGA; o workspace inicial PEGA não torna uma tarefa de QAFramework/Framework uma tarefa PEGA. Para rotear tarefas entre repositórios, siga `immersive-ecosystem`. Escolha o fluxo pedido pelo usuário; não execute os quatro automaticamente. A instrução é o procedimento: use as ferramentas GitHub/Trello já conectadas pelo host e nunca crie cliente, serviço, credencial, MCP, banco, automação ou dependência.
+Use somente quando o artefato solicitado pertence à produção do PEGA; o workspace inicial PEGA não torna uma tarefa de QAFramework/Framework uma tarefa PEGA. Para rotear tarefas entre repositórios, siga `immersive-ecosystem`. Escolha o fluxo pedido pelo usuário; não execute todos os fluxos automaticamente. Especificação e planejamento podem ser respostas concisas nesta conversa; não exija catálogo, documento redundante, aprovação formal ou cerimônia quando o usuário não os pediu. A instrução é o procedimento: use as ferramentas GitHub/Trello já conectadas pelo host e nunca crie cliente, serviço, credencial, MCP, banco, automação ou dependência.
 
 ## Fontes, precedência e evidência
 
@@ -37,48 +37,77 @@ Para editar fonte do Framework, interrompa o caminho de implementação PEGA e s
 
 ## Fluxos
 
-### Análise de atividades do GDD
+### Análise macro de objetivos do GDD
 
-Use este fluxo quando a pergunta for “o que o jogo precisa permitir/fazer para cumprir o GDD?” ou quando o backlog parecer composto por fragmentos técnicos ou cartões que misturam resultados independentes. Faça a análise antes de decompor atividades em cartões ou checklists.
+Use este fluxo quando a pergunta for “quais resultados o jogo precisa produzir para cumprir o GDD?” ou quando o backlog parecer composto por fragmentos técnicos ou cartões que misturam resultados independentes. Faça a análise antes de decompor objetivos em trabalho de produção.
 
 1. Leia GDD e MVP segundo a autoridade das fontes. Consulte o ADR para recortes/decisões aprovadas; TASKS e Trello não definem objetivos. Não altere fontes normativas nem Trello nesta análise.
 2. **REQUIRED SUB-SKILLS:** use `pega-player-cycle-analysis` para a jornada do jogador, `pega-gameplay-cycle-analysis` para os resultados do mundo e `pega-gdd-activity-planning` para síntese, cobertura, fronteiras e lacunas. Não substitua uma das perspectivas pela outra nem use uma skill monolítica para encerrar a síntese.
 3. Preserve duas trilhas explícitas. Na trilha do jogador registre objetivos/escolhas, ações representativas e feedback/resultados observáveis. Na trilha de gameplay registre resultados do mundo, relógios/transições, entrada/conhecimento/decisões dos NPCs, respostas de objetos/itens, power-ups no escopo declarado e resolução. Relacione eventos que causam, habilitam ou revelam resultados na outra trilha.
-4. Construa a hierarquia de atividades macro a partir dos objetivos do GDD. Cada atividade deve ter um objetivo coerente e um resultado observável, com fonte, escopo do MVP e dependências. Use checks para timers, regras, eventos e ações que sustentam um objetivo; não converta cada bullet, mecânica ou verbo em atividade. Preserve famílias diferentes de resultado quando o GDD as define; não una objetivos independentes porque compartilham uma cena ou missão. Materializar o personagem escolhido é critério da seleção, não motivo para fundir seleção de personagem, seleção de missão e o ciclo inteiro.
-5. Faça uma verificação de cobertura: cada objetivo relevante do GDD deve estar ligado a uma atividade, dependência, escopo posterior/opcional/fora do MVP ou lacuna de alocação. Confirme que ciclos de NPCs, tempo, objetos/itens e resolução não sumiram por estarem menos visíveis na jornada do jogador.
-6. Classifique lacunas na granularidade macro: decisão que impede definir objetivo/dependência agora; conflito real entre fontes, citando as afirmações; ou detalhe de conteúdo, configuração, apresentação/aceite que pode esperar porque o objetivo já está claro. Não escolha regras ausentes nem transforme desconhecidos de detalhe em bloqueios de atividade.
-7. Quando ajudar a decompor o jogo, inclua inventários concisos de Players/personagens, momentos de apresentação/menus e inputs definidos, distinguindo fatos de pendências. Eles informam os objetivos e não viram atividades automaticamente. Não prescreva Unity Scenes, Routes, Activities, Actors, APIs, componentes, scripts, assets ou ordem técnica.
+4. Construa uma hierarquia de objetivos macro a partir dos resultados do GDD. Cada objetivo deve ter um resultado coerente e observável, com fonte, escopo do MVP e relações funcionais. Use checks para timers, regras, eventos e ações que sustentam um objetivo; não converta cada bullet, mecânica ou verbo em objetivo. Preserve famílias diferentes de resultado quando o GDD as define; não una objetivos independentes porque compartilham uma cena ou missão. Materializar o personagem escolhido é resultado/check da seleção, não motivo para fundir seleção de personagem, seleção de missão e o ciclo inteiro.
+5. Faça uma verificação de cobertura: cada objetivo relevante do GDD deve estar ligado a um objetivo macro, relação funcional, escopo posterior/opcional/fora do MVP ou lacuna de alocação. Confirme que ciclos de NPCs, tempo, objetos/itens e resolução não sumiram por estarem menos visíveis na jornada do jogador.
+6. Classifique lacunas na granularidade macro: decisão que impede definir objetivo/dependência agora; conflito real entre fontes, citando as afirmações; ou detalhe de conteúdo, configuração, apresentação/aceite que pode esperar porque o objetivo já está claro. Não escolha regras ausentes nem transforme desconhecidos de detalhe em bloqueios para definir objetivos macro.
+7. Quando ajudar a decompor o jogo, inclua inventários concisos de Players/personagens, momentos de apresentação/menus e inputs definidos, distinguindo fatos de pendências. Eles informam os objetivos e não viram objetivos macro automaticamente. Não prescreva Unity Scenes, Routes, Activities, Actors, APIs, componentes, scripts, assets ou ordem técnica.
 
 Mantenha estas distinções explícitas:
 
 - **Objetivo de produto** é o resultado da experiência PEGA; `Desejo / Goal` no GDD é uma intenção de um agente GOAP.
 - **Atividade de jogo** e **fase de gameplay** descrevem ações/resultados do jogador ou comportamento do mundo.
 - **Tela/momento de apresentação** é o que o jogador vê. Não implica uma Unity Scene.
-- Unity `Scene`, Framework `Route` e `Activity`, Session, Actor, componente, asset e API são escolhas técnicas. Não as infira durante a análise de atividades; mapeie-as somente em um plano técnico solicitado.
+- Unity `Scene`, Framework `Route` e `Activity`, Session, Actor, componente, asset e API são escolhas técnicas. Não as infira durante a análise de objetivos; mapeie-as somente em um plano técnico solicitado.
 
-#### Formato do documento de atividades
+#### Formato do mapa macro de objetivos
 
 Entregue, nesta ordem:
 
 1. objetivo, recorte do MVP e fontes consultadas;
 2. lane curta do ciclo do jogador e lane curta do ciclo de gameplay, com vínculos causais;
-3. tabela de atividades macro, cada uma com objetivo/resultado observável, checks de suporte, escopo do MVP, fontes e dependências;
+3. hierarquia/tabela de objetivos macro, cada um com resultado observável, checks de suporte, escopo do MVP, fontes e relações funcionais;
 4. cobertura do GDD/MVP e lacunas classificadas entre decisões necessárias agora, conflitos reais e detalhes que podem esperar;
 5. decisões de produto que impedem definir objetivo, em forma de perguntas/opções baseadas em evidência;
 6. inventários transversais de Players/personagens, apresentação/menus e inputs quando forem relevantes.
 
-IDs usados dentro desse documento são rótulos de análise, não IDs do Trello. Uma atividade não define quantidade de Unity Scenes nem ordem de implementação quando a fonte não a define.
+IDs usados na análise são rótulos locais, não IDs do Trello ou entregáveis de produção. Um objetivo macro não equivale a um cartão, script, componente ou pacote; não define quantidade de Unity Scenes nem ordem de implementação. Quando um ou mais objetivos selecionados precisarem de contrato comportamental verificável, use `pega-objective-specification`.
+
+### Specify Objective
+
+Use quando um objetivo macro novo ou insuficientemente definido precisa de regras, condições e critérios de aceite claros antes de virar trabalho técnico. A análise macro organiza a hierarquia; esta etapa especifica apenas os objetivos solicitados e não reconstrói o catálogo inteiro.
+
+1. Consulte a análise macro existente e identifique o objetivo/família solicitado. Use GDD para regras, MVP para escopo, ADR para decisões aprovadas e o catálogo apenas como referência derivada. Confirme cada regra relevante nas fontes originais.
+2. Use `pega-objective-specification` para produzir o contrato comportamental, critérios observáveis, relações e lacunas. Não invente regra nem prescreva arquitetura, código, assets, Unity, APIs, pacotes, authoring ou ordem técnica; esta etapa também não exige descoberta de projeto/pacotes.
+3. Distinga prontidão para especificação, aceite e integração de conclusão da implementação. Se uma regra essencial faltar, especifique a parte sustentada e registre exatamente o que continua bloqueado.
+4. Retorne o contrato na resposta, salvo se o usuário pedir explicitamente um documento. Não altere GDD/MVP/ADR/TASKS/Trello e não crie aprovação formal. A autorização para editar skills não se estende a essas fontes.
+
+Se ainda não houver catálogo ou análise macro, informe isso e use as fontes normativas existentes para o objetivo pedido. Se for necessário identificar uma hierarquia de objetivos, encaminhe primeiro pela análise macro; não chame uma especificação local de catálogo aprovado.
+
+### Audit Objective Coverage and Consistency
+
+Use quando for preciso saber se a análise macro e/ou os contratos de objetivos cobrem o GDD/MVP de forma coerente. A auditoria é somente leitura e não produz automaticamente catálogo, roadmap ou tarefas.
+
+1. Compare os resultados relevantes do GDD e o escopo do MVP com os objetivos macro e contratos existentes; confirme toda regra em GDD/MVP/ADR, pois o catálogo é derivado.
+2. Verifique cobertura e rastreabilidade, resultados independentes omitidos ou fundidos, fragmentação de checks em objetivos, fronteiras, relações funcionais e escopos conflitantes.
+3. Classifique cada lacuna conforme o ponto que bloqueia: identificar objetivo, especificar comportamento, definir aceite ou integrar objetivos. Separe conflito real de ambiguidade e de detalhe que pode esperar.
+4. Apresente achados, fontes, impacto e owner/ação recomendada. Não resolva regras nem edite fontes normativas, catálogo, TASKS ou Trello.
+
+### Plan Execution
+
+Use quando o usuário pedir como executar trabalho que atende a um ou mais objetivos. Plano de execução transforma contratos de jogo em uma sequência de trabalho rastreável; não altera a hierarquia macro nem define regras ausentes.
+
+1. Localize objetivo macro e especificação comportamental correspondente, quando existirem. Se não houver especificação, volte às fontes normativas e deixe explícita a ausência; se uma regra essencial estiver indefinida, especifique o objetivo antes de propor trabalho técnico dependente.
+2. Derive as atividades de produção necessárias para atingir os resultados especificados, suas dependências e critérios de conclusão. Mantenha resultado de jogo, atividade de produção e solução técnica como níveis distintos.
+3. Para integração PEGA com Immersive, aplique `immersive-ecosystem` e as regras de FirstGame/contrato instalado do fluxo Prepare Task. Para trabalho que não envolva API, pacote, authoring Unity ou integração técnica, não faça descoberta de pacote sem necessidade.
+4. Entregue o plano na resposta salvo pedido explícito de arquivo. Inclua rastreabilidade e critérios verificáveis; marque questões de design ainda abertas como bloqueios, sem escondê-las como tarefas técnicas. Não crie roadmap/TASKS/Trello sem autorização explícita.
 
 ### Audit
 
-Leia GDD, MVP, TASKS e ADR relevantes; inspecione código, package resolution e Trello quando disponíveis/relevantes. Procure conflitos de requisito, tarefas sem decisão/requisito, referência obsoleta, critério de aceitação conflitante, duplicação, dependência circular, divergência código/documento e progresso sem evidência. Para cada achado reporte severidade, afirmações e localizações de ambas as fontes, impacto, owner correto e ação proposta. Não tome decisão de jogo/escopo nem corrija fontes.
+Leia GDD, MVP, TASKS e ADR relevantes; inspecione código, package resolution e Trello quando disponíveis/relevantes. Procure conflitos de requisito, tarefas sem decisão/requisito, referência obsoleta, critério de aceitação conflitante, duplicação, dependência circular, divergência código/documento e progresso sem evidência. Para verificar cobertura/coerência entre objetivos e fontes, use o fluxo `Audit Objective Coverage and Consistency`. Para cada achado reporte severidade, afirmações e localizações de ambas as fontes, impacto, owner correto e ação proposta. Não tome decisão de jogo/escopo nem corrija fontes.
 
 ### Prepare Task
 
-Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada cartão, consulte também a ferramenta especializada `trelloReadChecklist` (`list_by_card`), paginando até o fim. Não conclua que não há checklists a partir de `checklists: []` em `trelloReadCard/get`; só declare ausência após a consulta especializada retornar completa e vazia. Se a consulta especializada falhar ou não estiver disponível, marque checklists como não verificados. Identifique primeiro a atividade entregável do GDD que o cartão atende e a fase indicada pelo MVP. Se o cartão agrupar resultados independentes, registrar essa fronteira como proposta, sem alterar o Trello. Siga as referências até entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
+Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada cartão, consulte também a ferramenta especializada `trelloReadChecklist` (`list_by_card`), paginando até o fim. Não conclua que não há checklists a partir de `checklists: []` em `trelloReadCard/get`; só declare ausência após a consulta especializada retornar completa e vazia. Se a consulta especializada falhar ou não estiver disponível, marque checklists como não verificados. Identifique primeiro o objetivo macro do GDD e a fase do MVP que o cartão atende; consulte também o contrato comportamental correspondente quando existir. Se não localizar análise ou contrato, declare a ausência e retorne às fontes normativas — não invente uma especificação aprovada. Se o comportamento essencial estiver indefinido, identifique a especificação como dependência anterior ao trabalho técnico. Se o cartão agrupar resultados independentes, registre essa fronteira como proposta, sem alterar o Trello. Siga as referências até objetivo, contrato, entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
 
 1. cartão/URL, estado, responsável/estimativa/progresso se disponíveis e itens de checklist incompletos;
-2. atividade/resultado do GDD e fase do MVP atendidos pelo cartão; sinalize quando o cartão não tiver um resultado único ou não corresponder a uma atividade identificável;
+2. objetivo macro/resultado do GDD e fase do MVP atendidos pelo cartão; sinalize quando o cartão não tiver um resultado único ou não corresponder a um objetivo identificável;
 3. entregável/TASKS/requisito/decisão e rastreabilidade ausente;
 4. contratos/maturidade da referência oficial mais recente e migrações relevantes; informe a resolução atual do consumidor apenas se ela mudar uma ação concreta;
 5. adaptação/atualização necessária dentro da tarefa, se houver; não inclua alinhamento de versão como critério de aceitação ou bloqueio;
@@ -103,7 +132,7 @@ Compare documentos aprovados, implementação e Trello. Retorne proposta de reco
 
 ### Review Delivery
 
-Revise diff contra objetivo e aceitação do cartão. Para APIs Immersive, verifique o contrato/maturidade da referência oficial mais recente e as migrações aplicáveis; presença de tipo não significa integração. Verifique regressões, validações permitidas e lacunas de documentação/rastreabilidade. Para cada critério classifique evidência como satisfeito, não satisfeito ou não verificado. Não marque cartão concluído. Não execute Unity: liste compile/import/Editor/runtime que o usuário ainda precisa confirmar.
+Revise diff contra o objetivo e o contrato/aceitação correspondente quando existir; se não existir, use GDD/MVP/ADR como fontes normativas e declare essa ausência sem inventar critérios aprovados. Para APIs Immersive, verifique o contrato/maturidade da referência oficial mais recente e as migrações aplicáveis; presença de tipo não significa integração. Verifique regressões, validações permitidas e lacunas de documentação/rastreabilidade. Para cada critério classifique evidência como satisfeito, não satisfeito ou não verificado. Não marque cartão concluído. Não execute Unity: liste compile/import/Editor/runtime que o usuário ainda precisa confirmar.
 
 ## Forma da resposta
 

@@ -1,108 +1,218 @@
-# PEGA — Análise macro de atividades do GDD
+# PEGA — Catálogo de objetivos derivados do GDD
 
-**Status:** análise de objetivos e entregáveis candidatos; não altera GDD, MVP, ADR, TASKS ou Trello.
+**Status:** catálogo derivado para análise e especificação; não é roadmap nem altera fontes normativas.
 **Data:** 2026-10-15
-**Fontes principais:** [GDD](../PEGA%20GDD/GDD.md), [MVP](../PEGA%20GDD/MVP.md) e [ADR de pré-produção](../PEGA%20GDD/ADR-PREPRODUCAO.md). O [Art Book](../PEGA%20GDD/ArtBook.md) é referência visual, não fonte de regras de gameplay.
+**Ponto de entrada:** [Especificações comportamentais dos objetivos](pega-objective-specifications.md).
+**Fontes normativas:** [GDD](../PEGA%20GDD/GDD.md), [MVP](../PEGA%20GDD/MVP.md) e [ADR de pré-produção](../PEGA%20GDD/ADR-PREPRODUCAO.md). [TASKS](../PEGA%20GDD/TASKS.md) foi consultado apenas para entender a estrutura operacional existente, sem inferir regras de gameplay.
 
-## Objetivo e recorte
+## Propósito e regras de leitura
 
-Esta análise transforma os resultados pretendidos pelo jogo em atividades macro candidatas. O GDD define comportamento e experiência; o MVP diz o que entra no primeiro vertical slice e na Demo; o ADR registra decisões de produção. TASKS e Trello podem ser comparados depois, mas não criam objetivos de jogo.
+Este catálogo reconstrói os resultados de jogo a partir das fontes normativas. O GDD define regras e experiência; o MVP determina os recortes de entrega; o ADR organiza decisões de produção sem substituir as duas fontes anteriores. IDs MC, VS e DEM são recortes do ADR, não IDs de objetivos de jogo.
 
-Uma atividade candidata representa um resultado de jogo coerente. Regras, verbos, timers, objetos e estados são checks que sustentam esse resultado, a menos que o GDD lhes dê um objetivo independente. As duas perspectivas permanecem visíveis: o que o jogador escolhe/faz e o que o mundo produz.
+O critério para separar objetivos é a independência do resultado pretendido e de sua condição de conclusão. Timers, estados, inputs, objetos e componentes aparecem como regras ou critérios de aceite, salvo quando as fontes lhes dão resultados independentes. Objetivos de gameplay do PEGA também não são os Goals/Desejos usados pelo GOAP dos larápios.
 
-**Atenção ao recorte de produção:** o microciclo inicial do ADR é um subconjunto do vertical slice. Preparação completa, invasão temporal, depósito em cofres, prisão, Fuga Final e resolução continuam no escopo do vertical slice completo; o ADR apenas os coloca depois do microciclo inicial. Isso não é remoção de conteúdo do MVP (MVP §A; ADR §§3.1–3.2).
+O GDD resume a intenção central como **“Capturar é a recompensa. Perseguir é a experiência.”** O catálogo representa localização, perseguição, interceptação, confronto e decisões autônomas dos larápios. A perda/recuperação de contato pelo Player é uma lacuna específica: o GDD define memória de alvo para larápios, mas não fixa a regra/feedback equivalente para o Player. A qualidade de uma perseguição ser divertida, legível ou caótica é uma hipótese para playtest, não uma regra funcional inventada para este documento.
 
-## Ciclo pela perspectiva do jogador
+## Recortes documentais
 
-| Fase/objetivo do jogador | Resultado observável | Recorte |
+| Recorte | Significado usado aqui | Fonte |
 |---|---|---|
-| Selecionar personagem e entrar em sessão local | Um Player entra controlável no slice; na Demo, os Players escolhem Rick/Petra e cada personagem selecionado pode ser controlado com apresentação correta. | Slice solo com identidade padrão, sem tela de seleção; Demo com seleção de personagem, dois Players e split-screen (MVP §§A–B; ADR, adendo v2). |
-| Escolher a missão e entender o que será protegido | Na Demo, o jogador percorre o HUB, escolhe a missão e recebe apresentação/briefing do cenário e da gangue. | A Demo tem um Armazém jogável. O slice inicia diretamente na missão, sem menu/HUB (MVP §B; ADR, adendo v2). |
-| Preparar a proteção | Durante a Preparação, o jogador escolhe um cofre válido para o objetivo principal; a escolha fica visível aos Players. | Slice e Demo. No slice, ao menos dois cofres válidos e um padrão; na Demo, ambos podem alterar a escolha e prevalece a última válida. A transição de fase pertence à progressão temporal da missão (GDD §Preparação; MVP §§A–B). |
-| Responder ao assalto e proteger os bens | O jogador acompanha ameaças, persegue/interrompe larápios, usa o cenário, recupera itens e os protege em armazenamento válido. | Ciclo central do slice e da Demo (GDD §§Loop principal, Controles, Inventário e Interações; MVP §A). |
-| Concluir capturas | Um larápio incapacitado é transportado e entregue à prisão; só a entrega conclui a captura. | Slice completo e Demo. É resultado distinto da recuperação de itens; o microciclo inicial do ADR o deixa para etapa posterior (GDD §§Transporte de larápios e Encerramento; MVP §A; ADR §3). |
-| Ver o resultado e continuar | O jogador recebe os estados finais e a classificação; na Demo, acompanha saldo, carreira, repetição da missão e bancarrota/reinício. | Resultado básico no slice; carreira e fluxo financeiro na Demo (GDD §§Classificação, Carreira e Encerramento; MVP §§A–B). |
+| Microciclo inicial | Primeiro teste integrado, menor que o vertical slice. Adia fases e resultados completos para cortes posteriores do mesmo slice. | ADR §§3.1–3.2 (71–97) |
+| Vertical slice | Primeiro ciclo completo jogável com um Player: Preparação, invasão, perseguição, roubo, recuperação/captura, fuga e resultado. | MVP §A (23–39) |
+| Demo | Acrescenta dois Players locais, seleção de Rick/Petra, cooperação, Armazém completo, apresentação, scoring, economia e persistência. | MVP §B (45–61) |
+| Posterior à Demo | Expansões declaradas pelo MVP, sem especificação adicional criada aqui. | MVP §C (71–77) |
+| Opcional / playtest | Conteúdo ou medida cuja inclusão/valor permanece sujeita a decisão ou validação. | MVP §D (79–84) |
 
-## Ciclo pela perspectiva de gameplay
+Diferenças entre microciclo, slice e Demo indicam ordem ou ampliação de escopo, não conflito de regras. O slice começa diretamente na atividade Mission, sem menu inicial/HUB; isso não elimina o fluxo da Demo. ADR adendo v2 (165–179).
 
-| Resultado do mundo | Regra observável | Recorte |
+## Análise preservada por perspectiva
+
+### Ciclo do jogador
+
+| Momento | Resultado/decisão do jogador | Recorte e observação |
 |---|---|---|
-| A missão avança por fases temporizadas | A Preparação termina pelo próprio timer; inicia o Assalto Ativo. O Tempo de Assalto e o Tempo de Fuga são separados. As receitas de Spawn Point começam no Assalto Ativo, não durante a Preparação. | Slice completo e Demo. Valores são configurados/balanceados por missão (GDD §§Estrutura da missão, Preparação e Encerramento; MVP §§A, D). |
-| Larápios invadem e conduzem um assalto autônomo | Spawn Points executam receitas independentes; os larápios entram pelo Spawn Seguro. Eles têm conhecimento parcial, investigam e decidem via GOAP, podem roubar e tentar escapar; mudanças relevantes provocam replanejamento. | Slice com ao menos um grupo/arquetipo e Demo com a gangue e quatro arquétipos definidos (GDD §§GOAP, Investigação, Spawn Points e Fuga; MVP §§A–B). |
-| Cenário e objetos respondem às interações | Portas, armadilhas, câmeras, armazenamentos e outros objetos podem alterar acesso, informação ou oportunidade; seus estados devem ser comunicáveis. | Slice: leitura de mapa e interações necessárias ao ciclo. Demo: Armazém completo com objetos e condições legíveis. A lista de objetos necessária em cada corte não está enumerada individualmente (GDD §§Interações e Sala de controle; MVP §§A–B). |
-| Posse de itens e captura mudam o estado da missão | Itens não são destruídos: sua posse muda, ataques válidos podem derrubá-los, e armazenamento pode protegê-los. Captura só se conclui por entrega efetiva à prisão. | Slice completo e Demo; recuperação, depósito e prisão são resultados ligados, mas cada um tem critério próprio (GDD §§Inventário, Interações e Estado final dos itens; MVP §A). |
-| Fuga e encerramento resolvem NPCs e itens | O fim do Tempo de Assalto inicia a Fuga Final; GOAP continua ativo. Ao fim do Tempo de Fuga, os larápios são Capturado, Escapou ou Não escapou; itens que saíram com fugitivos são Roubados e os que permaneceram no cenário são Recuperados. | Slice completo e Demo; a classificação temporal é opcional no primeiro corte (GDD §§Fuga Final, Encerramento e Classificação; MVP §§A, D). |
-| Power-ups alteram temporariamente propriedades do jogador | Efeito e duração devem ser legíveis quando forem incluídos. | Fora do primeiro MVP; inclusão/efeitos futuros dependem de escopo e playtest. Não é atividade do slice atual (GDD §Power-ups; MVP §D). |
+| Entrar na missão | Escolher modo local/roster permitido e controlar o personagem selecionado. | Slice: um Player, sem seleção formal definida. Demo: dois Players locais e Rick/Petra selecionáveis e mecanicamente equivalentes; GDD também permite modo solo. Fluxo exato, exclusividade de personagens e atribuição entre controles não estão definidos. GDD §§Personagens, Modos e Menus; MVP §§A–B. |
+| Escolher contrato | Selecionar uma missão disponível e iniciar esse contrato. | Demo: escritório estático com hotspots e um Armazém. HUB navegável e novos contratos são pós-Demo. MVP §§B–C. |
+| Entender o contrato | Reconhecer cenário, entradas, saídas, itens, novidades e gangue antes da ação. | Demo: briefing e apresentações. O conteúdo formal do briefing do slice não é especificado. GDD §Estrutura de uma missão; MVP §§A–B. |
+| Preparar | Escolher um cofre válido para proteger o objetivo principal durante a janela fixa de Preparação. | Slice e Demo; na Demo, ambos podem alterar a escolha e a última escolha válida prevalece. GDD §Preparação; MVP §§A–B. |
+| Ler e atravessar | Mover-se e observar ameaças/pontos relevantes para perseguir e interceptar. | O comportamento de perda/recuperação de contato pelo Player não está definido. Uso de câmeras, esquiva e salto não estão alocados pelo MVP a um recorte específico. |
+| Intervir | Atacar e usar recursos do cenário disponíveis para alterar acesso, informação ou oportunidade. | Interações são descritas no GDD; o MVP não enumera quais objetos ou capacidades específicas precisam estar no slice ou na Demo. |
+| Recuperar e proteger | Recuperar itens soltos e depositar os elegíveis em armazenamento para afetar o estado final e a proteção. | Resultados diferentes: um item recuperado pode continuar exposto no cenário; depósito válido produz estado de armazenamento e possível bônus. MVP slice inclui inventário e depósito em cofre. |
+| Capturar | Transportar um larápio incapacitado e entregá-lo à prisão. | Incapacitação não é captura. Entrega efetiva é necessária. O microciclo inicial adia prisão para depois, ainda no mesmo slice. |
+| Encerrar e avaliar | Acompanhar a Fuga Final, os estados finais de NPCs/itens e a classificação da missão. | Slice: resultado básico; Demo: scoring configurado. Métrica temporal é opcional no primeiro slice. |
+| Continuar carreira | Ver créditos/saldo e retornar, repetir ou reiniciar a carreira conforme o resultado. | Economia e persistência entre missões são requisitos da Demo; não existe salvamento/retomada do assalto em andamento. |
 
-O ciclo de NPCs coberto aqui é o dos larápios. Civis/figurantes dão vida aos cenários; clientes apoiam briefing narrativo; P.G.A. aparece na narrativa/transições, mas não atua como NPC durante o assalto (GDD §NPCs). Não se inventou um ciclo de simulação para essas categorias.
+### Ciclo de gameplay
 
-## Atividades macro candidatas
-
-Os IDs abaixo são locais a esta análise; não são IDs de cartões. As linhas descrevem objetivos, não cenas, componentes ou ordem de implementação.
-
-| ID | Objetivo e resultado observável | Perspectiva | Escopo e relações |
-|---|---|---|---|
-| A1 | **Participar da missão como Player local:** o Player (ou os dois Players na Demo) controla o personagem associado à sessão e recebe a apresentação correta. | Jogador | Slice: um Player controlável. Demo: Rick/Petra selecionáveis e dois Players em split-screen. A seleção de personagem e a de missão têm objetivos próprios; a materialização comprova o resultado da seleção de personagem (GDD §§Personagens e Modos; MVP §§A–B). |
-| A2 | **Escolher e entender a missão:** o jogador inicia o contrato escolhido com informação sobre cenário e ameaça. | Jogador | Demo: HUB, seleção, briefing e uma missão jogável, o Armazém. Slice: entrada direta na missão. A apresentação detalhada é suporte deste objetivo, não contagem de Unity Scenes (GDD §§Loop principal e HUB; MVP §B; ADR, adendo v2). |
-| A3 | **Preparar a proteção do objetivo principal:** o objetivo fica associado ao cofre válido escolhido e a escolha é conhecida pelos Players. | Jogador + mundo | Slice e Demo. Checks: cofre padrão, escolha gratuita; na Demo, última escolha válida prevalece. A localização não é revelada automaticamente aos larápios. Liga-se a A4 e A5 (GDD §Preparação; MVP §§A–B). |
-| A4 | **Avançar a missão por fases e relógios:** a Preparação, o Assalto Ativo e a Fuga Final começam e terminam conforme seus tempos; receitas de invasão ocorrem na janela prevista. | Mundo | Slice completo e Demo. Preparação, Tempo de Assalto, Tempo de Fuga e receitas de Spawn Point seguem regras temporais próprias; seus valores podem ser configurados por missão. Habilita A5 e leva a A9 (GDD §§Estrutura da missão, Preparação e Encerramento; MVP §§A, D). |
-| A5 | **Produzir a invasão e o assalto autônomo dos larápios:** a gangue entra e executa objetivos a partir de informação parcial, podendo roubar e tentar escapar. | Mundo | Slice: entradas/Spawn Seguro e GOAP com pelo menos um arquétipo. Demo: Armazém completo e quatro arquétipos. Checks: conhecimento, investigação, decisões e replanejamento; não são atividades individuais. Depende da progressão A4 (GDD §§GOAP e Spawn Points; MVP §§A–B). |
-| A6 | **Usar o cenário para afetar informação e acesso:** interações do ambiente mudam as oportunidades disponíveis e comunicam o estado relevante. | Jogador + mundo | Slice: apenas interações necessárias ao ciclo; Demo: cenário completo. Câmeras/sala de controle e a seleção exata de portas, armadilhas e armazenamentos ainda precisam ser alocadas ao conteúdo da missão (GDD §§Interações e Sala de controle; MVP §§A–B). |
-| A7 | **Recuperar e proteger os bens:** itens mudam de portador, podem ser derrubados/recuperados e, quando elegíveis, depositados em armazenamento válido. | Jogador + mundo | Slice completo e Demo. Não depende de capturar o portador; relaciona-se a A5 e A9. A9 resolve os estados finais dos itens (GDD §§Inventário e Estado final dos itens; MVP §A; ADR §3.2). |
-| A8 | **Concluir a captura de um larápio:** o resultado Capturado só ocorre após incapacitação, transporte e entrega à prisão. | Jogador + mundo | Slice completo e Demo. Independente de recuperar itens, ainda que os dois resultados influenciem o desempenho do assalto. Liga-se a A5 e A9 (GDD §§Transporte e Encerramento; MVP §A; ADR §3.2). |
-| A9 | **Encerrar o assalto e produzir seu resultado:** o fim da Fuga resolve estados de larápios/itens e produz uma classificação compreensível. | Mundo + jogador | Slice: resultado básico sem exigir pontuação temporal. Demo: critérios/pesos da missão comunicados e resumo do turno. Depende de A4, A5, A7 e A8 (GDD §§Encerramento e Classificação; MVP §§A–B). |
-| A10 | **Continuar a carreira após a missão:** o jogador consulta saldo e resultados, repete a missão ou encerra/reinicia diante da bancarrota. | Jogador + progressão | Demo; créditos e persistência entre assaltos. Campanha expandida, contratos adicionais e Endless são posteriores à Demo (GDD §§Carreira e Modos; MVP §§B–C). |
-
-## Relações entre os ciclos e as atividades
-
-| Encadeamento | Experiência do jogador | Resultado de gameplay relacionado |
+| Resultado do mundo | Comportamento observável | Recorte |
 |---|---|---|
-| A1 + A2 → início da missão | Na Demo, o jogador tem um personagem e uma missão selecionados; no slice, a missão inicia diretamente com a identidade padrão. | A sessão começa com personagem controlável e contexto de missão definidos. A seleção do personagem e a seleção da missão continuam objetivos distintos. |
-| A2 → A3 → A4 | O jogador entende o objetivo principal e prepara sua proteção. | A missão selecionada define o objetivo; a fase de Preparação termina pelo relógio e habilita o Assalto Ativo. |
-| A4 → A5 | O jogador passa a responder à invasão. | Receitas geram as entradas durante o Assalto Ativo; os larápios investigam, decidem e replanejam sem receber fatos ocultos. |
-| A5 ↔ A6 | O jogador observa e altera oportunidades usando o cenário. | Larápios e jogadores interagem com objetos; o ambiente pode alterar acesso ou informação disponível. A seleção exata de objetos permanece alocada ao conteúdo da missão. |
-| A5 → A7; A5 → A8; A4, A5, A7 e A8 → A9 | O jogador responde ao assalto, recupera bens e tenta concluir capturas. | Posse de itens e condição dos larápios evoluem; ao terminar a Fuga, o jogo resolve os estados finais e calcula a classificação. Recuperar bens e capturar um larápio continuam resultados distintos. |
-| A9 → A10 | O jogador consulta o resultado e decide continuar a carreira na Demo. | Saldo e persistência da carreira afetam a repetição, continuidade ou bancarrota. |
+| A missão progride | Preparação termina pelo relógio; Assalto Ativo e Fuga Final usam relógios separados. Preparação não encerra por comando de pronto. | Slice completo e Demo. |
+| A gangue entra | Cada Spawn Point executa receitas independentes a partir do Assalto Ativo; Spawn Seguro e portas afetam a entrada física conforme regras do GDD. | Slice: um Spawn Point e Spawn Seguro; Demo amplia o conteúdo do Armazém. |
+| Informação permanece parcial e rastreável | Percepção, investigação e propagação atualizam fatos conforme fonte, capacidade, validade e escopo Individual/Gangue/Global. O planner não consulta estado oculto. | Conhecimento parcial e replanejamento estão no slice; nem todo conteúdo de habilidade está automaticamente incluído. |
+| Larápios conduzem o assalto | GOAP seleciona Desejos/Actions compatíveis com conhecimento, capacidades, custos e configuração; mudanças relevantes levam a reavaliação. | Slice: ao menos um arquétipo; Demo: gangue Trapalhões com quatro arquétipos. |
+| O cenário muda oportunidades | Interações válidas alteram estados de objetos, acesso ou informação e comunicam os estados relevantes. | GDD descreve portas, câmeras, armadilhas, cofres, prisões e outros objetos; escopo por entrega não está enumerado. |
+| Posse e estado de NPCs mudam | Roubo, ataque, soltura, recuperação, armazenamento, incapacitação, transporte e entrega alteram estados de itens e larápios. | Slice completo e Demo, com itens não destruídos e captura só após entrega. |
+| O assalto termina | Fuga Final mantém o GOAP ativo; fim do relógio fecha o gameplay e resolve larápios/itens. | Slice completo e Demo. |
+| Resultado e carreira avançam | Dados consolidados produzem classificação; na Demo, créditos/custo e persistência atualizam a carreira. | Resultado básico no slice, scoring/economia/persistência na Demo. |
 
-As setas indicam dependência de sequência; `↔` indica influência durante o mesmo assalto. São relações entre objetivos do jogo, não uma ordem de implementação.
+O ciclo de NPCs deste catálogo é o dos larápios, que têm comportamento de gameplay. O GDD trata civis/figurantes, clientes e P.G.A. como presença narrativa/apresentação, não como NPCs autônomos do assalto; nenhum ciclo de gameplay foi inventado para eles (GDD §NPCs, 368–375).
 
-## Cobertura e lacunas
+## Hierarquia sintetizada
 
-### Objetivos macro bloqueados por decisão
+As famílias organizam resultados próximos para navegação. Não determinam arquitetura, ordem técnica nem número de cenas.
 
-**Nenhum identificado.** As fontes permitem reconhecer as atividades candidatas e separar o que pertence ao slice, à Demo, ao pós-Demo ou ao opcional.
+| Família | IDs | Resultado agrupador |
+|---|---|---|
+| Entrada e compreensão da missão | OBJ-01–OBJ-03 | Jogar com o roster local escolhido, selecionar contrato e entender sua apresentação. |
+| Preparação e progressão do assalto | OBJ-04–OBJ-06 | Proteger o objetivo principal, avançar relógios e materializar as receitas de invasão. |
+| Operação dos larápios | OBJ-07–OBJ-08 | Manter informação parcial e produzir comportamento autônomo por GOAP. |
+| Perseguição, cenário e bens | OBJ-09–OBJ-13 | Perseguir, alterar oportunidades do cenário, recuperar bens, protegê-los em armazenamento e concluir captura. |
+| Encerramento e continuidade | OBJ-14–OBJ-16 | Resolver estados finais, classificar/apresentar resultados e manter a carreira. |
 
-### Conflitos reais entre fontes
+### Catálogo de objetivos
 
-**Nenhum identificado.** Diferenças aparentes correspondem a recortes explícitos:
+| ID | Objetivo | Fronteira do resultado |
+|---|---|---|
+| OBJ-01 | Participar da missão com o roster local escolhido | O(s) Player(s) selecionado(s) entra(m) controlável(is) na atividade com o personagem correspondente. |
+| OBJ-02 | Selecionar e iniciar um contrato disponível | Uma missão disponível é escolhida e iniciada. |
+| OBJ-03 | Compreender o contexto do contrato | Apresentação informa cenário e ameaça antes do assalto, conforme o fluxo de Demo. |
+| OBJ-04 | Preparar a proteção do objetivo principal | Uma escolha válida de cofre é estabelecida durante Preparação e comunicada aos Players. |
+| OBJ-05 | Avançar fases e relógios da missão | Preparação, Assalto Ativo e Fuga Final obedecem a seus relógios distintos. |
+| OBJ-06 | Executar receitas temporais de invasão | Spawns independentes são criados e entram no cenário segundo Spawn Points e Spawn Seguro. |
+| OBJ-07 | Manter conhecimento limitado e válido dos larápios | Percepção/investigação gera fatos com origem, escopo e validade; desconhecido não vira ausência conhecida. |
+| OBJ-08 | Produzir operação autônoma dos larápios por GOAP | Larápios escolhem e executam ações compatíveis com Desejos, conhecimento, capacidades e situação. |
+| OBJ-09 | Perseguir, interceptar e confrontar larápios | O Player localiza/segue alvos e obtém os efeitos de ataque definidos; qualidade da perseguição é validada por playtest. |
+| OBJ-10 | Alterar oportunidades por interações do cenário | Interações válidas mudam acesso, informação ou condição de objetos, nos recursos incluídos pela missão. |
+| OBJ-11 | Recuperar bens e alterar sua posse | Itens roubados, soltos e recuperados mudam de portador sem destruição ou duplicação. |
+| OBJ-12 | Proteger bens elegíveis em armazenamento | Depósito transfere itens elegíveis para armazenamento compatível; proteção/bônus é resolvido sem empilhar transferências. |
+| OBJ-13 | Concluir captura por entrega à prisão | Um larápio só fica Capturado após incapacitação, transporte e entrega efetiva. |
+| OBJ-14 | Resolver a Fuga Final e estados terminais | Fim do relógio fecha o assalto e determina estados finais de larápios e itens. |
+| OBJ-15 | Classificar e apresentar o resultado da missão | Critérios configurados convertem dados do assalto em resultado compreensível. |
+| OBJ-16 | Continuar a carreira e persistir progresso | Créditos, custo, saldo, bancarrota/reinício e persistência entre missões seguem as regras de carreira. |
 
-- O loop completo do GDD passa pelo HUB e seleção de missão; o slice do ADR entra diretamente na Mission Route. A seleção e apresentação pertencem ao fluxo de Demo, não ao slice.
-- O primeiro microciclo do ADR adia preparação, invasão temporal, prisão, armazenamento, Fuga Final e classificação dentro do mesmo vertical slice; o MVP ainda exige o ciclo completo para concluir o slice.
-- O jogo completo prevê conteúdo maior que a Demo; MVP §C identifica campanha expandida, outros cenários/contratos, Endless e conteúdo adicional como posterior.
+## Relações entre objetivos
 
-### Detalhes que não bloqueiam definir as atividades macro
+Estas relações indicam dependência ou troca de resultado no gameplay; não são sequência de implementação.
 
-Essas lacunas não impedem reconhecer os objetivos, mas podem virar decisões ou checks de aceitação quando uma atividade for preparada para execução.
-
-| Lacuna | Por que não bloqueia o objetivo macro |
+| Relação | Justificativa |
 |---|---|
-| Se dois Players podem escolher o mesmo personagem; identidade padrão do slice | A seleção/controle está definida; a regra de exclusividade e a identidade do slice são critérios detalhados ainda não declarados (GDD §Personagens; MVP §§A–B). |
-| Posição/regra de entrada do Player no cenário | “Player controlável/entrada correta” é um resultado definido para a Demo, mas o ponto exato é detalhe de composição/conteúdo (MVP §B). |
-| Valores de Preparação, Assalto, Fuga, receitas de Spawn Points e balanceamento por arquétipo | O GDD/MVP definem que tempos e receitas existem; valores e combinações são conteúdo configurável (MVP §D). |
-| Conteúdo exato de objetos interativos, sala de controle, câmeras e armadilhas por entrega | O objetivo de ler/interagir com o cenário está claro; a MVP pede somente interações necessárias no slice e cenário completo na Demo, sem inventário fechado por objeto (GDD §§Interações e Sala de controle; MVP §§A–B). |
-| Fórmula/pesos finais da classificação, detalhes de apresentação do resultado e conteúdo da carreira após a Demo | O MVP define resultado básico no slice e carreira na Demo; pesos são por missão/playtest e o pós-Demo ainda é aberto (GDD §§Classificação e Carreira; MVP §§B–D). |
-| Mapeamento final de esquiva, salto e soltura de itens; política de Pause cooperativo | Ações e necessidade de Pause estão descritas, mas parte do input e suporte para dois Players ainda precisa de definição (GDD §Controles; MVP §§B e decisões pendentes). |
-| Lista e efeitos dos power-ups | Explicitamente fora do primeiro MVP e sujeitos a escopo/playtest posterior (MVP §D). |
+| OBJ-01 → OBJ-02/OBJ-03 → OBJ-04 | A atividade precisa de roster jogável; a Demo escolhe/apresenta contrato antes da Preparação. O slice entra diretamente na missão e não exige a seleção/apresentação formal da Demo. |
+| OBJ-04 → OBJ-05 | A Preparação temporizada termina e inicia o Assalto Ativo; a proteção escolhida é estabelecida nessa fase. |
+| OBJ-05 → OBJ-06 | Receitas contam tempos absolutos a partir do Assalto Ativo; Fuga Final cancela receitas ainda pendentes. |
+| OBJ-06 → OBJ-07/OBJ-08 | Larápios criados entram no mundo, percebem fatos e iniciam decisões autônomas. |
+| OBJ-07 ↔ OBJ-08 | Conhecimento válido orienta GOAP; mudanças e efeitos de Actions podem produzir novos fatos. É um ciclo de gameplay, não dependência circular de definição. |
+| OBJ-08 ↔ OBJ-09/OBJ-10 | Ações dos larápios criam alvos e oportunidades; Player e cenário alteram perseguição, acesso e informação. |
+| OBJ-09 → OBJ-11/OBJ-13 | Ataques podem soltar itens e incapacitar conforme regra; recuperar o item e capturar o larápio têm condições finais próprias. |
+| OBJ-11 → OBJ-12 → OBJ-14/OBJ-15 | Posse e depósito afetam o estado final dos bens e podem afetar proteção/classificação. Permanecer no cenário ao fim não equivale a estar protegido em cofre. |
+| OBJ-13 → OBJ-14/OBJ-15 | Entrega à prisão afeta o estado final do larápio e os critérios de resultado. |
+| OBJ-05/OBJ-08/OBJ-11/OBJ-12/OBJ-13 → OBJ-14 | Tempo, comportamento, posse, armazenamento e captura alimentam a resolução terminal. |
+| OBJ-14 → OBJ-15 → OBJ-16 | Estados terminais sustentam classificação; na Demo o resultado alimenta créditos e carreira. |
 
-### Entregas transversais para detalhamento posterior
+## Requisitos transversais
 
-- **Apresentação e navegação:** o fluxo da Demo inclui splash/logo, menu, opções, HUB, seleção de Players/personagens e missão, briefing, gangue, gameplay/Pause, classificação, resumo financeiro e retorno/bancarrota. São momentos de experiência; não implicam uma Unity Scene cada.
-- **Feedback/HUD:** temporizadores, inventário, itens recuperados/protegidos, capturas, estado do personagem e minimapa sustentam as atividades A3–A9; a orientação do minimapa permanece opcional.
-- **Players e controles:** o GDD prevê um ou dois Players locais; a Demo exige dois, sem multiplayer online. Movimento, interagir/atacar, confirmar e pausar têm mapeamentos descritos; esquiva, salto e soltura ainda precisam de binding.
-- **Conteúdo visual/audiovisual:** a Demo exige assets, animações e identidade visual necessários para Players, gangue, Armazém e apresentação. Esta análise não verifica arquivos existentes nem fecha a lista de produção; o Art Book serve como referência visual.
+São condições de suporte a múltiplos objetivos, não objetivos independentes apenas por aparecerem no GDD.
 
-Esses elementos podem gerar atividades próprias quando houver objetivos de produto independentes. Nesta análise, telas, controles, feedback e assets permanecem requisitos transversais das atividades acima; não foram transformados automaticamente em cartões por tela ou arquivo.
+| Requisito transversal | Objetivos atendidos | Estado de especificação |
+|---|---|---|
+| Controles: mover, interagir/atacar, soltar, confirmar e pausar; esquiva/salto | OBJ-01, OBJ-04, OBJ-09–OBJ-13 | Ações de controle estão no GDD; bindings de várias ações e escopo MVP de esquiva/salto não estão alocados. |
+| Feedback/HUD: relógios, inventário, ameaças, itens, capturas, estado do Player e minimapa | OBJ-01, OBJ-04–OBJ-15 | GDD indica conteúdo; MVP exige UI suficiente para observar o ciclo. Layout e alocação de cada indicador permanecem a detalhar. |
+| Câmera e leitura simultânea | OBJ-01, OBJ-09–OBJ-13 | GDD prevê câmera oblíqua/split horizontal e dá critério verificável: HUD, minimapa e ícones legíveis para ambos, sem conteúdo crítico pequeno demais ou apenas na metade do outro Player. |
+| Estado legível de objetos interativos | OBJ-07, OBJ-08, OBJ-10–OBJ-13 | GDD exige comunicar estado relevante; a lista de objetos presente em cada entrega não está fechada. |
+| Apresentação audiovisual e humor | OBJ-01–OBJ-03, OBJ-09, OBJ-15 | GDD/MVP exigem apresentação de Demo. Qualidade narrativa/visual precisa de avaliação, não ganha critério funcional arbitrário aqui. |
+| Menus, navegação e Pause | OBJ-01–OBJ-03, OBJ-15–OBJ-16 | Fluxo da Demo cobre início/solo-coop, opções/saída, HUB estático, missão/resultados, Pause e bancarrota. Pause oferece continuar, opções e saída confirmada conforme GDD. São partes do fluxo, não um objetivo por tela. Semântica de Pause com dois Players ainda precisa de aceite. |
+| Integridade de fatos, posse e resultado | OBJ-07–OBJ-08, OBJ-11–OBJ-15 | Invariantes comportamentais especificados nos contratos; aceitação de implementação ainda será planejada depois desta revisão. |
 
-## Integridade da análise
+## Matriz de cobertura GDD/MVP
 
-O GDD/MVP/ADR foram usados somente como fontes de análise; não foram editados. TASKS e Trello não foram alterados. Nenhum código, prefab, asset ou configuração de gameplay foi implementado. Os resultados podem agora ser usados para comparar os cartões existentes com os objetivos do jogo, sem presumir que cada linha desta análise corresponda a um cartão.
+Esta checagem parte novamente das áreas do GDD/MVP. Uma mesma linha pode ser transversal e coberta por mais de um objetivo.
+
+| Área de cobertura | Objetivo(s)/aceite | Recorte | Estado / lacuna |
+|---|---|---|---|
+| Identidade e participação de Players | OBJ-01; roster selecionado fica controlável no contrato | Slice: um Player; Demo: dois Players locais, Rick/Petra | Seleção formal no slice, exclusividade/atribuição de personagens não alocadas. |
+| Controles e interação do Player | OBJ-01, OBJ-04, OBJ-09–OBJ-13; feedback e controles transversais | Slice/Demo conforme ciclo | Esquiva, salto, mapeamentos e algumas regras de incapacitação do Player não alocados/especificados. |
+| Preparação e proteção do objetivo principal | OBJ-04; critérios de cofre válido e cooperação | Slice e Demo | Momento exato da mudança de localização no mundo não especificado. |
+| Relógios e progressão do assalto | OBJ-05 | Slice completo e Demo | Valores são configuração/balanceamento, não lacuna de objetivo. |
+| Spawn Points, Spawn Seguro e receitas | OBJ-06 | Slice: ao menos um ponto e zona; Demo conforme Armazém | Regras comportamentais no GDD; horários/quantidades são conteúdo por missão. |
+| GOAP, conhecimento e arquétipos | OBJ-07–OBJ-08 | Slice: um grupo e ao menos um arquétipo; Demo: quatro arquétipos Trapalhões | Interpretação de “item inicialmente desconhecido” no MC-02 exige esclarecer objeto da informação (GAP-01); plano vencedor específico exige configuração inequívoca (GAP-15). |
+| Interações de cenário | OBJ-10; itens, prisão e ataque ficam nos objetivos próprios | Slice: necessárias ao loop; Demo: Armazém completo | MVP não lista cada interação/objeto obrigatório por corte. |
+| Posse, inventário e transferência de itens | OBJ-11–OBJ-12 | Microciclo começa com posse/queda/recuperação; slice acrescenta armazenamento completo; Demo pontua proteção | Ordem parcial inicial documentada como estável e revisável por playtest. |
+| Recuperação e armazenamento | OBJ-11 e OBJ-12 | Slice e Demo | Objetivos separados: recuperação não implica proteção em armazenamento. |
+| Confronto, incapacitação, transporte e captura | OBJ-09 e OBJ-13 | Slice completo/Demo; prisão é posterior ao microciclo | Critério completo de ataque válido e continuidade do timer durante transporte em aberto. |
+| Fuga Final e resolução terminal | OBJ-05, OBJ-08, OBJ-14 | Slice completo e Demo | Invariantes definidos; duração configurável. |
+| Classificação e resultado | OBJ-14–OBJ-15 | Slice: resultado básico; Demo: scoring configurado | Fórmula/valores e critérios efetivamente selecionados para o Armazém precisam de configuração da missão. |
+| Cooperação local | OBJ-01, OBJ-04 e transversal de câmera/HUD | Demo | Regras específicas de escolha cooperativa definidas; divisão geral de tarefas/legibilidade exige playtest. |
+| HUB e fluxo de apresentação | OBJ-02–OBJ-03, OBJ-15–OBJ-16 | Demo: escritório estático/hotspots; pós-Demo: HUB navegável | Não se infere quantidade de Unity Scenes a partir de páginas/etapas de experiência. |
+| Modo de jogo local | OBJ-01; escolha de solo/cooperativo e roster | GDD permite um ou dois Players; Demo exige coop local para dois e verifica fluxo de um/dois | Sem multiplayer online. A semântica completa de pause compartilhado está em GAP-14. |
+| Dificuldade por cenário | Sem objetivo detalhado; mantém rastreabilidade no horizonte | GDD descreve três níveis por cenário; MVP não aloca a seleção/configuração a um recorte | GAP-13: não inferir que dificuldade seja selecionável antes de haver decisão de fluxo. |
+| Carreira e persistência | OBJ-16 | Demo | Valores iniciais de custo/limite são provisórios de playtest; sem save/resume de assalto. |
+| Feedback/HUD | Requisito transversal aplicado aos objetivos acima | Slice: observar o ciclo; Demo: HUD/minimapa conforme MVP/GDD | Contrato de conteúdo existe, layout e critérios de legibilidade ainda não foram detalhados. |
+| Posterior à Demo | horizonte abaixo | Pós-Demo | Identificado e rastreável; sem especificação especulativa. |
+| Opcional/playtest | horizonte abaixo | Opcional / conforme playtest | Não antecipado ao primeiro corte. |
+
+## Horizonte além do primeiro slice/Demo
+
+Estes itens permanecem rastreáveis às fontes, sem receber contrato inventado onde o GDD ainda está aberto.
+
+| Item | Classificação | Fonte/limite |
+|---|---|---|
+| HUB navegável, novos cenários/contratos e campanha expandida | Pós-Demo | MVP §C; conteúdo e ordenação ainda não detalhados. |
+| Mais gangues, habilidades e desbloqueios | Pós-Demo | MVP §C; GDD lista possibilidades, não aloca todo o catálogo à Demo. |
+| Endless | Pós-Demo | MVP §C e GDD §Modos. |
+| Power-ups | Fora do primeiro MVP; inclusão depende de escopo/playtest | MVP §D; GDD §Power-ups deixa efeitos futuros abertos. |
+| Três níveis de dificuldade por cenário | GDD descreve a variação; recorte/fluxo de escolha não alocado pelo MVP | GDD §Dificuldade; não classificar automaticamente como Demo ou pós-Demo. |
+| Classificação temporal no primeiro slice | Opcional | MVP §D; não é removida da possibilidade de scoring/configuração posterior. |
+| Valores de relógios, capacidades, pesos e economia | Configuração/balanceamento sujeito a playtest | GDD; MVP §D. |
+
+## Lacunas e decisões pendentes
+
+Uma lacuna não apaga a identidade do objetivo. Ela limita comportamento, aceite ou integração, conforme indicado.
+
+| ID | Objetivo(s) | Tipo | Informação ausente / impacto | Quando resolver | Fontes consultadas |
+|---|---|---|---|---|---|
+| GAP-01 | OBJ-07–OBJ-08 | Especificação/aceite | ADR MC-02 chama algo de “item inicialmente desconhecido”; o GDD diz que identidade do objetivo principal é conhecida e localização não é revelada automaticamente. Não está claro se MC-02 se refere à localização, existência ou identidade. Não é conflito confirmado. | Antes de fixar estado inicial do microciclo/fixture de aceite. | GDD §Objetivo principal; ADR §3.1 MC-02; MVP §A. |
+| GAP-02 | OBJ-04 | Comportamento/aceite | O GDD define escolha do cofre e última escolha válida, mas não explicita quando o objetivo muda sua posição física/estado de armazenamento após a escolha. | Antes de aceitar a materialização física de OBJ-04; seleção e visibilidade podem ser especificadas desde já. | GDD §§Preparação e Objetivo principal; MVP §§A–B. |
+| GAP-03 | OBJ-01 | Aceite | Não está fixado se Rick e Petra podem ser escolhidos simultaneamente pelos dois Players nem como escolhas/controles são atribuídos quando coincidem. | Antes de fechar critérios de seleção cooperativa da Demo. | GDD §§Personagens/Menus; MVP §B. |
+| GAP-04 | OBJ-09, OBJ-13 | Comportamento/aceite | “Ataque válido” não tem todos os critérios de acerto descritos; o GDD não esclarece se o timer de recuperação continua durante transporte. Também precisa ficar observável o evento que conta como entrega à prisão. | Antes de aceite verificável do combate/transporte/captura. | GDD §§Interação, Propriedades, Estados e Transporte; MVP §A; ADR §§3.1–3.2. |
+| GAP-05 | OBJ-09 | Comportamento/integração | Habilidades de larápios podem incapacitar Players, mas a consequência para Player, assalto e retomada de controle não está definida. | Antes de exigir esse efeito em uma missão/arquétipo. | GDD §Habilidades especiais; MVP não aloca consequência. |
+| GAP-06 | OBJ-10 | Escopo/aceite | “Armazém completo” e interações necessárias ao slice não vêm acompanhados de uma lista fechada de portas, armadilhas, câmeras, controles, objetos carregáveis ou capacidades incluídos em cada corte. | Ao definir conteúdo da missão e seus critérios de aceite, antes de implementá-los. | GDD §§Cenários, Interações de cenário, Sala de controle; MVP §§A–B. |
+| GAP-07 | OBJ-01, OBJ-09 | Escopo | O GDD descreve esquiva e salto, mas MVP não aloca esses verbos a uma entrega. Identidade padrão/formal do Player do slice também não foi fixada. | Ao especificar controles e roster do slice, sem bloquear o objetivo macro. | GDD §§Controles/Movimento/Esquiva/Salto; MVP §A. |
+| GAP-08 | OBJ-03, OBJ-10, transversais | Aceite/qualidade | O conteúdo do briefing e o layout exato de HUD ainda não estão fechados; a legibilidade básica de split-screen, porém, tem critério normativo explícito e não é lacuna. Qualidade subjetiva continua dependente de playtest. | Antes do aceite de apresentação/UI da Demo; não bloqueia identificar os objetivos. | GDD §§Estrutura da missão, Câmera, HUD, Sala de controle; MVP §§A–B. |
+| GAP-09 | OBJ-15 | Integração/aceite | GDD define critérios possíveis e pontuação por missão; MVP exige scoring configurado na Demo, mas não nomeia a configuração concreta do Armazém nem valores. | Antes de aceitar o resultado configurado da Demo; slice pode ter resultado básico. | GDD §Critérios de classificação; MVP §§A–B, D. |
+| GAP-10 | OBJ-04 | Aceite | A regra de “última escolha válida” não define desempate se dois comandos forem recebidos como simultâneos no mesmo instante lógico. | Se o modo de entrada permitir empate simultâneo; resolver na especificação de cooperação. | GDD §Preparação; MVP §B. |
+| GAP-11 | OBJ-01–OBJ-16 | Qualidade/playtest | “Perseguição interessante”, humor, caos legível e domínio gradual são intenções qualitativas, não limiares funcionais. Não devem ser convertidos em números sem pesquisa/playtest. | Em validações de experiência, depois de existir ciclo jogável. | GDD §§Intenção, Pilares e Experiência alvo; MVP §D. |
+| GAP-12 | OBJ-09 | Comportamento/aceite | A intenção central pede perseguição, mas a regra de contato/última posição/recuperação da percepção do Player não está especificada. O GDD define memória de alvo para larápios; essa regra não deve ser copiada automaticamente para o Player. | Antes de exigir casos de perda e retomada de contato no aceite de perseguição. | GDD §§Intenção central, HUD/Minimapa e Perda de alvo; MVP §A. |
+| GAP-13 | OBJ-02–OBJ-03 | Escopo/aceite | GDD define três níveis de dificuldade por cenário; MVP não fixa se a Demo/slice oferece escolha de dificuldade nem em que momento ela acontece. | Antes de exigir seleção de dificuldade ou pontuar um nível específico na missão. | GDD §Dificuldade (885–887); MVP §§A–C. |
+| GAP-14 | Requisito transversal de menu/Pause | Aceite de cooperação | GDD/MVP exigem Pause no fluxo da Demo, mas não definem se pausar por um Player pausa o jogo para ambos, nem as regras de opções/saída durante coop local. | Antes do aceite manual de Pause com dois Players. | GDD §Menus (943–959); MVP §B (56, 61). |
+| GAP-15 | OBJ-08 | Aceite/configuração | Pesos e custos são configuráveis, mas nenhuma missão/fixture da fonte define candidatos e um vencedor inequívoco para um aceite de seleção de plano específico. Sem essa configuração não se deve presumir uma fórmula ou vencedor. | Antes de aceitar escolhas específicas de plano; não bloqueia os critérios de validade, replanejamento e execução. | GDD §§GOAP e Peso/custo (170–234); MVP §§A–B (34–35, 54). |
+
+### Conflitos entre fontes
+
+**Nenhum conflito efetivo entre GDD e MVP foi identificado nesta reconstrução.** O microciclo do ADR adia partes que o MVP exige no slice completo; isso é uma sequência de produção expressa pelo próprio ADR. GAP-01 é ambiguidade na nomenclatura de um recorte do ADR, não evidência suficiente de regra conflitante.
+
+**Limite de escopo, não lacuna de gameplay:** GDD/MVP definem momentos e telas da Demo, mas não determinam quantidade de Unity Scenes. Essa decisão não pode ser derivada deste catálogo e pertence ao planejamento técnico posterior.
+
+## Correspondência com a análise anterior A1–A10
+
+| ID anterior | Tratamento | Novo destino | Motivo |
+|---|---|---|---|
+| A1 — participar como Player local | Dividido/refinado | OBJ-01; cooperação transversal; detalhes de entrada e seleção no GAP-03/07 | Preserva participação e materialização, separando-a de missão/briefing. |
+| A2 — escolher e entender missão | Dividido | OBJ-02 e OBJ-03 | Selecionar contrato e receber contexto têm resultados verificáveis distintos. |
+| A3 — preparar proteção | Preservado/refinado | OBJ-04 | Mantém escolha de cofre, temporização e regras cooperativas; registra lacuna de atualização física. |
+| A4 — avançar fases e relógios | Dividido | OBJ-05 e OBJ-06 | Progressão de fases e execução de receitas têm condições de conclusão independentes. |
+| A5 — assalto autônomo | Dividido/refinado | OBJ-07 e OBJ-08; escapa em OBJ-14 | Conhecimento parcial é resultado verificável que alimenta a operação GOAP; término de escape pertence à resolução terminal. |
+| A6 — usar cenário | Reclassificado/refinado | OBJ-10 e requisitos transversais | Interação válida pode mudar acesso/informação; o conteúdo por entrega permanece sem alocação. Interações de itens, combate e prisão pertencem aos seus próprios objetivos. |
+| A7 — recuperar e proteger bens | Dividido | OBJ-11 e OBJ-12 | Recuperar item no cenário e armazená-lo protegido têm resultados/aceites independentes. |
+| A8 — capturar larápio | Preservado/refinado | OBJ-13; confronto em OBJ-09 | A captura exige entrega efetiva; perseguição/ataque são etapas de jogador, não sinônimos de captura. |
+| A9 — encerrar e classificar | Dividido | OBJ-14 e OBJ-15 | Resolução de estados terminais e cálculo/apresentação da classificação são resultados distintos. |
+| A10 — continuar carreira | Preservado/refinado | OBJ-16 | Mantém economia, continuidade e persistência da Demo; modos futuros ficam no horizonte pós-Demo. |
+
+Não houve objetivo retirado por duplicidade. A família e os IDs de GOAP foram mantidos como conceitos de IA, não transformados em Goals do catálogo. Requisitos visuais, de controle, HUD e telas não foram convertidos em objetivos apenas por corresponderem a assets, inputs ou cenas.
+
+## Integridade e uso futuro
+
+- Os contratos detalhados estão em [pega-objective-specifications.md](pega-objective-specifications.md); este arquivo é a visão macro e matriz de cobertura.
+- O catálogo não cria regras novas nem resolve GAPs por inferência.
+- OBJ-01–OBJ-16 não são cartões Trello nem ordem de implementação.
+- As telas e momentos de fluxo não determinam a quantidade de cenas.
+- O próximo trabalho é revisar este catálogo. Dependências de produção e roadmap ficam para depois da revisão.
+- GDD, MVP, ADR, TASKS, Trello, código e assets não foram alterados por esta intervenção.
