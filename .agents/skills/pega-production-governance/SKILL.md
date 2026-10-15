@@ -1,6 +1,6 @@
 ---
 name: pega-production-governance
-description: Audita, prepara, reconcilia e revisa trabalho de produção do PEGA com evidências rastreáveis, fontes locais, Trello e o ecossistema Immersive; não grava fontes ou integrações na Fase 1.
+description: Use when deriving PEGA deliverable activities from GDD goals, diagnosing GDD/MVP/TASKS scope, preparing Trello work, reconciling production sources, or reviewing delivery against evidence.
 ---
 
 # Governança de Produção do PEGA
@@ -29,13 +29,45 @@ Se uma leitura externa falhar, informe ferramenta/objeto e erro observado, conti
 
 ## Código PEGA que consome Immersive
 
-Antes de API específica, aplique a skill instalada `immersive-ecosystem`; não copie seu conteúdo. Faça a sequência dela: raiz/Unity, manifest + lock + pacotes embutidos, diretório efetivamente resolvido e `package.json`, documentação inicial instalada e contrato/maturidade da API instalada, ownership/lifetime/dependências e camada/evidência de validação. Se localização, origem, versão ou conteúdo instalado for ambíguo, pare API-specific guidance.
+Antes de API específica, aplique a skill instalada `immersive-ecosystem`; não copie seu conteúdo. Faça a sequência dela: raiz/Unity, manifest + lock + pacotes embutidos, diretório efetivamente resolvido e `package.json`, documentação da versão oficial mais recente e README/CHANGELOG de migração, estado atual do consumidor, ownership/lifetime/dependências e camada/evidência de validação. A versão resolvida descreve o consumidor; uma diferença de versão não bloqueia planejamento ou integração. Se a localização/conteúdo efetivo estiver indisponível, registre essa lacuna e planeje a verificação/migração necessária em vez de adivinhar o estado instalado.
 
-Para cada contrato/maturidade solicitados, determine um **mínimo de versão baseado em evidência** usando documentação versionada, changelog/release e fonte instalada quando preciso. Relate lado a lado (a) versão/origem atualmente resolvidas no consumidor, (b) mínimo requerido e sua evidência, e (c) maturidade/contrato requerido. Não transforme snapshot atual, versão do checkout de desenvolvimento ou `latest` em requisito. Não escreva gatilhos por versão fixa nesta skill. Se piso ou maturidade não forem demonstráveis, marque `unknown`, explique a lacuna e suspenda orientação dependente dessa versão; não adivinhe nem atualize dependências. Mesmo acima do piso, valide a API contra a instalação resolvida do consumidor.
+Para cada contrato/maturidade solicitado, use a referência oficial mais recente e consulte README/CHANGELOG para diferenças de API e migrações. Relate a resolução atual do consumidor apenas como contexto e descreva a adaptação necessária. Não transforme diferença de versão em bloqueio nem peça alinhamento de versões como pré-requisito separado. Se a tarefa exigir uma dependência ou schema mais novo, inclua atualização e migração no escopo autorizado da integração; mantenha a validação de API e comportamento como critérios normais de conclusão.
 
 Para editar fonte do Framework, interrompa o caminho de implementação PEGA e solicite uma tarefa separada no repositório proprietário. Nessa tarefa aplique as skills Framework instaladas `immersive-framework-package-general`, `immersive-framework-architecture-audit`, `immersive-framework-package-implementation` e, se envolver Core/módulos, `immersive-framework-core-architecture`. Não modifique package técnico congelado sem pedido explícito.
 
 ## Fluxos
+
+### Análise de atividades do GDD
+
+Use este fluxo quando a pergunta for “o que o jogo precisa permitir/fazer para cumprir o GDD?” ou quando o backlog parecer composto por fragmentos técnicos ou cartões que misturam resultados independentes. Faça a análise antes de decompor atividades em cartões ou checklists.
+
+1. Leia GDD e MVP segundo a autoridade das fontes. Consulte o ADR para recortes/decisões aprovadas; TASKS e Trello não definem objetivos. Não altere fontes normativas nem Trello nesta análise.
+2. **REQUIRED SUB-SKILLS:** use `pega-player-cycle-analysis` para a jornada do jogador, `pega-gameplay-cycle-analysis` para os resultados do mundo e `pega-gdd-activity-planning` para síntese, cobertura, fronteiras e lacunas. Não substitua uma das perspectivas pela outra nem use uma skill monolítica para encerrar a síntese.
+3. Preserve duas trilhas explícitas. Na trilha do jogador registre objetivos/escolhas, ações representativas e feedback/resultados observáveis. Na trilha de gameplay registre resultados do mundo, relógios/transições, entrada/conhecimento/decisões dos NPCs, respostas de objetos/itens, power-ups no escopo declarado e resolução. Relacione eventos que causam, habilitam ou revelam resultados na outra trilha.
+4. Construa a hierarquia de atividades macro a partir dos objetivos do GDD. Cada atividade deve ter um objetivo coerente e um resultado observável, com fonte, escopo do MVP e dependências. Use checks para timers, regras, eventos e ações que sustentam um objetivo; não converta cada bullet, mecânica ou verbo em atividade. Preserve famílias diferentes de resultado quando o GDD as define; não una objetivos independentes porque compartilham uma cena ou missão. Materializar o personagem escolhido é critério da seleção, não motivo para fundir seleção de personagem, seleção de missão e o ciclo inteiro.
+5. Faça uma verificação de cobertura: cada objetivo relevante do GDD deve estar ligado a uma atividade, dependência, escopo posterior/opcional/fora do MVP ou lacuna de alocação. Confirme que ciclos de NPCs, tempo, objetos/itens e resolução não sumiram por estarem menos visíveis na jornada do jogador.
+6. Classifique lacunas na granularidade macro: decisão que impede definir objetivo/dependência agora; conflito real entre fontes, citando as afirmações; ou detalhe de conteúdo, configuração, apresentação/aceite que pode esperar porque o objetivo já está claro. Não escolha regras ausentes nem transforme desconhecidos de detalhe em bloqueios de atividade.
+7. Quando ajudar a decompor o jogo, inclua inventários concisos de Players/personagens, momentos de apresentação/menus e inputs definidos, distinguindo fatos de pendências. Eles informam os objetivos e não viram atividades automaticamente. Não prescreva Unity Scenes, Routes, Activities, Actors, APIs, componentes, scripts, assets ou ordem técnica.
+
+Mantenha estas distinções explícitas:
+
+- **Objetivo de produto** é o resultado da experiência PEGA; `Desejo / Goal` no GDD é uma intenção de um agente GOAP.
+- **Atividade de jogo** e **fase de gameplay** descrevem ações/resultados do jogador ou comportamento do mundo.
+- **Tela/momento de apresentação** é o que o jogador vê. Não implica uma Unity Scene.
+- Unity `Scene`, Framework `Route` e `Activity`, Session, Actor, componente, asset e API são escolhas técnicas. Não as infira durante a análise de atividades; mapeie-as somente em um plano técnico solicitado.
+
+#### Formato do documento de atividades
+
+Entregue, nesta ordem:
+
+1. objetivo, recorte do MVP e fontes consultadas;
+2. lane curta do ciclo do jogador e lane curta do ciclo de gameplay, com vínculos causais;
+3. tabela de atividades macro, cada uma com objetivo/resultado observável, checks de suporte, escopo do MVP, fontes e dependências;
+4. cobertura do GDD/MVP e lacunas classificadas entre decisões necessárias agora, conflitos reais e detalhes que podem esperar;
+5. decisões de produto que impedem definir objetivo, em forma de perguntas/opções baseadas em evidência;
+6. inventários transversais de Players/personagens, apresentação/menus e inputs quando forem relevantes.
+
+IDs usados dentro desse documento são rótulos de análise, não IDs do Trello. Uma atividade não define quantidade de Unity Scenes nem ordem de implementação quando a fonte não a define.
 
 ### Audit
 
@@ -43,23 +75,27 @@ Leia GDD, MVP, TASKS e ADR relevantes; inspecione código, package resolution e 
 
 ### Prepare Task
 
-Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada cartão, consulte também a ferramenta especializada `trelloReadChecklist` (`list_by_card`), paginando até o fim. Não conclua que não há checklists a partir de `checklists: []` em `trelloReadCard/get`; só declare ausência após a consulta especializada retornar completa e vazia. Se a consulta especializada falhar ou não estiver disponível, marque checklists como não verificados. Siga as referências até entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
+Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada cartão, consulte também a ferramenta especializada `trelloReadChecklist` (`list_by_card`), paginando até o fim. Não conclua que não há checklists a partir de `checklists: []` em `trelloReadCard/get`; só declare ausência após a consulta especializada retornar completa e vazia. Se a consulta especializada falhar ou não estiver disponível, marque checklists como não verificados. Identifique primeiro a atividade entregável do GDD que o cartão atende e a fase indicada pelo MVP. Se o cartão agrupar resultados independentes, registrar essa fronteira como proposta, sem alterar o Trello. Siga as referências até entregável, tarefa, requisito/ADR e código. Para código Immersive, aplique antes a sequência acima. Entregue:
 
 1. cartão/URL, estado, responsável/estimativa/progresso se disponíveis e itens de checklist incompletos;
-2. entregável/TASKS/requisito/decisão e rastreabilidade ausente;
-3. pacote/origem resolvida, versão consumidora e APIs/maturidade relevantes;
-4. mínimo demonstrado por contrato/maturidade e evidência, ou `unknown` com bloqueio de orientação específica;
-5. plano de execução delimitado, dependências bloqueadoras, riscos e critérios de aceitação, seguindo as regras abaixo;
-6. validação executável autorizada e passos manuais Unity restantes.
+2. atividade/resultado do GDD e fase do MVP atendidos pelo cartão; sinalize quando o cartão não tiver um resultado único ou não corresponder a uma atividade identificável;
+3. entregável/TASKS/requisito/decisão e rastreabilidade ausente;
+4. contratos/maturidade da referência oficial mais recente e migrações relevantes; informe a resolução atual do consumidor apenas se ela mudar uma ação concreta;
+5. adaptação/atualização necessária dentro da tarefa, se houver; não inclua alinhamento de versão como critério de aceitação ou bloqueio;
+6. plano de execução delimitado, dependências bloqueadoras, riscos e critérios de aceitação, seguindo as regras abaixo;
+7. validação executável autorizada e passos manuais Unity restantes.
 
 #### Plano de execução rastreável
 
-- Para composição PEGA de cenas, prefabs ou outros assets que consomem Immersive, prove primeiro o padrão no FirstGame: registre checkout/branch/HEAD, caminhos dos exemplos/assets, referências serializadas relevantes e baseline do pacote. Confirme compatibilidade com a instalação resolvida no PEGA. FirstGame é referência de composição; a instalação PEGA continua sendo autoridade para contratos de API.
+- Para composição PEGA de cenas, prefabs ou outros assets que consomem Immersive, prove primeiro o padrão no FirstGame: registre checkout/branch/HEAD, caminhos dos exemplos/assets e referências serializadas relevantes. Consulte README/CHANGELOG para adaptar o padrão ao contrato oficial mais recente; a diferença entre versões não invalida a referência nem bloqueia o plano. Registre a resolução PEGA somente se ela mudar a migração necessária.
+- Antes de ordenar implementação, faça inventário dos assets exigidos pelo cartão, GDD/MVP e contrato instalado: compare cada tipo com os arquivos e referências serializadas já existentes no PEGA e classifique como reutilizar, criar ou pendente de prova. Distinga asset visual de apresentação do prefab/Host/Actor de runtime; um modelo existente não prova que a composição de Player exista.
 - Inclua somente objetos, assets e configurações demonstrados pelas fontes. Trate itens sugeridos pelo usuário/card/rascunho como hipóteses a comparar com a fonte; não os confirme nem expanda em classes, alternativas ou checklists especulativos.
-- Sem referência aplicável e compatível, registre `FirstGame canonical gap`; proponha canonização e aceitação no FirstGame como pré-requisito bloqueador. Não invente composição substituta no PEGA.
+- Compare o fluxo completo definido no GDD com o recorte e os aceites do MVP. Se uma etapa foi omitida, mas produz uma escolha ou dado necessário a uma etapa incluída, trace esse resultado da origem até o consumidor e planeje a ponte mínima e substituível que o slice precisa. Derive papel e ownership pelas fontes normativas, pelo contrato instalado e pela composição canônica; não fixe script, UI ou asset sem evidência. Se a saída, o handoff ou o consumidor não puderem ser comprovados, registre essa lacuna antes da integração dependente; omitir a etapa não elimina por si só o requisito produzido por ela.
+- Para Player, derive de GDD/MVP/ADR o momento do Join e confirme o contrato mais recente para Route/Activity e binding. Iniciar direto na Route e estar “sem UI” não definem auto-Join nem eliminam uma escolha que a missão precisa receber. O botão/UI do sample prova somente o fluxo daquele sample. Quando uma seleção precisa anteceder uma missão, verifique primeiro a pré-condição do comando de seleção (por exemplo, se exige Slot `Joined`), o lifetime da Session/Actor através da Route e o handoff para a Activity consumidora; ordene Join e seleção conforme essa evidência. Planeje a ponte mínima substituível para o recorte, sem inventar API, componente ou chamador.
+- Só registre `FirstGame canonical gap` quando não existir composição aplicável mesmo após consultar README/CHANGELOG e adaptar a referência ao contrato mais recente. Diferença de versão não constitui lacuna canônica. Se houver uma lacuna funcional real, proponha canonização e aceite no FirstGame antes da composição dependente no PEGA.
 - Ordene cada etapa pelas dependências e informe **ação**, **como/fonte**, **saída concreta** e **critério de conclusão**. Deixe detalhes ainda não necessários para a etapa que os comprovará; marque desconhecidos como bloqueios ou decisões pendentes.
 
-Não reproduza documentos inteiros, inferira API de outro release, alegue sucesso runtime ou mude cartão.
+Não reproduza documentos inteiros, adivinhe migrações sem README/CHANGELOG, alegue sucesso runtime ou mude cartão.
 
 ### Reconcile
 
@@ -67,7 +103,7 @@ Compare documentos aprovados, implementação e Trello. Retorne proposta de reco
 
 ### Review Delivery
 
-Revise diff contra objetivo e aceitação do cartão. Para APIs Immersive, exija primeiro a verificação de contrato, maturidade e mínimo demonstrado; presença de tipo não significa integração. Verifique regressões, validações permitidas e lacunas de documentação/rastreabilidade. Para cada critério classifique evidência como satisfeito, não satisfeito ou não verificado. Não marque cartão concluído. Não execute Unity: liste compile/import/Editor/runtime que o usuário ainda precisa confirmar.
+Revise diff contra objetivo e aceitação do cartão. Para APIs Immersive, verifique o contrato/maturidade da referência oficial mais recente e as migrações aplicáveis; presença de tipo não significa integração. Verifique regressões, validações permitidas e lacunas de documentação/rastreabilidade. Para cada critério classifique evidência como satisfeito, não satisfeito ou não verificado. Não marque cartão concluído. Não execute Unity: liste compile/import/Editor/runtime que o usuário ainda precisa confirmar.
 
 ## Forma da resposta
 
