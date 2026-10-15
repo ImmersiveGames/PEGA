@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.10.0
+**Versão:** 0.11.0
 **Última atualização:** 2026-10-15
 
 ---
@@ -114,7 +114,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 :::flow
 1. No HUB, o jogador seleciona um **contrato de missão**, sujeito aos requisitos de habilitação e aos fundos/recursos exigidos quando aplicáveis. O **Briefing** pertence à seleção do contrato e apresenta local, objetivo principal e gangues previstas, antes de entrar na missão.
 2. Ao entrar na **Mission Activity**, começa a **Introdução da missão**: uma panorâmica cinematográfica dos pontos de interesse do cenário, seguida da apresentação das gangues participantes. Cada gangue recebe um splash screen; apenas gangues inéditas na carreira recebem, antes do splash, sua animação especial de introdução. Toda a apresentação pode ser saltada por pressão prolongada de Cancelar; pular conta como apresentação das gangues inéditas.
-3. Encerrada ou saltada a introdução, a câmera retorna à área inicial, os Players são materializados e recebem controle, e **então** começa o relógio da **Preparação**. Durante sua duração fixa, os Players podem escolher entre cofres válidos onde proteger o objetivo principal.
+3. Encerrada ou saltada a introdução, a câmera retorna à área inicial, os Players são materializados e recebem controle, e **então** começa o relógio da **Preparação**. Durante sua duração fixa, os Players exploram livremente o cenário, interagem com POIs fixos e locais válidos e configuram armadilhas, incrementos e armazenamento compatível. A escolha do cofre principal é uma dessas interações.
 4. Quando a Preparação termina, começa o **Assalto Ativo** e passam a contar as receitas de invasão dos Spawn Points. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal, mas não conhecem automaticamente as escolhas de proteção dos jogadores.
 5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
 6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
@@ -131,7 +131,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 |---|---|
 | Seleção do contrato e Briefing (HUB) | O jogador seleciona um contrato habilitado e, antes de iniciar a missão, recebe informações sobre local, objetivo principal e gangues previstas. Não é uma fase do assalto. |
 | Introdução cinematográfica (Mission Activity) | Panorâmica dos pontos de interesse do cenário e apresentação das gangues, com splash recorrente e animação especial somente na primeira aparição na carreira. Pode ser saltada. Não é uma fase de gameplay. |
-| Preparação (Mission Activity) | Após a introdução, câmera e Players ficam na área inicial; começa o relógio de Preparação e os Players escolhem onde proteger o objetivo principal entre cofres válidos. |
+| Preparação (Mission Activity) | Após a introdução, Players controláveis iniciam exploração livre e configuração contextual do cenário, incluindo armazenamento, armadilhas, incrementos e cofre do objetivo principal, enquanto corre o relógio. |
 | Assalto Ativo e invasão (Mission Activity) | Quando termina a Preparação, começa o Tempo de Assalto. Spawn Points executam suas receitas temporais independentes; investigação, roubo, proteção, confronto e captura acontecem normalmente. |
 | Fuga Final (Mission Activity) | Ao terminar o Tempo de Assalto, começa o Tempo de Fuga e o contexto global muda para Fuga Final, mantendo o GOAP. |
 | Encerramento e resultados | Ao terminar o Tempo de Fuga, o gameplay encerra, os estados são consolidados e os resultados são apresentados em Activity própria. |
@@ -174,9 +174,14 @@ A validação combina **aceite individual** (cenários de comportamento com IDs 
 :::decision
 **Decisão:** a Preparação inicia **somente após o fim ou skip da Introdução cinematográfica**, com a câmera na área inicial, os Players materializados e o controle de gameplay disponível. Tem duração fixa configurável por missão e termina quando o tempo acaba. Ela representa narrativamente o tempo até a chegada dos larápios. No gameplay normal, não há encerramento antecipado nem confirmação de `Pronto`; antecipar o fim é permitido apenas por ferramenta de debug.
 
-A ação central da Preparação inicial é escolher em qual cofre válido proteger o objetivo principal. No primeiro MVP há pelo menos dois cofres válidos, um deles selecionado como padrão. A escolha não tem custo; orçamento, investimentos e outras preparações ficam para etapas posteriores.
+A Preparação é a fase de **exploração livre e configuração contextual do cenário**. Os Players podem percorrer todo o espaço acessível e interagir com POIs fixos ou posições válidas para **guardar/retirar itens físicos, instalar armadilhas, aplicar incrementos, configurar portas ou executar eventos especiais**, conforme as possibilidades declaradas pelo próprio alvo. Essa preparação cria oportunidades para o Assalto e a Fuga; cada objeto possui ações, capacidades e estados próprios (ver **Interações de cenário**).
 
-Em cooperativo, ambos os Players podem alterar a seleção. A última escolha válida prevalece e o estado selecionado é comunicado aos dois Players, sem revelar automaticamente a localização aos larápios. **Cada nova escolha válida altera imediatamente a localização do objetivo principal para o cofre escolhido**, sem transporte manual ou duplicação: o item sai do cofre anterior e passa ao novo. A seleção padrão corresponde à localização inicial válida. A mudança do World State não fornece conhecimento automático aos larápios. A missão pode definir alternativas adicionais no jogo completo, inclusive iniciar o objetivo em posse do Player.
+No primeiro recorte do MVP, a ação mínima obrigatória permanece escolher em qual **cofre válido** proteger o objetivo principal: há pelo menos dois cofres válidos, um selecionado por padrão, e a escolha é gratuita. Isso não torna loja, compra de equipamentos ou todas as configurações aqui descritas requisitos automáticos do MVP. O jogo completo poderá oferecer tais recursos conforme o recorte de produção.
+
+Em cooperativo, ambos os Players podem alterar a seleção do cofre; **a última escolha válida prevalece** e é comunicada aos dois sem revelar automaticamente a posição aos larápios. Cada escolha válida **transfere imediatamente o objetivo principal para o cofre escolhido**, sem transporte manual nem duplicação. O item sai da posição anterior; a seleção padrão corresponde ao local inicial. Essa alteração do World State não gera conhecimento automático para a IA. Missões posteriores podem permitir outras posições iniciais, inclusive posse do Player.
+
+**O tempo da Preparação não pausa durante a navegação nos menus contextuais.** A seleção de opções/itens deve ser ágil, semelhante a menus de seleção rápida, evitando gerenciamento longo no gameplay. Ao fim do relógio, encerra-se a permissão de novas configurações exclusivas da Preparação; ações operacionais, como guardar e retirar itens físicos, permanecem permitidas no Assalto e na Fuga. A conclusão ou cancelamento de uma operação que esteja em curso no instante da mudança de fase depende de detalhamento posterior.
+
 
 A Preparação e as receitas dos Spawn Points são sistemas temporais distintos. O tempo das receitas começa no início do Assalto Ativo, não durante a Preparação.
 :::
@@ -345,7 +350,7 @@ Ao concluir, cancelar, invalidar ou interromper a Action, seu proprietário libe
 ### Áreas, POIs e investigação
 
 :::decision
-**Decisão:** o cenário é organizado em **Áreas** que funcionam como unidades de exploração e em **POIs (Points of Interest)** relevantes ao planejamento, como cofres, terminais, chaves e portas especiais.
+**Decisão:** o cenário é organizado em **Áreas** que funcionam como unidades de exploração e em **POIs (Points of Interest)** relevantes ao planejamento, como cofres, terminais, chaves e portas especiais. O **POI fixo de configuração do Player** é ancorado ao cenário; itens físicos móveis e outros Targets da IA podem continuar sendo alvos de percepção/interação sem se tornarem POIs fixos.
 
 Cofres candidatos são POIs conhecidos inicialmente. A invasão pode começar tentando alcançar e investigar um desses pontos. Se o objetivo não for encontrado ou uma solução necessária não for conhecida, o GOAP pode escolher outra oportunidade conhecida ou investigar uma Área ainda não explorada.
 
@@ -377,6 +382,7 @@ O HUB organiza contratos e progressão na cidade de Larópolis. A **seleção de
 - Visualizar progressão.
 - Retornar ao menu inicial.
 - Esconder conteúdos futuros até o jogador cumprir requisitos.
+- No jogo completo, permitir **loja e preparação do kit de missão**, com aquisição de armadilhas/incrementos e seleção dos equipamentos coletivos que serão levados; detalhes e escopo por entrega permanecem a definir.
 
 ## Personagens principais
 
@@ -411,7 +417,7 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 | Mover | Eixo esquerdo ou D-Pad | Movimento em todas as direções no solo. |
 | Esquivar | Botão a definir no mapeamento final | Deslocamento curto e rápido com breve janela de invulnerabilidade e cooldown. |
 | Saltar | Botão a definir no mapeamento final | Salto livre usado para mobilidade e para evitar ameaças explicitamente compatíveis com salto. |
-| Interagir / atacar | Botão contextual (`B`) | Interage com alvo válido ou ataca quando não houver alvo interativo. |
+| Interagir / atacar | Botão contextual (`B`) | Na Preparação, abre ações/configuração do POI ou local válido; no Assalto/Fuga, executa interações operacionais ou ataque direcional quando não houver interação válida. |
 | Soltar itens | Comando próprio a definir | Solta simultaneamente todos os itens carregados. |
 | Confirmar | Botão sul (`A`) | Confirmação em menus. |
 | Pausar | `Start` | Abre ou fecha menu de pausa. |
@@ -452,30 +458,31 @@ O salto livre pode superar geometria e pequenas diferenças físicas compatívei
 
 ### Interação
 
-A interação depende do objeto diretamente à frente do personagem e dentro de sua área de ação. Se houver mais de um objeto interativo, a prioridade vai para o objeto mais próximo, indicado visualmente por linha, contorno ou efeito.
+A interação considera o objeto à frente do personagem, dentro de sua área válida; entre candidatos compatíveis, o mais próximo tem prioridade, com feedback visual. **O objeto/local define suas ações; a fase, o estado, a capacidade, o alcance físico e os recursos disponíveis filtram as possibilidades.**
 
-- Interagir com inimigo executa ação conforme tipo e estado do inimigo; recolher um larápio incapacitado é diferente de atacar um larápio ativo.
-- Interagir com objeto segurável pega ou manipula o objeto, respeitando a capacidade disponível.
-- Interagir com armazenamento compatível transfere itens conforme as regras de depósito.
-- Sem objeto interativo válido, o comando contextual executa **ataque físico direcional**, na orientação do Player. O alvo somente é atingido se estiver na **região frontal e no alcance válido no momento de impacto**. Alcance e tolerância são configuráveis; **não há seleção automática nem redirecionamento para o alvo mais próximo**. O acerto válido aplica as regras existentes de queda de itens e de Capacidade de ataque × Resistência.
-- Enquanto transporta um larápio, o comando contextual executa **entrega à prisão** quando o Player está na área válida; fora dela, **solta o larápio**. Entrar na área da prisão não captura automaticamente.
-- Cada interação tem cadência base de `1` segundo.
+- **Preparação — POI fixo:** `B` abre um **menu contextual rápido** com operações daquele POI, como escolher itens para guardar/retirar, instalar armadilha, aplicar incremento, abrir/fechar porta ou executar evento especial.
+- **Preparação — posição sem POI:** `B` pode abrir opções de posicionamento de itens ou instalação de equipamentos **quando o local for válido**. A colocação não cria automaticamente um POI fixo; a reação em locais sem opção válida permanece a detalhar.
+- **Assalto Ativo e Fuga Final:** `B` executa operações permitidas pelo estado do objeto: guardar/retirar itens, recolher/soltar, destravar/abrir portas, acionar armadilha ou **rearmar somente se seu tipo permitir**. **Não se instala uma nova armadilha nem incremento por padrão** nessas fases. Quando houver opções simultâneas, o menu rápido permite escolhê-las sem pausar a missão.
+- Interagir com inimigo usa seu estado: recolher um larápio incapacitado é diferente de confrontar um ativo.
+- Sem interação válida **durante Assalto ou Fuga**, `B` executa **ataque físico direcional**, conforme orientação do Player. O alvo precisa estar na região frontal e alcance válido no momento de impacto. Alcance e tolerância são configuráveis; não há seleção automática de alvo. Acertos seguem as regras de queda de itens e Capacidade de ataque × Resistência.
+- Enquanto transporta um larápio, `B` o entrega e conclui a captura na área válida da prisão; fora dela, o solta. Entrar na prisão não captura automaticamente.
+- Cada interação tem cadência base de `1` segundo; o detalhamento de seleção rápida e execução deve respeitar os tempos de gameplay e não criar Pause oculto.
 
-Quantidade de alvos atingidos por golpe e parâmetros de animação permanecem para detalhamento posterior, sem alterar a regra direcional.
+Quantidade de alvos atingidos por golpe e parâmetros de animação permanecem pendentes, sem alterar o ataque direcional.
 
 ### Inventário, transferência e soltura de itens
 
 :::decision
 **Decisão:** itens de desejo **nunca são destruídos nem danificados**, em nenhum momento. Eles só mudam de posse ou de lugar: podem ser segurados, soltos, guardados, roubados e recuperados.
 
-- **Capacidade:** a capacidade é configurada pela mecânica de inventário do Actor e pode variar por tipo de Actor. Não há atributo universal obrigatório. Cada item ocupa uma unidade inteira.
-- **Segurar:** pegar um item o coloca no inventário se houver capacidade disponível.
-- **Soltura voluntária:** um comando próprio, separado de interagir/atacar, solta simultaneamente todos os itens do inventário no chão. Não há seleção individual nem arremesso.
-- **Depósito:** uma interação com armazenamento compatível transfere todos os itens elegíveis. Cofres e armários compartilham regras básicas de transferência, mas mantêm funções distintas. Armários não concedem bônus de proteção por padrão; o primeiro MVP pode implementar apenas cofres.
-- **Capacidade insuficiente no armazenamento:** o depósito é parcial e determinístico. Os itens elegíveis que couberem são transferidos; os excedentes permanecem no inventário. A ordem inicial usa a ordem estável do inventário e pode ser substituída após playtests.
-- **Ataque:** um ataque válido faz o personagem atingido derrubar **todos** os itens que carrega (ver seção "Posse, desejo e inversão da perseguição").
+- **Inventário físico do Actor:** itens roubáveis e objetos realmente transportados permanecem vinculados ao Actor; capacidade é configurada por sua mecânica, sem atributo universal. Cada item físico ocupa uma unidade do inventário do Actor.
+- **Segurar:** pegar um item físico o coloca no inventário do Actor se houver capacidade disponível.
+- **Soltura voluntária:** um comando próprio, distinto de interagir/atacar, solta simultaneamente todos os itens físicos carregados, sem seleção individual nem arremesso por esse comando.
+- **Guardar/retirar:** em **Preparação, Assalto Ativo e Fuga Final**, o Player pode selecionar itens físicos compatíveis para depositar ou retirar por interação contextual rápida, respeitando o conteúdo e a capacidade do armazenamento. Cofres e armários mantêm funções distintas; armários não concedem bônus de proteção por padrão.
+- **Capacidade insuficiente:** somente itens selecionados, válidos e que couberem são transferidos, com resolução determinística e sem duplicação; excedentes permanecem na origem. A regra anterior de depósito **automático de todos os itens elegíveis** deixa de ser o contrato geral. Um atalho de depósito em lote poderá ser avaliado em playtest.
+- **Ataque:** um ataque válido faz o alvo derrubar **todos os itens físicos** que carrega (ver seção "Posse, desejo e inversão da perseguição").
 
-O jogador pode pegar itens do chão e do armazenamento, soltá-los no chão e depositá-los. O armazém compatível define quais itens pode receber.
+O jogador pode pegar itens físicos do chão e do armazenamento, soltá-los no chão e depositá-los nas fases permitidas. Os itens roubáveis têm presença física e identidade próprias, como pequenos alvos interativos móveis, **não equivalentes aos POIs fixos de configuração**. Cada armazenamento define o conteúdo, a compatibilidade e o espaço disponível.
 
 **Motivo:** a única perda possível de um item é ele sair do cenário com um larápio que escapou. Isso mantém todo item sempre disputável e simplifica pontuação, feedback e comportamento da IA.
 :::
@@ -824,6 +831,50 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 
 ## Interações de cenário
 
+### POIs fixos e configuração contextual
+
+:::decision
+**Intenção do jogo completo e modelo inicial de experimentação:** o POI fixo é ancorado ao cenário e define ações compatíveis. **Fase da missão + estado do objeto + capacidade/espaço + recursos disponíveis + alcance físico do Player** determinam quais são utilizáveis. Mesas, armários, cofres e portas exemplificam POIs fixos. Também é possível configurar equipamentos em **posições válidas sem POI**, sem materializar um novo POI fixo.
+
+Um POI pode combinar espaços distintos:
+
+- **Armazenamento físico:** itens roubáveis depositados ocupam espaço e existem fisicamente no POI. Guardar e retirar são permitidos nas três fases de gameplay, conforme capacidade/compatibilidade.
+- **Slot de armadilha:** recebe a **configuração lógica** de uma armadilha compatível. Não é obrigatório instanciar uma armadilha física própria; o POI pode mudar sua aparência e passa a ter comportamento de acionamento conforme o tipo instalado.
+- **Slot de incremento:** recebe melhoria compatível, como tranca reforçada, capaz de ocupar **um ou mais slots** configurados, sem obrigar criar objeto físico separado. O POI pode alterar modelo/estado para refletir a melhoria.
+- **Ação especial:** determinada pelo POI, por exemplo ativar evento, abrir/fechar/destravar porta ou operação específica do local.
+
+Exemplos: uma mesa pode apenas guardar/retirar itens; um armário pode combinar armazenamento, armadilha e incremento; uma porta pode ser aberta/fechada ou reforçada durante a Preparação. Os limites reais são dados do POI, não valores universais.
+
+| Ação | Preparação | Assalto Ativo e Fuga Final |
+|---|---|---|
+| Explorar e manipular itens físicos | Permitido conforme acesso/capacidade | Permitido conforme acesso/capacidade |
+| Guardar/retirar itens em armazenamento compatível | Permitido | Permitido |
+| Instalar armadilha/incremento | Permitido em slot/posição válida, se houver recurso | Não permitido por padrão; **rearmar** só quando suportado |
+| Operar porta, disparar armadilha ou evento | Conforme estado e tipo | Conforme estado e tipo |
+| Selecionar cofre inicial do objetivo principal | Permitido com transferência imediata e única | Não é reconfigurado; itens podem ser operados normalmente |
+
+**A armadilha e o incremento instalados são configurações dos slots, não itens roubáveis materializados.** A representação pode comunicar o estado do POI visualmente, por exemplo uma porta/armário com tranca. Acionamento, consumo e rearmamento dependem do tipo de armadilha, sem regra global inventada. Portas de Spawn Points ainda podem atrasar a entrada, mas **nunca torná-la impossível**.
+
+**Menus:** rápidos e contextuais, inspirados em seleção ágil de itens, e **não suspendem o relógio, a IA ou o outro Player**. Não são inventário extenso de gerenciamento. Pause explícito continua separado.
+
+**Cooperativo:** ambos os Players observam os mesmos estados e slots, precisam estar em alcance físico para interagir, e não podem duplicar conteúdo ou recursos por ações simultâneas. Consumo e ocupação devem usar o estado efetivo compartilhado; a política detalhada de concorrência e de interface será resolvida em protótipo.
+:::
+
+### Acervo coletivo, loja e kit da missão
+
+:::decision
+**Modelo inicial simplificado para testes, sem inventários individuais de equipamento por Player:**
+
+1. **Acervo coletivo da carreira:** armadilhas e incrementos pertencem à equipe fora das missões. Seu armazenamento é **conceitualmente ilimitado** no modelo atual. No jogo completo, a **loja do HUB** permite adquiri-los usando recursos/créditos ganhos na carreira.
+2. **Kit/recursos compartilhados da missão:** o grupo seleciona no HUB um **subconjunto limitado** do acervo para levar, e a missão também pode disponibilizar seus próprios recursos/equipamentos. O estoque resultante é comum aos dois Players; uso ou instalação válida consome/ocupa somente a disponibilidade real, sem duplicação. Não há necessidade de abrir uma tela de inventário extensiva desse kit durante a missão; os menus contextuais mostram as opções.
+3. **Inventário físico de cada Actor:** bens roubáveis e objetos carregados em cena continuam ligados ao Actor e sujeitos à sua capacidade física. Não são o acervo coletivo nem slots de equipamento.
+
+Os limites do kit, catálogo, preços, destino dos itens não usados, critérios de consumo/retorno e eventual divisão futura por Player serão avaliados por gameplay e balanceamento. **Comprar na loja não é o mesmo que custo operacional do assalto**; a forma exata de debitá-la e seus efeitos econômicos ainda precisam de definição.
+
+Trata-se de **intenção para o jogo completo e regra inicial de experimentação**. Não acrescenta automaticamente loja ou todos os equipamentos ao microciclo, vertical slice ou Demo; esses recortes permanecem definidos pelo [MVP](MVP.md).
+:::
+
+
 ### Tipos de interação
 
 | Tipo | Uso |
@@ -831,10 +882,10 @@ O contrato geral é **Condição → Ativação → Efeito**. Duração, tempo d
 | Armadilhas comuns | Podem capturar, atrasar, empurrar ou derrubar inimigos. |
 | Armadilhas específicas | Relacionadas ao tema do cenário. |
 | Objetos seguráveis | Podem ser carregados, soltos, roubados ou usados para bloquear caminho. Nunca são destruídos. |
-| Armários | Recebem itens soltos pelo personagem e permitem pegá-los de novo. São diferentes dos cofres. |
-| Portas | Podem ser abertas, fechadas, trancadas, arrombadas ou hackeadas. |
+| Armários | POIs fixos com armazenamento físico e, se configurados, slots independentes para armadilhas e incrementos. Diferem dos cofres. |
+| Portas | POIs fixos que podem ser abertos, fechados, trancados, arrombados ou hackeados; incrementos como trancas mudam estado/apresentação sem bloquear permanentemente Spawn Points. |
 | Câmeras | Informam posição e permitem ativar armadilhas em áreas monitoradas. |
-| Cofres | Podem proteger bens durante a Preparação e o assalto; suas proteções podem exigir capacidades ou soluções de cenário para serem superadas. Também podem receber itens recuperados quando configurados para isso. |
+| Cofres | POIs fixos de proteção de bens; permitem escolher a localização inicial do objetivo principal na Preparação e guardar/retirar itens físicos em todas as fases, conforme capacidade e proteções. |
 | Prisões | Recebem inimigos capturados. |
 | Interações de mobilidade | Atalhos, passagens, carrinhos ou objetos que mudam deslocamento. |
 
@@ -918,7 +969,7 @@ Modo desbloqueável em que o jogador tenta deter o maior número possível de la
 
 ### Créditos e desbloqueio
 
-O jogador recebe créditos conforme classificação. Cada estágio pode ter um custo em créditos para ser acessado. A progressão deve incentivar replay de fases para melhorar classificação e liberar novos contratos.
+O jogador recebe créditos conforme classificação. Cada estágio pode ter um custo em créditos para ser acessado. A progressão deve incentivar replay de fases para melhorar classificação e liberar novos contratos. No jogo completo, a loja do HUB oferece armadilhas e incrementos pagos com recursos de carreira; preços, limites e efeitos econômicos permanecem sujeitos a detalhamento e balanceamento.
 
 ### Dificuldade
 
@@ -1016,7 +1067,7 @@ Empréstimos como opção de continue após bancarrota apareceram em material an
 
 #### Persistência da carreira
 
-A carreira é preservada **entre assaltos e entre sessões do jogo**. O estado salvo deve restaurar o progresso consolidado, incluindo saldo, situação de continuidade/encerramento e **quais grupos de larápios já tiveram sua introdução registrada** (assistida ou saltada). **Não existe salvamento nem retomada de um assalto em andamento**. A validação requer encerrar e reabrir o jogo sem perder o estado de carreira já consolidado.
+A carreira é preservada **entre assaltos e entre sessões do jogo**. O estado salvo deve restaurar o progresso consolidado, incluindo saldo, situação de continuidade/encerramento e **quais grupos de larápios já tiveram sua introdução registrada** (assistida ou saltada); quando a loja estiver no escopo da entrega, também o **acervo coletivo e as escolhas de kit pertinentes à carreira**. **Não existe salvamento nem retomada de um assalto em andamento**. A validação requer encerrar e reabrir o jogo sem perder o estado de carreira já consolidado.
 
 ## Encerramento do assalto
 
@@ -1049,6 +1100,18 @@ A classificação avalia captura, recuperação/proteção de itens e métricas 
 ## Questões abertas
 
 Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve anteceder o aceite do objetivo/recorte afetado, sem antecipar mecânicas especulativas.
+
+:::open-question
+**Configuração do cenário:** catálogo e requisitos dos POIs, capacidades de armazenamento, slots e locais válidos; comportamento de `B` em locais sem opção configurável na Preparação; detalhes do menu rápido e destino de interações ainda em execução na transição de fase.
+:::
+
+:::open-question
+**Loja e equipamentos:** preços, limite do kit, consumo/retorno de recursos, efeitos das compras sobre o saldo e bancarrota, persistência do acervo e eventual divisão de equipamentos entre Players; avaliar por playtest.
+:::
+
+:::open-question
+**Cooperativo e armadilhas:** concorrência de duas interações no mesmo POI, acionamento e rearmamento por tipo, visualização das configurações abstratas, sem presumir objetos físicos próprios.
+:::
 
 :::open-question
 **Confronto:** quantidade de alvos atingidos por golpe e parâmetros de animação, preservando ataque direcional sem seleção automática.
@@ -1088,8 +1151,8 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | Larápios | Criminosos/inimigos do jogo. |
 | Assalto | Unidade principal de gameplay dentro de uma fase ou missão. |
 | Item de desejo | Item valioso que inimigos querem roubar. |
-| Inventário | Itens que um personagem está segurando. Capacidade é configurada pela mecânica do Actor; cada item ocupa uma unidade inteira. Um ataque válido faz o personagem derrubar todo o inventário. |
-| Armário | Ponto do cenário onde o personagem pode guardar e pegar itens; não é um cofre. |
+| Inventário físico do Actor | Itens físicos carregados em cena pelo Actor; capacidade por mecânica, uma unidade por item, derrubados integralmente por ataque válido. É distinto dos equipamentos coletivos. |
+| Armário | POI fixo que armazena itens físicos e pode ter slots lógicos de armadilha/incremento; não concede bônus de proteção de cofre por padrão. |
 | Cofre | Ponto de proteção de bens. Pode receber itens na Preparação ou durante recuperação e possuir proteções configuráveis que larápios precisam descobrir e superar. |
 | Prisão | Local onde inimigos capturados devem ser depositados. |
 | Janela de Invasão | Período inicial do Assalto Ativo coberto pelos timestamps absolutos das receitas de Spawn Points; informação principalmente de autoria e balanceamento. |
@@ -1112,7 +1175,10 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | Capacidade de interação | Aptidão determinística de um ator para executar determinado tipo/requisito de interação do cenário. Quando compatível, a ação possui um tempo de execução definido. |
 | GOAP | Goal-Oriented Action Planning; arquitetura em que Desejos, conhecimento, capacidades, Actions, precondições e Effects formam planos dinâmicos. |
 | Área | Unidade espacial de exploração e aquisição de informação usada pela IA. |
-| POI | Point of Interest relevante ao planejamento, como cofre, terminal, chave ou porta especial. |
+| POI | Point of Interest relevante à interação ou à IA. Um **POI fixo de configuração** é ancorado ao cenário; itens físicos móveis continuam sendo alvos interativos/da IA sem se tornarem POIs fixos. |
+| Slot de armadilha/incremento | Espaço lógico compatível de configuração do POI, separado do armazenamento físico; não precisa de equipamento materializado independentemente. |
+| Acervo coletivo da carreira | Conjunto compartilhado de equipamentos adquirido/disponível fora da missão; armazenamento sem limite no modelo inicial. |
+| Kit / estoque compartilhado da missão | Equipamentos levados em quantidade limitada do HUB e recursos próprios da missão, usados conjuntamente pelos Players. |
 | Gangue | Unidade de cooperação, compartilhamento de conhecimento e reservas entre larápios. |
 | Spawn Point | Ponto de invasão com receita temporal própria que define quantos e quais arquétipos de uma gangue entram em cada disparo. |
 | Spawn Seguro | Área técnica protegida fora do gameplay normal onde uma leva é criada antes de sua entrada garantida no cenário. |
@@ -1137,6 +1203,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.11.0 | 2026-10-15 | Consolidada Preparação com exploração livre, menu contextual sem Pause, POIs fixos/slots abstratos, manipulação física de itens em todas as fases, kit e acervo coletivo, loja do HUB e pendências explicitamente condicionadas a protótipos. |
 | 0.10.0 | 2026-10-15 | Clarificado fluxo do contrato no HUB e Briefing antes da missão; estabelecida introdução cinematográfica na Mission Activity com panorâmica, splashes recorrentes e animação inédita por carreira, skip prolongado e registro de grupos apresentados mesmo ao saltar; Preparação começa apenas após introdução e controle disponível. |
 | 0.9.0 | 2026-10-15 | Incorporadas 17 decisões da revisão guiada sobre objetivos e validação, cooperativo, apresentação, cofre, ataque, transporte, prisão, Player, Armazém, mobilidade, perda de contato, Pause e classificação; preservadas pendências condicionadas. |
 | 0.8.0 | 2026-10-10 | Consolidada a fonte normativa; incorporados os contratos aprovados de GOAP, Actor, preparação, inventário, captura, classificação, carreira e encerramento. Removidas referências a fontes e perguntas resolvidas. |
