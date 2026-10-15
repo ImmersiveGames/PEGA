@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.GameApplicationAsset
   applicationName: PEGA
   startupRoute: {fileID: 11400000, guid: 9e000000000000000000000000000001, type: 2}
-  playerSessionEnabled: 0
-  defaultPlayerSessionProfile: {fileID: 0}
+  playerSessionEnabled: 1
+  defaultPlayerSessionProfile: {fileID: 11400000, guid: 5d23b2f859102e74fa3aa303476f0ac3, type: 2}
   playerActorSelectionDuplicatePolicy: 20
   progressionSaveEnabled: 0
   defaultProgressionSaveProfile: {fileID: 0}
