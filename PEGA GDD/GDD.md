@@ -3,8 +3,8 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.8.0
-**Última atualização:** 2026-10-10
+**Versão:** 0.9.0
+**Última atualização:** 2026-10-15
 
 ---
 
@@ -129,7 +129,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 
 | Etapa | Função |
 |---|---|
-| Apresentação do cenário | Câmera mostra partes importantes: início, entradas, saídas, power-ups, itens de valor e armadilhas. |
+| Apresentação do cenário | Apresenta as informações relevantes da missão e, quando previstas no recorte, mostra início, entradas, saídas, ameaças, itens de valor e recursos do cenário. A apresentação funcional não comprova, por si, a compreensão do jogador; legibilidade e compreensão são avaliadas em playtests. |
 | Preparação | Durante uma duração fixa da missão, os Players escolhem o cofre que protegerá o objetivo principal; o assalto começa quando o tempo acaba. |
 | Entrada dos larápios | Splash screen apresenta as gangues inimigas, representantes e indicação de dificuldade. |
 | Invasão por Spawn Points | Cada Spawn Point executa sua própria receita temporal, definindo quando, quantos e quais arquétipos de uma gangue entram no cenário. |
@@ -143,6 +143,15 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 **Consequência:** documentação técnica, UI e narrativa usam os termos com esses significados.
 :::
 
+### Objetivos de gameplay e critérios de verificação
+
+Os objetivos derivados deste GDD representam **resultados independentes, observáveis e verificáveis** do jogo, não tarefas técnicas nem marcos de produção. A experiência de perseguição se desdobra em resultados distintos de **perseguir/interceptar**, **confrontar/neutralizar** e **concluir a captura por entrega à prisão**. Também são independentes **gerenciar a progressão econômica** e **preservar o progresso da carreira entre sessões**. **Participar cooperativamente do mesmo assalto** verifica a integração dos Players num mesmo estado sem duplicar contratos individuais. **Apresentar o contexto da missão** é um resultado funcional; compreensão e legibilidade são critérios de qualidade avaliados em playtests, não provas automáticas da apresentação.
+
+As relações entre objetivos devem ser classificadas como **dependência funcional**, **sequência temporal**, **compartilhamento de estado** ou **integração**, sempre justificadas por gameplay. Uma sequência temporal não implica dependência de implementação: o fim temporizado da Preparação não depende de o Player alterar o cofre padrão.
+
+A validação combina **aceite individual** (cenários de comportamento com IDs rastreáveis), **aceite integrado** (cenários ponta a ponta sem duplicar regras) e **validação de experiência** (playtests). A integração deve ser rastreável aos marcos **MC-04**, **VS-16** e **DEM-09** do [ADR de pré-produção](ADR-PREPRODUCAO.md), sem criar objetivos artificiais. O [MVP](MVP.md) determina as entregas; o ADR organiza a produção; este GDD permanece a fonte normativa das regras. Os contratos derivados devem evitar redundâncias, conflitos e dependências circulares.
+
+
 ## Preparação do assalto
 
 :::decision
@@ -150,7 +159,7 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 
 A ação central da Preparação inicial é escolher em qual cofre válido proteger o objetivo principal. No primeiro MVP há pelo menos dois cofres válidos, um deles selecionado como padrão. A escolha não tem custo; orçamento, investimentos e outras preparações ficam para etapas posteriores.
 
-Em cooperativo, ambos os Players podem alterar a seleção. A última escolha válida prevalece e o estado selecionado é comunicado aos dois Players, sem revelar automaticamente a localização aos larápios. A missão pode definir alternativas adicionais no jogo completo, inclusive iniciar o objetivo em posse do Player.
+Em cooperativo, ambos os Players podem alterar a seleção. A última escolha válida prevalece e o estado selecionado é comunicado aos dois Players, sem revelar automaticamente a localização aos larápios. **Cada nova escolha válida altera imediatamente a localização do objetivo principal para o cofre escolhido**, sem transporte manual ou duplicação: o item sai do cofre anterior e passa ao novo. A seleção padrão corresponde à localização inicial válida. A mudança do World State não fornece conhecimento automático aos larápios. A missão pode definir alternativas adicionais no jogo completo, inclusive iniciar o objetivo em posse do Player.
 
 A Preparação e as receitas dos Spawn Points são sistemas temporais distintos. O tempo das receitas começa no início do Assalto Ativo, não durante a Preparação.
 :::
@@ -365,6 +374,8 @@ Rick é um jovem aspirante à PGA Larópolis. Depois de ser reprovado, funda a P
 
 Petra é parceira de Rick e cofundadora da PEGA. Ela é jogável e mecanicamente equivalente a Rick na Demo; sua identidade visual é própria. Diferenças mecânicas posteriores dependem de playtests e decisão futura.
 
+No **microciclo e no vertical slice**, Rick Ronda é a identidade padrão do único personagem controlável, sem UI de seleção ou arte definitiva obrigatórias. Na **Demo**, Rick e Petra são selecionáveis, mecanicamente equivalentes e disponíveis para o cooperativo. **Player** (participação/controle), **Actor** (ocorrência e composição de gameplay) e **personagem** (identidade) mantêm responsabilidades distintas; assets técnicos de validação do Framework não se tornam conteúdo de produção por renomeação.
+
 ### NPCs
 
 | Categoria | Função |
@@ -394,6 +405,8 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 **Decisão:** o jogador não possui estados separados de andar e correr. Seu movimento-base já representa a corrida de gameplay e possui velocidade definida pela mecânica de movimento do Actor, com modificadores configurados quando aplicáveis.
 
 Larápios possuem pelo menos dois regimes de velocidade: **velocidade de movimentação**, usada durante navegação e investigação, e **velocidade de perseguição**, usada quando sua intenção exige perseguir um portador ou fugir com um objetivo. Esses valores pertencem à mecânica de movimento do Actor e podem ser especializados pela configuração de arquétipo e por modificadores. Não existe atributo universal de Agilidade.
+
+O **movimento-base do Player** é obrigatório desde o microciclo. **Esquiva e salto** permanecem regras de gameplay deste GDD, mas sua inclusão nos recortes será justificada pela necessidade concreta da perseguição e do level design do Armazém antes do aceite do recorte afetado. Não são pré-requisitos automáticos do microciclo nem do primeiro vertical slice.
 :::
 
 ### Esquiva
@@ -424,12 +437,14 @@ O salto livre pode superar geometria e pequenas diferenças físicas compatívei
 
 A interação depende do objeto diretamente à frente do personagem e dentro de sua área de ação. Se houver mais de um objeto interativo, a prioridade vai para o objeto mais próximo, indicado visualmente por linha, contorno ou efeito.
 
-- Interagir com inimigo executa ação conforme tipo e estado do inimigo.
+- Interagir com inimigo executa ação conforme tipo e estado do inimigo; recolher um larápio incapacitado é diferente de atacar um larápio ativo.
 - Interagir com objeto segurável pega ou manipula o objeto, respeitando a capacidade disponível.
 - Interagir com armazenamento compatível transfere itens conforme as regras de depósito.
-- Sem objeto válido, a interação vira ataque.
-- Se o personagem estiver carregando outro personagem, a interação solta o carregado.
+- Sem objeto interativo válido, o comando contextual executa **ataque físico direcional**, na orientação do Player. O alvo somente é atingido se estiver na **região frontal e no alcance válido no momento de impacto**. Alcance e tolerância são configuráveis; **não há seleção automática nem redirecionamento para o alvo mais próximo**. O acerto válido aplica as regras existentes de queda de itens e de Capacidade de ataque × Resistência.
+- Enquanto transporta um larápio, o comando contextual executa **entrega à prisão** quando o Player está na área válida; fora dela, **solta o larápio**. Entrar na área da prisão não captura automaticamente.
 - Cada interação tem cadência base de `1` segundo.
+
+Quantidade de alvos atingidos por golpe e parâmetros de animação permanecem para detalhamento posterior, sem alterar a regra direcional.
 
 ### Inventário, transferência e soltura de itens
 
@@ -454,6 +469,8 @@ O jogador pode pegar itens do chão e do armazenamento, soltá-los no chão e de
 **Decisão:** transportar um larápio é uma dificuldade baseada em restrição de ações, não em redução de velocidade.
 
 Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal. Os itens que já estavam em seu inventário permanecem lá, mas sua manipulação fica bloqueada. O larápio transportado não ocupa capacidade de inventário. O Player **não pode atacar, saltar, esquivar ou usar interações comuns**; pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
+
+O **temporizador de recuperação** do larápio conta enquanto permanece incapacitado no chão, **é suspenso durante o transporte** e **retoma o tempo restante, sem reiniciar**, se for solto antes da prisão. Transportar não equivale a capturar: somente a **entrega contextual explícita** na área válida da prisão conclui a captura, atribui o estado **Capturado** e retira definitivamente o larápio do assalto. A entrada na área, sem interação, não conclui a captura.
 
 Essa restrição cria custo de oportunidade: durante o transporte, o jogador fica menos capaz de responder aos demais larápios, e no cooperativo o segundo jogador pode assumir proteção e interceptação.
 :::
@@ -511,7 +528,7 @@ O armazém é o cenário inicial mais detalhado no GDD. Ele funciona como centro
 | Cofre | Local para depositar itens recuperados. |
 | Prisão | Local para depositar inimigos capturados. |
 
-O Armazém é o cenário inicial de referência. O recorte técnico e de conteúdo de cada entrega está definido em [MVP](MVP.md), sem tornar esta ficha uma afirmação de que o cenário já foi implementado.
+O Armazém é o cenário inicial de referência. O conteúdo concreto de cada recorte deriva dos **objetivos de gameplay e das necessidades de apresentação**, não de um inventário prévio de assets. O **microciclo** usa blockout funcional para investigação, roubo, fuga, perseguição, confronto e recuperação; o **vertical slice** incorpora todos os elementos obrigatórios do [MVP](MVP.md), inclusive cofres válidos, prisão e invasão; a **Demo** evolui o mesmo Armazém para cenário completo. A lista de possibilidades desta seção não obriga todo objeto em todo recorte. Cada elemento incluído deve ter função de gameplay ou apresentação identificável, e o inventário concreto será especificado no detalhamento da missão. Esta descrição não afirma implementação existente.
 
 ### Catálogo de cenários
 
@@ -544,8 +561,8 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 |---|---|
 | Normal | Personagem livre para se mover e agir. |
 | Carregando | Personagem segura item ou outro personagem. |
-| Caído / Incapacitado | Larápio temporariamente incapaz de agir após ser neutralizado. Um temporizador de recuperação começa; enquanto estiver nesse estado, ele pode ser recolhido pelo jogador, mas ainda não está capturado. |
-| Em transporte | Larápio incapacitado sob custódia de um jogador e sendo levado à sala de detenção. |
+| Caído / Incapacitado | Larápio temporariamente incapaz de agir após ser neutralizado. Seu temporizador conta enquanto está no chão, pausa durante o transporte e retoma o tempo restante quando solto antes da prisão; ainda não está capturado. |
+| Em transporte | Larápio incapacitado sob custódia de um jogador, com recuperação suspensa, a caminho da sala de detenção; ainda não está capturado. |
 | Detido / Capturado | Larápio entregue à sala de detenção. Sua captura está concluída e ele deixa definitivamente o assalto. |
 | Escapou | Larápio que deixou o cenário por uma rota de fuga. Ele deixa definitivamente o assalto sem ser capturado. |
 | Escondido | Personagem usa objeto ou cenário para ocultação. |
@@ -766,6 +783,8 @@ O princípio permanece: **consegue ou não consegue; se consegue, existe um cust
 
 ### Habilidades especiais
 
+A **incapacitação do Player** por habilidades inimigas (como Terror e Uppercut, quando previstas no conteúdo de uma entrega) exige um contrato comportamental **comum** de controle, duração, recuperação, posse e interação com dois Players. Esse contrato deve ser especificado antes da primeira habilidade implementada que o exigir; não se antecipa essa mecânica ao microciclo. A seleção de habilidades dos quatro arquétipos dos Trapalhões da Demo deve verificar essa dependência. Enquanto não especificado, não presumir efeitos ou duração para o Player.
+
 :::decision
 **Decisão:** habilidades especiais não dependem de um recurso universal `Especial SP`. Cada habilidade pertence ao repertório reutilizável do jogo; sua disponibilidade e exclusividade decorrem da configuração de arquétipos. Não há uma arquitetura paralela obrigatória para Boss Skills. A habilidade é acionada por condições explícitas de gameplay.
 
@@ -870,6 +889,8 @@ Power-ups são modificadores temporários que alteram propriedades de gameplay o
 
 O modo principal pode ser jogado por um ou dois Players em cooperativo local com tela dividida. Multiplayer online não está planejado para PEGA.
 
+No cooperativo, ambos agem sobre **o mesmo estado do assalto**, compartilhando itens, posse, cofres, preparação, larápios, capturas e resultado. Um Player pode derrubar um item que o outro recupera ou transportar um larápio enquanto o segundo protege bens e intercepta inimigos. Não pode ocorrer duplicação de itens, capturas ou recompensas. **Dois Players controláveis não bastam para comprovar gameplay cooperativo**: o ciclo integrado precisa ser verificado na Demo.
+
 ### Campanha
 
 Modo principal, acompanha a história de Rick e Petra e a evolução da PEGA em Larópolis. Pode ser jogado por um ou dois jogadores.
@@ -904,6 +925,8 @@ Cada cenário possui três níveis de dificuldade. O layout permanece reconhecí
 **Decisão:** critérios e pesos são configuráveis por missão; nenhum critério domina universalmente. A missão comunica ao jogador os critérios relevantes. Tempo faz parte do modelo completo, mas pode ficar fora do primeiro recorte do MVP.
 
 Métricas temporais derivam de eventos relevantes de gameplay e dos intervalos entre eles; seus pesos são configurados por missão. A fórmula exata de cada missão é conteúdo de balanceamento, não uma regra global do GDD.
+
+O **aceite funcional** verifica regras e invariantes por configurações explícitas e reproduzíveis, incluindo representabilidade de todas as notas da escala, critérios aplicados e estado final de itens. **Pesos, limites entre notas e recompensas** são parâmetros específicos de cada missão, definidos por balanceamento e avaliados por playtest; não impedem o teste antecipado de correção funcional. O vertical slice exige resultados básicos, sem obrigar pontuação por tempo; a Demo deve ter classificação configurada e comunicada para o Armazém.
 :::
 
 ### Estado final dos itens e bônus de proteção
@@ -940,6 +963,8 @@ O minimapa segue padrão quadriculado, com a posição atual do jogador no centr
 - Prisão.
 - Possível opção de norte fixo ou norte relativo.
 
+Quando o Player perde contato com um larápio, pode reencontrá-lo pela observação do cenário, exploração e informações disponíveis conforme as regras de detecção do minimapa e demais ferramentas já previstas. **Não há marcador adicional de última posição conhecida para o Player** no contrato inicial. A memória de última posição conhecida dos larápios controlados por GOAP não é automaticamente reproduzida na UI do jogador. Legibilidade e readquisição de contato são avaliadas por playtest.
+
 ### Menus
 
 #### Menu inicial
@@ -956,15 +981,25 @@ O minimapa segue padrão quadriculado, com a posição atual do jogador no centr
 
 - Continuar.
 - Opções.
-- Sair do assalto conforme o fluxo de confirmação definido pela UI.
+- Sair do assalto mediante confirmação explícita.
+
+No cooperativo local, o **Pause é compartilhado**: qualquer Player pode solicitá-lo com `Start`, e o **solicitante controla o menu e a retomada**. O outro Player não controla o menu simultaneamente. A pausa suspende para ambos movimento, IA, execução de Actions e relógios de gameplay (Preparação, Assalto Ativo e Fuga Final), sem mudar estados nem consumir tempos restantes; a retomada preserva os estados e os prazos. A implementação respeita a autoridade e as superfícies públicas compatíveis do Immersive Framework; o suporte cooperativo deve ser verificado na versão instalada, sem ser presumido.
 
 ### Carreira e persistência
 
-A carreira é persistida entre assaltos; não há salvamento nem retomada de um assalto em andamento. Ao concluir um assalto, os créditos concedidos pela classificação menos o custo operacional formam o saldo líquido do turno, que é somado ao saldo acumulado da carreira. Se o saldo acumulado ficar abaixo do limite de bancarrota, a carreira termina; reiniciar a carreira começa com saldo zero. Um único assalto de resultado ruim não encerra o jogo por si só.
+**Progressão econômica** e **preservação da carreira entre sessões** são resultados independentes. A progressão pode ser validada em memória; a persistência valida gravação/restauração sem duplicar as regras econômicas.
 
-**Economia provisória para playtest:** custo operacional fixo de 150 créditos por assalto. Há bancarrota quando o saldo acumulado fica estritamente abaixo de -1000 créditos; saldo exatamente igual a -1000 não encerra a carreira. Ambos os valores são configuráveis por balanceamento.
+#### Progressão econômica da carreira
 
-A ideia de empréstimos como opção de continue após bancarrota apareceu em material anterior, mas não foi aprovada nem faz parte do escopo atual. Sua eventual inclusão no jogo completo permanece sem decisão.
+Ao concluir um assalto, os créditos concedidos pela classificação menos o custo operacional formam o saldo líquido do turno, somado ao saldo acumulado. A carreira termina apenas se o saldo acumulado ficar abaixo do limite de bancarrota; reiniciar a carreira começa com saldo zero. Um único assalto de resultado ruim não encerra o jogo por si só.
+
+**Economia provisória para playtest:** custo operacional fixo de 150 créditos por assalto. Há bancarrota quando o saldo acumulado é **estritamente inferior a -1000 créditos**; saldo exatamente igual a **-1000** não encerra a carreira. Os valores são configuráveis por balanceamento.
+
+Empréstimos como opção de continue após bancarrota apareceram em material anterior, mas não foram aprovados e não fazem parte do escopo atual. Sua eventual inclusão no jogo completo permanece sem decisão.
+
+#### Persistência da carreira
+
+A carreira é preservada **entre assaltos e entre sessões do jogo**. O estado salvo deve restaurar o progresso consolidado, incluindo saldo e situação de continuidade/encerramento. **Não existe salvamento nem retomada de um assalto em andamento**. A validação requer encerrar e reabrir o jogo sem perder o estado de carreira já consolidado.
 
 ## Encerramento do assalto
 
@@ -995,6 +1030,20 @@ A classificação avalia captura, recuperação/proteção de itens e métricas 
 :::
 
 ## Questões abertas
+
+Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve anteceder o aceite do objetivo/recorte afetado, sem antecipar mecânicas especulativas.
+
+:::open-question
+**Confronto:** quantidade de alvos atingidos por golpe e parâmetros de animação, preservando ataque direcional sem seleção automática.
+:::
+
+:::open-question
+**Incapacitação do Player:** regras compartilhadas de estado, recuperação, controles e posse antes da primeira habilidade dependente.
+:::
+
+:::open-question
+**Escopo funcional:** alocação de esquiva e salto segundo as necessidades da perseguição e inventário concreto do Armazém por entrega, preservando o MVP.
+:::
 
 :::open-question
 **Questão de escopo:** o HUB da Demo é o escritório estático com hotspots descrito no MVP. A forma do HUB após a Demo ainda não foi definida.
@@ -1062,6 +1111,7 @@ A classificação avalia captura, recuperação/proteção de itens e métricas 
 | Documento | Uso |
 |---|---|
 | [MVP](MVP.md) | Recorta as regras deste GDD no primeiro vertical slice e na Demo completa. |
+| [ADR de pré-produção](ADR-PREPRODUCAO.md) | Decisões de produção e marcos de integração; não substitui regras e contratos de gameplay. |
 | [TASKS](TASKS.md) | Tarefas executáveis derivadas do escopo do MVP. |
 | [Art Book](ArtBook.md) | Direção visual e referências de personagens, gangues e cenários. |
 | [Tabela de Atributos e Habilidades.xlsx](Tabela%20de%20Atributos%20e%20Habilidades.xlsx) | Referência auxiliar histórica para ideias de distribuição de habilidades por gangue e valores preliminares de classificação/créditos. Agilidade, HP/dano, Defesa, Vigor, fórmulas e valores da planilha não são contratos atuais nem dados validados. |
@@ -1070,4 +1120,5 @@ A classificação avalia captura, recuperação/proteção de itens e métricas 
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.9.0 | 2026-10-15 | Incorporadas 17 decisões da revisão guiada sobre objetivos e validação, cooperativo, apresentação, cofre, ataque, transporte, prisão, Player, Armazém, mobilidade, perda de contato, Pause e classificação; preservadas pendências condicionadas. |
 | 0.8.0 | 2026-10-10 | Consolidada a fonte normativa; incorporados os contratos aprovados de GOAP, Actor, preparação, inventário, captura, classificação, carreira e encerramento. Removidas referências a fontes e perguntas resolvidas. |
