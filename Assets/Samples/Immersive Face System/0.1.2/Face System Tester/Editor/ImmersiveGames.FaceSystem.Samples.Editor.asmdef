@@ -1,0 +1,19 @@
+{
+  "name": "ImmersiveGames.FaceSystem.Samples.Editor",
+  "rootNamespace": "ImmersiveGames.FaceSystem.Samples.Editor",
+  "references": [
+    "ImmersiveGames.FaceSystem.Runtime",
+    "ImmersiveGames.FaceSystem.Samples"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

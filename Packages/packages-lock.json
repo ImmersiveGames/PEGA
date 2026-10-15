@@ -42,6 +42,13 @@
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
+    "com.immersivegames.face-system": {
+      "version": "https://github.com/ImmersiveGames/com.immersivegames.face-system.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "9a1342ed8a96775369b3d7d96425bd2185981f7e"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.15",
       "depth": 0,

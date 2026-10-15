@@ -1,0 +1,16 @@
+{
+  "name": "ImmersiveGames.FaceSystem.Samples",
+  "rootNamespace": "ImmersiveGames.FaceSystem.Samples",
+  "references": [
+    "ImmersiveGames.FaceSystem.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

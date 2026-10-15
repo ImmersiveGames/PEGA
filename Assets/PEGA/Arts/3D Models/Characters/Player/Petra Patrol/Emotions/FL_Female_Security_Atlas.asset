@@ -14,76 +14,111 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FaceSpriteLibrary
   tracks:
   - trackId: eyes
+    displayName: eyes
     atlas: {fileID: 2800000, guid: 7848a2b67ea0fd5469dc750a384e9298, type: 3}
     gridSize: {x: 4, y: 6}
     sprites:
     - id: eye.normal.open
+      displayName: eye.normal.open
       atlasCoordinate: {x: 0, y: 0}
     - id: eye.normal.closed
+      displayName: eye.normal.closed
       atlasCoordinate: {x: 1, y: 0}
     - id: eye.happy.closed
+      displayName: eye.happy.closed
       atlasCoordinate: {x: 2, y: 0}
     - id: eye.scary.open
+      displayName: eye.scary.open
       atlasCoordinate: {x: 3, y: 0}
     - id: eye.angry.open
+      displayName: eye.angry.open
       atlasCoordinate: {x: 0, y: 1}
     - id: eye.sad.open
+      displayName: eye.sad.open
       atlasCoordinate: {x: 1, y: 1}
     - id: eye.suspicius.open
+      displayName: eye.suspicius.open
       atlasCoordinate: {x: 2, y: 1}
     - id: eye.tired.open
+      displayName: eye.tired.open
       atlasCoordinate: {x: 3, y: 1}
     - id: eye.surprised.bright
+      displayName: eye.surprised.bright
       atlasCoordinate: {x: 0, y: 2}
     - id: eye.shocked.bright
+      displayName: eye.shocked.bright
       atlasCoordinate: {x: 1, y: 2}
     - id: eye.cry.open
+      displayName: eye.cry.open
       atlasCoordinate: {x: 2, y: 2}
     - id: eye.winky.left
+      displayName: eye.winky.left
       atlasCoordinate: {x: 3, y: 2}
     - id: eye.hurt.left
+      displayName: eye.hurt.left
       atlasCoordinate: {x: 0, y: 3}
     - id: eye.surprised.open
+      displayName: eye.surprised.open
       atlasCoordinate: {x: 1, y: 3}
     - id: eye.naughty.open
+      displayName: eye.naughty.open
       atlasCoordinate: {x: 2, y: 3}
     - id: eye.winky.right
+      displayName: eye.winky.right
       atlasCoordinate: {x: 3, y: 3}
     - id: eye.look.up
+      displayName: eye.look.up
       atlasCoordinate: {x: 0, y: 4}
     - id: eye.look.down
+      displayName: eye.look.down
       atlasCoordinate: {x: 1, y: 4}
     - id: eye.look.right
+      displayName: eye.look.right
       atlasCoordinate: {x: 2, y: 4}
     - id: eye.look.left
+      displayName: eye.look.left
       atlasCoordinate: {x: 3, y: 4}
     - id: eye.angry.closed
+      displayName: eye.angry.closed
       atlasCoordinate: {x: 0, y: 5}
     - id: eye.sad.closed
+      displayName: eye.sad.closed
       atlasCoordinate: {x: 1, y: 5}
   - trackId: mouth
+    displayName: mouth
     atlas: {fileID: 2800000, guid: e083572b0e1311847a44df8d0986722e, type: 3}
     gridSize: {x: 4, y: 3}
     sprites:
     - id: mouth.normal.close
+      displayName: mouth.normal.close
       atlasCoordinate: {x: 0, y: 0}
     - id: mouth.happy.close
+      displayName: mouth.happy.close
       atlasCoordinate: {x: 1, y: 0}
     - id: mouth.sad.close
+      displayName: mouth.sad.close
       atlasCoordinate: {x: 2, y: 0}
     - id: mouth.surprised.large.open
+      displayName: mouth.surprised.large.open
       atlasCoordinate: {x: 3, y: 0}
     - id: mouth.angry.closed
+      displayName: mouth.angry.closed
       atlasCoordinate: {x: 0, y: 1}
     - id: mouth.surprised.small.open
+      displayName: mouth.surprised.small.open
       atlasCoordinate: {x: 1, y: 1}
     - id: mouth.surprised.medium.open
+      displayName: mouth.surprised.medium.open
       atlasCoordinate: {x: 2, y: 1}
     - id: mouth.naughty
+      displayName: mouth.naughty
       atlasCoordinate: {x: 3, y: 1}
     - id: mouth.talk.full.open
+      displayName: mouth.talk.full.open
       atlasCoordinate: {x: 0, y: 2}
     - id: mouth.talk.mid.open
+      displayName: mouth.talk.mid.open
       atlasCoordinate: {x: 1, y: 2}
     - id: mouth.talk.lil.open
+      displayName: mouth.talk.lil.open
       atlasCoordinate: {x: 2, y: 2}
