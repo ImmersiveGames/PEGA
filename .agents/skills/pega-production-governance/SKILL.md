@@ -49,8 +49,15 @@ Aceite URL ou ID estável do cartão. Leia cartão e lista/estado; para cada car
 2. entregável/TASKS/requisito/decisão e rastreabilidade ausente;
 3. pacote/origem resolvida, versão consumidora e APIs/maturidade relevantes;
 4. mínimo demonstrado por contrato/maturidade e evidência, ou `unknown` com bloqueio de orientação específica;
-5. plano delimitado, dependências bloqueadoras, riscos e critérios de aceitação;
+5. plano de execução delimitado, dependências bloqueadoras, riscos e critérios de aceitação, seguindo as regras abaixo;
 6. validação executável autorizada e passos manuais Unity restantes.
+
+#### Plano de execução rastreável
+
+- Para composição PEGA de cenas, prefabs ou outros assets que consomem Immersive, prove primeiro o padrão no FirstGame: registre checkout/branch/HEAD, caminhos dos exemplos/assets, referências serializadas relevantes e baseline do pacote. Confirme compatibilidade com a instalação resolvida no PEGA. FirstGame é referência de composição; a instalação PEGA continua sendo autoridade para contratos de API.
+- Inclua somente objetos, assets e configurações demonstrados pelas fontes. Trate itens sugeridos pelo usuário/card/rascunho como hipóteses a comparar com a fonte; não os confirme nem expanda em classes, alternativas ou checklists especulativos.
+- Sem referência aplicável e compatível, registre `FirstGame canonical gap`; proponha canonização e aceitação no FirstGame como pré-requisito bloqueador. Não invente composição substituta no PEGA.
+- Ordene cada etapa pelas dependências e informe **ação**, **como/fonte**, **saída concreta** e **critério de conclusão**. Deixe detalhes ainda não necessários para a etapa que os comprovará; marque desconhecidos como bloqueios ou decisões pendentes.
 
 Não reproduza documentos inteiros, inferira API de outro release, alegue sucesso runtime ou mude cartão.
 
