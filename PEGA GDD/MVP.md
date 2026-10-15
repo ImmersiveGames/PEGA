@@ -3,8 +3,8 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Escopo de implementação
 **Status:** Ativo
-**Versão:** 0.4.0
-**Última atualização:** 2026-10-10
+**Versão:** 0.5.0
+**Última atualização:** 2026-10-15
 **Fonte de regras:** [GDD](GDD.md)
 
 ---
@@ -40,6 +40,8 @@ Este documento recorta as regras do GDD em duas entregas. O GDD é a fonte norma
 
 ### Não confundir com o vertical slice
 
+**O fluxo de Join/seleção de personagens no HUB é requisito da Demo, não do primeiro vertical slice técnico**: este continua com um Player, Rick como identidade padrão, entrada direta na Mission Route e sem tela de seleção, conforme o [ADR de pré-produção](ADR-PREPRODUCAO.md).
+
 Testes temporários de Restart Point, Scene-Provided Player, composição do Framework ou uma cena de prova são experimentos técnicos. Não são funcionalidades de PEGA, conteúdo de carreira, menu ou critério de conclusão do jogo. Só entram no escopo quando a evidência do teste for aplicada a uma configuração real do PEGA.
 
 ## B. Demo completa
@@ -48,12 +50,12 @@ Testes temporários de Restart Point, Scene-Provided Player, composição do Fra
 
 | Área | Acréscimo obrigatório à Demo |
 |---|---|
-| Players | Rick e Petra selecionáveis e mecanicamente equivalentes. Dois Players locais com tela dividida, cada um com entrada, Actor e apresentação corretos. |
+| Players | Rick e Petra selecionáveis e mecanicamente equivalentes; **os dois Players podem escolher o mesmo personagem**. Após a seleção da missão no HUB, dispositivos locais fazem Join para um ou dois Players, cada um escolhe e confirma seu personagem. A missão começa somente pelo botão **Iniciar Missão**, após as confirmações. Cooperativo com tela dividida, entrada, Actor e apresentação corretos para cada Player. |
 | Framework | Fluxo entre telas e atividades, autoria dos Players, câmera, Pause, transições e persistência compostos pelas capacidades existentes e compatíveis do Framework. Não duplicar autoridade já pertencente ao pacote. |
 | Armazém | Cenário inicial completo, incluindo level design, conteúdos, caminhos, Spawn Points, Spawn Seguro, objetos e condições de captura/escape legíveis. |
 | Inimigos | Uma gangue da Demo, Os Trapalhões do Crime, com seus quatro arquétipos configurados sobre mecânicas disponíveis. Os comportamentos usam o GOAP compartilhado do PEGA, não uma implementação diferente por arquétipo. |
 | Preparação cooperativa | Ambos os Players podem mudar a seleção do cofre; a última escolha válida prevalece. Ambos recebem a seleção atual e ela não é divulgada automaticamente aos larápios. |
-| UI/UX | Fluxo de menus, HUB da Demo como escritório estático com hotspots, briefing, splash, HUD, feedback de critérios e resultados, resumo do turno, Pause e telas de bancarrota. |
+| UI/UX | Fluxo de menus e HUB da Demo como escritório estático com hotspots; **seleção de missão e Briefing → Join de dispositivos → seleção/confirmação de personagens (duplicação permitida) → botão Iniciar Missão**; splash, HUD, feedback de critérios e resultados, resumo do turno, Pause e telas de bancarrota. |
 | Carreira | Repetir a missão do Armazém na Demo, acumular créditos líquidos (créditos da classificação menos custo operacional provisório de 150), bancarrota apenas com saldo estritamente menor que -1000, e reinício explícito da carreira com saldo zero. Configurar os valores para playtest. |
 | Persistência | Salvar carreira entre assaltos. Não salvar nem retomar gameplay em andamento. Configurar e validar o backend escolhido no Framework; a documentação instalada classifica perfil e backend JSON como experimentais. |
 | Classificação | Critérios e pesos por missão, sem critério universalmente dominante; comunicar ao jogador os fatores considerados. Configurar a classificação da missão da Demo. |
@@ -64,7 +66,7 @@ Testes temporários de Restart Point, Scene-Provided Player, composição do Fra
 
 O HUB é o escritório estático da P.E.G.A. Larópolis, sem navegação livre. O quadro com o mapa abre a seleção de missão; a escrivaninha/PC apresenta o saldo da carreira e a inbox de resultados, mensagens de clientes e contratos desbloqueados. Como a Demo tem uma missão, contratos futuros aparecem apenas como espaço de apresentação, sem função de desbloqueio. A forma navegável do HUB permanece posterior à Demo.
 
-O fluxo de apresentação cobre splash/logo, menu principal, opções, HUB, entrada e seleção de Players/personagem, seleção de missão, briefing do cenário, apresentação da gangue, gameplay com Pause, classificação, resumo financeiro do turno e retorno ao HUB ou encerramento/reinício da carreira após bancarrota.
+O fluxo de apresentação cobre splash/logo, menu principal, opções, HUB, **seleção de missão e Briefing no HUB, Join dos dispositivos participantes, escolha e confirmação de personagem por Player (inclusive personagens iguais), botão explícito Iniciar Missão**, apresentação do cenário e da gangue dentro da Mission Activity, gameplay com Pause, classificação, resumo financeiro do turno e retorno ao HUB ou encerramento/reinício da carreira após bancarrota. A confirmação individual não inicia automaticamente a missão.
 
 O escopo de PEGA prevê cooperativo local em tela dividida; multiplayer online não está planejado para este jogo.
 
@@ -102,4 +104,5 @@ O escopo de PEGA prevê cooperativo local em tela dividida; multiplayer online n
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.5.0 | 2026-10-15 | Alinhado o fluxo da Demo: seleção de contrato e Briefing no HUB antes do Join de dispositivos, seleção e confirmação individual de personagens (iguais permitidos) e botão explícito de início; preservada a entrada direta do vertical slice técnico. |
 | 0.4.0 | 2026-10-10 | Separados o primeiro vertical slice técnico e a Demo completa; atualizado escopo do multiplayer, GOAP, preparação, inventário, carreira, framework e níveis de entrega. |
