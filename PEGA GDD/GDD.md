@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.11.0
+**Versão:** 0.12.0
 **Última atualização:** 2026-10-15
 
 ---
@@ -113,33 +113,39 @@ O desempenho do jogador é medido pelo quanto ele consegue proteger durante o as
 
 :::flow
 1. No HUB, o jogador seleciona um **contrato de missão**, sujeito aos requisitos de habilitação e aos fundos/recursos exigidos quando aplicáveis. O **Briefing** pertence à seleção do contrato e apresenta local, objetivo principal e gangues previstas, antes de entrar na missão.
-2. Ao entrar na **Mission Activity**, começa a **Introdução da missão**: uma panorâmica cinematográfica dos pontos de interesse do cenário, seguida da apresentação das gangues participantes. Cada gangue recebe um splash screen; apenas gangues inéditas na carreira recebem, antes do splash, sua animação especial de introdução. Toda a apresentação pode ser saltada por pressão prolongada de Cancelar; pular conta como apresentação das gangues inéditas.
-3. Encerrada ou saltada a introdução, a câmera retorna à área inicial, os Players são materializados e recebem controle, e **então** começa o relógio da **Preparação**. Durante sua duração fixa, os Players exploram livremente o cenário, interagem com POIs fixos e locais válidos e configuram armadilhas, incrementos e armazenamento compatível. A escolha do cofre principal é uma dessas interações.
-4. Quando a Preparação termina, começa o **Assalto Ativo** e passam a contar as receitas de invasão dos Spawn Points. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal, mas não conhecem automaticamente as escolhas de proteção dos jogadores.
-5. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
-6. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
-7. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Desejos conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
-8. Quando o **Tempo de Assalto** termina, começa o **Tempo de Fuga** e o contexto global muda para **Fuga Final**. Os larápios reavaliam seus desejos e passam a operar com as prioridades configuradas para esse contexto.
-9. Durante o Tempo de Fuga, o jogador recebe a última oportunidade de perseguir, recuperar itens, incapacitar e deter larápios antes que escapem.
-10. Quando o Tempo de Fuga termina, o gameplay é encerrado. Larápios ainda presentes recebem a resolução **Não escapou**; itens que ainda permanecem no cenário são considerados recuperados.
-11. O jogo muda de atividade para a tela de resultados, onde calcula classificação, créditos e progresso.
+2. Ainda no **HUB**, após escolher o contrato e consultar seu Briefing, os dispositivos locais solicitam **Join**. A quantidade de Players (um ou dois) decorre dos dispositivos participantes; **cada Player escolhe e confirma seu personagem**, podendo ambos escolher a mesma identidade. A missão **não inicia automaticamente**: após as confirmações, o usuário aciona explicitamente o botão **Iniciar Missão**.
+3. Ao entrar na **Mission Activity**, começa a **Introdução da missão**: uma panorâmica cinematográfica dos pontos de interesse do cenário, seguida da apresentação das gangues participantes. Cada gangue recebe um splash screen; apenas gangues inéditas na carreira recebem, antes do splash, sua animação especial de introdução. Toda a apresentação pode ser saltada por pressão prolongada de Cancelar; pular conta como apresentação das gangues inéditas.
+4. Encerrada ou saltada a introdução, a câmera retorna à área inicial, os Players são materializados e recebem controle, e **então** começa o relógio da **Preparação**. Durante sua duração fixa, os Players exploram livremente o cenário, interagem com POIs fixos e locais válidos e configuram armadilhas, incrementos e armazenamento compatível. A escolha do cofre principal é uma dessas interações.
+5. Quando a Preparação termina, começa o **Assalto Ativo** e passam a contar as receitas de invasão dos Spawn Points. Os larápios invadem com conhecimento incompleto: sabem qual é o objetivo principal, mas não conhecem automaticamente as escolhas de proteção dos jogadores.
+6. Os inimigos investigam o cenário, descobrem proteções e oportunidades, procuram o objetivo principal e podem roubar valores secundários durante o caminho.
+7. O jogador manipula informação, protege bens, persegue, recupera itens, captura larápios e usa ferramentas do ambiente.
+8. Quando o objetivo principal é localizado, essa descoberta torna-se informação global. Cada arquétipo reavalia seus Desejos conforme sua configuração: alguns podem disputar ou retirar o objetivo, enquanto outros continuam buscando valores secundários.
+9. Quando o **Tempo de Assalto** termina, começa o **Tempo de Fuga** e o contexto global muda para **Fuga Final**. Os larápios reavaliam seus desejos e passam a operar com as prioridades configuradas para esse contexto.
+10. Durante o Tempo de Fuga, o jogador recebe a última oportunidade de perseguir, recuperar itens, incapacitar e deter larápios antes que escapem.
+11. Quando o Tempo de Fuga termina, o gameplay é encerrado. Larápios ainda presentes recebem a resolução **Não escapou**; itens que ainda permanecem no cenário são considerados recuperados.
+12. O jogo muda de atividade para a tela de resultados, onde calcula classificação, créditos e progresso.
 :::
 
 ### Estrutura de uma missão
 
 | Etapa | Função |
 |---|---|
-| Seleção do contrato e Briefing (HUB) | O jogador seleciona um contrato habilitado e, antes de iniciar a missão, recebe informações sobre local, objetivo principal e gangues previstas. Não é uma fase do assalto. |
+| Seleção do contrato e Briefing (HUB) | O jogador seleciona um contrato habilitado e recebe as informações da missão; continua dentro do HUB, sem entrar na Mission Activity. |
+| Join e seleção dos Players (HUB) | Após a escolha da missão, um ou dois dispositivos solicitam Join; cada Player seleciona e confirma seu personagem, inclusive repetindo a mesma identidade. A entrada na missão requer acionamento explícito de **Iniciar Missão**, após as confirmações. |
 | Introdução cinematográfica (Mission Activity) | Panorâmica dos pontos de interesse do cenário e apresentação das gangues, com splash recorrente e animação especial somente na primeira aparição na carreira. Pode ser saltada. Não é uma fase de gameplay. |
 | Preparação (Mission Activity) | Após a introdução, Players controláveis iniciam exploração livre e configuração contextual do cenário, incluindo armazenamento, armadilhas, incrementos e cofre do objetivo principal, enquanto corre o relógio. |
 | Assalto Ativo e invasão (Mission Activity) | Quando termina a Preparação, começa o Tempo de Assalto. Spawn Points executam suas receitas temporais independentes; investigação, roubo, proteção, confronto e captura acontecem normalmente. |
 | Fuga Final (Mission Activity) | Ao terminar o Tempo de Assalto, começa o Tempo de Fuga e o contexto global muda para Fuga Final, mantendo o GOAP. |
 | Encerramento e resultados | Ao terminar o Tempo de Fuga, o gameplay encerra, os estados são consolidados e os resultados são apresentados em Activity própria. |
 
-### Seleção do contrato, Briefing e introdução da missão
+### Seleção do contrato, Players e introdução da missão
 
 :::decision
 **Decisão de fluxo para o jogo completo:** a **seleção de um novo contrato** acontece no HUB, considerando requisitos de habilitação e fundos/recursos da carreira quando aplicáveis. O **Briefing é uma subdivisão desse fluxo de seleção**, antes da entrada na missão, e informa o jogador sobre o local a proteger, o item/objetivo principal e os grupos de larápios previstos. O contrato e sua disponibilidade não se confundem com o custo operacional calculado no resultado; requisitos concretos, consumo de recursos e valores de acesso ainda precisam de especificação própria.
+
+**Entrada de Players e personagens no HUB:** depois de escolher a missão (com seu Briefing), o fluxo oferece **Join de dispositivos locais**. A quantidade de Players será definida por quantos dispositivos efetivamente participarem, respeitando o limite de **um ou dois Players**; não é necessário escolher previamente o número em um seletor separado. Cada dispositivo participante corresponde a um Player com **entrada independente**, que seleciona seu personagem (Rick ou Petra na Demo) e **confirma a própria seleção**. **A mesma identidade pode ser escolhida pelos dois Players**; a identidade visual/narrativa selecionada não unifica nem duplica a participação, o Input ou a ocorrência do Actor. Após pelo menos um Player ter ingressado, o botão **Iniciar Missão** somente permite prosseguir quando **todos os Players participantes tiverem confirmado suas escolhas**. Confirmar o personagem **não inicia** a missão; é indispensável o comando explícito **Iniciar Missão**. O HUB mantém a autoridade desse fluxo até essa ação.
+
+A entrada na Mission Activity utiliza a composição dos Players confirmados, mantendo Player, Actor e identidade de personagem distintos. A definição exata de UI para sair do Join, trocar dispositivos ou cancelar a seleção antes do início fica para detalhamento posterior, sem antecipar requisitos de gameplay.
 
 Depois de entrar na **Mission Activity**, o Player **não aparece imediatamente controlável no mapa**. Primeiro ocorre uma **Introdução cinematográfica**, composta por:
 
@@ -376,9 +382,11 @@ Larópolis deve funcionar como um mundo urbano colorido, exagerado e reconhecív
 
 ### HUB
 
-O HUB organiza contratos e progressão na cidade de Larópolis. A **seleção de contrato e seu Briefing ocorrem no HUB antes de entrar na Mission Activity**, incluindo as informações do local, objetivo principal e larápios previstos; a disponibilidade depende dos requisitos e fundos/recursos de acesso configurados para o contrato no jogo completo. A Demo usa o escritório da PEGA como uma tela temática estática com hotspots para o mapa de missões e a carreira. A forma do HUB após a Demo permanece em aberto. O HUB deve permitir:
+O HUB organiza contratos e progressão na cidade de Larópolis. **Seleção do contrato, Briefing, Join de dispositivos, seleção e confirmação de personagem e comando Iniciar Missão** acontecem no HUB, nessa ordem, antes da Mission Activity. A seleção do contrato apresenta informações do local, objetivo principal e larápios previstos; a disponibilidade depende dos requisitos e fundos/recursos de acesso configurados para o contrato no jogo completo. A Demo usa o escritório da PEGA como uma tela temática estática com hotspots para o mapa de missões e a carreira. A forma do HUB após a Demo permanece em aberto. O HUB deve permitir:
 
 - Selecionar fases liberadas.
+- Receber Join de um ou dois Players e permitir que cada um escolha e confirme seu personagem, admitindo identidade duplicada.
+- Disponibilizar **Iniciar Missão** somente após confirmação de todos os Players participantes.
 - Visualizar progressão.
 - Retornar ao menu inicial.
 - Esconder conteúdos futuros até o jogador cumprir requisitos.
@@ -397,7 +405,7 @@ Rick é um jovem aspirante à PGA Larópolis. Depois de ser reprovado, funda a P
 
 Petra é parceira de Rick e cofundadora da PEGA. Ela é jogável e mecanicamente equivalente a Rick na Demo; sua identidade visual é própria. Diferenças mecânicas posteriores dependem de playtests e decisão futura.
 
-No **microciclo e no vertical slice**, Rick Ronda é a identidade padrão do único personagem controlável, sem UI de seleção ou arte definitiva obrigatórias. Na **Demo**, Rick e Petra são selecionáveis, mecanicamente equivalentes e disponíveis para o cooperativo. **Player** (participação/controle), **Actor** (ocorrência e composição de gameplay) e **personagem** (identidade) mantêm responsabilidades distintas; assets técnicos de validação do Framework não se tornam conteúdo de produção por renomeação.
+No **microciclo e no vertical slice**, Rick Ronda é a identidade padrão do único personagem controlável, sem UI de seleção ou arte definitiva obrigatórias. Na **Demo**, Rick e Petra são selecionáveis, mecanicamente equivalentes e disponíveis para o cooperativo, **sem exigência de personagens diferentes entre os dois Players**. A escolha individual e confirmação ocorrem no HUB, após selecionar a missão. **Player** (participação/controle), **Actor** (ocorrência e composição de gameplay) e **personagem** (identidade) mantêm responsabilidades distintas; assets técnicos de validação do Framework não se tornam conteúdo de produção por renomeação.
 
 ### NPCs
 
@@ -1038,12 +1046,11 @@ Quando o Player perde contato com um larápio, pode reencontrá-lo pela observa�
 #### Menu inicial
 
 - Novo jogo.
-- Modo solo.
-- Multiplayer local cooperativo.
-- Seleção de personagem.
 - Endless, quando desbloqueado.
 - Opções.
 - Sair.
+
+A quantidade de Players e a seleção de personagens não são etapas obrigatórias do menu inicial: acontecem **no HUB depois da escolha de uma missão**, por Join e confirmação individual, antes do botão **Iniciar Missão**.
 
 #### Menu de pausa
 
@@ -1203,6 +1210,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.12.0 | 2026-10-15 | Definida no HUB, depois da seleção da missão e Briefing, a entrada por Join dos dispositivos locais, escolha e confirmação individual dos personagens (com duplicação permitida) e início apenas por botão explícito Iniciar Missão; alinhado o fluxo com a Demo. |
 | 0.11.0 | 2026-10-15 | Consolidada Preparação com exploração livre, menu contextual sem Pause, POIs fixos/slots abstratos, manipulação física de itens em todas as fases, kit e acervo coletivo, loja do HUB e pendências explicitamente condicionadas a protótipos. |
 | 0.10.0 | 2026-10-15 | Clarificado fluxo do contrato no HUB e Briefing antes da missão; estabelecida introdução cinematográfica na Mission Activity com panorâmica, splashes recorrentes e animação inédita por carreira, skip prolongado e registro de grupos apresentados mesmo ao saltar; Preparação começa apenas após introdução e controle disponível. |
 | 0.9.0 | 2026-10-15 | Incorporadas 17 decisões da revisão guiada sobre objetivos e validação, cooperativo, apresentação, cofre, ataque, transporte, prisão, Player, Armazém, mobilidade, perda de contato, Pause e classificação; preservadas pendências condicionadas. |
