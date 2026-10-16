@@ -15,10 +15,11 @@ MonoBehaviour:
   activityId: 31d3e84dd12747bdb4d3b06fb2f64adb
   activityName: Mission
   description: Mission Activity. Preparation, Assault and Escape are future internal mission phases.
-  playerParticipationProjectionMode: 0
+  playerParticipationProjectionMode: 20
   playerParticipationZeroParticipantPolicy: 0
-  playerParticipationExplicitSlotProfiles: []
-  playerParticipationRequirementLevel: 0
+  playerParticipationExplicitSlotProfiles:
+  - {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  playerParticipationRequirementLevel: 30
   activityContentProfile: {fileID: 11400000, guid: a3000000000000000000000000000001, type: 2}
   playerRelocationPolicy: 0
   activityEntryReadinessPolicy: 0

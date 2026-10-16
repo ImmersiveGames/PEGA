@@ -107,9 +107,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c2bc43486fa96a0459f6d9061478656f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9063198838978097676}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c2bc43486fa96a0459f6d9061478656f, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8729888894998415563}
   m_SourcePrefab: {fileID: 100100000, guid: c2bc43486fa96a0459f6d9061478656f, type: 3}
 --- !u!137 &1057779382911245071 stripped
 SkinnedMeshRenderer:
@@ -146,20 +143,8 @@ MonoBehaviour:
   - trackId: mouth
     targetRenderer: {fileID: 1057779382911245071}
     materialIndex: 0
+  defaultState: {fileID: 11400000, guid: 780d4a80c604b244fb9b138d1babdec7, type: 2}
   states:
   - {fileID: 11400000, guid: 780d4a80c604b244fb9b138d1babdec7, type: 2}
   animations:
   - {fileID: 11400000, guid: e333b797edfccd14794c876bfe82c4a5, type: 2}
---- !u!114 &8729888894998415563
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6323473450400066937}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b731f270518716347b6705fac75664a1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FaceControllerTester
-  controller: {fileID: 9063198838978097676}
