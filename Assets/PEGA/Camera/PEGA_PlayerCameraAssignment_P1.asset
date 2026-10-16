@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77252ac8d7db46d0b832aeecc4e42c67, type: 3}
+  m_Name: PEGA_PlayerCameraAssignment_P1
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.CameraAuthoring.SessionCameraAssignmentAsset
+  assignmentId: 53057b060ab7411993da4f7025b5f759
+  rigPrefab: {fileID: 100000000, guid: 16f1da0d8d0344da9a4883275af65cb0, type: 3}
+  occurrenceMode: 2
+  membershipPolicy: 2
+  targetPolicy: 3
+  memberSlots:
+  - {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  outputDefinitions:
+  - {fileID: 11400000, guid: 5c7d30d85a2042d699a88bbd5189a9bd, type: 2}
+  individualMemberOutputMappings:
+  - playerSlotProfile: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+    outputDefinition: {fileID: 11400000, guid: 5c7d30d85a2042d699a88bbd5189a9bd, type: 2}

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 400000000}
   - component: {fileID: 114000000}
   - component: {fileID: 114000001}
+  - component: {fileID: 114000002}
   m_Layer: 0
   m_Name: PEGA_LocalPlayerHost
   m_TagString: Untagged
@@ -79,6 +80,31 @@ MonoBehaviour:
   playerInput: {fileID: 114000000}
   actorMount: {fileID: 400000001}
   playerActorRuntimeHostPrefab: {fileID: 114000000, guid: 818f809763db4d06a81cebbe7a590adf, type: 3}
+--- !u!114 &114000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcfea0d7cc4144be8c064041108b58b1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.UnityInput.UnityPlayerInputGateAdapter
+  playerInput: {fileID: 114000000}
+  gameplayActionMap:
+    actionAsset: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    actionMapId: df70fa95-8a34-4494-b137-73ab6b9c7d37
+    cachedActionMapName: Player
+  gameplayActionMapName: Player
+  blockOnInputAcceptance: 1
+  blockOnGameplayAction: 1
+  restorePreviousState: 1
+  applyOnEnable: 1
+  logStateChanges: 1
+  logMissingRuntimeOnce: 1
+  logMissingTargetOnce: 1
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0

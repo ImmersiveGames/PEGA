@@ -17,16 +17,15 @@
       "url": "https://package.openupm.com"
     },
     "com.immersive.framework": {
-      "version": "1.1.0",
+      "version": "file:C:/Projetos/ImmersivePackages/com.immersive.framework",
       "depth": 0,
-      "source": "registry",
+      "source": "local",
       "dependencies": {
         "com.immersive.foundation": "0.2.2",
         "com.immersive.logging": "0.2.3",
         "com.unity.cinemachine": "3.1.7",
         "com.unity.inputsystem": "1.19.0"
-      },
-      "url": "https://package.openupm.com"
+      }
     },
     "com.immersive.logging": {
       "version": "0.2.4",

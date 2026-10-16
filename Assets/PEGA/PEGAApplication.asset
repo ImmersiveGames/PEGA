@@ -22,7 +22,8 @@ MonoBehaviour:
   cameraSession:
     outputPrefabs:
     - {fileID: 6102830329239094849, guid: 0ca791f6adb34b5dae6abfd216ec7e64, type: 3}
-  startupCameraAssignments: []
+  startupCameraAssignments:
+  - {fileID: 11400000, guid: 829ea36b4af34236bccf30a688fb3555, type: 2}
   persistentContent:
     scenePath: Assets/PEGA/Scenes/PersistentContent.unity
     sceneName: PersistentContent
