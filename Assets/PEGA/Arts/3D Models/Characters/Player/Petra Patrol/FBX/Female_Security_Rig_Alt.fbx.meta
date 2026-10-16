@@ -3,7 +3,27 @@ guid: 6029e5df4d4395a4381cd43101f19937
 ModelImporter:
   serializedVersion: 24501
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Eyes_Expressions_Mat
+    second: {fileID: 2100000, guid: 70739e3bf1fa2af4eaa58ecd50ae09e4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Female_Security_Alt_Mat
+    second: {fileID: 2100000, guid: c3eeb10fb8db2904ea4d768697314dc1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Head_Mat
+    second: {fileID: 2100000, guid: d8285ce4c94a201498b6a66018f6d03c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mouth_Mat
+    second: {fileID: 2100000, guid: 28d88978637eb3b46980b9a1e95ba9af, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

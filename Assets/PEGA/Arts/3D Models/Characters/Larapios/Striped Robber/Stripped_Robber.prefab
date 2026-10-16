@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.0638533
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
       propertyPath: m_LocalPosition.y
@@ -18,7 +18,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.0280397
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
       propertyPath: m_LocalRotation.w
@@ -112,6 +112,7 @@ MonoBehaviour:
   - trackId: mouth
     targetRenderer: {fileID: 1788904659983707039}
     materialIndex: 0
+  defaultState: {fileID: 11400000, guid: 8122d4304eb62b14082dc08f18029887, type: 2}
   states:
   - {fileID: 11400000, guid: 8122d4304eb62b14082dc08f18029887, type: 2}
   - {fileID: 11400000, guid: 97f281c5dceb1974c83ee55e6ffae158, type: 2}

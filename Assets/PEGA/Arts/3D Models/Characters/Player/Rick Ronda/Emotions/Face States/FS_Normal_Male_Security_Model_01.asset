@@ -20,13 +20,10 @@ MonoBehaviour:
     frames:
     - frameId: eye.opened
       spriteId: eye.normal.open
-      displayName: eye.opened
     - frameId: eye.closed
       spriteId: eye.normal.closed
-      displayName: eye.closed
   - trackId: mouth
     defaultFrameId: mouth.closed
     frames:
     - frameId: mouth.closed
       spriteId: mouth.normal.close
-      displayName: mouth.closed
