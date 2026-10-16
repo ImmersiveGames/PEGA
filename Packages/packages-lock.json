@@ -17,15 +17,16 @@
       "url": "https://package.openupm.com"
     },
     "com.immersive.framework": {
-      "version": "file:C:/Projetos/ImmersivePackages/com.immersive.framework",
+      "version": "https://github.com/ImmersiveGames/com.immersive.framework.git",
       "depth": 0,
-      "source": "local",
+      "source": "git",
       "dependencies": {
         "com.immersive.foundation": "0.2.2",
         "com.immersive.logging": "0.2.3",
         "com.unity.cinemachine": "3.1.7",
         "com.unity.inputsystem": "1.19.0"
-      }
+      },
+      "hash": "10aeb459df42e27159f375ee6e8c6b154f1ef985"
     },
     "com.immersive.logging": {
       "version": "0.2.4",
