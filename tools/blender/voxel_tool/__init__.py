@@ -6,7 +6,7 @@ Painel: View3D > Sidebar (N) > Voxel Tool.
 bl_info = {
     "name": "Voxel Tool",
     "author": "Immersive Games",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > Voxel Tool",
     "description": "Otimiza malhas do MagicaVoxel, abre UV no grid de pixels e gera a textura base para pintura",
@@ -250,7 +250,7 @@ class VOXELTOOL_OT_export_fbx(bpy.types.Operator):
     bl_idname = "voxel_tool.export_fbx"
     bl_label = "Exportar FBX para o Unity"
     bl_description = ("Exporta a seleção como FBX com transformações aplicadas (escala 1, sem rotação no Unity), "
-                      "sombreamento flat e sem leaf bones")
+                      "só deform bones, sem animação, sombreamento flat e sem leaf bones")
     bl_options = {'REGISTER'}
 
     filepath: StringProperty(subtype='FILE_PATH')
@@ -268,23 +268,67 @@ class VOXELTOOL_OT_export_fbx(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
-        bpy.ops.export_scene.fbx(
-            filepath=bpy.path.ensure_ext(self.filepath, ".fbx"),
-            use_selection=True,
-            object_types={'ARMATURE', 'MESH'},
-            apply_scale_options='FBX_SCALE_ALL',
-            axis_forward='-Z',
-            axis_up='Y',
-            bake_space_transform=True,
-            mesh_smooth_type='FACE',
-            use_mesh_modifiers=True,
-            add_leaf_bones=False,
-            use_armature_deform_only=False,
-            bake_anim=False,
-            path_mode='AUTO',
-        )
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        selected = set(context.selected_objects)
+        # Malhas soltas já saem certas com bake_space_transform; só o Armature precisa do truque.
+        roots = [o for o in selected if o.type == 'ARMATURE' and o.parent not in selected]
+        state = _rotate_for_unity(roots)
+        try:
+            bpy.ops.export_scene.fbx(
+                filepath=bpy.path.ensure_ext(self.filepath, ".fbx"),
+                use_selection=True,
+                object_types={'ARMATURE', 'MESH'},
+                apply_scale_options='FBX_SCALE_ALL',
+                axis_forward='-Z',
+                axis_up='Y',
+                bake_space_transform=True,
+                mesh_smooth_type='FACE',
+                use_mesh_modifiers=True,
+                add_leaf_bones=False,
+                use_armature_deform_only=True,
+                bake_anim=False,
+                path_mode='AUTO',
+            )
+        finally:
+            _restore_rotation(state)
         self.report({'INFO'}, "FBX exportado: %s" % self.filepath)
         return {'FINISHED'}
+
+
+# O export do Blender converte Z-up para Y-up com -90 em X no Armature.
+# O mesmo truque manual (girar -90 em X, aplicar, voltar para +90 sem aplicar)
+# é feito aqui só durante o export e desfeito em seguida: no Unity o objeto
+# chega em pé com rotação 0 e escala 1, sem precisar de Bake Axis Conversion.
+_TO_UNITY = Matrix.Rotation(math.radians(-90.0), 4, 'X')
+
+
+def _rotate_for_unity(roots):
+    state = []
+    rotated_data = set()
+    for obj in roots:
+        children = [c for c in obj.children if c.parent_type == 'OBJECT']
+        state.append((obj, obj.matrix_basis.copy(), [(c, c.matrix_parent_inverse.copy()) for c in children]))
+        if obj.data not in rotated_data:
+            obj.data.transform(_TO_UNITY)
+            rotated_data.add(obj.data)
+        obj.matrix_basis = obj.matrix_basis @ _TO_UNITY.inverted()
+        for c in children:
+            c.matrix_parent_inverse = _TO_UNITY @ c.matrix_parent_inverse
+    bpy.context.view_layer.update()
+    return (state, rotated_data)
+
+
+def _restore_rotation(saved):
+    state, rotated_data = saved
+    back = _TO_UNITY.inverted()
+    for data in rotated_data:
+        data.transform(back)
+    for obj, basis, children in state:
+        obj.matrix_basis = basis
+        for c, inv in children:
+            c.matrix_parent_inverse = inv
+    bpy.context.view_layer.update()
 
 
 class VOXELTOOL_PT_main(bpy.types.Panel):

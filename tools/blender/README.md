@@ -28,6 +28,8 @@ padrão vêm dos personagens do PEGA.
    de cada ilha (magenta) e a grade de voxels, para usar como camada de
    referência e esconder antes de salvar.
 6. Faça o rig como de costume e use **Exportar FBX para o Unity** com a seleção.
+   Ele exporta escala 1 e rotação 0 no Armature (sem precisar de *Bake Axis
+   Conversion* no Unity), só deform bones, sem animação e sem leaf bones.
 
 O resultado é criado como `<objeto>_Voxel` dentro da collection
 `<Nome>_Voxel`; o original fica escondido e intacto. Rodar de novo não

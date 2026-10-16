@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "voxel_tool"
-version = "0.2.0"
+version = "0.2.1"
 name = "Voxel Tool"
 tagline = "Otimiza malhas do MagicaVoxel e gera UV e textura base"
 maintainer = "Immersive Games"
