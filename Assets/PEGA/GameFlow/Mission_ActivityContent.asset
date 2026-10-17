@@ -20,4 +20,4 @@ MonoBehaviour:
     requiredness: 0
     loadMode: 0
     releasePolicy: 0
-  description: Owns the temporary diagnostic object and Mission Activity content.
+  description: Owns Mission Activity diagnostics and the Larapio NPC demonstrator through Activity Content scene lifetime.

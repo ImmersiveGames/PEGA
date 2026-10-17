@@ -2,7 +2,7 @@
   "dependencies": {
     "com.immersive.audio": "0.2.4",
     "com.immersive.foundation": "0.2.3",
-    "com.immersive.framework": "https://github.com/ImmersiveGames/com.immersive.framework.git",
+    "com.immersive.framework": "1.2.0-preview.2",
     "com.immersive.logging": "0.2.4",
     "com.immersive.pooling": "0.2.3",
     "com.immersivegames.face-system": "https://github.com/ImmersiveGames/com.immersivegames.face-system.git",

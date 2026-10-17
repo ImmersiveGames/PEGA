@@ -1,109 +1,91 @@
-# PEGA — Backlog da Demo
+# PEGA — Planejamento de produção do vertical slice e da Demo
 
-**Status:** backlog derivado do escopo aprovado
-**Versão:** 0.4.1
-**Atualização:** 2026-10-10
-**Escopo:** primeiro vertical slice técnico e Demo completa
+**Status:** backlog derivado do escopo aprovado e da estratégia vigente em ADR PP-37
+**Versão:** 0.6.0
+**Atualização:** 2026-10-16
+**Escopo:** capacidades de gameplay do vertical slice e evolução posterior da Demo
 
-Este backlog transforma o recorte de [MVP.md](MVP.md) em entregas verificáveis. Regras e comportamento pertencem ao [GDD.md](GDD.md); tarefas não criam contratos adicionais. “Framework” abaixo significa configurar e integrar APIs disponíveis na versão instalada, sem reimplementar o framework nem presumir que documentação equivale a validação em Unity.
+Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
 
-## Dependências técnicas e autoria no Immersive Framework
+## Estratégia de execução vigente — PP-37
 
-- [ ] **VS** Auditar as superfícies públicas do `com.immersive.framework` já instalado (`1.1.0-preview.6`) que o slice realmente usará e registrar contratos, maturidade e limites aplicáveis antes da integração. **Aceite:** nenhuma capacidade já fornecida pelo pacote é reimplementada pelo PEGA e nenhuma superfície experimental é tratada como validada sem confirmação no Editor.
-- [ ] **FOUND-01 · VS · pré-requisito do cartão [#75](https://trello.com/c/EfPEV4Ip/75-mc-01-integrar-player-actor-do-framework-na-miss%C3%A3o)** Compor a fundação da aplicação PEGA e validar a navegação até Result sem Player.
-  - **Aceite:** GameApplication próprio do PEGA referencia a Mission Route como Startup Route; Player Session e Progression Save permanecem desabilitados.
-  - **Aceite:** incluir somente o Camera Output técnico necessário ao bootstrap da versão resolvida do Framework. Não criar Player Session, assignment de câmera para Player, câmera de gameplay ou movimento; a câmera top-down definitiva permanece no cartão #29.
-  - **Aceite:** Mission Activity permite zero Players; Result é uma Activity distinta.
-  - **Aceite:** Persistent Content e perfis de conteúdo são próprios do PEGA; cenas de produção estão declaradas no Build Profile ativo.
-  - **Aceite:** inicialização e navegação funcionam sem depender de cenas, assets ou protótipos de FrameworkValidation.
-  - **Aceite:** diagnóstico temporário registra alterações de fase Preparação → Assalto → Fuga e solicita Result. O diagnóstico demonstra somente composição e navegação, não gameplay funcional nem regras definitivas.
-  - **Aceite:** evidências no Unity Editor registram importação do pacote resolvido, validação da configuração/autoria e execução do fluxo Mission → Result.
-  - **Evidência desta execução:** [relatório de validação Unity FOUND-01](../docs/superpowers/reports/2026-10-10-found-01-unity-validation.md); pendências de aceite permanecem explícitas no relatório.
-  - **Fora de escopo:** menu, HUB, carreira, retry/reset definitivo, gameplay funcional e integração Player/Actor.
-- [ ] **VS** Inspecionar maturidade e contratos das APIs públicas de Game Flow, Actor/Player, Pause, Camera e Progression Save antes de integrar cada superfície. **Aceite:** decisões de integração registram a API pública concreta, limites documentados e qualquer bloqueio experimental; nenhum recurso é marcado como validado sem confirmação de importação/execução no Editor.
-- [ ] **Demo** Configurar participação de dois Players locais e câmera/apresentação compatível com tela dividida usando a superfície pública disponível; desenhar solução explícita para limitações atuais de Pause/API single-player. **Aceite:** ambos entram, controlam Rick ou Petra, mantêm câmera/UX legíveis e pausa não produz estado inconsistente.
-- [ ] **Demo** Integrar Save de Progression para persistência entre assaltos após verificar o perfil exigido e o contrato do backend. **Aceite:** saldo e progressão sobrevivem a reinício do jogo; nenhum assalto em andamento é salvo ou retomado.
-- [ ] **Demo** Configurar reset/repetição de missão somente conforme o ciclo documentado e compatível com a carreira. **Aceite:** reinício não duplica recompensas nem perde indevidamente o resultado já confirmado.
+Priorizar: **(1)** controles, movimento e capacidades do Player necessárias à perseguição; **(2)** movimento e autonomia dos NPCs com sistemas reais do GDD; **(3)** preparar somente então um ambiente mínimo para observar essas capacidades juntas; **(4)** compor e avaliar a perseguição central; **(5)** depois expandir progressivamente o gameplay; **(6)** amadurecer o conjunto até o vertical slice completo e a Demo. Cada capacidade deve avançar em incrementos coerentes e aproveitáveis. Não fechar microciclos artificiais entre sistemas nem exigir polimento definitivo antes de avaliar a perseguição.
 
-## Mecânicas específicas de PEGA
+O ambiente de teste conjunto depende da suficiência de Player e NPCs; a composição depende desse ambiente. Isso não exige o Armazém completo nem a Demo para o primeiro teste integrado de perseguição. O escopo final do MVP permanece intacto.
 
-- [ ] **VS** Integrar movimento do Actor e configurar especializações de velocidade por arquétipo/modificador, sem atributo universal de Agilidade. **Aceite:** Rick/Petra e larápios usam suas configurações; transporte de larápio mantém velocidade normal do policial.
-- [ ] **VS** Implementar interação contextual e comandos distintos para interagir/atacar e soltar itens. **Aceite:** soltar descarta todos os itens; depósito transfere itens elegíveis; contexto não mistura ataque e descarte.
-- [ ] **VS** Implementar inventário de capacidade configurável, itens de unidade inteira e armazenamento em cofre. **Aceite:** capacidade pode variar por tipo de Actor; depósito parcial segue ordem estável atual; excedentes permanecem no inventário; itens não são destruídos.
-- [ ] **VS** Implementar transporte de larápio incapacitado e entrega na prisão como condição de captura efetiva. **Aceite:** transporte bloqueia ataque, salto, esquiva e interação comum, mas preserva itens do policial e sua capacidade; incapacitação/transporte não contam como captura.
-- [ ] **VS** Implementar confronto por Capacidade de ataque versus Resistência, ataques válidos derrubando os itens do alvo e recuperação temporizada de incapacitação. **Aceite:** sem HP/dano acumulativo; resultados e feedback distinguem ataque insuficiente, queda e captura posterior.
-- [ ] **VS** Implementar percepção por área radial e cone frontal, parâmetros configuráveis e bloqueio por obstáculos; propagar fatos apenas conforme escopo/política de Knowledge Data. **Aceite:** Individual, Gangue e Global permanecem distintos e percepção individual não é compartilhada automaticamente.
-- [ ] **VS** Implementar coleta, carregamento, roubo, recuperação, fuga e estados finais dos itens conforme o GDD. **Aceite:** item no cenário ao fim da Fuga é recuperado; item levado por larápio que escapou é roubado; nenhum item desaparece.
-- [ ] **Demo** Implementar cofres adicionais e armários quando incluídos no conteúdo aprovado. **Aceite:** armazenamento compartilha regras básicas, funções são distintas e armário não concede bônus de proteção por padrão.
-- [ ] **Demo** Implementar pausa e saída no fluxo de UI da missão segundo os limites confirmados da API. **Aceite:** pause e retomada não deixam atores/timers em estados divergentes; sair encaminha ao fluxo definido.
+O Immersive Framework é infraestrutura adotada pelo PEGA. Usar contratos/capacidades existentes; não criar tarefas ou checks para repetir validações genéricas de lifecycle, Input Gate, troca de Player ou comportamento interno de componentes. Corrigir falhas concretas de integração PEGA e validar gameplay pertencente ao PEGA.
 
-## IA GOAP dos larápios
+**Frente imediata:** evolução funcional do Player em [#80 — responsividade do controle](https://trello.com/c/5vyBuvLX), em continuidade ao movimento-base de [#34](https://trello.com/c/6pE7J5R0). O #34 continua incompleto: colisão e aceite de gameplay permanecem pendentes. A evidência estática de blockout em [#53](https://trello.com/c/t7gPfzuM) não é aceite Unity nem prioridade atual de implementação.
 
-- [ ] **VS** Implementar arquitetura de planejamento GOAP separada da execução de ações; somente larápios usam GOAP. **Aceite:** Rick e Petra são controlados pelos Players; não existe FSM substituta conduzindo larápios.
-- [ ] **VS** Definir estados do mundo, desejos/contextos globais e políticas de conhecimento usadas pelo planejamento. **Aceite:** roubo, fuga, recuperação, perseguição e investigação usam fatos com escopo correto.
-- [ ] **VS** Implementar contrato comum de GOAP Action com ciclo de vida, resultados explícitos e término por sucesso, invalidação, interrupção ou cancelamento. **Aceite:** reservas são liberadas em todo término; progresso parcial cancelado é descartado conforme GDD.
-- [ ] **VS** Implementar reservas apenas para operações incompatíveis com owner e liberação explícitos. **Aceite:** não há bloqueio por reservas desnecessárias; término, cancelamento, invalidação e interrupção liberam propriedade.
-- [ ] **VS** Implementar seleção/execução de objetivos para proteger, roubar, recuperar item, perseguir portador, confrontar e escapar, incluindo Fuga Final com GOAP ativo. **Aceite:** decisões respondem a desejos, fatos e oportunidades sem prioridade fixa contraditória.
-- [ ] **Demo** Configurar perfis e receitas temporais independentes de Spawn Points. **Aceite:** cada receita conta a partir do início do Assalto Ativo; Preparação não altera seus relógios.
+## 1. Player — controles e movimento para perseguição
 
-## Autoria, conteúdo de cena e level design
+- [ ] **VS · Movimento-base e velocidades configuráveis** — movimento do Actor relativo à câmera, projeção no solo, aceleração, rotação, parada, limite diagonal e velocidades especializadas conforme GDD, sem atributo universal de Agilidade. Rastreabilidade: [#34 — movimento e colisão](https://trello.com/c/6pE7J5R0). E03–E04 do cartão permanecem pendentes; a checagem de colisão com o ambiente conjunto ocorre após a preparação do estágio 3.
+- [ ] **VS · Responsividade funcional do controle** — evoluir frenagem/desaceleração, resposta a inversões e intensidade analógica proporcional, preservando controles digitais previsíveis, orientação, direção relativa à câmera e limite de velocidade. Rastreabilidade: [#80 — resposta do controle](https://trello.com/c/5vyBuvLX). A parte funcional antecede NPCs e composição; Inspector final, tuning definitivo, extensão para Petra/P2 e sinais visuais de animação permanecem polimento posterior. Não reimplementar Input Reader/Input Gate do Framework.
+- Esquiva, salto, interação contextual, combate e recuperação não são pré-requisitos universais da perseguição. Antecipá-los para esta prioridade somente se uma necessidade concreta estiver sustentada pelo GDD; caso contrário, evoluem após a avaliação da perseguição central.
 
-- [ ] **VS** Configurar missão inicial com Preparação de duração fixa, cofre inicial padrão e pelo menos dois cofres válidos; escolha gratuita e sem confirmação de pronto no fluxo normal. **Aceite:** cofre selecionado comunica-se aos Players e não revela automaticamente a localização aos larápios; encerramento antecipado só existe como ferramenta de debug.
-- [ ] **VS** Construir cenário compacto com rotas de perseguição, cofre, prisão, entradas e saídas necessárias ao ciclo. **Aceite:** fluxo completo é possível e os objetos usados têm referências/configuração válidas.
-- [ ] **VS** Configurar Spawn Seguro para Player e pontos/receitas de invasão dos larápios. **Aceite:** nenhum spawn ocorre em posição inválida ou bloqueada nas condições cobertas pelo teste manual.
-- [ ] **Demo** Completar o Armazém e suas rotas, obstáculos e pontos de interesse do GDD. **Aceite:** fluxo comporta dois Players, quatro arquétipos dos Trapalhões do Crime, fuga e legibilidade top-down.
-- [ ] **Demo** Autorar rotas de saída e conteúdo de transição narrativa da P.G.A. Larópolis. **Aceite:** polícia oficial/PGA não atua como NPC policial durante assaltos.
+## 2. NPCs/larápios — movimento e autonomia para perseguição
 
-## Multiplayer local
+- [ ] **VS · Locomoção e comportamento autônomo com GOAP real** — evoluir movimento/velocidade de acordo com a mecânica do Actor e o GDD; usar conhecimento legítimo, percepção, Actions, Desejos e replanejamento na medida necessária para larápios reagirem, fugirem e lidarem com perda/readquisição de alvo sem informação oculta, sequência roteirizada ou FSM substituta. Rastreabilidade dos work packages: [#63 Actions](https://trello.com/c/KAbJVyUl), [#64 Desejos](https://trello.com/c/iWwXiDee), [#68 Knowledge State](https://trello.com/c/WzynxvkM), [#69 percepção](https://trello.com/c/KQmXJWoa), [#72 replanejamento](https://trello.com/c/5ruY3fkZ) e [#76 autonomia para perseguição](https://trello.com/c/T42AjD8K). #66 e #71 só entram se os casos de contingência/conflito do GDD os exigirem.
+- A suficiência do NPC é avaliada no comportamento autônomo pertinente à perseguição, não pela conclusão de roubo, inventário ou combate. O GDD permite fuga sem loot e define o comportamento após perda de um alvo; isso permite desenvolver essa capacidade antes da expansão por itens.
+- [ ] **VS · Investigação, POIs e roubo GOAP** — desenvolver busca por oportunidade, investigação ativa, descoberta legítima e roubo com Actions executáveis depois da composição central, sem abandonar o GOAP real nem simplificar as regras do GDD. Rastreabilidade: [#70 — investigação](https://trello.com/c/hFYlIZ5l), extensões do [#63](https://trello.com/c/KAbJVyUl) e aceitação expandida do [#76](https://trello.com/c/T42AjD8K).
+- [ ] **VS-14 · Fuga Final e relógios** — manter GOAP ativo e aplicar contextos/receitas temporais conforme GDD/MVP quando o gameplay expandido e o vertical slice forem compostos. Rastreabilidade: [#73 — temporizadores e resultado](https://trello.com/c/pyQ3yyzf); contextos globais/satisfação de Desejos em [#65](https://trello.com/c/oziocz9k) e [#67](https://trello.com/c/1vUPA1IG).
 
-- [ ] **Demo** Integrar entrada, seleção/atribuição de Rick e Petra e controle simultâneo de dois Players. **Aceite:** personagens têm equivalência mecânica e os dois podem alterar a escolha do cofre; última escolha válida prevalece e atualiza a ambos.
-- [ ] **Demo** Adaptar HUD, câmera, pausa, feedback de interação e legibilidade do cenário à tela dividida. **Aceite:** informação crítica e comandos contextuais são legíveis para cada Player durante a missão.
-- [ ] **Demo** Exercitar conflitos de interação e estados cooperativos (carregar, atacar, transportar, depositar, pausar). **Aceite:** ownership e resultados permanecem consistentes quando ambos agem simultaneamente.
+## 3. Ambiente de teste conjunto
 
-## UI/UX
+- [ ] **LD-01 · Ambiente mínimo de perseguição** — somente após Player e NPCs satisfazerem seus objetivos atuais, preparar na Mission geometria transitável, obstáculos/colliders e referência de saída suficientes para observar fuga, perseguição, perda/readquisição de contato e interceptação. Não validar layout ideal, conteúdo completo, cofres, prisão, invasão ou apresentação da Demo neste estágio. Rastreabilidade: [#53 — ambiente de teste e evolução do Armazém](https://trello.com/c/t7gPfzuM). E01 permanece com inclusão estática registrada, mas sem aceite manual no Unity; E02–E03 permanecem abertos.
 
-- [ ] **VS** Exibir timer da Preparação, cofre escolhido, estado do objetivo, timer de Assalto/Fuga e feedback de captura/itens. **Aceite:** Preparação fixa e relógios de Spawn não são apresentados como o mesmo timer.
-- [ ] **VS** Implementar feedback de percepção/ameaça, Resistência e incapacitação com sinais visuais e sonoros mínimos. **Aceite:** jogador distingue alvo apenas percebido, incapacitado, transportado e capturado.
-- [ ] **Demo** Implementar fluxo de carreira entre HUB, seleção/briefing, assalto, resultado e resumo. **Aceite:** telas refletem a hierarquia de Game Flow e não duplicam regras do GDD.
-- [ ] **Demo** Comunicar critérios relevantes da classificação F–S+ e a resolução dos itens. **Aceite:** critérios/pesos são configuráveis por missão e nenhum critério universal domina por definição.
-- [ ] **Demo** Implementar pausa, opções e saída conforme o fluxo definido; omitir salvar/carregar durante assalto. **Aceite:** interface não sugere retomada de assalto persistido.
+## 4. Composição da perseguição central
 
-## Carreira e persistência
+- [ ] **VS · Compor e avaliar a perseguição PEGA** — depois da suficiência do Player/NPC e do ambiente mínimo, integrar as capacidades para observar Player perseguir, larápio fugir, antecipação de rota, perda/readquisição de contato e interceptação, conforme GDD. Não exigir item, roubo, combate/confronto ou recuperação como pré-condição desta primeira composição. Rastreabilidade: [#77 — composição da perseguição](https://trello.com/c/YXKa2Hvi).
+- [ ] **VS · Critério de saída da perseguição central** — registrar evidência real de gameplay e limitações; prosseguir para expansão quando os comportamentos especificados estiverem satisfatórios. Não definir regras novas nem usar validação genérica do Framework como aceite. O critério deve permanecer ligado aos contratos do GDD, sem inventar limiar numérico de satisfação.
 
-- [ ] **Demo** Calcular classificação e métricas temporais por eventos/intervalos configuráveis por missão. **Aceite:** relatório explica critérios relevantes e diferencia larápios capturados, escapados e não escapados.
-- [ ] **Demo** Resolver itens ao fim do assalto e calcular bônus de proteção uma única vez sobre o estado final. **Aceite:** itens guardados podem receber bônus configurado; retirar/roubar remove elegibilidade; entregas repetidas não acumulam bônus.
-- [ ] **Demo** Aplicar custo operacional provisório de 150 créditos e bancarrota somente abaixo de -1000, com valores configuráveis. **Aceite:** exatamente -1000 não dispara bancarrota; Game Over de carreira não ocorre por um único assalto ruim.
-- [ ] **Demo** Persistir carreira apenas entre assaltos e oferecer reinício explícito após bancarrota. **Aceite:** saldo/progresso são restaurados, não existe save de partida em andamento, e novo ciclo não contamina a carreira anterior.
+## 5. Expansão progressiva até o vertical slice completo
 
-## Arte e animação
+Depois da perseguição central satisfatória, desenvolver os demais resultados necessários ao MVP em incrementos coerentes, preservando suas fronteiras e a autoridade de posse:
 
-- [ ] **VS** Produzir modelos/animações mínimas para Player, larápio, item, cofre e prisão. **Aceite:** silhueta/estado de movimento, carregamento, queda e transporte são distinguíveis no cenário compacto.
-- [ ] **Demo** Produzir Rick e Petra e os quatro arquétipos dos Trapalhões do Crime com leitura top-down. **Aceite:** Rick/Petra permanecem mecanicamente equivalentes; arte comunica grupos, ameaça e estados.
-- [ ] **Demo** Produzir cenários, UI e animações restantes necessários ao fluxo demonstrável, mantendo referências e autoria identificadas no [ArtBook.md](ArtBook.md). **Aceite:** imagens e assets usados têm proveniência/estado de produção registrados.
+- [ ] **VS · Interação contextual do Player** — seleção de alvos por contexto/alcance e distinção entre interação, ataque e soltura. Rastreabilidade: [#37 — interação contextual](https://trello.com/c/wWbleLBj).
+- [ ] **VS · Itens, posse e transferência** — disponibilidade, portador, posse exclusiva, coleta, soltura, roubo, recuperação e depósito sem duplicação/perda; capacidade configurável por Actor. Rastreabilidade: [#38 — posse e soltura](https://trello.com/c/dCc2lbu7), [#70 — investigação/roubo](https://trello.com/c/hFYlIZ5l) e [#83 — depósito em cofre](https://trello.com/c/687JSVZ0).
+- [ ] **VS · Confronto** — aplicar ataque válido, Capacidade de Ataque × Resistência, incapacitação e queda de itens conforme GDD; sem HP ou desgaste acumulativo. Rastreabilidade: [#40 — ataque e confronto](https://trello.com/c/7EGgunYM).
+- [ ] **VS · Recuperação e captura** — recuperação temporizada, transporte e captura efetiva por entrega na prisão; manter as restrições de ação, posse e inventário previstas no GDD. Rastreabilidade: [#42 — recuperação](https://trello.com/c/BJUgV7EY) e [#39 — captura](https://trello.com/c/Trj9hyl6).
+- [ ] **VS · Esquiva, salto e obstáculos especiais** — incluir conforme necessidade do recorte sustentada pelo GDD; não inventar ameaça/obstáculo nem torná-los pré-requisitos da perseguição básica. Rastreabilidade: [#35 — esquiva](https://trello.com/c/ePIM6alK) e [#36 — salto](https://trello.com/c/Vnmzl21P).
+- [ ] **VS · Preparação e invasão** — configurar duração, escolha de cofre, Spawn Seguro e receitas/relógios de invasão segundo GDD/MVP, sem misturar relógios ou declarar pronto/skip fora das regras aprovadas.
+- [ ] **VS · GOAP de roubo, proteção e recuperação** — integrar investigação/descoberta de item, ações de roubo, replanejamento por informação válida, posse, confronto e recuperação conforme GDD; se o Player obtiver o item antes, o larápio só altera sua decisão depois de informação legítima. Não substituir o GOAP por roteiro.
+- [ ] **VS · Encerramento completo** — compor Preparação, invasão, Assalto, Fuga Final, estados Capturado/Escapou/Não escapou, resolução de itens e Result Activity conforme GDD/MVP; preservar os dados necessários antes de descarregar conteúdo de gameplay.
+- [ ] **VS · Feedback funcional e sinais mínimos** — comunicar os estados e timers necessários para observar o gameplay expandido; apresentação/animação finais não bloqueiam comportamento funcional.
+- [ ] **VS-16 · Aceitação integrada do vertical slice** — validar manualmente no Unity os cenários solo exigidos pelo MVP após as capacidades correspondentes estarem prontas. Registrar versão, evidência e limitações reais; não repetir testes internos genéricos do Framework.
 
-## Testes e critérios de aceitação
+## 6. Demo — cooperação, conteúdo e refinamento
 
-- [ ] **VS** Validar manualmente no Unity Editor fluxo de cena, preparação, GOAP, percepção, reservas, confronto, inventário, cofre, captura, fuga e resultados. **Aceite:** checklist do GDD/MVP passa em uma sessão solo; registrar versão Unity/framework e limitações observadas.
-- [ ] **VS** Verificar casos de interrupção/cancelamento de ações, capacidade insuficiente, múltiplas reservas e item deixado ao fim da fuga. **Aceite:** contratos de término/ownership e resolução final de itens são reproduzíveis.
-- [ ] **Demo** Validar manualmente dois Players locais, split screen, escolha concorrente de cofre, interações simultâneas, pause/retomada, carreira e persistência entre reinicializações. **Aceite:** não há perda/duplicação de estado nem avanço indevido dos timers.
-- [ ] **Demo** Executar cenários de aceitação de sucesso, captura, fuga com itens, falha de proteção e bancarrota limítrofe. **Aceite:** resultados, classificação e saldo seguem GDD e MVP.
-- [ ] **Demo** Revisar cada item marcado como implementado com evidência de importação/execução no Editor. **Aceite:** documentação não é usada como prova de implementação.
+- [ ] **DEM-01/02 · Dois Players e gameplay cooperativo** — entrada/seleção e controle independente de Rick/Petra, câmera/split-screen e operações compartilhadas conforme MVP; exercitar conflitos sem perda/duplicação de estado. Rastreabilidade: [#28 — entrada e seleção local](https://trello.com/c/oUlBYsNI).
+- [ ] **DEM-03 · Gangue da Demo** — aplicar mecânicas e GOAP compartilhados aos quatro arquétipos dos Trapalhões do Crime, variando configurações conforme GDD sem duplicar a lógica.
+- [ ] **DEM-04 · Armazém completo e conteúdo** — evoluir o ambiente de teste para Level Design, conteúdo e apresentação da Demo a partir de gameplay real; incluir cofres, prisão, Spawn Points/Spawn Seguro, item principal e rotas da P.G.A. Larópolis conforme MVP. Rastreabilidade: [#53](https://trello.com/c/t7gPfzuM), [#81 — circulação](https://trello.com/c/5Qliadzo) e [#82 — POIs/leitura](https://trello.com/c/r4t1CVUL).
+- [ ] **DEM-05 · HUB e fluxo da carreira** — seleção de missão/Briefing, entrada na Mission, resultados/resumo e retorno ao HUB conforme MVP.
+- [ ] **DEM-06 · Economia e classificação** — implementar critérios e valores configuráveis do GDD/MVP; não inventar estimativa ou progresso.
+- [ ] **DEM-07 · Persistência e repetição** — persistir carreira entre assaltos, sem salvar/retomar assalto em andamento; reinício explícito após bancarrota.
+- [ ] **DEM-08 · Apresentação e animações** — clips, Animator/representação, HUD, áudio e feedback final para capacidades funcionais. Rastreabilidade: [#52 — animações de gameplay](https://trello.com/c/zZ0r1BZa).
+- [ ] **DEM-09 · Aceitação da Demo** — validar manualmente um e dois Players, carreira, cooperação, gameplay, apresentação, Pause, resultados e persistência, registrando evidência real.
 
-## Pós-Demo, opcional e sujeito a playtest
+## Fundação e integração PEGA–Framework já aceitas
 
-- [ ] **Pós-Demo** Orçamento de Preparação, investimentos de segurança, novos cenários/gangues e conteúdo narrativo adicional.
-- [ ] **Pós-Demo** Decidir inclusão e efeitos de power-ups a partir de playtests; não são requisito do primeiro vertical slice.
-- [ ] **Playtest** Revisar ordem estável de depósito parcial, valores econômicos, duração dos timers, pesos da classificação e balanceamento de arquétipos.
-- [ ] **Playtest** Avaliar proteção de armários, habilidades específicas por arquétipo e alternativas de cenário sem alterar as regras base sem decisão registrada no GDD.
+- [x] **FOUND-01 · Composição PEGA e navegação Mission → Result sem Player.** Aceite e evidências Unity registrados no [relatório FOUND-01](../docs/superpowers/reports/2026-10-10-found-01-unity-validation.md) e no [cartão #79](https://trello.com/c/5BvgU409). Esse resultado cobre somente a fundação/fluxo observado; não comprova movimento, perseguição, gameplay, GOAP ou o encerramento funcional do assalto.
+- Capacidades públicas do Framework são consumidas conforme a necessidade concreta da integração PEGA; não existe entregável aberto para revalidar comportamento genérico do pacote.
+
+## Pós-Demo, opcional ou sujeito a playtest
+
+- [ ] Avaliar orçamento de Preparação, investimentos de segurança, novos cenários/gangues, conteúdo narrativo e power-ups conforme GDD/MVP.
+- [ ] Avaliar proteção de armários, habilidades por arquétipo, duração de timers, pesos de classificação e balanceamento sem alterar regras-base sem decisão no GDD.
 
 ## Referências
 
 - [GDD — contratos completos](GDD.md)
 - [MVP — escopo por entrega](MVP.md)
+- [ADR de pré-produção — decisões de produção](ADR-PREPRODUCAO.md)
 - [Art Book — direção visual](ArtBook.md)
 
 ## Histórico de revisão
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.6.0 | 2026-10-16 | Reordenada a produção para satisfazer Player e NPCs, preparar ambiente conjunto, compor a perseguição central e depois expandir gameplay; preservado todo o escopo final do MVP. |
+| 0.5.0 | 2026-10-16 | Reordenado o backlog por capacidades do Player, dos larápios, mecânicas compartilhadas, composição do gameplay e evolução da Demo; antecipada a parte funcional da responsividade; separadas fronteiras de Framework, Level Design, captura e depósito; registrada evidência de FOUND-01 concluído. |
 | 0.4.1 | 2026-10-10 | Corrigido o critério FOUND-01 para explicitar o Camera Output técnico exigido pelo bootstrap, sem Player Session, assignment de Player ou câmera de gameplay; registrada a evidência Unity disponível. |

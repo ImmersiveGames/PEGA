@@ -15,7 +15,7 @@ Use an existing player/gameplay analysis and macro objective map as the starting
 
 - **GDD:** normative game behavior and rules.
 - **MVP:** delivery scope and acceptance for the vertical slice and Demo.
-- **ADR:** approved production/architecture decisions within their stated scope. Preserve the distinction between the initial microcycle and the complete vertical slice; the microcycle is a subset, not a new MVP phase.
+- **ADR:** approved production/architecture decisions within their stated scope. The microcycle is a subset of the vertical slice, not a new MVP scope. Under ADR PP-37, capability development precedes test-environment preparation and pursuit composition; the older microcycle remains historical coverage, not a sequence of implementation stages.
 - **Macro analysis:** navigation and derived grouping, not authority to change a rule or scope.
 - **TASKS/Trello:** operational planning, not a source of game behavior.
 - **Code/assets:** evidence of implementation, not authority to invent or resolve design rules.
@@ -51,6 +51,8 @@ Use the fields that apply; omit unsupported or irrelevant fields instead of fill
 | Gaps | Missing rule/decision, source conflict, acceptance/integration gap, or detail that can wait. |
 
 Use this shape when acceptance is needed:
+
+Delivery scope classifies the gameplay coverage an objective belongs to; it does not establish technical order. Use ADR PP-37 for production priority: satisfy Player capabilities needed for pursuit, then NPC movement/autonomy with the real GDD systems, prepare the joint test environment, compose and evaluate the central chase, expand gameplay mechanics afterward, and mature the complete vertical slice/Demo. The GDD/MVP scope remains unchanged. Do not make a subsystem wait for an artificial mini-cycle merely because its objective is scoped to that gameplay subset.
 
 | Scenario | Given | When | Then / pass boundary | Evidence | Sources |
 |---|---|---|---|---|---|

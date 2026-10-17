@@ -2,7 +2,7 @@
 
 **Projeto:** PEGA (Unity 6)  
 **Tipo:** registro de decisões de planejamento de produção  
-**Status:** decisões PP-01 a PP-35 consolidadas para revisão/incorporação  
+**Status:** PP-01 a PP-36 e adendos anteriores preservados como histórico; PP-37 registra a estratégia de produção vigente desde 2026-10-16.
 **Data-base:** 2026-10-10  
 **Destino proposto no repositório:** `PEGA GDD/ADR-PREPRODUCAO.md`  
 **Escopo:** microciclo, vertical slice técnico, Demo e estratégia de evolução do ecossistema Immersive Games.
@@ -66,9 +66,11 @@ As decisões abaixo são resumidas deliberadamente: detalhamento normativo de ga
 
 ## 3. Catálogo inicial de entregáveis
 
-Identificadores provisórios de planejamento; não implicam ordem rígida de início ou datas.
+Identificadores provisórios de planejamento; não implicam datas. A estratégia PP-37 abaixo prevalece quanto à ordem de trabalho. MC-01 a MC-04 preservam os recortes e referências do planejamento anterior, mas não constituem uma sequência de pequenos ciclos que cada capacidade precise fechar antes de avançar.
 
-### 3.1 Primeiro microciclo (subconjunto do vertical slice)
+### 3.1 Referência histórica: primeiro microciclo (subconjunto do vertical slice)
+
+O recorte abaixo preserva a composição planejada antes de PP-36. É referência de cobertura integrada, não prioridade atual nem gate para avançar capacidades.
 
 | ID | Resultado de aceite principal |
 |---|---|
@@ -112,10 +114,10 @@ Os IDs são recortes de produção, **não substituem** os contratos detalhados 
 
 ## 4. Dependências e responsabilidades
 
-- **MC-01, MC-02 e LD-01** podem avançar em paralelo; MC-03 pode usar alvo controlado; **MC-04 depende da integração funcional** dos anteriores.
+- A prioridade vigente e as interpretações das dependências estão registradas em **PP-37**. A decomposição anterior em MC-01 a MC-04 não obriga cada capacidade a ser entregue como microciclo isolado. Trabalho paralelo não antecipa o ambiente conjunto nem a composição: eles começam somente depois que Player e NPCs alcançarem suficiência para seus objetivos atuais.
 - A implementação de referência de componentes compartilhados pertence ao primeiro entregável que precisa deles; os demais integram ou estendem, sem duplicar autoridade.
 - **Programação** explicita requisitos de navegação, colisão, percepção, interação e pontos de integração; **Arte/Level Design** fornece o blockout e o evolui sem congelar geometria prematuramente.
-- Entregáveis da Demo podem iniciar investigação técnica antecipada, **sem antecipar sua conclusão como condição do microciclo**.
+- A investigação técnica pode ocorrer sem virar implementação antecipada da Demo; conteúdo, Level Design completo e polimento continuam posteriores à experiência central de perseguição satisfatória.
 - Os critérios de aceite estão dentro de cada entregável; somente uma demonstração reproduzível e checklist cumprido autorizam conclusão.
 
 ## 5. Immersive Framework × código do PEGA
@@ -231,7 +233,7 @@ GOAP, percepção/conhecimento e inventário/posse são **exemplos de candidatos
 
 1. Usar este ADR como **registro de decisões**; não gerar outro catálogo normativo de gameplay.
 2. Verificar, antes de planejar implementação, a API do Framework **efetivamente instalada** e a diferença entre os protótipos/QA e as capacidades de produção do PEGA.
-3. Manter a primeira validação jogável no MC-01 a MC-04 + LD-01, sem confundi-la com o vertical slice completo.
+3. **Encaminhamento histórico, reordenado por PP-36 e PP-37:** a primeira validação foi planejada como MC-01 a MC-04 + LD-01. O microciclo continua como referência histórica de cobertura. PP-37 agora prioriza capacidades de perseguição, composição do comportamento central e só depois sua expansão; o MVP continua regendo o escopo final do vertical slice.
 4. Planejar novas estimativas de esforço próximo à execução; converter em duração apenas com informação de capacidade suficiente.
 5. Ao incorporar no repositório, conferir que IDs, links e termos são consistentes com GDD/MVP/TASKS; não alterar as fontes normativas por implicação silenciosa.
 
@@ -282,3 +284,62 @@ Esses pontos descrevem o contrato e a implementação inspecionados no `.6`; nã
 Ao terminar a Fuga Final, o PEGA deve resolver os estados finais de larápios e itens e **consolidar os dados necessários ao cálculo do resultado antes de liberar o conteúdo de gameplay requerido por esse cálculo**. A Result Activity consome dados já consolidados e não depende de Actors ou cenas de gameplay que possam ter sido descarregados na transição.
 
 Formato do resultado, owners concretos dos dados e mecanismo explícito de transferência para Result permanecem para a implementação do encerramento no VS-15. Este registro não escolhe uma solução técnica nem cria tarefa nova; mantém a cadeia do entregável VS-15 existente. A confirmação FOUND-01 de transição Mission → Result comprova somente o fluxo observado naquela composição, não este contrato de dados ou um encerramento de missão já implementado.
+
+## 11. PP-36 — Evolução por capacidades antes da composição integrada (2026-10-16; decisão histórica)
+
+**Decisão registrada em PP-36:** orientar a produção pela evolução progressiva das capacidades necessárias à experiência central de **PERSEGUIR**, aprofundando sua implementação antes de exigir uma composição integrada. A prioridade então registrada era: (1) Player; (2) larápios; (3) mecânicas compartilhadas; (4) composição incluindo confronto e recuperação; (5) Demo. A ordem foi refinada e substituída em PP-37, preservando PP-36 como histórico.
+
+Essa ordem expressa prioridade, não fases rígidas, bloqueios universais ou proibição de desenvolvimento paralelo. Uma dependência só ordena trabalho quando a fonte normativa, o contrato ou uma relação de implementação demonstrável mostrar que uma etapa não pode avançar sem outra. Capacidades podem atingir maturidade funcional incrementalmente; não é necessário fechar um pequeno ciclo jogável completo a cada avanço. Implementação funcional e polimento final devem permanecer identificáveis como trabalhos distintos.
+
+**Fronteira do Immersive Framework:** o PEGA adota contratos e capacidades existentes do Framework. Lifecycle genérico, Input Gate, troca de Player e comportamento geral de componentes não são entregáveis nem critérios para revalidar o produto Framework no PEGA. O PEGA continua responsável por corrigir defeitos concretos da sua configuração e integração e por demonstrar o gameplay de sua propriedade. Mudança de Framework segue o repositório proprietário e sua governança própria.
+
+**Relação com decisões anteriores — histórico preservado:**
+
+| Decisões anteriores | Leitura após PP-36 |
+|---|---|
+| **PP-01 a PP-04** | Reafirmadas: planejar por capacidades e resultados, usar maturidade como atributo de cada capacidade, permitir avanço progressivo e registrar apenas dependências reais. “Demonstrável” não obriga uma composição de missão a cada incremento. |
+| **PP-13** | Reafirmada: capacidades jogáveis são o centro. Sistemas técnicos são componentes de suporte; sua implementação isolada não é, por si só, resultado de gameplay. |
+| **PP-14** | Reinterpretada: tamanho de entrega deve ser determinado pelo avanço significativo de uma capacidade, e não por uma escala intermediária fixa que fragmente desenvolvimento ou force composição prematura. |
+| **PP-15** | Substituída quanto à prioridade: o microciclo não é mais o primeiro resultado que precisa ser composto antes da evolução das capacidades. Sua cobertura permanece como referência de integração dentro do vertical slice, sem criar outro MVP. |
+| **PP-16, PP-22 a PP-24** | Mantidas com limite mais claro: trabalho de suporte pode existir quando habilita uma capacidade concreta; não criar entregáveis para repetir prova de infraestrutura do Framework nem checks de consequências triviais. Implementação compartilhada permanece no owner PEGA adequado e é reutilizada. |
+| **PP-17** | Mantida como cobertura de gameplay para a composição da perseguição — Player, larápio com GOAP e conhecimento limitado, item, roubo, fuga, perseguição, confronto, queda e recuperação. Não define a ordem de implementação das capacidades. Preparação, captura, cofres, relógios e resolução continuam no escopo do vertical slice conforme MVP, ainda que entrem na composição mais ampla posteriormente. |
+| **PP-18** | Substituída como decomposição de produção sequencial. Os rótulos MC-01 a MC-04 são referências históricas/operacionais; não exigem quatro entregas mínimas independentes. MC-04 representa a composição da perseguição quando as capacidades necessárias estiverem maduras o suficiente. |
+| **PP-19 a PP-21** | PP-19 permanece como cenário único evolutivo. PP-20 passa a significar autoria espacial mínima para apoiar as capacidades em desenvolvimento, sem exigir um blockout que feche o microciclo. PP-21 mantém contratos reais entre Programação e Level Design, sem criar pontos de integração artificiais ou tornar o cenário uma dependência geral. Refinamentos de proporção, composição dos POIs e apresentação amadurecem com gameplay suficiente e na evolução da Demo. |
+| **PP-25 a PP-27 e PP-33 a PP-35** | Mantidas, subordinadas à prioridade de capacidade: ampliar comportamento progressivamente e permitir paralelismo; compor a validação ponta a ponta depois; evoluir a Demo em paralelo quando houver benefício real, sem antecipar polimento como gate; estimar apenas com fundamento e manter horas/datas simuladas como tais. |
+
+**Autoridade e escopo:** PP-36 é decisão de produção; não altera regras do GDD nem categorias/aceites do MVP. Quando a necessidade de esquiva, salto, ameaça, interação ou outra capacidade depender de uma regra ou conteúdo não definido, a decisão permanece limitada ao que o GDD/MVP já sustentam; PP-36 não cria novas regras de jogo.
+
+**Efeito documental na vigência de PP-36:** `TASKS.md` e Trello refletiram aquela prioridade sem alterar estimativas ou evidências. PP-37 registra abaixo a substituição da ordem; mantém-se a regra de preservar histórico e não declarar tarefa concluída sem evidência de aceitação ou Unity validado sem observação real no Editor/runtime.
+
+## 12. PP-37 — Primeiro satisfazer as capacidades da perseguição, depois expandir o gameplay (2026-10-16)
+
+**Decisão vigente:** aprofundar capacidades em incrementos coerentes e aproveitáveis, sem exigir pequenos ciclos artificiais entre sistemas diferentes. A ordem de prioridade é:
+
+1. **Player:** evoluir controles e movimentação, incluindo responsividade, até satisfazer o movimento e as capacidades necessárias à perseguição. Implementação funcional não exige polimento definitivo. Interação com itens, combate, recuperação e mobilidade para obstáculos especiais não são pré-requisitos automáticos; entram antes somente quando uma necessidade concreta da perseguição estiver definida no GDD.
+2. **NPCs/larápios:** evoluir movimentação e comportamento autônomo até satisfazer o comportamento necessário à perseguição, usando os sistemas reais do GDD — GOAP, conhecimento, percepção, Actions, Desejos e replanejamento conforme a necessidade. Não substituir comportamento por roteiros ou por uma IA simplificada. A fuga sem loot e a perda/readquisição de um alvo permitem evoluir e avaliar autonomia sem exigir primeiro o sistema de roubo.
+3. **Ambiente de teste:** somente depois da suficiência das capacidades de Player e NPC, preparar um ambiente mínimo apropriado para observar sua interação. Isto é uma bancada funcional para a experiência, não a conclusão antecipada do Armazém da Demo.
+4. **Composição da perseguição:** integrar Player e larápios e avaliar perseguir, fugir, antecipar rotas, perder contato, recuperar contato e interceptar. A composição central não exige itens, roubo, combate ou recuperação como aceites prévios.
+5. **Expansão progressiva:** quando a experiência central de perseguição estiver satisfatória, acrescentar mecânicas do GDD em incrementos coerentes, incluindo itens, investigação/roubo, combate/confronto, recuperação/captura, obstáculos especiais e demais sistemas necessários ao MVP. No fluxo de roubo, se o Player obtiver o item primeiro, o larápio só altera sua decisão depois de adquirir informação válida, conforme o GDD.
+6. **Vertical slice e Demo:** amadurecer a experiência composta até cobrir todo o escopo final do MVP e, depois, completar conteúdo, Level Design, animações, apresentação, cooperação e refinamento da Demo.
+
+A ordem é de prioridade e as dependências explicitadas nos itens 3 e 4 são gates reais: não iniciar a preparação do ambiente de integração nem a composição conjunta antes que Player e NPCs estejam satisfatórios para seus objetivos atuais; não exigir a Demo completa para testar a perseguição. Cada capacidade pode avançar por incrementos internos aproveitáveis, sem que cada incremento crie um aceite isolado de sistema nem force integração prematura.
+
+**Base normativa sem alteração:** o GDD define perseguição como experiência central, velocidades de movimento/perseguição e comportamento GOAP, inclusive perda do alvo com uso da última posição conhecida e readquisição pela percepção normal. O GDD também permite que um larápio escolha fugir antes da Fuga Final sem carregar loot. Isso sustenta avaliar a perseguição antes do roubo; não altera regras de percepção, planejamento ou fuga. Os objetivos de perseguir/interceptar, confrontar/neutralizar e concluir captura permanecem distintos no GDD. O MVP continua incluindo Preparação, invasão, roubo, recuperação/captura, fuga e resultados no produto final.
+
+**Fronteira do Immersive Framework:** permanece adotado como infraestrutura. Não criar tarefa de revalidar lifecycle, Input Gate, troca de Player ou comportamento genérico de componente; corrigir apenas falhas concretas de integração PEGA e validar o gameplay de propriedade do PEGA.
+
+**Relação com decisões anteriores — histórico preservado:**
+
+| Decisões | Leitura após PP-37 |
+|---|---|
+| **PP-01 a PP-04 e PP-13** | Mantidas: evolução por capacidades e dependências reais; incrementos devem ser coerentes e contribuir à experiência, sem exigir composição completa a cada passo. |
+| **PP-14, PP-15 e PP-18** | Mantidas as revisões de PP-36 contra entregas artificiais; PP-37 especifica a sequência atual. Os rótulos MC-01 a MC-04 continuam rastreáveis, mas o microciclo antigo não define a primeira composição prioritária. |
+| **PP-16, PP-22 a PP-24 e PP-26** | Mantidas: suporte necessário pertence ao owner adequado, checks não repetem consequências triviais ou testes do Framework, e a aceitação integrada ocorre após evolução das capacidades. |
+| **PP-17** | Preservada como cobertura de gameplay do vertical slice; reordenada. A avaliação inicial da perseguição pode anteceder itens/roubo/confronto/recuperação, que continuam necessários no escopo final conforme GDD/MVP. |
+| **PP-19 a PP-21** | O mesmo Armazém continua evolutivo. A preparação de um ambiente para integrar Player/NPC ocorre somente após essas capacidades estarem satisfatórias; Level Design completo e refinamentos continuam posteriores. |
+| **PP-25 a PP-27 e PP-33 a PP-35** | Mantidas no que não conflita: estimativas somente com fundamento, preservação das projeções históricas, evolução incremental e maturação posterior da Demo. PP-27 não autoriza antecipar acabamento ou ambiente conjunto como gate da perseguição. |
+| **PP-36** | Preservada como decisão histórica da revisão anterior. PP-37 substitui especificamente sua ordem que antecipava mecânicas compartilhadas/itens e blockout para antes da primeira avaliação da perseguição. A salvaguarda de não retestar internals do Framework permanece. |
+
+**Autoridade e escopo:** PP-37 altera estratégia e ordem de construção, não regras do GDD nem escopo final/aceitação do MVP. Não elimina Preparação, invasão, itens/roubo, confronto, recuperação/captura, Fuga Final, resultados, Demo ou cooperação. Não cria regras para antecipação/interceptação nem critérios de “satisfatório” além dos contratos e evidências de gameplay aplicáveis.
+
+**Efeito documental:** atualizar `TASKS.md`, o roadmap operacional e Trello para tornar explícita a sequência Player → NPCs → ambiente de teste → composição central da perseguição → expansão das mecânicas → vertical slice/Demo. Preservar status, checklists, evidências, estimativas e datas; mover checks que agora pertencem a etapas posteriores sem marcá-los concluídos. Não recalcular cronograma sem base de capacidade/estimativa e não registrar validação Unity sem observação real.

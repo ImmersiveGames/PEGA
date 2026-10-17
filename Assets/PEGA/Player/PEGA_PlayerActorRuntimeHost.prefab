@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 114000002}
   - component: {fileID: 114000003}
   - component: {fileID: 114000004}
+  - component: {fileID: 114000005}
   - component: {fileID: 143000000}
   m_Layer: 0
   m_Name: PEGA_PlayerActorRuntimeHost
@@ -108,11 +109,36 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 724481bb75bd4769af20d6fbf4b04cd1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerMovementMechanic
-  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementMechanic
+  intentSource: {fileID: 114000005}
   maxSpeed: 6
   acceleration: 8
+  deceleration: 8
+  minimumTurnAnalysisSpeed: 0.5
+  closedCurveStartAngleDegrees: 25
+  closedCurveFullAngleDegrees: 100
+  reversalStartAngleDegrees: 145
+  smoothCurveResponseAcceleration: 16
+  closedCurveResponseAcceleration: 18
+  reversalResponseAcceleration: 20
+  closedCurveSpeedRetention: 0.9
+  reversalBrakingAcceleration: 8
   rotationSpeed: 420
+--- !u!114 &114000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b2a12a820c343d2b49e6da48ce17cb4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerMovementIntentSource
+  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  additionalMoveDeadzone: 0
+  analogResponseExponent: 1
 --- !u!143 &143000000
 CharacterController:
   m_ObjectHideFlags: 0
