@@ -1,53 +1,61 @@
 {
   "dependencies": {
     "com.immersive.audio": {
-      "version": "0.2.4",
+      "version": "https://github.com/ImmersiveGames/com.immersive.audio.git",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
         "com.immersive.pooling": "0.2.2"
       },
-      "url": "https://package.openupm.com"
+      "hash": "481f5e01a26f158118ff475230910944aba676ef"
+    },
+    "com.immersive.composition": {
+      "version": "https://github.com/ImmersiveGames/com.immersive.composition.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "ef577765d0b565a020f3e98f6e5eaae681333c29"
     },
     "com.immersive.foundation": {
-      "version": "0.2.3",
+      "version": "https://github.com/ImmersiveGames/com.immersive.foundation.git",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {},
-      "url": "https://package.openupm.com"
+      "hash": "86b5e17d69ffa72b302f323628ec494362702f42"
     },
     "com.immersive.framework": {
-      "version": "1.2.0-preview.2",
+      "version": "https://github.com/ImmersiveGames/com.immersive.framework",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
-        "com.immersive.foundation": "0.2.2",
-        "com.immersive.logging": "0.2.3",
+        "com.immersive.composition": "0.1.0-preview.3",
+        "com.immersive.foundation": "0.2.3",
+        "com.immersive.logging": "0.2.4",
         "com.unity.cinemachine": "3.1.7",
         "com.unity.inputsystem": "1.19.0"
       },
-      "url": "https://package.openupm.com"
+      "hash": "431251f0805ca4e176ec7e898d0276a547fb7e6d"
     },
     "com.immersive.logging": {
-      "version": "0.2.4",
+      "version": "https://github.com/ImmersiveGames/com.immersive.logging.git",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {},
-      "url": "https://package.openupm.com"
+      "hash": "fe19eff32faea98a8f1005ba060ffd1babdbcadb"
     },
     "com.immersive.pooling": {
-      "version": "0.2.3",
+      "version": "https://github.com/ImmersiveGames/com.immersive.pooling.git",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {},
-      "url": "https://package.openupm.com"
+      "hash": "8befe28927408a2fb9883ef56dd7d0d294275305"
     },
     "com.immersivegames.face-system": {
       "version": "https://github.com/ImmersiveGames/com.immersivegames.face-system.git",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "9a1342ed8a96775369b3d7d96425bd2185981f7e"
+      "hash": "66c0ae7d977466ec98abed1bb9703c9ec2bf6266"
     },
     "com.unity.ai.navigation": {
       "version": "2.0.15",
