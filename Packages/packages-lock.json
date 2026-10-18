@@ -24,7 +24,7 @@
       "hash": "86b5e17d69ffa72b302f323628ec494362702f42"
     },
     "com.immersive.framework": {
-      "version": "https://github.com/ImmersiveGames/com.immersive.framework",
+      "version": "https://github.com/ImmersiveGames/com.immersive.framework.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
