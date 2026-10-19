@@ -5,6 +5,10 @@ using UnityEngine;
 
 namespace PEGA.Actors
 {
+    /// <summary>
+    /// Apresenta animações de locomoção a partir do movimento do Actor.
+    /// Destination: Production.
+    /// </summary>
     [DisallowMultipleComponent]
     public sealed class PEGAActorMovementAnimationPresenter : MonoBehaviour
     {

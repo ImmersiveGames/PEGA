@@ -60,6 +60,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: e4fae37d0cfe46745b8cfdb60a25d153, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 4edc9b2d6036a4e4789836a61d02e3af, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8589663364219067508, guid: 4edc9b2d6036a4e4789836a61d02e3af, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -73,7 +77,7 @@ PrefabInstance:
       addedObject: {fileID: 4972977051749128097}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4edc9b2d6036a4e4789836a61d02e3af, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3845011768759277998}
+      addedObject: {fileID: 7925401391738265111}
   m_SourcePrefab: {fileID: 100100000, guid: 4edc9b2d6036a4e4789836a61d02e3af, type: 3}
 --- !u!137 &1196650723562504727 stripped
 SkinnedMeshRenderer:
@@ -115,7 +119,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7ea5804574bcf8b42b916f7a8f66f397, type: 2}
   animations:
   - {fileID: 11400000, guid: 218d8ae7b8cb6dd479eaaa2dc36bb6bd, type: 2}
---- !u!114 &3845011768759277998
+
+--- !u!114 &7925401391738265111
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -124,7 +129,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7741318315126268722}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b731f270518716347b6705fac75664a1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FaceControllerTester
-  controller: {fileID: 4972977051749128097}
+  m_Script: {fileID: 11500000, guid: fa629a9e2b684a1b8aa749c1b8ae1784, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementAnimationPresenter
+  idleSpeedThresholdMetersPerSecond: 0.1
+  runSpeedThresholdMetersPerSecond: 3.5
+  runExitSpeedThresholdMetersPerSecond: 3.25
