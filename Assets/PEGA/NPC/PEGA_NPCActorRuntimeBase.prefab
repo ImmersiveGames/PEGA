@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 114000002}
   - component: {fileID: 114000003}
   - component: {fileID: 114000004}
+  - component: {fileID: 2765785676748957259}
   m_Layer: 0
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -113,7 +114,6 @@ MonoBehaviour:
   targetPlayerReference: {fileID: 114000001}
   wanderDirectionChangeInterval: 2.5
   wanderMagnitude: 0.55
-  wanderRandomSeed: 104
   fleeEnterRadius: 2
   fleeExitRadius: 3.5
   fleeMagnitude: 1
@@ -143,6 +143,32 @@ MonoBehaviour:
   closedCurveSpeedRetention: 0.9
   reversalBrakingAcceleration: 8
   rotationSpeed: 360
+--- !u!114 &114000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
+  actorDeclaration: {fileID: 114000000}
+  compositionMount: {fileID: 400000001}
+--- !u!114 &2765785676748957259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -238,17 +264,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1457086649997269153, guid: 840bc1943809e434db9d804152604137, type: 3}
   m_PrefabInstance: {fileID: 700000000}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &114000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
-  actorDeclaration: {fileID: 114000000}
-  compositionMount: {fileID: 400000001}

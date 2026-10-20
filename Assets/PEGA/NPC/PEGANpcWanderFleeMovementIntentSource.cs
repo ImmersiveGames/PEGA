@@ -10,6 +10,7 @@ namespace PEGA.NPC
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorOccurrenceReferenceBinding))]
+    [RequireComponent(typeof(ActorDeclaration))]
     public sealed class PEGANpcWanderFleeMovementIntentSource : MonoBehaviour, IPEGAPlanarMovementIntentSource
     {
         private const string LogCategory = "PEGA.Gameplay.Movement";
@@ -29,10 +30,6 @@ namespace PEGA.NPC
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Magnitude normalizada da intenção durante Wander; a velocidade é definida pelo executor deste Actor.")]
         private float wanderMagnitude = 0.55f;
-
-        [SerializeField]
-        [Tooltip("Semente local do sorteio de direções; não altera o estado aleatório global do jogo.")]
-        private int wanderRandomSeed = 104;
 
         [Header("Flee")]
         [SerializeField, Min(0.1f)]
@@ -65,14 +62,15 @@ namespace PEGA.NPC
             _log = PEGALogging.CreateScopedLogger<PEGANpcWanderFleeMovementIntentSource>(
                 LogCategory,
                 gameObject.name);
-            _random = new System.Random(wanderRandomSeed);
-            _isConfigured = ValidateConfiguration();
+            _isConfigured = ValidateConfiguration(out ActorId actorId);
             if (!_isConfigured)
             {
                 enabled = false;
                 return;
             }
 
+            int actorIdDerivedWanderSeed = CreateStableSeed(actorId.StableText);
+            _random = new System.Random(actorIdDerivedWanderSeed);
             ChooseWanderDirection();
             _log.Info(
                 "NPC Wander initialized.",
@@ -80,7 +78,8 @@ namespace PEGA.NPC
                 LogFields.Field("initialState", "Wander"),
                 LogFields.Field("wanderDirectionChangeIntervalSeconds", wanderDirectionChangeInterval),
                 LogFields.Field("wanderMagnitude", wanderMagnitude),
-                LogFields.Field("wanderRandomSeed", wanderRandomSeed),
+                LogFields.Field("actorId", actorId.StableText),
+                LogFields.Field("actorIdDerivedWanderSeed", actorIdDerivedWanderSeed),
                 LogFields.Field("initialDirectionX", _wanderDirection.x),
                 LogFields.Field("initialDirectionZ", _wanderDirection.z),
                 LogFields.Field("fleeEnterRadiusMeters", fleeEnterRadius),
@@ -222,8 +221,31 @@ namespace PEGA.NPC
             _timeUntilNextDirection = wanderDirectionChangeInterval;
         }
 
-        private bool ValidateConfiguration()
+        private bool ValidateConfiguration(out ActorId actorId)
         {
+            actorId = default;
+            ActorDeclaration actorDeclaration = GetComponent<ActorDeclaration>();
+            if (actorDeclaration == null)
+            {
+                _log.Error(
+                    $"{nameof(PEGANpcWanderFleeMovementIntentSource)} requires an {nameof(ActorDeclaration)} on the same Actor root.",
+                    LogFields.Field("actorRoot", gameObject.name));
+                return false;
+            }
+
+            if (!actorDeclaration.TryCreateDescriptor(
+                    nameof(PEGANpcWanderFleeMovementIntentSource),
+                    out ActorDescriptor actorDescriptor,
+                    out ActorSetIssue actorIssue))
+            {
+                _log.Error(
+                    $"{nameof(PEGANpcWanderFleeMovementIntentSource)} requires a valid Framework Actor ID on the same Actor root.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("diagnostic", actorIssue.Message));
+                return false;
+            }
+
+            actorId = actorDescriptor.ActorId;
             if (targetPlayerReference == null || targetPlayerReference.gameObject != gameObject)
             {
                 _log.Error(
@@ -470,6 +492,20 @@ namespace PEGA.NPC
 
         private static string GetPhysicalActorRootName(ActorOccurrenceResolution resolution) =>
             resolution.Succeeded ? resolution.Occurrence.ActorRoot.name : string.Empty;
+
+        private static int CreateStableSeed(string stableActorId)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int index = 0; index < stableActorId.Length; index++)
+                {
+                    hash = (hash ^ stableActorId[index]) * 16777619u;
+                }
+
+                return (int)hash;
+            }
+        }
 
         private static bool IsNormalizedMagnitude(float value) =>
             IsFinite(value) && value >= 0f && value <= 1f;
