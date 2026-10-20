@@ -42,6 +42,10 @@ namespace PEGA.Actors
         /// <summary>Ângulo do último pedido de giro (°): positivo à direita, negativo à esquerda.</summary>
         public float LastTurnAngleDegrees { get; private set; }
 
+        /// <summary>Velocidade com que o gameplay gira o corpo do Actor (°/s).</summary>
+        public float BodyTurnRateDegreesPerSecond =>
+            _movementMechanic != null ? _movementMechanic.RotationSpeedDegreesPerSecond : 0f;
+
         private void Awake()
         {
             _log = PEGALogging.CreateScopedLogger<PEGAActorPresentationSignals>(

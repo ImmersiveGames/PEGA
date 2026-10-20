@@ -20,6 +20,8 @@ namespace PEGA.Actors
         private static readonly int LocomotionParameter = Animator.StringToHash("Locomotion");
         private static readonly int TurnAngleParameter = Animator.StringToHash("TurnAngle");
         private static readonly int TurnParameter = Animator.StringToHash("Turn");
+        private static readonly int TurnPlaybackSpeedParameter = Animator.StringToHash("TurnPlaybackSpeed");
+        private static readonly int TurnStateTag = Animator.StringToHash("Turn");
 
         [Header("Animation Set")]
         [SerializeField]
@@ -39,10 +41,21 @@ namespace PEGA.Actors
         [Tooltip("Tempo de suavização do parâmetro Locomotion enviado ao Animator (s).")]
         private float locomotionDampTimeSeconds = 0.1f;
 
+        [Header("Turn In Place Presentation")]
+        [SerializeField, Range(0.1f, 1f)]
+        [Tooltip("Velocidade mínima de reprodução do clipe de giro (x). O clipe é acelerado ou desacelerado para terminar junto com o giro do corpo.")]
+        private float minimumTurnPlaybackSpeed = 0.5f;
+
+        [SerializeField, Range(1f, 10f)]
+        [Tooltip("Velocidade máxima de reprodução do clipe de giro (x).")]
+        private float maximumTurnPlaybackSpeed = 5f;
+
         private PEGAActorPresentationSignals _signals;
         private Animator _animator;
         private int _consumedTurnSequence;
         private bool _turnTriggerPending;
+        private bool _turnPlaybackPending;
+        private float _requestedTurnAngleDegrees;
         private bool _reportedMissingAnimator;
         private bool _configurationFailed;
         private ScopedLogger _log;
@@ -70,6 +83,12 @@ namespace PEGA.Actors
             if (_signals == null)
             {
                 FailConfiguration($"{nameof(PEGAActorAnimationSetPresenter)} requires a parent {nameof(PEGAActorPresentationSignals)} on the Actor root.");
+                return;
+            }
+
+            if (minimumTurnPlaybackSpeed > maximumTurnPlaybackSpeed)
+            {
+                FailConfiguration($"{nameof(PEGAActorAnimationSetPresenter)} requires the minimum turn playback speed to be at most the maximum.");
                 return;
             }
 
@@ -124,13 +143,58 @@ namespace PEGA.Actors
                 _animator.ResetTrigger(TurnParameter);
             }
 
+            if (_turnPlaybackPending)
+            {
+                ApplyTurnPlaybackSpeed();
+            }
+
             if (_signals.TurnRequestSequence != _consumedTurnSequence)
             {
                 _consumedTurnSequence = _signals.TurnRequestSequence;
-                _animator.SetFloat(TurnAngleParameter, _signals.LastTurnAngleDegrees);
+                _requestedTurnAngleDegrees = _signals.LastTurnAngleDegrees;
+                _animator.SetFloat(TurnAngleParameter, _requestedTurnAngleDegrees);
                 _animator.SetTrigger(TurnParameter);
                 _turnTriggerPending = true;
+                _turnPlaybackPending = true;
             }
+        }
+
+        /// <summary>
+        /// Ajusta a reprodução do clipe de giro que o Animator acabou de escolher para que ele
+        /// dure o mesmo tempo que o gameplay leva para girar o corpo pelo ângulo pedido.
+        /// </summary>
+        private void ApplyTurnPlaybackSpeed()
+        {
+            AnimatorClipInfo[] clips;
+            if (_animator.IsInTransition(0) && _animator.GetNextAnimatorStateInfo(0).tagHash == TurnStateTag)
+            {
+                clips = _animator.GetNextAnimatorClipInfo(0);
+            }
+            else if (_animator.GetCurrentAnimatorStateInfo(0).tagHash == TurnStateTag)
+            {
+                clips = _animator.GetCurrentAnimatorClipInfo(0);
+            }
+            else
+            {
+                // O giro ainda não começou; o pedido não consumido é descartado pelo reset do trigger.
+                _turnPlaybackPending = _turnTriggerPending;
+                return;
+            }
+
+            _turnPlaybackPending = false;
+            float turnRate = _signals.BodyTurnRateDegreesPerSecond;
+            float bodyTurnSeconds = turnRate > 0f ? Mathf.Abs(_requestedTurnAngleDegrees) / turnRate : 0f;
+            if (clips.Length == 0 || clips[0].clip == null || bodyTurnSeconds <= 0f)
+            {
+                _animator.SetFloat(TurnPlaybackSpeedParameter, 1f);
+                return;
+            }
+
+            float playbackSpeed = Mathf.Clamp(
+                clips[0].clip.length / bodyTurnSeconds,
+                minimumTurnPlaybackSpeed,
+                maximumTurnPlaybackSpeed);
+            _animator.SetFloat(TurnPlaybackSpeedParameter, playbackSpeed);
         }
 
         private bool TryBindAnimator()
@@ -165,9 +229,10 @@ namespace PEGA.Actors
             candidate.runtimeAnimatorController = animationSet;
             if (!HasParameter(candidate, LocomotionParameter, AnimatorControllerParameterType.Float) ||
                 !HasParameter(candidate, TurnAngleParameter, AnimatorControllerParameterType.Float) ||
-                !HasParameter(candidate, TurnParameter, AnimatorControllerParameterType.Trigger))
+                !HasParameter(candidate, TurnParameter, AnimatorControllerParameterType.Trigger) ||
+                !HasParameter(candidate, TurnPlaybackSpeedParameter, AnimatorControllerParameterType.Float))
             {
-                FailConfiguration($"{nameof(PEGAActorAnimationSetPresenter)} requires Animator parameters 'Locomotion' (Float), 'TurnAngle' (Float) and 'Turn' (Trigger).");
+                FailConfiguration($"{nameof(PEGAActorAnimationSetPresenter)} requires Animator parameters 'Locomotion' (Float), 'TurnAngle' (Float), 'Turn' (Trigger) and 'TurnPlaybackSpeed' (Float).");
                 return false;
             }
 

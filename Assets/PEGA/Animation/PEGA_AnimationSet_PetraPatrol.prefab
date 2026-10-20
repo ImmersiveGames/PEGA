@@ -48,3 +48,5 @@ MonoBehaviour:
   walkSpeedMetersPerSecond: 1.5
   runSpeedMetersPerSecond: 3.5
   locomotionDampTimeSeconds: 0.1
+  minimumTurnPlaybackSpeed: 0.5
+  maximumTurnPlaybackSpeed: 5
