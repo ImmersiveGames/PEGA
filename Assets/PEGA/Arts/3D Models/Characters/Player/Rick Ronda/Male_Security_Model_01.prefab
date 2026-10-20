@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 373842457350720537}
   - component: {fileID: 8171672990622414545}
-  - component: {fileID: 7648521306742693811}
   m_Layer: 0
   m_Name: Male_Security_Model_01
   m_TagString: Untagged
@@ -59,21 +58,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 780d4a80c604b244fb9b138d1babdec7, type: 2}
   animations:
   - {fileID: 11400000, guid: e333b797edfccd14794c876bfe82c4a5, type: 2}
---- !u!114 &7648521306742693811
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6826033860532329157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa629a9e2b684a1b8aa749c1b8ae1784, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementAnimationPresenter
-  idleSpeedThresholdMetersPerSecond: 0.1
-  runSpeedThresholdMetersPerSecond: 3.5
-  runExitSpeedThresholdMetersPerSecond: 3.25
 --- !u!1001 &7362584297699184594
 PrefabInstance:
   m_ObjectHideFlags: 0

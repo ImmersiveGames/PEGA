@@ -74,9 +74,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6029e5df4d4395a4381cd43101f19937, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8030303649869799829}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6029e5df4d4395a4381cd43101f19937, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7925401391738265112}
   m_SourcePrefab: {fileID: 100100000, guid: 6029e5df4d4395a4381cd43101f19937, type: 3}
 --- !u!1 &1466102690162510198 stripped
 GameObject:
@@ -140,19 +137,3 @@ SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 8589663364219067508, guid: 6029e5df4d4395a4381cd43101f19937, type: 3}
   m_PrefabInstance: {fileID: 1772673813149692967}
   m_PrefabAsset: {fileID: 0}
-
---- !u!114 &7925401391738265112
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1466102690162510198}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa629a9e2b684a1b8aa749c1b8ae1784, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementAnimationPresenter
-  idleSpeedThresholdMetersPerSecond: 0.1
-  runSpeedThresholdMetersPerSecond: 3.5
-  runExitSpeedThresholdMetersPerSecond: 3.25
