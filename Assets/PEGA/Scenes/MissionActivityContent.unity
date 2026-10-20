@@ -119,6 +119,99 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &889876565
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_Name
+      value: Larapio NPC Demonstrator (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: actorId
+      value: actor.6090887a2b9844529442aeba98a8df21
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000002, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: wanderRandomSeed
+      value: 102
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 889876567}
+  m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!1 &889876566 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 889876565}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &889876567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 889876566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16e1a79d27a8487aa81d12cc68a2f0af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeStateDebugEvidenceSource
+  _rickIdentityProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+  _otherCharacterProfile: {fileID: 11400000, guid: 6bdd921341c64580a6abbb1c7f172165, type: 2}
+  _syntheticRickPosition: {x: 3, y: 0, z: 5}
+  _syntheticOrigin: 1
+  _baselineObservationTimeSeconds: 10
+  _areaAbsenceObservationTimeSeconds: 15
+  _contactLossObservationTimeSeconds: 20
+  _identityConflictObservationTimeSeconds: 30
 --- !u!1 &2500000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -245,6 +338,91 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   joinTrigger: {fileID: 2500000204}
+--- !u!114 &2500000206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5205dead8ba740f796635d3e23af661b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerActorCompositionAccess
+  scope: 20
+--- !u!114 &2500000207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44d40c4cca356b446bf782279981c9dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionObserver
+  scope: 20
+  onJoiningOpened:
+    m_PersistentCalls:
+      m_Calls: []
+  onJoiningClosed:
+    m_PersistentCalls:
+      m_Calls: []
+  onPlayerJoined:
+    m_PersistentCalls:
+      m_Calls: []
+  onPlayerLeft:
+    m_PersistentCalls:
+      m_Calls: []
+  onActorSelected:
+    m_PersistentCalls:
+      m_Calls: []
+  onActorChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onActorCleared:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2500000208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
+  selectionMode: 10
+  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  actorDeclaration: {fileID: 0}
+  useSessionOwner: 0
+  routeOwner: {fileID: 0}
+  activityOwner: {fileID: 0}
+--- !u!114 &2500000209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2b260c94d3043a1a5d3f8a050d5af71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorVisualCompositionProof
+  proofTarget: 0
+  playerSlotProfile: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  playerCompositionAccess: {fileID: 2500000206}
+  playerSessionObserver: {fileID: 2500000207}
+  playerActorReference: {fileID: 2500000208}
+  nonPlayerPublication: {fileID: 2500000301}
+  petraPatrolVisual: {fileID: 7741318315126268722, guid: efd9df94d24465b4f98a7fe69ecb23a4, type: 3}
+  petraPatrolAlternateVisual: {fileID: 1466102690162510198, guid: 7b8ae13c32f77a144a18f229bd44d2be, type: 3}
 --- !u!1001 &2500000300
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -300,77 +478,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2500000303}
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
---- !u!114 &2500000206
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5205dead8ba740f796635d3e23af661b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerActorCompositionAccess
-  scope: 20
---- !u!114 &2500000207
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44d40c4cca356b446bf782279981c9dc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionObserver
-  scope: 20
---- !u!114 &2500000208
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
-  selectionMode: 10
-  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
-  actorDeclaration: {fileID: 0}
-  useSessionOwner: 0
-  routeOwner: {fileID: 0}
-  activityOwner: {fileID: 0}
---- !u!114 &2500000209
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2b260c94d3043a1a5d3f8a050d5af71, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorVisualCompositionProof
-  proofTarget: 0
-  playerSlotProfile: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
-  playerCompositionAccess: {fileID: 2500000206}
-  playerSessionObserver: {fileID: 2500000207}
-  playerActorReference: {fileID: 2500000208}
-  nonPlayerPublication: {fileID: 2500000301}
-  petraPatrolVisual: {fileID: 7741318315126268722, guid: efd9df94d24465b4f98a7fe69ecb23a4, type: 3}
-  petraPatrolAlternateVisual: {fileID: 1466102690162510198, guid: 7b8ae13c32f77a144a18f229bd44d2be, type: 3}
 --- !u!114 &2500000301 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 114000004, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 2500000300}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
+--- !u!1 &2500000302 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 2500000300}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2500000303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16e1a79d27a8487aa81d12cc68a2f0af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeStateDebugEvidenceSource
+  _rickIdentityProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+  _otherCharacterProfile: {fileID: 11400000, guid: 6bdd921341c64580a6abbb1c7f172165, type: 2}
+  _syntheticRickPosition: {x: 3, y: 0, z: 5}
+  _syntheticOrigin: 1
+  _baselineObservationTimeSeconds: 10
+  _areaAbsenceObservationTimeSeconds: 15
+  _contactLossObservationTimeSeconds: 20
+  _identityConflictObservationTimeSeconds: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -378,3 +526,4 @@ SceneRoots:
   - {fileID: 2500000101}
   - {fileID: 2500000201}
   - {fileID: 2500000300}
+  - {fileID: 889876565}
