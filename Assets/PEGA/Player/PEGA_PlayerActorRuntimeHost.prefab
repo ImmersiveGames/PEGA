@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 114000003}
   - component: {fileID: 114000004}
   - component: {fileID: 114000005}
+  - component: {fileID: 114000006}
   - component: {fileID: 143000000}
   m_Layer: 0
   m_Name: PEGA_PlayerActorRuntimeHost
@@ -226,3 +227,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 400000000}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
+  turnMaximumSpeedMetersPerSecond: 1
+  turnMinimumAngleDegrees: 60
+  turnRearmAngleDegrees: 20

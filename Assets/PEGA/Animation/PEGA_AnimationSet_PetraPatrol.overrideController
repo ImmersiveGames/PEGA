@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PEGA_AnimationSet_PetraPatrol
+  m_Controller: {fileID: 9100000, guid: 29e26c9557c74eb58e791ed59c6365fe, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 4777e2a99ce05e445877e5378e206630, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: aedeb27f53a651543a80fc6775e8c7b8, type: 2}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 36b8bc43c1fdc8b489fc5c2634901e10, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: cb48e6f1cdadc1c4ca2c4c7b0a98ded4, type: 2}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 168356408072887439bacaab900822c5, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 3efb51b41aff1984a9f0a0dd05454efc, type: 2}

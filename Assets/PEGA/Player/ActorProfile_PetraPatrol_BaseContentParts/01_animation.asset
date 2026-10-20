@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 420c9275d1ac4124a5a593fed2d01f54, type: 3}
+  m_Name: 01_animation
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorCompositionPartAsset
+  key: animation
+  prefab: {fileID: 100000000, guid: 442d97aa2b804ed1b6098d87626e60d8, type: 3}
+  dependencies:
+  - visual

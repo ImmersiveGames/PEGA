@@ -20,5 +20,6 @@ MonoBehaviour:
   actorRole: 10
   baseContentParts:
   - {fileID: 11400000, guid: 2b62720c517415a4fb9d2e47cf6b5bee, type: 2}
+  - {fileID: 11400000, guid: ffd6e5e1e130459bb64fd53704e5be57, type: 2}
   compositionParts: []
   legacyPresentationPrefab: {fileID: 0}

@@ -151,6 +151,12 @@ namespace PEGA.Actors
 
         public Vector3 CurrentPlanarVelocity => _currentVelocity;
 
+        public bool HasCurrentMoveIntent => _isConfigured && HasValidMoveInput();
+
+        public Vector3 CurrentMoveDirection => HasCurrentMoveIntent ? _moveDirection : Vector3.zero;
+
+        public float RotationSpeedDegreesPerSecond => rotationSpeed;
+
         private void Awake()
         {
             _log = PEGALogging.CreateScopedLogger<PEGAActorMovementMechanic>(
