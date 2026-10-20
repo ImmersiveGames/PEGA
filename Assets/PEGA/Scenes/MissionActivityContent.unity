@@ -182,36 +182,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 889876567}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
 --- !u!1 &889876566 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 889876565}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &889876567
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 889876566}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16e1a79d27a8487aa81d12cc68a2f0af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeStateDebugEvidenceSource
-  _rickIdentityProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
-  _otherCharacterProfile: {fileID: 11400000, guid: 6bdd921341c64580a6abbb1c7f172165, type: 2}
-  _syntheticRickPosition: {x: 3, y: 0, z: 5}
-  _syntheticOrigin: 1
-  _baselineObservationTimeSeconds: 10
-  _areaAbsenceObservationTimeSeconds: 15
-  _contactLossObservationTimeSeconds: 20
-  _identityConflictObservationTimeSeconds: 30
 --- !u!1 &2500000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -478,10 +455,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2500000303}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
 --- !u!114 &2500000301 stripped
 MonoBehaviour:
@@ -499,26 +473,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 2500000300}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2500000303
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000302}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16e1a79d27a8487aa81d12cc68a2f0af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeStateDebugEvidenceSource
-  _rickIdentityProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
-  _otherCharacterProfile: {fileID: 11400000, guid: 6bdd921341c64580a6abbb1c7f172165, type: 2}
-  _syntheticRickPosition: {x: 3, y: 0, z: 5}
-  _syntheticOrigin: 1
-  _baselineObservationTimeSeconds: 10
-  _areaAbsenceObservationTimeSeconds: 15
-  _contactLossObservationTimeSeconds: 20
-  _identityConflictObservationTimeSeconds: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
