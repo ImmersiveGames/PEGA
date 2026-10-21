@@ -5,9 +5,24 @@ using UnityEngine;
 
 namespace PEGA.Actors
 {
+    public enum PEGAActorMovementSpeedRegime
+    {
+        Movement = 0,
+        Pursuit = 10
+    }
+
     public interface IPEGAPlanarMovementIntentSource
     {
         bool TryGetIntent(float deltaTime, out PEGAPlanarMovementIntent intent);
+    }
+
+    public interface IPEGAPlanarMovementFeedbackSink
+    {
+        void OnMovementExecuted(
+            Vector3 previousPosition,
+            Vector3 actualPosition,
+            Vector3 requestedVelocity,
+            float deltaTime);
     }
 
     public readonly struct PEGAPlanarMovementIntent
@@ -16,9 +31,24 @@ namespace PEGA.Actors
 
         public Vector3 Direction { get; }
         public float Magnitude { get; }
+        public PEGAActorMovementSpeedRegime SpeedRegime { get; }
 
         public PEGAPlanarMovementIntent(Vector3 direction, float magnitude)
+            : this(direction, magnitude, PEGAActorMovementSpeedRegime.Movement)
         {
+        }
+
+        public PEGAPlanarMovementIntent(
+            Vector3 direction,
+            float magnitude,
+            PEGAActorMovementSpeedRegime speedRegime)
+        {
+            if (speedRegime != PEGAActorMovementSpeedRegime.Movement &&
+                speedRegime != PEGAActorMovementSpeedRegime.Pursuit)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(speedRegime));
+            }
+
             if (!IsFinite(direction.x) ||
                 !IsFinite(direction.y) ||
                 !IsFinite(direction.z))
@@ -37,6 +67,7 @@ namespace PEGA.Actors
                     "Movement intent requires finite planar direction and normalized magnitude in [0, 1].");
             }
 
+            SpeedRegime = speedRegime;
             direction.y = 0f;
             float directionSqrMagnitude = direction.sqrMagnitude;
             if (directionSqrMagnitude <= DirectionThreshold * DirectionThreshold)
@@ -80,9 +111,13 @@ namespace PEGA.Actors
         private MonoBehaviour intentSource;
 
         [Header("Movement")]
-        [SerializeField, Min(0.01f)]
-        [Tooltip("Velocidade planar máxima do Actor (m/s).")]
+        [SerializeField, Min(0.01f), InspectorName("Movement Speed (m/s)")]
+        [Tooltip("Velocidade planar máxima no regime de movimentação (m/s).")]
         private float maxSpeed = 4f;
+
+        [SerializeField, Min(0f), InspectorName("Pursuit Speed (m/s)")]
+        [Tooltip("Velocidade planar para intenções de perseguição (m/s). Deve superar a velocidade de movimentação quando usada por um larápio. Zero significa que este Actor não oferece esse regime; o valor inicial do PEGA é apenas para validação e calibração.")]
+        private float pursuitSpeed;
 
         [SerializeField, Min(0.01f)]
         [Tooltip("Aceleração normal ao arrancar ou recuperar velocidade (m/s²).")]
@@ -157,6 +192,36 @@ namespace PEGA.Actors
 
         public float RotationSpeedDegreesPerSecond => rotationSpeed;
 
+        public bool TryGetMaximumSpeed(
+            PEGAActorMovementSpeedRegime speedRegime,
+            out float speedMetersPerSecond,
+            out string diagnostic)
+        {
+            speedMetersPerSecond = 0f;
+            diagnostic = string.Empty;
+
+            if (speedRegime == PEGAActorMovementSpeedRegime.Movement)
+            {
+                speedMetersPerSecond = maxSpeed;
+                return IsPositiveFinite(speedMetersPerSecond);
+            }
+
+            if (speedRegime != PEGAActorMovementSpeedRegime.Pursuit)
+            {
+                diagnostic = $"Unsupported movement speed regime: {speedRegime}.";
+                return false;
+            }
+
+            if (!IsPositiveFinite(pursuitSpeed) || pursuitSpeed <= maxSpeed)
+            {
+                diagnostic = "Pursuit speed must be configured and greater than movement speed for this Actor.";
+                return false;
+            }
+
+            speedMetersPerSecond = pursuitSpeed;
+            return true;
+        }
+
         private void Awake()
         {
             _log = PEGALogging.CreateScopedLogger<PEGAActorMovementMechanic>(
@@ -178,6 +243,7 @@ namespace PEGA.Actors
                 LogFields.Field("mechanic", nameof(PEGAActorMovementMechanic)),
                 LogFields.Field("intentSource", _intentSourceBehaviour.GetType().FullName),
                 LogFields.Field("maxSpeedMps", maxSpeed),
+                LogFields.Field("pursuitSpeedMps", pursuitSpeed),
                 LogFields.Field("accelerationMps2", acceleration),
                 LogFields.Field("decelerationMps2", deceleration),
                 LogFields.Field("minimumTurnAnalysisSpeedMps", minimumTurnAnalysisSpeed),
@@ -212,22 +278,37 @@ namespace PEGA.Actors
 
             _moveDirection = intent.Direction;
             _moveMagnitude = intent.Magnitude;
-            MoveActor(Time.deltaTime);
+            if (!TryGetMaximumSpeed(
+                    intent.SpeedRegime,
+                    out float movementSpeed,
+                    out string diagnostic))
+            {
+                _log.Error(
+                    "Shared movement executor rejected an unsupported speed regime.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("speedRegime", intent.SpeedRegime),
+                    LogFields.Field("diagnostic", diagnostic));
+                enabled = false;
+                return;
+            }
+
+            MoveActor(Time.deltaTime, movementSpeed);
             LogIntentState(intent, true);
             LogPhysicalMotionState();
         }
 
-        private void MoveActor(float deltaTime)
+        private void MoveActor(float deltaTime, float movementSpeed)
         {
             if (deltaTime <= 0f)
             {
                 return;
             }
 
-            Vector3 targetVelocity = _moveDirection * (_moveMagnitude * maxSpeed);
+            Vector3 targetVelocity = _moveDirection * (_moveMagnitude * movementSpeed);
             Vector3 requestedVelocity = CalculateRequestedVelocity(
                 targetVelocity,
-                deltaTime);
+                deltaTime,
+                movementSpeed);
             RotateActorTowardInput(deltaTime);
 
             Vector3 previousPosition = transform.position;
@@ -237,7 +318,16 @@ namespace PEGA.Actors
             actualDisplacement.y = 0f;
             _currentVelocity = Vector3.ClampMagnitude(
                 actualDisplacement / deltaTime,
-                maxSpeed);
+                Mathf.Max(movementSpeed, _currentVelocity.magnitude));
+
+            if (_intentSource is IPEGAPlanarMovementFeedbackSink feedbackSink)
+            {
+                feedbackSink.OnMovementExecuted(
+                    previousPosition,
+                    transform.position,
+                    requestedVelocity,
+                    deltaTime);
+            }
         }
 
         private void RotateActorTowardInput(float deltaTime)
@@ -257,7 +347,10 @@ namespace PEGA.Actors
                 rotationSpeed * deltaTime);
         }
 
-        private Vector3 CalculateRequestedVelocity(Vector3 targetVelocity, float deltaTime)
+        private Vector3 CalculateRequestedVelocity(
+            Vector3 targetVelocity,
+            float deltaTime,
+            float movementSpeed)
         {
             Vector3 planarVelocity = _currentVelocity;
             planarVelocity.y = 0f;
@@ -318,7 +411,7 @@ namespace PEGA.Actors
                 closedCurveWeight);
             float retainedTargetSpeed = Mathf.Min(
                 targetSpeed,
-                maxSpeed * targetSpeedRetention);
+                movementSpeed * targetSpeedRetention);
             Vector3 retainedTargetVelocity = desiredDirection * retainedTargetSpeed;
 
             float opposingSpeed = Mathf.Max(
@@ -334,7 +427,9 @@ namespace PEGA.Actors
                 velocityAfterReversalBraking,
                 retainedTargetVelocity,
                 responseAcceleration * deltaTime);
-            return Vector3.ClampMagnitude(requestedVelocity, maxSpeed);
+            return Vector3.ClampMagnitude(
+                requestedVelocity,
+                Mathf.Max(movementSpeed, currentSpeed));
         }
 
         private bool HasValidMoveInput() =>

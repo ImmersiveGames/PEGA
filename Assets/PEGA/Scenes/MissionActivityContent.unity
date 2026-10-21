@@ -149,7 +149,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.5
+      value: 7.96
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -192,11 +192,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
---- !u!1 &889876566 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
-  m_PrefabInstance: {fileID: 889876565}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2500000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -430,7 +425,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.5
+      value: -8
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -484,11 +479,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
---- !u!1 &2500000302 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2266238850143905051, guid: dc8debf43157402cb928951971def5a1, type: 3}
-  m_PrefabInstance: {fileID: 2500000300}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
