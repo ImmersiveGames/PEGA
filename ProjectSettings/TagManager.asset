@@ -11,10 +11,10 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
+  - PEGA_Obstacle
+  - PEGA_Floor
+  - PEGA_Player
+  - PEGA_NPC
   - 
   - 
   - 

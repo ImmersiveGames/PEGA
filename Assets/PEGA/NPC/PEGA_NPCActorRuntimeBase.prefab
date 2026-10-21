@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 114000004}
   - component: {fileID: 2765785676748957259}
   - component: {fileID: 114000005}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}

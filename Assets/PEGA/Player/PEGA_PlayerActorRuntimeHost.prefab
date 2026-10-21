@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 114000005}
   - component: {fileID: 114000006}
   - component: {fileID: 143000000}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PEGA_PlayerActorRuntimeHost
   m_TagString: Untagged
   m_Icon: {fileID: 0}

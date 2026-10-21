@@ -85,6 +85,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1153730980321472536}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1637042697785520853}
   m_SourcePrefab: {fileID: 100100000, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
 --- !u!137 &1788904659983707039 stripped
 SkinnedMeshRenderer:
@@ -135,6 +138,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FaceControllerTester
   controller: {fileID: 3899501107480730580}
+--- !u!136 &1637042697785520853
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2266238849736589851}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 3
+  m_Direction: 1
+  m_Center: {x: 0, y: 1.5, z: 0}
 --- !u!137 &3712532259387571484 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 2321523695958950486, guid: e61a3a6066b5c75448b59c4489585eba, type: 3}
