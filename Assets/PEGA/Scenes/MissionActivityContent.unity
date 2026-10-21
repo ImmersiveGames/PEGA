@@ -139,6 +139,14 @@ PrefabInstance:
       propertyPath: wanderRandomSeed
       value: 102
       objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: playerSessionObserver
+      value: 
+      objectReference: {fileID: 2500000207}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.5
@@ -411,6 +419,14 @@ PrefabInstance:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
       value: Larapio NPC Demonstrator
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: playerSessionObserver
+      value: 
+      objectReference: {fileID: 2500000207}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
