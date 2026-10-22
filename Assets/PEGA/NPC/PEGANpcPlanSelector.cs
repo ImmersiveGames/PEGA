@@ -129,6 +129,7 @@ namespace PEGA.NPC
                 evaluations.Add(new PEGANpcDesirePlanEvaluation(
                     desire.DesireId,
                     desire.DisplayName,
+                    desire.DesiredGoal,
                     applicable,
                     effectiveWeight,
                     desirePlans,

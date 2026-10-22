@@ -1,3 +1,5 @@
+using System;
+using Immersive.Foundation.Events;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Actors;
@@ -132,6 +134,22 @@ namespace PEGA.NPC
         public string Diagnostic { get; }
     }
 
+    /// <summary>Expõe o snapshot final de uma execução de Action de navegação.</summary>
+    public sealed class PEGANpcActionTerminalOutcomeEvent : IEvent
+    {
+        internal PEGANpcActionTerminalOutcomeEvent(
+            PEGANpcActionExecutionSnapshot execution,
+            double completedAtTimeSeconds)
+        {
+            Execution = execution;
+            CompletedAtTimeSeconds = completedAtTimeSeconds;
+        }
+
+        public PEGANpcActionExecutionSnapshot Execution { get; }
+
+        public double CompletedAtTimeSeconds { get; }
+    }
+
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PEGANpcNavMeshMovementIntentSource))]
     public abstract class PEGANpcNavigationAction : MonoBehaviour
@@ -155,6 +173,12 @@ namespace PEGA.NPC
         private double _completedAtTimeSeconds;
         private string _diagnostic = string.Empty;
 
+        [NonSerialized]
+        private bool _loggerInitialized;
+
+        [NonSerialized]
+        private EventBus<PEGANpcActionTerminalOutcomeEvent> _terminalOutcomeEvents;
+
         protected abstract PEGANpcActionEffectKind ActionEffectKind { get; }
 
         protected abstract PEGANpcDesireGoalKind ActionGoalKind { get; }
@@ -167,6 +191,48 @@ namespace PEGA.NPC
             _navigationSnapshot,
             DeclaredEffect,
             _diagnostic);
+
+        /// <summary>Assina resultados terminais desta Action.</summary>
+        /// <remarks>
+        /// A entrega é síncrona e ocorre depois que o snapshot terminal foi gravado e registrado. Exceções de
+        /// assinantes são registradas e isoladas para preservar o resultado e a entrega aos demais assinantes.
+        /// </remarks>
+        public IEventBinding SubscribeToTerminalOutcomes(Action<PEGANpcActionTerminalOutcomeEvent> handler)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            EnsureTerminalOutcomeEventsInitialized();
+            return _terminalOutcomeEvents.Subscribe(outcome =>
+            {
+                try
+                {
+                    handler(outcome);
+                }
+                catch (Exception exception)
+                {
+                    LogSubscriberFailure(handler, outcome, exception);
+                }
+            });
+        }
+
+        public bool UnsubscribeFromTerminalOutcomes(IEventBinding binding)
+        {
+            if (binding == null)
+            {
+                throw new ArgumentNullException(nameof(binding));
+            }
+
+            return _terminalOutcomeEvents != null && _terminalOutcomeEvents.Unsubscribe(binding);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            _terminalOutcomeEvents?.Clear();
+            _terminalOutcomeEvents = null;
+        }
 
         public PEGANpcActionEffectDeclaration DeclaredEffect => new PEGANpcActionEffectDeclaration(
             ActionEffectKind,
@@ -240,9 +306,7 @@ namespace PEGA.NPC
 
         protected virtual void Awake()
         {
-            _log = PEGALogging.CreateScopedLogger<PEGANpcNavigationAction>(
-                LogCategory,
-                gameObject.name);
+            EnsureLoggerInitialized();
         }
 
         protected virtual void OnDisable()
@@ -474,6 +538,7 @@ namespace PEGA.NPC
                 LogFields.Field("maximumUnsynchronizedPositionOffsetMeters", result.MaximumUnsynchronizedPositionOffsetMeters),
                 LogFields.Field("maximumPositionReconciliationResidualMeters", result.MaximumPositionReconciliationResidualMeters),
                 LogFields.Field("diagnostic", result.Diagnostic));
+            PublishTerminalOutcome(result);
         }
 
         private void CompleteWithoutNavigation(
@@ -482,6 +547,7 @@ namespace PEGA.NPC
             string diagnostic)
         {
             _diagnostic = diagnostic ?? string.Empty;
+            _completedAtTimeSeconds = Time.timeAsDouble;
             _navigationSnapshot = default;
             _hasNavigationSnapshot = false;
             Outcome = outcome;
@@ -499,6 +565,52 @@ namespace PEGA.NPC
                 LogFields.Field("targetY", targetPosition.y),
                 LogFields.Field("targetZ", targetPosition.z),
                 LogFields.Field("diagnostic", _diagnostic));
+            PublishTerminalOutcome(CurrentExecution);
+        }
+
+        private void PublishTerminalOutcome(PEGANpcActionExecutionSnapshot execution)
+        {
+            if (_terminalOutcomeEvents == null)
+            {
+                return;
+            }
+
+            _terminalOutcomeEvents.Publish(new PEGANpcActionTerminalOutcomeEvent(
+                execution,
+                _completedAtTimeSeconds));
+        }
+
+        private void EnsureTerminalOutcomeEventsInitialized()
+        {
+            _terminalOutcomeEvents ??= new EventBus<PEGANpcActionTerminalOutcomeEvent>();
+        }
+
+        private void LogSubscriberFailure(
+            Action<PEGANpcActionTerminalOutcomeEvent> handler,
+            PEGANpcActionTerminalOutcomeEvent outcome,
+            Exception exception)
+        {
+            EnsureLoggerInitialized();
+            _log.Error(
+                "NPC terminal Action subscriber failed; remaining subscribers will still be notified.",
+                LogFields.Field("action", GetType().Name),
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("requestId", outcome.Execution.RequestId),
+                LogFields.Field("result", outcome.Execution.Outcome),
+                LogFields.Field("subscriberMethod", handler.Method.Name),
+                LogFields.Field("exceptionType", exception.GetType().FullName),
+                LogFields.Field("exceptionMessage", exception.Message));
+        }
+
+        private void EnsureLoggerInitialized()
+        {
+            if (_loggerInitialized)
+            {
+                return;
+            }
+
+            _log = PEGALogging.CreateScopedLogger<PEGANpcNavigationAction>(LogCategory, gameObject.name);
+            _loggerInitialized = true;
         }
 
         private void ResetExecution()

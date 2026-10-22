@@ -1,4 +1,9 @@
+using System;
+using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using Immersive.Logging.Loggers;
+using Immersive.Logging.Records;
+using PEGA.Diagnostics;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -7,6 +12,8 @@ namespace PEGA.NPC
     [AddComponentMenu("PEGA/NPC/Actions/Approach Known Rick")]
     public sealed class PEGANpcApproachKnownRickAction : PEGANpcNavigationAction
     {
+        private const string IntentLogCategory = "PEGA.Gameplay.NPC.PursuitIntent";
+
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ApproachKnownRickPosition;
 
@@ -26,9 +33,228 @@ namespace PEGA.NPC
         [Tooltip("Actor Profile que identifica Rick no Knowledge State.")]
         private ActorProfile rickActorProfile;
 
+        [System.NonSerialized]
+        private IEventBinding _knowledgeChangeBinding;
+
+        [System.NonSerialized]
+        private EventBus<PEGANpcLastKnownRickPursuitIntentRequestedEvent> _pursuitIntentEvents;
+
+        [System.NonSerialized]
+        private ScopedLogger _intentLog;
+
+        public IEventBinding SubscribeToLostContactPursuitIntents(
+            Action<PEGANpcLastKnownRickPursuitIntentRequestedEvent> handler)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            EnsurePursuitIntentEventsInitialized();
+            return _pursuitIntentEvents.Subscribe(intentEvent =>
+            {
+                try
+                {
+                    handler(intentEvent);
+                }
+                catch (Exception exception)
+                {
+                    LogIntentSubscriberFailure(handler, intentEvent, exception);
+                }
+            });
+        }
+
+        public bool UnsubscribeFromLostContactPursuitIntents(IEventBinding binding)
+        {
+            if (binding == null)
+            {
+                throw new ArgumentNullException(nameof(binding));
+            }
+
+            return _pursuitIntentEvents != null && _pursuitIntentEvents.Unsubscribe(binding);
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            EnsureIntentLoggerInitialized();
+        }
+
+        private void OnEnable()
+        {
+            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            {
+                EnsureIntentLoggerInitialized();
+                _intentLog.Warning(
+                    "Lost-contact pursuit intent source requires this NPC's Knowledge State on the same root.",
+                    LogFields.Field("actorRoot", gameObject.name));
+                return;
+            }
+
+            _knowledgeChangeBinding ??= knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
+        }
+
+        protected override void OnDisable()
+        {
+            if (knowledgeState != null && _knowledgeChangeBinding != null)
+            {
+                knowledgeState.UnsubscribeFromKnowledgeChanges(_knowledgeChangeBinding);
+                _knowledgeChangeBinding = null;
+            }
+
+            base.OnDisable();
+        }
+
+        protected override void OnDestroy()
+        {
+            if (knowledgeState != null && _knowledgeChangeBinding != null)
+            {
+                knowledgeState.UnsubscribeFromKnowledgeChanges(_knowledgeChangeBinding);
+                _knowledgeChangeBinding = null;
+            }
+
+            _pursuitIntentEvents?.Clear();
+            _pursuitIntentEvents = null;
+            base.OnDestroy();
+        }
+
         public bool TryGetKnownRickPosition(out Vector3 position, out string diagnostic)
         {
             return TryGetKnownRickEvidence(out _, out position, out _, out diagnostic);
+        }
+
+        private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
+        {
+            if (change == null ||
+                change.FactKind != PEGANpcKnowledgeFactKind.RickVisualContact ||
+                !change.SubjectActorId.HasValue ||
+                change.EvidenceOrigin != PEGANpcEvidenceOrigin.Perception)
+            {
+                return;
+            }
+
+            PEGANpcKnowledgeFact<bool> contact =
+                knowledgeState.GetRickVisualContact(change.SubjectActorId.Value);
+            if (!contact.TryGetValue(out bool hasVisualContact) || hasVisualContact)
+            {
+                return;
+            }
+
+            if (!TryCreateLostContactPursuitIntent(
+                    change,
+                    out PEGANpcLastKnownRickPursuitIntent intent,
+                    out string diagnostic))
+            {
+                EnsureIntentLoggerInitialized();
+                _intentLog.Warning(
+                    "Lost-contact pursuit intent was not published.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("subjectActorId", change.SubjectActorId.Value),
+                    LogFields.Field("observationTimeSeconds", change.ObservationTimeSeconds),
+                    LogFields.Field("diagnostic", diagnostic));
+                return;
+            }
+
+            EnsurePursuitIntentEventsInitialized();
+            _pursuitIntentEvents.Publish(
+                new PEGANpcLastKnownRickPursuitIntentRequestedEvent(intent));
+
+            EnsureIntentLoggerInitialized();
+            _intentLog.Info(
+                "NPC requested continuation of Rick pursuit at the last Perception-backed position.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("subjectActorId", intent.SubjectActorId),
+                LogFields.Field("actionId", intent.ActionId),
+                LogFields.Field("targetPosition", intent.LastKnownPosition),
+                LogFields.Field("positionEvidenceTimeSeconds", intent.LastKnownObservationTimeSeconds),
+                LogFields.Field("contactLossTimeSeconds", intent.ContactLossObservationTimeSeconds));
+        }
+
+        /// <summary>
+        /// Produces the continuation intent for a confirmed visual-contact loss.
+        /// The destination comes only from this NPC's Knowledge State; this method never reads Rick's current transform.
+        /// Call it while handling the corresponding N01 knowledge-change event.
+        /// </summary>
+        private bool TryCreateLostContactPursuitIntent(
+            PEGANpcKnowledgeFactChangedEvent contactChange,
+            out PEGANpcLastKnownRickPursuitIntent intent,
+            out string diagnostic)
+        {
+            intent = default;
+            diagnostic = string.Empty;
+            if (contactChange == null ||
+                contactChange.FactKind != PEGANpcKnowledgeFactKind.RickVisualContact ||
+                !contactChange.SubjectActorId.HasValue ||
+                !contactChange.HasValueOrStatusChanged ||
+                contactChange.PreviousStatus != PEGANpcKnowledgeStatus.Known ||
+                contactChange.CurrentStatus != PEGANpcKnowledgeStatus.Known ||
+                contactChange.EvidenceOrigin != PEGANpcEvidenceOrigin.Perception)
+            {
+                diagnostic = "A changed Known-to-Known Rick visual-contact event from Perception is required.";
+                return false;
+            }
+
+            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            {
+                diagnostic = "The Action requires this NPC's PEGANpcKnowledgeState on the same root.";
+                return false;
+            }
+
+            ActorId subjectActorId = contactChange.SubjectActorId.Value;
+            if (!subjectActorId.IsValid)
+            {
+                diagnostic = "The contact-loss event has no valid Rick subject ActorId.";
+                return false;
+            }
+
+            if (rickActorProfile == null ||
+                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out diagnostic) ||
+                !rickProfileId.IsValid)
+            {
+                diagnostic = string.IsNullOrEmpty(diagnostic)
+                    ? "The Action requires a valid Rick Actor Profile."
+                    : diagnostic;
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<ActorProfileId> identity =
+                knowledgeState.GetObservedCharacterIdentity(subjectActorId);
+            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
+                observedProfileId != rickProfileId)
+            {
+                diagnostic = "The subject is not legitimately known as the configured Rick Actor Profile.";
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<bool> contact = knowledgeState.GetRickVisualContact(subjectActorId);
+            if (!contact.TryGetValue(out bool hasVisualContact) ||
+                hasVisualContact ||
+                !contact.HasObservationTime ||
+                contact.ObservationTimeSeconds != contactChange.ObservationTimeSeconds ||
+                (contact.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+            {
+                diagnostic = "The current Knowledge State does not confirm this Perception event as a current visual-contact loss.";
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<Vector3> lastPosition =
+                knowledgeState.GetLastObservedRickPosition(subjectActorId);
+            if (!lastPosition.TryGetValue(out Vector3 position) ||
+                !lastPosition.HasObservationTime ||
+                (lastPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
+                lastPosition.ObservationTimeSeconds > contact.ObservationTimeSeconds)
+            {
+                diagnostic = "The NPC has no Perception-backed last Rick position at or before contact loss.";
+                return false;
+            }
+
+            intent = new PEGANpcLastKnownRickPursuitIntent(
+                subjectActorId,
+                position,
+                lastPosition.ObservationTimeSeconds,
+                contact.ObservationTimeSeconds);
+            diagnostic = string.Empty;
+            return true;
         }
 
         public bool TryCreatePlanningCandidate(
@@ -174,6 +400,33 @@ namespace PEGA.NPC
 
             diagnostic = string.Empty;
             return true;
+        }
+
+        private void EnsurePursuitIntentEventsInitialized()
+        {
+            _pursuitIntentEvents ??= new EventBus<PEGANpcLastKnownRickPursuitIntentRequestedEvent>();
+        }
+
+        private void EnsureIntentLoggerInitialized()
+        {
+            _intentLog ??= PEGALogging.CreateScopedLogger<PEGANpcApproachKnownRickAction>(
+                IntentLogCategory,
+                gameObject.name);
+        }
+
+        private void LogIntentSubscriberFailure(
+            Action<PEGANpcLastKnownRickPursuitIntentRequestedEvent> handler,
+            PEGANpcLastKnownRickPursuitIntentRequestedEvent intentEvent,
+            Exception exception)
+        {
+            EnsureIntentLoggerInitialized();
+            _intentLog.Error(
+                "Lost-contact pursuit intent subscriber failed; other subscribers remain isolated.",
+                exception,
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("subscriber", handler.Method.DeclaringType?.FullName),
+                LogFields.Field("subjectActorId", intentEvent.Intent.SubjectActorId),
+                LogFields.Field("targetPosition", intentEvent.Intent.LastKnownPosition));
         }
     }
 }

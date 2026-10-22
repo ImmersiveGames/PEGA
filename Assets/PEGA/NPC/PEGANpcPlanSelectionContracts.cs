@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using PEGA.Actors;
 using UnityEngine;
@@ -541,6 +542,7 @@ namespace PEGA.NPC
         internal PEGANpcDesirePlanEvaluation(
             string desireId,
             string desireName,
+            PEGANpcDesireGoalKind desiredGoal,
             bool applicable,
             float effectiveWeight,
             IReadOnlyList<PEGANpcPlanSnapshot> plans,
@@ -548,6 +550,7 @@ namespace PEGA.NPC
         {
             DesireId = desireId ?? string.Empty;
             DesireName = desireName ?? string.Empty;
+            DesiredGoal = desiredGoal;
             IsApplicable = applicable;
             EffectiveWeight = effectiveWeight;
             PEGANpcPlanSnapshot[] copy = new PEGANpcPlanSnapshot[plans.Count];
@@ -563,6 +566,8 @@ namespace PEGA.NPC
         public string DesireId { get; }
 
         public string DesireName { get; }
+
+        public PEGANpcDesireGoalKind DesiredGoal { get; }
 
         public bool IsApplicable { get; }
 
@@ -626,5 +631,105 @@ namespace PEGA.NPC
 
             return Array.AsReadOnly(copy);
         }
+    }
+
+    /// <summary>
+    /// A request to continue the Rick pursuit at the last position confirmed by Perception.
+    /// It is data for a planner/consumer; it does not select, start, cancel, or execute an Action.
+    /// </summary>
+    public readonly struct PEGANpcLastKnownRickPursuitIntent
+    {
+        internal PEGANpcLastKnownRickPursuitIntent(
+            ActorId subjectActorId,
+            Vector3 lastKnownPosition,
+            double lastKnownObservationTimeSeconds,
+            double contactLossObservationTimeSeconds)
+        {
+            SubjectActorId = subjectActorId;
+            LastKnownPosition = lastKnownPosition;
+            LastKnownObservationTimeSeconds = lastKnownObservationTimeSeconds;
+            ContactLossObservationTimeSeconds = contactLossObservationTimeSeconds;
+        }
+
+        public bool IsValid =>
+            SubjectActorId.IsValid &&
+            IsFinite(LastKnownPosition) &&
+            IsNonNegativeFinite(LastKnownObservationTimeSeconds) &&
+            IsNonNegativeFinite(ContactLossObservationTimeSeconds) &&
+            LastKnownObservationTimeSeconds <= ContactLossObservationTimeSeconds;
+
+        public ActorId SubjectActorId { get; }
+
+        public PEGANpcPlanningActionId ActionId => PEGANpcPlanningActionId.ApproachKnownRick;
+
+        public PEGANpcPlanningTargetKind TargetKind => PEGANpcPlanningTargetKind.CharacterPosition;
+
+        public Vector3 LastKnownPosition { get; }
+
+        public double LastKnownObservationTimeSeconds { get; }
+
+        public double ContactLossObservationTimeSeconds { get; }
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private static bool IsNonNegativeFinite(double value) =>
+            value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
+    }
+
+    /// <summary>Published when real Perception confirms loss of Rick and a legitimate last position exists.</summary>
+    public sealed class PEGANpcLastKnownRickPursuitIntentRequestedEvent : IEvent
+    {
+        internal PEGANpcLastKnownRickPursuitIntentRequestedEvent(
+            PEGANpcLastKnownRickPursuitIntent intent)
+        {
+            Intent = intent;
+        }
+
+        public PEGANpcLastKnownRickPursuitIntent Intent { get; }
+    }
+
+    public enum PEGANpcPlanReevaluationTrigger
+    {
+        RickReacquired = 10,
+        RickConsideredEvaded = 20
+    }
+
+    /// <summary>
+    /// Sinaliza uma mudança do alvo observada ou uma perda de contato que persistiu até o prazo configurado.
+    /// Não seleciona, cancela, substitui nem executa planos.
+    /// </summary>
+    /// <remarks>
+    /// RickReacquired identifica planos dependentes do alvo; RickConsideredEvaded solicita avaliação do conjunto
+    /// normal de Desejos. O consumidor autônomo é responsável por interpretar o gatilho.
+    /// </remarks>
+    public sealed class PEGANpcPlanReevaluationRequestedEvent : IEvent
+    {
+        internal PEGANpcPlanReevaluationRequestedEvent(
+            PEGANpcPlanReevaluationTrigger trigger,
+            ActorId targetActorId,
+            double observationTimeSeconds,
+            double requestedAtTimeSeconds)
+        {
+            Trigger = trigger;
+            TargetActorId = targetActorId;
+            ObservationTimeSeconds = observationTimeSeconds;
+            RequestedAtTimeSeconds = requestedAtTimeSeconds;
+        }
+
+        public PEGANpcPlanReevaluationTrigger Trigger { get; }
+
+        public ActorId TargetActorId { get; }
+
+        /// <summary>
+        /// Tempo da evidência que motivou o pedido: observação consolidada da readquisição ou amostra de perda.
+        /// </summary>
+        public double ObservationTimeSeconds { get; }
+
+        /// <summary>Momento de jogo em que o pedido foi emitido.</summary>
+        public double RequestedAtTimeSeconds { get; }
     }
 }
