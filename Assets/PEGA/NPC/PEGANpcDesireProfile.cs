@@ -266,7 +266,7 @@ namespace PEGA.NPC
         private float satisfactionGain = 1f;
 
         [SerializeField, Min(0.001f)]
-        [Tooltip("Satisfação acumulada necessária para deixar de ser aplicável.")]
+        [Tooltip("Teto da satisfação acumulada e referência para o modificador de peso; não limita a reaplicabilidade do Desejo.")]
         private float maximumSatisfaction = 1f;
 
         [SerializeField, Range(0f, 1f)]
@@ -321,7 +321,7 @@ namespace PEGA.NPC
 
         public bool IsApplicable(PEGANpcDesireSatisfactionSnapshot satisfaction)
         {
-            if (!enabledForContext || satisfaction.Satisfaction >= maximumSatisfaction)
+            if (!enabledForContext)
             {
                 return false;
             }
@@ -343,7 +343,7 @@ namespace PEGA.NPC
             observedEffect.IsValid && observedEffect.GoalKind == desiredGoal;
 
         internal bool CanRecordSatisfaction(PEGANpcDesireSatisfactionSnapshot satisfaction) =>
-            enabledForContext && satisfaction.Satisfaction < maximumSatisfaction &&
+            enabledForContext &&
             (maximumCompletedExecutions < 0 ||
              satisfaction.CompletedExecutions < maximumCompletedExecutions);
 

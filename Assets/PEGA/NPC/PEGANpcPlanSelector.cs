@@ -122,7 +122,7 @@ namespace PEGA.NPC
                 }
 
                 string evaluationDiagnostic = !applicable
-                    ? "Desire is not applicable in this context or reached its satisfaction/execution limit."
+                    ? "Desire is not applicable in this context or reached its configured completed-execution limit."
                     : desirePlans.Count == 0
                         ? "Desire is applicable, but no compatible Action has a known Target and complete valid route."
                         : string.Empty;

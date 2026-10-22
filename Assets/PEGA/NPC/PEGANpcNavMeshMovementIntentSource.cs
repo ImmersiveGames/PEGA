@@ -75,6 +75,7 @@ namespace PEGA.NPC
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Navigation";
         private const float PathDirectionThreshold = 0.0001f;
+        private const int InitialPathResolutionGraceFrames = 2;
 
         [Header("Physical Reconciliation")]
         [SerializeField, Min(0.01f)]
@@ -116,6 +117,8 @@ namespace PEGA.NPC
         private bool _warnedPositionDivergence;
         private bool _reportedUnsynchronizedPositionOffset;
         private bool _canCompleteWithoutPath;
+        private int _requestStartedFrame;
+        private bool _reportedInitialPathResolutionWait;
         private string _diagnostic = string.Empty;
         private float _lastDesiredSpeedMetersPerSecond;
 
@@ -341,6 +344,8 @@ namespace PEGA.NPC
             _reportedUnsynchronizedPositionOffset = false;
             _diagnostic = string.Empty;
             _currentOutcome = PEGANpcNavigationOutcome.Running;
+            _requestStartedFrame = Time.frameCount;
+            _reportedInitialPathResolutionWait = false;
             _canCompleteWithoutPath = PlanarDistance(transform.position, targetPosition) <= arrivalRadiusMeters;
             _hasActiveRequest = true;
 
@@ -402,16 +407,38 @@ namespace PEGA.NPC
                 ? _agent.pathStatus
                 : NavMeshPathStatus.PathInvalid;
 
+            bool waitingForInitialPathResolution = _hasActiveRequest &&
+                !_canCompleteWithoutPath &&
+                !pathPending &&
+                !hasPath &&
+                Time.frameCount - _requestStartedFrame <= InitialPathResolutionGraceFrames;
+
+            if (waitingForInitialPathResolution && !_reportedInitialPathResolutionWait)
+            {
+                _reportedInitialPathResolutionWait = true;
+                _log.Info(
+                    "NPC navigation request is waiting for Unity to initialize or resolve its new NavMesh path.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestId", requestId),
+                    LogFields.Field("requestAgeFrames", Time.frameCount - _requestStartedFrame),
+                    LogFields.Field("pathPending", pathPending),
+                    LogFields.Field("hasPath", hasPath),
+                    LogFields.Field("pathStatus", pathStatus));
+            }
+
             if (_hasActiveRequest && !pathPending && !_canCompleteWithoutPath &&
                 (!hasPath || pathStatus != NavMeshPathStatus.PathComplete))
             {
-                FinishRequest(
-                    requestId,
-                    PEGANpcNavigationOutcome.Invalid,
-                    $"NavMesh path is not complete ({pathStatus}).");
-                pathPending = false;
-                hasPath = false;
-                pathStatus = NavMeshPathStatus.PathInvalid;
+                if (!waitingForInitialPathResolution)
+                {
+                    FinishRequest(
+                        requestId,
+                        PEGANpcNavigationOutcome.Invalid,
+                        $"NavMesh path is not complete ({pathStatus}) after initial path resolution (requestAgeFrames={Time.frameCount - _requestStartedFrame}).");
+                    pathPending = false;
+                    hasPath = false;
+                    pathStatus = NavMeshPathStatus.PathInvalid;
+                }
             }
 
             if (_hasActiveRequest && !pathPending && hasPath && !_hasCachedRouteLength)
