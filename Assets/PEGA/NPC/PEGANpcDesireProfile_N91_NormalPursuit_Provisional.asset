@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db47bbb1ad3143a419812a7fe2741c7b, type: 3}
+  m_Name: PEGANpcDesireProfile_N91_NormalPursuit_Provisional
+  m_EditorClassIdentifier:
+  contexts:
+  - context: 0
+    planSelectionPolicy:
+      costReferenceSeconds: 10
+    desires:
+    - desireId: n91-normal-known-rick-pursuit-n01
+      displayName: Perseguir Rick reconhecido (N01 provisório)
+      enabledForContext: 1
+      desiredGoal: 0
+      baseWeight: 1
+      satisfactionGain: 1
+      maximumSatisfaction: 1
+      satisfactionWeightModifier: 0
+      maximumCompletedExecutions: -1

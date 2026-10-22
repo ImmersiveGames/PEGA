@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 114000008}
   - component: {fileID: 114000009}
   - component: {fileID: 1407004870509830926}
+  - component: {fileID: 114000010}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -279,6 +280,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9d650ea3d357e14caf6c67f56f03608, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcDesireState
+--- !u!114 &114000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 286156af9b894e1eb6460d3fefb2ff32, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
+  desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
