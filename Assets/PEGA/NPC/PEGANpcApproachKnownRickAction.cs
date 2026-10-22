@@ -10,6 +10,9 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ApproachKnownRickPosition;
 
+        protected override PEGANpcDesireGoalKind ActionGoalKind =>
+            PEGANpcDesireGoalKind.ReachKnownCharacterPosition;
+
         [Header("Known Target")]
         [SerializeField]
         [Tooltip("Conhecimento mantido por este NPC.")]
@@ -25,8 +28,62 @@ namespace PEGA.NPC
 
         public bool TryGetKnownRickPosition(out Vector3 position, out string diagnostic)
         {
+            return TryGetKnownRickEvidence(out _, out position, out _, out diagnostic);
+        }
+
+        public bool TryCreatePlanningCandidate(
+            out PEGANpcPlanningTarget target,
+            out PEGANpcPlanningActionCandidate candidate,
+            out string diagnostic)
+        {
+            target = default;
+            candidate = default;
+            if (!TryGetKnownRickEvidence(
+                    out ActorId subjectActorId,
+                    out Vector3 knownPosition,
+                    out double evidenceTimeSeconds,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            if (!TryEstimateNavigationRoute(
+                    knownPosition,
+                    PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
+                    out PEGANpcNavigationRouteEstimate routeEstimate,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            target = PEGANpcPlanningTarget.FromKnownActorPosition(
+                subjectActorId,
+                knownPosition,
+                evidenceTimeSeconds);
+            candidate = new PEGANpcPlanningActionCandidate(
+                PEGANpcPlanningActionId.ApproachKnownRick,
+                ActionEffectKind,
+                ActionGoalKind,
+                target.TargetId,
+                PEGANpcPlanningTargetKind.CharacterPosition,
+                true,
+                PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
+                routeEstimate,
+                IntrinsicDurationSeconds);
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private bool TryGetKnownRickEvidence(
+            out ActorId subjectActorId,
+            out Vector3 position,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
+            subjectActorId = default;
             position = default;
-            if (!TryResolveRickSubject(out ActorId subjectActorId, out diagnostic))
+            evidenceTimeSeconds = 0d;
+            if (!TryResolveRickSubject(out subjectActorId, out diagnostic))
             {
                 return false;
             }
@@ -47,12 +104,13 @@ namespace PEGA.NPC
 
             PEGANpcKnowledgeFact<Vector3> lastObservedPosition =
                 knowledgeState.GetLastObservedRickPosition(subjectActorId);
-            if (!lastObservedPosition.TryGetValue(out position))
+            if (!lastObservedPosition.TryGetValue(out position) || !lastObservedPosition.HasObservationTime)
             {
-                diagnostic = "This NPC has no valid last observed Rick position.";
+                diagnostic = "This NPC has no valid last observed Rick position with evidence time.";
                 return false;
             }
 
+            evidenceTimeSeconds = lastObservedPosition.ObservationTimeSeconds;
             diagnostic = string.Empty;
             return true;
         }

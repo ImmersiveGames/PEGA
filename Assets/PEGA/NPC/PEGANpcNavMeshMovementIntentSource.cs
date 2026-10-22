@@ -136,6 +136,104 @@ namespace PEGA.NPC
         public float CurrentMaximumPositionReconciliationResidualMeters =>
             _maximumPositionReconciliationResidualMeters;
 
+        public bool TryEstimateRoute(
+            Vector3 targetPosition,
+            PEGAActorMovementSpeedRegime speedRegime,
+            float arrivalRadiusMeters,
+            out PEGANpcNavigationRouteEstimate estimate,
+            out string diagnostic)
+        {
+            estimate = default;
+            diagnostic = string.Empty;
+
+            if (!IsReady)
+            {
+                diagnostic = "NPC navigation source, NavMeshAgent and shared movement mechanic must be active.";
+                return false;
+            }
+
+            if (!IsFinite(targetPosition) || !IsNonNegativeFinite(arrivalRadiusMeters))
+            {
+                diagnostic = "Route estimate target and arrival radius must be finite; arrival radius cannot be negative.";
+                return false;
+            }
+
+            if (!_agent.isOnNavMesh)
+            {
+                diagnostic = "NavMeshAgent is not placed on a baked NavMesh at the Actor's physical position.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            if (!_movementMechanic.TryGetMaximumSpeed(
+                    speedRegime,
+                    out float effectiveSpeed,
+                    out diagnostic))
+            {
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            if (PlanarDistance(transform.position, targetPosition) <= arrivalRadiusMeters)
+            {
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Complete,
+                    0f,
+                    effectiveSpeed,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    string.Empty);
+                return true;
+            }
+
+            // CalculatePath devolve uma rota separada; não substitui o pedido ativo do agente.
+            NavMeshPath path = new NavMeshPath();
+            bool pathFound = _agent.CalculatePath(targetPosition, path);
+            PEGANpcPlanningRouteStatus status = path.status switch
+            {
+                NavMeshPathStatus.PathComplete => PEGANpcPlanningRouteStatus.Complete,
+                NavMeshPathStatus.PathPartial => PEGANpcPlanningRouteStatus.Partial,
+                _ => PEGANpcPlanningRouteStatus.Invalid
+            };
+            float routeLengthMeters = CalculatePathLength(path.corners);
+
+            if (!pathFound || status != PEGANpcPlanningRouteStatus.Complete ||
+                path.corners == null || path.corners.Length < 2 ||
+                !IsNonNegativeFinite(routeLengthMeters))
+            {
+                diagnostic = $"NavMesh route estimate is not complete ({path.status}).";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    status,
+                    routeLengthMeters,
+                    effectiveSpeed,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            estimate = new PEGANpcNavigationRouteEstimate(
+                PEGANpcPlanningRouteStatus.Complete,
+                routeLengthMeters,
+                effectiveSpeed,
+                _agent.agentTypeID,
+                _agent.areaMask,
+                string.Empty);
+            return true;
+        }
+
         private void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();

@@ -43,6 +43,44 @@ namespace PEGA.NPC
         public float TargetRadiusMeters { get; }
     }
 
+    public readonly struct PEGANpcObservedActionEffect
+    {
+        internal PEGANpcObservedActionEffect(
+            PEGANpcActionEffectKind kind,
+            PEGANpcDesireGoalKind goalKind,
+            long requestId,
+            Vector3 targetPosition,
+            float targetRadiusMeters,
+            float actualDistanceToTargetMeters,
+            double observedAtSeconds)
+        {
+            Kind = kind;
+            GoalKind = goalKind;
+            RequestId = requestId;
+            TargetPosition = targetPosition;
+            TargetRadiusMeters = targetRadiusMeters;
+            ActualDistanceToTargetMeters = actualDistanceToTargetMeters;
+            ObservedAtSeconds = observedAtSeconds;
+            IsValid = true;
+        }
+
+        public PEGANpcActionEffectKind Kind { get; }
+
+        public PEGANpcDesireGoalKind GoalKind { get; }
+
+        public long RequestId { get; }
+
+        public Vector3 TargetPosition { get; }
+
+        public float TargetRadiusMeters { get; }
+
+        public float ActualDistanceToTargetMeters { get; }
+
+        public double ObservedAtSeconds { get; }
+
+        public bool IsValid { get; }
+    }
+
     public readonly struct PEGANpcActionExecutionSnapshot
     {
         internal PEGANpcActionExecutionSnapshot(
@@ -114,9 +152,12 @@ namespace PEGA.NPC
         private PEGANpcNavigationSnapshot _navigationSnapshot;
         private bool _hasEffectTarget;
         private Vector3 _effectTarget;
+        private double _completedAtTimeSeconds;
         private string _diagnostic = string.Empty;
 
         protected abstract PEGANpcActionEffectKind ActionEffectKind { get; }
+
+        protected abstract PEGANpcDesireGoalKind ActionGoalKind { get; }
 
         public PEGANpcActionOutcome Outcome { get; private set; } = PEGANpcActionOutcome.NotStarted;
 
@@ -133,9 +174,63 @@ namespace PEGA.NPC
             _effectTarget,
             arrivalRadiusMeters);
 
+        public bool TryGetObservedEffect(out PEGANpcObservedActionEffect observedEffect)
+        {
+            observedEffect = default;
+            if (Outcome != PEGANpcActionOutcome.Success || !_hasNavigationSnapshot)
+            {
+                return false;
+            }
+
+            PEGANpcActionEffectDeclaration declaration = DeclaredEffect;
+            float actualDistance = _navigationSnapshot.ActualDistanceToTargetMeters;
+            if (!declaration.IsTargetResolved ||
+                _navigationSnapshot.RequestId <= 0 ||
+                !IsFinite(declaration.TargetPosition) ||
+                !IsNonNegativeFinite(declaration.TargetRadiusMeters) ||
+                !IsNonNegativeFinite(actualDistance) ||
+                actualDistance > declaration.TargetRadiusMeters ||
+                (_navigationSnapshot.TargetPosition - declaration.TargetPosition).sqrMagnitude > 0.000001f)
+            {
+                return false;
+            }
+
+            observedEffect = new PEGANpcObservedActionEffect(
+                declaration.Kind,
+                ActionGoalKind,
+                _navigationSnapshot.RequestId,
+                _navigationSnapshot.TargetPosition,
+                declaration.TargetRadiusMeters,
+                actualDistance,
+                _completedAtTimeSeconds);
+            return true;
+        }
+
         public float IntrinsicDurationSeconds => 0f;
 
         protected float ArrivalRadiusMeters => arrivalRadiusMeters;
+
+        protected bool TryEstimateNavigationRoute(
+            Vector3 targetPosition,
+            PEGAActorMovementSpeedRegime speedRegime,
+            out PEGANpcNavigationRouteEstimate estimate,
+            out string diagnostic)
+        {
+            estimate = default;
+            if (!isActiveAndEnabled || navigationSource == null ||
+                navigationSource.gameObject != gameObject || !navigationSource.IsReady)
+            {
+                diagnostic = "The Action requires an active NavMesh movement source on the same NPC root.";
+                return false;
+            }
+
+            return navigationSource.TryEstimateRoute(
+                targetPosition,
+                speedRegime,
+                arrivalRadiusMeters,
+                out estimate,
+                out diagnostic);
+        }
 
         protected virtual bool ArePreconditionsStillValid(out string diagnostic)
         {
@@ -345,6 +440,7 @@ namespace PEGA.NPC
             PEGANpcNavigationOutcome navigationOutcome)
         {
             _diagnostic = diagnostic ?? string.Empty;
+            _completedAtTimeSeconds = Time.timeAsDouble;
             if (navigationSource != null && _requestId > 0)
             {
                 navigationSource.FinishRequest(_requestId, navigationOutcome, _diagnostic);
@@ -412,6 +508,7 @@ namespace PEGA.NPC
             _navigationSnapshot = default;
             _hasEffectTarget = false;
             _effectTarget = default;
+            _completedAtTimeSeconds = 0d;
             _diagnostic = string.Empty;
             Outcome = PEGANpcActionOutcome.NotStarted;
         }

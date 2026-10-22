@@ -1,14 +1,12 @@
 # PEGA GOAP Desires and Plan Selection
 
-- **Status:** Written proposal; awaiting user review before implementation planning
+- **Status:** Implemented; Unity manual validation passed for the verified scope. Live selection between pursuit and escape remains pending legitimate knowledge of E01.
 - **Date:** 2026-10-21
 - **Scope:** First implementation slice for Trello [#64 — Desires and plan selection](https://trello.com/c/iWwXiDee/64-npc-desejos-e-escolha-de-planos)
 
 ## 1. Goal
 
-Implement the first PEGA-owned Desire and GOAP plan-selection capability for the Normal context. The selector must evaluate more than one valid plan, keep a Desire applicable when no plan can be built, compare configured Desire priority and estimated plan time deterministically, and keep predicted plan effects separate from observed Action results.
-
-The first acceptance compares the real pursuit and escape movement Actions already present in PEGA. It does not execute a selected plan autonomously, poll for changes, subscribe to replan events, or add new gameplay Actions. Escape means movement toward a known exit target; reaching its marker does not resolve the mission as `Escaped`.
+Implement the first PEGA-owned Desire configuration and GOAP plan-selection capability. Validate the selection algorithm in isolation using detached planning inputs, then validate live NPC integration only against facts the NPC actually knows. These are separate evidence tracks: an isolated choice result does not prove a gameplay Target or Desire is available. The implementation does not execute a selected plan autonomously, poll for changes, subscribe to replan events, add new gameplay Actions, or author a definitive mission Desire configuration.
 
 ## 2. Authority and traceability
 
@@ -38,44 +36,43 @@ The current Mission has no PEGA spawn-point/exit-knowledge producer. The local F
 
 ## 4. Why one Desire and one Action are insufficient
 
-A single `Pursue Rick` Desire paired with `ApproachKnownRickAction` can demonstrate applicability and a viable movement request, but it cannot show plan selection, the influence of priority versus cost, or a choice among valid alternatives. Adding another Desire that points directly to the same Action would only duplicate a mapping and would not demonstrate GOAP composition.
+An isolated choice check needs at least two valid plan candidates, a no-plan case, and changes to weight/cost that change the winner. Use a temporary demonstration configuration with two clearly labeled demo-only Desires and the two existing #63 movement operators:
 
-The minimum meaningful choice set uses two applicable declarative goals and two existing planning operators. This creates two distinct candidate plans in one evaluation instead of binding one Desire to one Action:
+1. **Demo: approach known Rick position** — `ApproachKnownRickAction` predicts arrival at the position in the supplied planning input.
+2. **Demo: move to known escape target** — `TravelToEscapeAction` predicts arrival at the supplied known target. Reaching its marker is not the terminal mission effect `Escaped`.
 
-1. **Pursue the last known Rick position** — the goal state is that the NPC reaches the known position. `ApproachKnownRickAction` declares preconditions from this NPC's legitimate Knowledge State and predicts the corresponding position effect.
-2. **Move toward a known escape** — the goal state is that the NPC reaches an explicitly known escape destination. `TravelToEscapeAction` declares its known-target precondition and predicts arrival at that destination. This is not the terminal mission effect `Escaped`.
+The selector matches declared Action preconditions/effects to each goal; the demo profile does not bind a Desire directly to an Action. Each plan is one step because these are the available movement operators. This verifies deterministic choice among plan candidates, but not multi-Action chain search.
 
-The planner discovers which operators can achieve each Desire's goal through their declared preconditions and effects. The profile does not hard-wire a Desire to an Action. In the first repertoire each valid plan is one step; the plan representation remains an ordered list so later Actions can form chains without changing the execution boundary.
+The demonstration inputs belong to a **detached isolated planning fixture** passed directly to the selector. The escape candidate is an immutable operator/Target value representing the declared `TravelToEscapeAction` effect; it does not invoke that Action's runtime target resolution. The fixture data is not written to `PEGANpcKnowledgeState`, assigned to an NPC, resolved from hidden scene objects, or treated as accepted gameplay facts. Log the mode as `IsolatedFixture` so the result cannot be confused with live integration.
 
-When both targets are known and both NavMesh routes are complete, both plans are viable alternatives. When neither target is known, or when the required routes are invalid, both Desires may remain applicable but have no valid plan and the result is `NoPlan`. The plans are one step because the available #63 movement repertoire contains only these two Actions; this acceptance proves goal/effect matching and selection across alternatives, but not multi-Action chain search or multiple plans for one Desire. No Action is added just to lengthen the demonstration.
+## 5. Live knowledge and gameplay-content boundary
 
-## 5. Known escape-target source required for the first choice
+The GDD says a gang learns an entry as a possible exit only after a member uses its Spawn Point, or learns an additional exit through discovery (GDD §§ “Fuga e escolha de saída” and “Spawn Points e receitas de invasão”). E01 is currently only a scene destination marker; the workspace has no Spawn Point use event, known-exit fact, or gang-knowledge producer. #64 will not add those systems, treat E01 as known, or configure the escape demo Desire as mission behavior.
 
-The current scene marker E01 cannot be passed directly to the planner: it is a location reference, not a knowledge fact. The GDD specifically says a gang knows an entry as a potential exit after a member uses that Spawn Point, or learns another exit through discovery. The workspace has E01 and `PEGANpcTravelToEscapeAction`, but no Spawn Point use event, known-exit fact, or gang-knowledge producer. Therefore the two-plan acceptance is not achievable from existing runtime facts alone.
+The live planner reads only the NPC's accepted Knowledge State and Targets resolved from that knowledge. In the current Mission, Rick's last observed position can come from real #69 perception and feed `ApproachKnownRickAction`; an escape candidate is unavailable until a legitimate known-exit source exists. Report that absence explicitly. Do not scan the scene, convert `PEGANpcEscapeDestination` into a fact, or inject an exit into a live NPC.
 
-To retain the escape alternative without fabricating knowledge, the minimum prerequisite is a **real entry-use fact source**: when a participating thief actually enters through an authored Spawn Point, the source records that entry as a known escape target with the GDD's Gang scope; the planner resolves only that fact. For the current Mission fixture this only works if E01 is configured as the actual entry used by the two NPCs. The destination marker remains a separate target reference and does not write knowledge. No scan of scene exits or arbitrary initial list of known exits is allowed.
+The GDD approves thieves using GOAP and describes context-dependent pursuit of a **known principal-item carrier** and configurable early escape. It does not define **approach Rick** as a default Desire for a thief archetype; Rick and Petra remain player-controlled, not GOAP agents. The current #68 Knowledge State also has no principal-item possession/carrier fact, and no known-exit producer. Therefore, `Demo: approach known Rick position` and `Demo: move to known escape target` exist only in temporary validation configuration. The implementation provides authorable Desire contracts, but does not create or assert a production archetype profile/weight set or an accepted mission behavior until its gameplay facts and content are approved.
 
-**Review decision:** confirm whether #64 may include this narrow Spawn Point-to-Knowledge-State producer, or whether the valid Escape alternative must wait for the production card that implements real Spawn Point use. The current Mission has two scene NPCs but no such producer, so a debug setter, per-NPC synthetic fact, or authoring E01 as known without actual entry use would violate the source rule. If the prerequisite is deferred, #64 can still demonstrate applicability, `NoPlan`, and pursuit selection, but cannot yet claim two valid competing movement plans or weight-versus-cost selection across pursuit and escape.
-
-This does not add a general target registry, scene scan, general gang-sharing framework, or a synthetic test-only write. If accepted, it adds only the typed used-entry fact and its narrow Gang-scope publication required by the existing GDD rule. Existing #68 facts and conflict rules remain unchanged.
+Validation has two independent outcomes: (a) isolated selector checks establish the algorithm can choose among valid candidates; (b) live integration checks establish the current NPC uses real Knowledge State and existing Actions correctly. Passing (a) does not establish live escape planning, a mission-approved pursuit Desire, or the card's real-known-Target alternatives criterion. That criterion remains unaccepted until the project has at least two legitimate live candidates for the approved Desire content.
 
 ## 6. Ownership and data model
 
 All new runtime and authoring contracts belong to `Assets/PEGA/NPC`:
 
-- **`PEGANpcArchetypeProfile`**: PEGA `ScriptableObject` referenced by each thief. It selects the Desire configuration for the Normal context, per-Desire base weight/satisfaction configuration, and one explicit deterministic priority-cost policy. It does not add components or Actions to an Actor.
+- **`PEGANpcDesireProfile`**: PEGA `ScriptableObject` contract for selecting Desire configuration and a deterministic priority-cost policy by context. It can be assigned per archetype by game content, but the first cut does not populate a definitive mission profile or weight set; demo configuration remains temporary. It does not add components or Actions to an Actor and is distinct from Immersive `ActorProfile`.
 - **Desire definition**: stable PEGA Desire ID, context, base weight, applicability predicate, desired fact predicate, satisfaction gain, satisfaction-to-weight modifier, and completed-execution limit. Applicability depends on context/profile/limits, not on whether a plan currently exists.
 - **Per-NPC Desire state**: transient accumulated satisfaction keyed by Desire ID on the NPC root. It is never shared between thieves. Satisfaction survives a later loss of the world condition and is not serialized as a current fact.
 - **Action planning contract**: a read-only query on each existing Action supplies planning Preconditions, predicted Effects, compatible known targets, resolved intrinsic duration, and execution binding. It must not call `TryStart`, change movement, write Knowledge State, or inspect the target's current Transform.
 - **Plan and selection snapshots**: immutable output containing applicability, plan viability/reason, chosen Desire, ordered Action/Target steps, predicted terminal facts, estimated seconds, effective Desire weight, and deterministic score/tie-break details. Predicted facts are never published as observed facts.
-- **Known exit fact/source**: typed PEGA knowledge for an entry actually used, with Gang scope as required by the GDD and a stable destination identity. It is not an Immersive `ActorId` or `ActorProfileId`; identities from different domains are never compared. This producer is conditional on the review decision in section 5.
+- **Known Targets**: planning candidates are resolved from accepted Knowledge State through an explicit read-only query. The selector never promotes `PEGANpcEscapeDestination` or another scene object into knowledge. No known-exit fact/source is added in #64.
+- **Isolated planning input**: temporary detached state and operator/Target data used only to verify selection logic; it is never assigned to or written into an NPC Knowledge State.
 
-The selector is invoked explicitly with the active context, profile, Knowledge State, current Action components, and individual satisfaction state. The current cut supplies `Normal`; it does not add a global mission-context authority.
+The selector is invoked explicitly with the active context, profile, Knowledge State, current Action components, and individual satisfaction state. The demonstration passes `Normal` as test input; it does not add a global mission-context authority or assert a permanent Normal-context Desire set.
 
 ## 7. Planning and selection behavior
 
 1. Evaluate each configured Desire's applicability and completion limit independently of plan construction.
-2. Read only accepted Knowledge State facts visible to this NPC, including an entry-use fact with Gang scope if the producer is in scope. Resolve candidate Action/Target operators from that input and the Actions physically present on the same NPC.
+2. In live mode, read only accepted Knowledge State facts visible to this NPC and compatible Action components on its root. In isolated validation mode, accept a detached immutable planning input and do not resolve scene objects or access an NPC Knowledge State.
 3. Build plans by matching operator Effects to Desire goal facts and applying operator Preconditions to the initial or projected planning state. Do not use fixed Action sequences or inspect hidden target positions.
 4. For each navigation step, estimate route length with a side-effect-free NavMesh query using the same agent type/area mask and the resolved speed regime used by execution. Convert route length to estimated seconds and add resolved Action durations. Do not call `SetDestination` or move the Actor.
 5. Reject a candidate if its target is not known, the Action is unavailable, its preconditions fail, its resolved speed/duration is invalid, or its NavMesh path is not complete. This removes the plan, not the Desire's applicable status.
@@ -85,29 +82,33 @@ The selector is invoked explicitly with the active context, profile, Knowledge S
 
 The route estimate represents the current baked NavMesh and resolved speed, not a guarantee that execution will succeed. Physical execution still validates collisions and current World State through the existing Action lifecycle.
 
-For a reproducible choice check, the temporary Unity fixture uses a configurable cost curve `1 / (1 + estimatedSeconds / referenceSeconds)` with `referenceSeconds = 10`. With pursuit weight `2`, pursuit cost `18s`, escape weight `1`, and escape cost `2s`, escape scores `0.833` versus pursuit `0.714`. Changing only pursuit weight to `3` makes pursuit score `1.071` and it wins. Resetting weights and changing only pursuit cost to `2s` makes pursuit score `1.667` and it wins. These values demonstrate independent weight/cost influence; they are not gameplay balance defaults. The curve and reference time remain authorable policy data.
+For a reproducible isolated choice check, the temporary fixture uses a configurable cost curve `1 / (1 + estimatedSeconds / referenceSeconds)` with `referenceSeconds = 10`. With demo pursuit weight `2`, demo pursuit cost `18s`, demo escape weight `1`, and demo escape cost `2s`, escape scores `0.833` versus pursuit `0.714`. Changing only pursuit weight to `3` makes pursuit score `1.071` and it wins. Resetting weights and changing only pursuit cost to `2s` makes pursuit score `1.667` and it wins. These values exist only in the detached validation fixture; they are not gameplay balance defaults. The curve and reference time remain authorable policy data.
 
 ## 8. Prediction, execution, and satisfaction
 
 - A selected plan contains **predicted** Effects only. Selection neither starts an Action nor writes those Effects to Knowledge State.
-- The existing Action execution snapshot remains the source of **observed** outcome and movement result. A later #91 executor may explicitly consume the selected plan; that integration is not part of #64.
-- Satisfaction is evaluated only after an Action reports `Success` and a post-execution observation confirms the configured Desire predicate. For the initial movement Desires, the observed physical arrival at the selected known target is checked from the real navigation snapshot. `Success` by itself never increments satisfaction.
-- A `PEGANpcDesireState` update records the configured gain and completed execution count for that Desire only. Interrupted, Invalid, Cancelled, abandoned, or successful-but-unsatisfying Actions add nothing.
+- The existing Action execution snapshot remains the source of observed movement outcome. Its current `EffectObserved` property is equivalent to `Outcome == Success`; it must not be treated alone as proof that a Desire predicate became true. A later #91 executor may explicitly consume the selected plan; that integration is not part of #64.
+- After any Action completes, evaluate its observed post-execution state against the satisfaction predicates of **all Desire definitions exposed by the active context**, not only the Desire that selected the plan. A completed Action may satisfy multiple Desires; increment each individual ledger whose predicate is actually true. For movement, require a successful execution snapshot with a resolved target and measured physical distance within the declared arrival radius, then match the observed Action effect/Target to each predicate. `Success` alone never increments satisfaction.
+- A `PEGANpcDesireState` update records each matching Desire's configured gain and completed-execution count independently. Interrupted, Invalid, Cancelled, abandoned, or successful-but-unsatisfying Actions add nothing. Plan origin and current selection do not filter satisfaction checks.
 - An explicit selector call after a Knowledge State change can produce a new plan and Target. No callback, polling loop, or event-driven re-planning is introduced; the event-driven behavior stays with the later re-planning work.
 
 ## 9. Manual validation approach
 
-Use the existing PEGA Mission and its two thief NPCs; do not create a separate scene or auto-edit prefab composition. A temporary, manually attached validation probe in the same PEGA scene can invoke evaluation and controlled Action starts, then report a consolidated `PASS`/`FAIL` summary through the canonical logger. It must not generate synthetic Rick or exit evidence. E01 is known only if actual configured Spawn Point use provides the fact described in section 5; Rick facts come from #69 perception.
+Use the existing PEGA Mission; do not create a separate scene. A temporary Editor setup utility prepared the demo-only Desire profile, ensured the definitive `PEGANpcDesireState` component on the NPC prefab, and attached/wired the probe to the existing Mission Actors. The probe reported separate summaries for `IsolatedFixture` and `LiveKnowledge` through the canonical logger. Isolated facts, targets, and costs were passed to the selector as detached values, never written to either NPC. Live checks used the NPC's real Knowledge State. After validation, the probe, setup utility, demo profile, and scene attachment were removed; the definitive Desire State component remains.
 
 The user runs these checks in Unity:
 
-1. With no accepted Rick identity/position and no used-entry knowledge fact, both Normal Desires report `applicable=true`, neither has a valid plan, and the selection reports `NoPlan`.
-2. After real perception establishes Rick's identity and last position, and actual Spawn Point use establishes E01 as a known exit (if that producer is accepted), the planner reports two complete candidates with distinct Targets, predicted Effects, estimated costs, and no movement side effect.
-3. Set a long pursuit route with a higher pursuit weight and a short E01 route with a lower escape weight. Confirm the configured cost policy selects according to both independent inputs; change only the weight or route opportunity and confirm the selected candidate changes deterministically.
-4. Move Rick so #69 records a newer legitimate position and request evaluation again. Confirm the new plan target comes from the updated Knowledge State; do not expect automatic re-planning.
-5. Manually execute each selected existing Action through the temporary probe. Confirm the prediction remains separate from the execution snapshot and only the Desire whose actual postcondition is observed receives satisfaction. A successful Action that satisfies the other Desire adds no satisfaction to that other Desire.
-6. Confirm evaluation of the second NPC uses its own Knowledge State and satisfaction ledger.
-7. Remove temporary validation components after review; keep permanent PEGA profiles/state components only after the user authors them in the Inspector.
+1. **Isolated no-plan:** detached demo Desires remain applicable with no matching Target/operators; report `NoPlan`, without mutating an NPC.
+2. **Isolated alternatives:** provide two detached valid plans and confirm the selector returns both candidates and one deterministic winner; log `validationMode=IsolatedFixture`.
+3. **Weight/cost:** use the numeric policy values in section 7, changing one input at a time; confirm both can independently change the selected plan and exact ties use stable IDs, not input order.
+4. **Multiple satisfaction:** use one physically completed movement Action and two demo-only Desire definitions whose satisfaction predicates both match that same observed effect and Target. Confirm both per-NPC ledgers gain their configured amounts regardless of which Desire originated the plan. Invalid, cancelled, or otherwise non-arrived execution gains nothing. The probe does not fabricate an observed result or write synthetic knowledge.
+5. **Live Knowledge State:** with the temporary demo profile on one existing NPC, let #69 produce Rick identity/last position. Confirm only the pursuit demo candidate resolves from that real fact. Confirm escape is absent because E01 is merely a scene marker and no known-exit fact exists; this is an explicit unavailable capability, not a failure of the isolated selector.
+6. **Live change and execution:** move Rick, allow #69 to record a newer position, explicitly reevaluate, then manually start the #63 Action. Confirm the predicted Target comes from Knowledge State, movement is not started by selection, and the observed completion remains separate from prediction. Do not expect automatic replanning.
+7. Confirm each NPC's live evaluation reads only its own current Knowledge State and satisfaction ledger. The current Mission can prove one live Rick candidate and a physical execution, but it cannot prove real alternative selection across escape and pursuit: E01 is not a known Target. Keep that first-card acceptance item open until legitimate live alternatives exist. Remove the temporary probe and demo configuration after review.
+
+**Unity validation reported by the user (2026-10-21):** the controlled smoke completed with **26 PASS, 0 FAIL, 0 UNAVAILABLE**, including cancellation during physical movement without satisfaction and a newer perception-derived Rick position followed by explicit plan reselection. This complements the earlier isolated selector, live planning, physical Action execution, and Desire satisfaction validations. These results validate the capabilities exercised by those checks; they do not establish live pursuit-versus-escape choice.
+
+**Still pending:** live selection between pursuing Rick and escaping to E01 after E01 is legitimately known by the NPC. The current Knowledge State has no known-exit fact or producer. Do not read the scene escape marker as knowledge, implement the missing producer in #64, or close #64 on this evidence.
 
 No Unity import, build, EditMode/PlayMode test, smoke, or batchmode command is run by Codex. Static source/diff inspection does not replace the user's Unity validation.
 
@@ -115,15 +116,17 @@ No Unity import, build, EditMode/PlayMode test, smoke, or batchmode command is r
 
 - No automatic plan execution, task loop, Update-driven decision, or autonomous behavior integration from #91.
 - No event subscription, automatic plan invalidation/reselection, loss-of-target timer, or re-planning behavior from later cards.
-- No perception, general target discovery, hidden-world scan, general gang-sharing framework, generic event bus, route-risk model, randomness, or new gameplay Action. The only possible addition is the narrow used-entry fact source described in section 5.
+- No Spawn Point system, gang-knowledge propagation, target discovery, hidden-world scan, generic event bus, route-risk model, randomness, or new gameplay Action.
+- No definitive `Approach Rick` Desire or production archetype weight configuration; the Rick Desire and choice values exist only in temporary demonstration content.
 - No complete Normal-context Desire catalogue, Item Principal in Play or Final Escape context implementation, contingency Desire, capture/combat, theft, or investigation behavior.
 - No Framework source/package changes and no reuse of Framework Actor Profiles as NPC archetypes.
-- No hand-edits to scene or prefab YAML and no automatic component attachment. User authoring and Unity validation remain manual.
+- The temporary Editor setup utility, probe, and demo profile are removed after validation; no permanent validation infrastructure remains. The definitive `PEGANpcDesireState` component stays on the NPC runtime prefab.
 
 ## 11. Risks and review decisions
 
-1. **Known E01 source:** the two-plan acceptance needs the real Spawn Point use fact, absent in the workspace. Confirm inclusion of that narrow producer in #64 or defer the escape plan until the relevant production card provides it. Do not claim scene presence or a debug injection as knowledge.
-2. **One-step repertoire:** the two current movement Actions produce only one-step plans. This is genuine goal/effect matching and plan choice across two applicable goals, but does not yet exercise a multi-Action chain or two alternative plans for one Desire. No new Action should be invented solely to make the chain longer.
-3. **Policy tuning:** the weight-cost curve and the two Desire values are provisional. The policy must remain editable and deterministic; Unity playtesting owns balancing.
-4. **NavMesh estimate:** a complete current NavMesh path and maximum speed estimate time but cannot guarantee the CharacterController will reach the target. Runtime result remains authoritative.
-5. **Immersive API maturity:** `ActorId` and `ActorProfileId` are used only in their own domains through the resolved Framework contract. No Framework change or migration is proposed.
+1. **No live exit source:** the current project has no fact making E01 a known Target. #64 supports only known Targets; real escape integration is deferred and cannot be marked accepted here.
+2. **No approved live pursuit/escape content yet:** GDD supports pursuit of a known principal-item carrier and configurable escape, but the current Knowledge State has no carrier fact and no known-exit source. Keep Rick approach and escape alternatives in detached/demo validation; do not author a production archetype choice or balance values.
+3. **One-step repertoire:** the two existing movement Actions produce one-step candidate plans. The isolated choice check does not exercise a multi-Action chain.
+4. **Policy tuning:** the weight-cost curve and demo values are provisional. The policy must remain editable and deterministic; Unity playtesting owns balancing.
+5. **NavMesh estimate:** a complete current NavMesh path and resolved speed estimate time but cannot guarantee the CharacterController will reach the target. Runtime result remains authoritative.
+6. **Immersive API maturity:** `ActorId` and `ActorProfileId` are used only in their own domains through the resolved Framework contract. No Framework change or migration is proposed.

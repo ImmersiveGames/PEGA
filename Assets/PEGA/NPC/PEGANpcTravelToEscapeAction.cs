@@ -10,6 +10,47 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachSelectedEscapeDestination;
 
+        protected override PEGANpcDesireGoalKind ActionGoalKind =>
+            PEGANpcDesireGoalKind.ReachKnownEscapeDestination;
+
+        public bool TryCreatePlanningCandidate(
+            PEGANpcPlanningTarget knownEscapeTarget,
+            PEGAActorMovementSpeedRegime speedRegime,
+            out PEGANpcPlanningActionCandidate candidate,
+            out string diagnostic)
+        {
+            candidate = default;
+            if (knownEscapeTarget.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState ||
+                knownEscapeTarget.Kind != PEGANpcPlanningTargetKind.EscapeDestination ||
+                !knownEscapeTarget.TargetId.IsValid)
+            {
+                diagnostic = "Escape planning requires a valid escape Target already resolved from this NPC's Knowledge State.";
+                return false;
+            }
+
+            if (!TryEstimateNavigationRoute(
+                    knownEscapeTarget.KnownPosition,
+                    speedRegime,
+                    out PEGANpcNavigationRouteEstimate routeEstimate,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            candidate = new PEGANpcPlanningActionCandidate(
+                PEGANpcPlanningActionId.TravelToEscapeTarget,
+                ActionEffectKind,
+                ActionGoalKind,
+                knownEscapeTarget.TargetId,
+                PEGANpcPlanningTargetKind.EscapeDestination,
+                true,
+                speedRegime,
+                routeEstimate,
+                IntrinsicDurationSeconds);
+            diagnostic = string.Empty;
+            return true;
+        }
+
         public bool TryStart(
             PEGANpcEscapeDestination selectedEscapeDestination,
             PEGAActorMovementSpeedRegime speedRegime,

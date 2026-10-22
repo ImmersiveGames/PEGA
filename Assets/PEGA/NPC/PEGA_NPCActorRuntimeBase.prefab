@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 195000001}
   - component: {fileID: 114000008}
   - component: {fileID: 114000009}
+  - component: {fileID: 1407004870509830926}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -114,7 +115,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77960452a1594177ae0a1768869b1da9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcNavMeshMovementIntentSource
   maximumPositionDivergenceMeters: 0.5
   blockedMovementTimeoutSeconds: 0.75
@@ -174,6 +175,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
+--- !u!114 &114000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
+  turnMaximumSpeedMetersPerSecond: 1
+  turnMinimumAngleDegrees: 60
+  turnRearmAngleDegrees: 20
+--- !u!114 &114000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
+  playerSessionObserver: {fileID: 0}
+  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+  perceivedAreaRadiusMeters: 6
+  visionRangeMeters: 10
+  visionFieldOfViewDegrees: 100
+  observerOriginHeightMeters: 1.55
+  occlusionLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  observationIntervalSeconds: 0.25
+  drawPerceptionGizmos: 1
+  drawGizmosWhenUnselected: 0
 --- !u!195 &195000001
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -206,7 +246,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownRickAction
   navigationSource: {fileID: 114000002}
   arrivalRadiusMeters: 1.25
@@ -223,10 +263,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d243b51d1194c8988a2d61a543a64ed, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcTravelToEscapeAction
   navigationSource: {fileID: 114000002}
   arrivalRadiusMeters: 1.25
+--- !u!114 &1407004870509830926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9d650ea3d357e14caf6c67f56f03608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcDesireState
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -257,7 +309,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1457086650696089505}
-  - {fileID: 400000003}
+  - {fileID: 1047438081}
   m_Father: {fileID: 400000000}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &700000000
@@ -323,45 +375,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1457086649997269153, guid: 840bc1943809e434db9d804152604137, type: 3}
   m_PrefabInstance: {fileID: 700000000}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &114000005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
-  turnMaximumSpeedMetersPerSecond: 1
-  turnMinimumAngleDegrees: 60
-  turnRearmAngleDegrees: 20
---- !u!114 &114000006
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
-  playerSessionObserver: {fileID: 0}
-  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
-  perceivedAreaRadiusMeters: 6
-  visionRangeMeters: 10
-  visionFieldOfViewDegrees: 100
-  observerOriginHeightMeters: 1.55
-  occlusionLayers:
-    serializedVersion: 2
-    m_Bits: 64
-  observationIntervalSeconds: 0.25
-  drawPerceptionGizmos: 1
-  drawGizmosWhenUnselected: 0
 --- !u!1001 &700000001
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -370,6 +383,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 400000001}
     m_Modifications:
+    - target: {fileID: 100000000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
+      propertyPath: m_Name
+      value: PEGA_AnimationSet_StripedRobber
+      objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -410,16 +427,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 100000000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
-      propertyPath: m_Name
-      value: PEGA_AnimationSet_StripedRobber
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
---- !u!4 &400000003 stripped
+--- !u!4 &1047438081 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
   m_PrefabInstance: {fileID: 700000001}
