@@ -43,6 +43,10 @@ namespace PEGA.NPC
 
         [System.NonSerialized]
         private IEventBinding _knowledgeChangeBinding;
+
+        [System.NonSerialized]
+        private IEventBinding _actionOutcomeBinding;
+
         [System.NonSerialized]
         private ScopedLogger _log;
 
@@ -54,6 +58,16 @@ namespace PEGA.NPC
 
         [System.NonSerialized]
         private bool _initialSelectionConsumed;
+
+        [System.NonSerialized]
+        private bool _hasActivePlan;
+
+        [System.NonSerialized]
+        private PEGANpcPlanSnapshot _activePlan;
+
+        [System.NonSerialized]
+        private long _activeActionRequestId;
+
         private void OnEnable()
         {
             EnsureLoggerInitialized();
@@ -68,6 +82,7 @@ namespace PEGA.NPC
             }
 
             _knowledgeChangeBinding ??= _knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
+            _actionOutcomeBinding ??= _approachAction.SubscribeToTerminalOutcomes(OnActionTerminalOutcome);
             _bootstrapPending = !_initialSelectionConsumed;
         }
 
@@ -89,7 +104,14 @@ namespace PEGA.NPC
             {
                 _knowledgeState.UnsubscribeFromKnowledgeChanges(_knowledgeChangeBinding);
                 _knowledgeChangeBinding = null;
-            }        }
+            }
+
+            if (_approachAction != null && _actionOutcomeBinding != null)
+            {
+                _approachAction.UnsubscribeFromTerminalOutcomes(_actionOutcomeBinding);
+                _actionOutcomeBinding = null;
+            }
+        }
 
         private void LateUpdate()
         {
@@ -255,14 +277,28 @@ namespace PEGA.NPC
                 LogFields.Field("costPreference", plan.CostPreference),
                 LogFields.Field("score", plan.Score));
 
+            _activePlan = plan;
+            _activeActionRequestId = 0;
+            _hasActivePlan = true;
             if (!_approachAction.TryStart(out string startDiagnostic))
             {
-                _log.Error(
-                    "NPC selected a valid GOAP plan, but its Action could not start.",
-                    LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("actionId", plan.ActionId),
-                    LogFields.Field("diagnostic", startDiagnostic));
+                if (_hasActivePlan)
+                {
+                    PEGANpcActionExecutionSnapshot execution = _approachAction.CurrentExecution;
+                    _log.Error(
+                        "NPC selected a valid GOAP plan, but no terminal Action result was delivered for the rejected start.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("actionOutcome", execution.Outcome),
+                        LogFields.Field("diagnostic", startDiagnostic));
+                    ClearActivePlan();
+                }
+
                 return;
+            }
+
+            if (_hasActivePlan)
+            {
+                _activeActionRequestId = _approachAction.CurrentExecution.RequestId;
             }
 
             _log.Info(
@@ -272,6 +308,173 @@ namespace PEGA.NPC
                 LogFields.Field("actionOutcome", _approachAction.Outcome),
                 LogFields.Field("targetPosition", plan.TargetPosition),
                 LogFields.Field("speedRegime", candidate.SpeedRegime));
+        }
+
+        private void OnActionTerminalOutcome(PEGANpcActionTerminalOutcomeEvent terminalEvent)
+        {
+            if (terminalEvent == null)
+            {
+                return;
+            }
+
+            PEGANpcActionExecutionSnapshot execution = terminalEvent.Execution;
+            if (!_hasActivePlan)
+            {
+                _log.Warning(
+                    "NPC received a terminal Action result without an active GOAP plan owner; no Effect or Desire satisfaction was applied.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestId", execution.RequestId),
+                    LogFields.Field("actionOutcome", execution.Outcome));
+                return;
+            }
+
+            if (_activeActionRequestId > 0 && execution.RequestId != _activeActionRequestId)
+            {
+                _log.Error(
+                    "NPC ignored a terminal Action result that does not match its active request.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("activeRequestId", _activeActionRequestId),
+                    LogFields.Field("terminalRequestId", execution.RequestId),
+                    LogFields.Field("actionOutcome", execution.Outcome));
+                return;
+            }
+
+            if (execution.Outcome != PEGANpcActionOutcome.Success &&
+                execution.Outcome != PEGANpcActionOutcome.Invalid &&
+                execution.Outcome != PEGANpcActionOutcome.Interrupted &&
+                execution.Outcome != PEGANpcActionOutcome.Cancelled)
+            {
+                _log.Warning(
+                    "NPC received a non-terminal Action snapshot for its active plan; no Effect or Desire satisfaction was applied.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestId", execution.RequestId),
+                    LogFields.Field("actionOutcome", execution.Outcome));
+                return;
+            }
+
+            PEGANpcPlanSnapshot completedPlan = _activePlan;
+            try
+            {
+                if (execution.Outcome != PEGANpcActionOutcome.Success)
+                {
+                    _log.Info(
+                        "NPC Action plan terminated without applying an Effect or Desire satisfaction.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("desireId", completedPlan.DesireId),
+                        LogFields.Field("actionId", completedPlan.ActionId),
+                        LogFields.Field("targetActorId", completedPlan.TargetId),
+                        LogFields.Field("targetPosition", completedPlan.TargetPosition),
+                        LogFields.Field("positionEvidenceTimeSeconds", completedPlan.EvidenceTimeSeconds),
+                        LogFields.Field("requestId", execution.RequestId),
+                        LogFields.Field("actionOutcome", execution.Outcome),
+                        LogFields.Field("completedAtTimeSeconds", terminalEvent.CompletedAtTimeSeconds),
+                        LogFields.Field("effectApplied", false),
+                        LogFields.Field("satisfactionUpdatedCount", 0),
+                        LogFields.Field("diagnostic", execution.Diagnostic));
+                    return;
+                }
+
+                if (!TryGetEffectMatchingActivePlan(
+                        execution,
+                        completedPlan,
+                        out PEGANpcObservedActionEffect observedEffect,
+                        out string effectDiagnostic))
+                {
+                    _log.Error(
+                        "NPC Action reported Success without an observed Effect matching the active GOAP plan; Desire satisfaction was not changed.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("desireId", completedPlan.DesireId),
+                        LogFields.Field("actionId", completedPlan.ActionId),
+                        LogFields.Field("targetActorId", completedPlan.TargetId),
+                        LogFields.Field("targetPosition", completedPlan.TargetPosition),
+                        LogFields.Field("positionEvidenceTimeSeconds", completedPlan.EvidenceTimeSeconds),
+                        LogFields.Field("requestId", execution.RequestId),
+                        LogFields.Field("actionOutcome", execution.Outcome),
+                        LogFields.Field("completedAtTimeSeconds", terminalEvent.CompletedAtTimeSeconds),
+                        LogFields.Field("terminalEffectReported", execution.EffectObserved),
+                        LogFields.Field("effectApplied", false),
+                        LogFields.Field("satisfactionUpdatedCount", 0),
+                        LogFields.Field("diagnostic", effectDiagnostic));
+                    return;
+                }
+
+                PEGANpcDesireSatisfactionUpdate satisfaction =
+                    _desireState.RecordCompletedAction(observedEffect, _normalContext);
+                _log.Info(
+                    "NPC applied a physically observed Action Effect to the matching Desire predicates.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("desireId", completedPlan.DesireId),
+                    LogFields.Field("actionId", completedPlan.ActionId),
+                    LogFields.Field("targetActorId", completedPlan.TargetId),
+                    LogFields.Field("targetPosition", completedPlan.TargetPosition),
+                    LogFields.Field("positionEvidenceTimeSeconds", completedPlan.EvidenceTimeSeconds),
+                    LogFields.Field("requestId", execution.RequestId),
+                    LogFields.Field("actionOutcome", execution.Outcome),
+                    LogFields.Field("completedAtTimeSeconds", terminalEvent.CompletedAtTimeSeconds),
+                    LogFields.Field("effect", observedEffect.Kind),
+                    LogFields.Field("goal", observedEffect.GoalKind),
+                    LogFields.Field("effectTargetPosition", observedEffect.TargetPosition),
+                    LogFields.Field("actualDistanceToTargetMeters", observedEffect.ActualDistanceToTargetMeters),
+                    LogFields.Field("effectApplied", true),
+                    LogFields.Field("satisfactionUpdatedCount", satisfaction.UpdatedCount),
+                    LogFields.Field("satisfiedDesireIds", JoinDesireIds(satisfaction)));
+            }
+            finally
+            {
+                ClearActivePlan();
+            }
+        }
+
+        private bool TryGetEffectMatchingActivePlan(
+            PEGANpcActionExecutionSnapshot execution,
+            PEGANpcPlanSnapshot plan,
+            out PEGANpcObservedActionEffect observedEffect,
+            out string diagnostic)
+        {
+            observedEffect = default;
+            if (plan.ActionId != PEGANpcPlanningActionId.ApproachKnownRick ||
+                !_approachAction.TryGetObservedEffect(out observedEffect))
+            {
+                diagnostic = "The active Approach Known Rick Action has no physically observed Effect.";
+                return false;
+            }
+
+            if (!observedEffect.IsValid ||
+                observedEffect.RequestId <= 0 ||
+                observedEffect.RequestId != execution.RequestId ||
+                observedEffect.Kind != plan.PredictedEffect ||
+                observedEffect.GoalKind != plan.PredictedGoal ||
+                (observedEffect.TargetPosition - plan.TargetPosition).sqrMagnitude > 0.000001f)
+            {
+                diagnostic = "The observed Action Effect does not match the active plan's request, predicted Effect, goal or known Target.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private void ClearActivePlan()
+        {
+            _hasActivePlan = false;
+            _activePlan = default;
+            _activeActionRequestId = 0;
+        }
+
+        private static string JoinDesireIds(PEGANpcDesireSatisfactionUpdate satisfaction)
+        {
+            if (satisfaction == null || satisfaction.UpdatedCount == 0)
+            {
+                return string.Empty;
+            }
+
+            string[] desireIds = new string[satisfaction.UpdatedCount];
+            for (int index = 0; index < satisfaction.UpdatedCount; index++)
+            {
+                desireIds[index] = satisfaction.UpdatedValues[index].DesireId;
+            }
+
+            return string.Join(",", desireIds);
         }
 
         private void EnsureLoggerInitialized()
