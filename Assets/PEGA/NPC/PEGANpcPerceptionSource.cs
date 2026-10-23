@@ -277,6 +277,27 @@ namespace PEGA.NPC
             return rickActorProfile.TryGetActorProfileId(out profileId, out diagnostic);
         }
 
+        internal bool TryBindActivityObserverBeforeActivation(
+            PlayerSessionObserver observer,
+            out string diagnostic)
+        {
+            if (observer == null)
+            {
+                diagnostic = "The current Activity Player Session observer is required before Perception activation.";
+                return false;
+            }
+
+            if (_isConfigured || isActiveAndEnabled || gameObject.activeInHierarchy)
+            {
+                diagnostic = "The Activity observer can only be bound before this Perception Source is activated.";
+                return false;
+            }
+
+            playerSessionObserver = observer;
+            diagnostic = string.Empty;
+            return true;
+        }
+
         private bool TryValidateConfiguration(out string diagnostic)
         {
             diagnostic = string.Empty;
