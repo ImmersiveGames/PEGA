@@ -123,6 +123,71 @@ namespace PEGA.NPC
             return TryGetKnownRickEvidence(out _, out position, out _, out diagnostic);
         }
 
+        internal bool IsCurrentLostContactPursuitIntent(
+            PEGANpcLastKnownRickPursuitIntent intent,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!intent.IsValid || !TryResolveRickSubject(out ActorId currentSubjectActorId, out diagnostic) ||
+                currentSubjectActorId != intent.SubjectActorId)
+            {
+                diagnostic = string.IsNullOrEmpty(diagnostic)
+                    ? "The intent does not identify this Action's current Player occurrence."
+                    : diagnostic;
+                return false;
+            }
+
+            if (rickActorProfile == null ||
+                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out diagnostic) ||
+                !rickProfileId.IsValid)
+            {
+                diagnostic = string.IsNullOrEmpty(diagnostic)
+                    ? "The Action has no valid configured Rick Actor Profile."
+                    : diagnostic;
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<ActorProfileId> identity =
+                knowledgeState.GetObservedCharacterIdentity(intent.SubjectActorId);
+            PEGANpcKnowledgeFact<bool> contact =
+                knowledgeState.GetRickVisualContact(intent.SubjectActorId);
+            PEGANpcKnowledgeFact<Vector3> lastPosition =
+                knowledgeState.GetLastObservedRickPosition(intent.SubjectActorId);
+            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
+                observedProfileId != rickProfileId ||
+                !identity.HasObservationTime ||
+                identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d ||
+                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+            {
+                diagnostic = "The current Knowledge State does not contain Perception-backed recognition of Rick.";
+                return false;
+            }
+
+            if (!contact.TryGetValue(out bool hasVisualContact) ||
+                hasVisualContact ||
+                !contact.HasObservationTime ||
+                Math.Abs(contact.ObservationTimeSeconds - intent.ContactLossObservationTimeSeconds) > 0.000001d ||
+                (contact.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+            {
+                diagnostic = "The current Knowledge State no longer matches the intent's Perception-backed visual-contact loss.";
+                return false;
+            }
+
+            if (!lastPosition.TryGetValue(out Vector3 knownPosition) ||
+                !knownPosition.Equals(intent.LastKnownPosition) ||
+                !lastPosition.HasObservationTime ||
+                Math.Abs(lastPosition.ObservationTimeSeconds - intent.LastKnownObservationTimeSeconds) > 0.000001d ||
+                lastPosition.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d ||
+                (lastPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+            {
+                diagnostic = "The intent's last position is not the current Perception-backed position preserved by this NPC.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
         {
             if (change == null ||

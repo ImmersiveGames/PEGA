@@ -22,7 +22,8 @@ namespace PEGA.NPC
     public enum PEGANpcActionEffectKind
     {
         ApproachKnownRickPosition = 10,
-        ReachSelectedEscapeDestination = 20
+        ReachSelectedEscapeDestination = 20,
+        ReachLocalObservationPosition = 30
     }
 
     public readonly struct PEGANpcActionEffectDeclaration
@@ -150,7 +151,7 @@ namespace PEGA.NPC
         public double CompletedAtTimeSeconds { get; }
     }
 
-    [DisallowMultipleComponent]
+    // Cada Action concreta impede sua própria duplicação; Actions irmãs precisam coexistir no mesmo Actor para o GOAP selecioná-las.
     [RequireComponent(typeof(PEGANpcNavMeshMovementIntentSource))]
     public abstract class PEGANpcNavigationAction : MonoBehaviour
     {

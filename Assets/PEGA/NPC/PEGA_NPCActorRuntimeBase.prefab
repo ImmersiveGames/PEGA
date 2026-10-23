@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 114000009}
   - component: {fileID: 1407004870509830926}
   - component: {fileID: 114000010}
+  - component: {fileID: 3705604825870797814}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -213,6 +214,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   observationIntervalSeconds: 0.25
+  lostContactEvadedIntervalSeconds: 5
   drawPerceptionGizmos: 1
   drawGizmosWhenUnselected: 0
 --- !u!195 &195000001
@@ -290,9 +292,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 286156af9b894e1eb6460d3fefb2ff32, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
   desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
+--- !u!114 &3705604825870797814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2b3bc9774641769b38efd77da079ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownRickPositionAction
+  navigationSource: {fileID: 114000002}
+  arrivalRadiusMeters: 1.25
+  localRadiusMeters: 3
+  maximumRouteLengthMeters: 6
+  minimumPhysicalRepositionMeters: 0.75
+  sampleSpacingMeters: 1
+  sampleDirectionsPerRing: 8
+  sampleProjectionDistanceMeters: 0.5
+  maximumVerticalDifferenceMeters: 0.35
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0

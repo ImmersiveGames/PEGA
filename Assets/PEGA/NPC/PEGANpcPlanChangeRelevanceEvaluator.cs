@@ -209,6 +209,9 @@ namespace PEGA.NPC
                 case PEGANpcPlanningActionId.TravelToEscapeTarget:
                     effectKind = PEGANpcActionEffectKind.ReachSelectedEscapeDestination;
                     return true;
+                case PEGANpcPlanningActionId.InvestigateLastKnownRickPosition:
+                    effectKind = PEGANpcActionEffectKind.ReachLocalObservationPosition;
+                    return true;
                 default:
                     effectKind = default;
                     return false;

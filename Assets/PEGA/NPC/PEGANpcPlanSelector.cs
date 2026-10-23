@@ -66,6 +66,11 @@ namespace PEGA.NPC
 
                 satisfaction.TryGet(desire.DesireId, out PEGANpcDesireSatisfactionSnapshot currentSatisfaction);
                 bool applicable = desire.IsApplicable(currentSatisfaction);
+                bool continuationOwner = input.PursuitContinuation.HasValue &&
+                    string.Equals(
+                        input.PursuitContinuation.Value.DesireId,
+                        desire.DesireId,
+                        StringComparison.Ordinal);
                 float effectiveWeight = applicable
                     ? desire.EvaluateEffectiveWeight(currentSatisfaction)
                     : 0f;
@@ -76,9 +81,7 @@ namespace PEGA.NPC
                     for (int candidateIndex = 0; candidateIndex < input.ActionCandidates.Count; candidateIndex++)
                     {
                         PEGANpcPlanningActionCandidate candidate = input.ActionCandidates[candidateIndex];
-                        if (!candidate.PreconditionsSatisfied ||
-                            candidate.PredictedGoal != desire.DesiredGoal ||
-                            candidate.RequiredTargetKind != GetRequiredTargetKind(candidate.PredictedGoal) ||
+                        if (!IsCandidateAllowed(input, desire, continuationOwner, candidate) ||
                             !input.TryGetTarget(candidate.TargetId, out PEGANpcPlanningTarget target) ||
                             target.Kind != candidate.RequiredTargetKind ||
                             !IsUsableCandidate(candidate))
@@ -105,7 +108,10 @@ namespace PEGA.NPC
                             estimatedSeconds,
                             effectiveWeight,
                             costPreference,
-                            score));
+                            score,
+                            input.PursuitContinuation.HasValue
+                                ? PEGANpcPlanPurpose.PursuitContinuationStep
+                                : PEGANpcPlanPurpose.DesireGoal));
                     }
                 }
 
@@ -124,7 +130,9 @@ namespace PEGA.NPC
                 string evaluationDiagnostic = !applicable
                     ? "Desire is not applicable in this context or reached its configured completed-execution limit."
                     : desirePlans.Count == 0
-                        ? "Desire is applicable, but no compatible Action has a known Target and complete valid route."
+                        ? input.PursuitContinuation.HasValue && !continuationOwner
+                            ? "Desire is outside the active pursuit continuation owner."
+                            : "Desire is applicable, but no compatible Action has a known Target and complete valid route."
                         : string.Empty;
                 evaluations.Add(new PEGANpcDesirePlanEvaluation(
                     desire.DesireId,
@@ -173,8 +181,47 @@ namespace PEGA.NPC
         {
             PEGANpcPlanningActionId.ApproachKnownRick => "approach-known-rick",
             PEGANpcPlanningActionId.TravelToEscapeTarget => "travel-to-escape-target",
+            PEGANpcPlanningActionId.InvestigateLastKnownRickPosition => "investigate-last-known-rick-position",
             _ => "invalid-action"
         };
+
+        private static bool IsCandidateAllowed(
+            PEGANpcPlanningInput input,
+            PEGANpcDesireDefinition desire,
+            bool continuationOwner,
+            PEGANpcPlanningActionCandidate candidate)
+        {
+            if (!candidate.PreconditionsSatisfied || candidate.PredictedGoal != desire.DesiredGoal)
+            {
+                return false;
+            }
+
+            if (!input.PursuitContinuation.HasValue)
+            {
+                return candidate.ActionId != PEGANpcPlanningActionId.InvestigateLastKnownRickPosition &&
+                       candidate.RequiredTargetKind == GetRequiredTargetKind(candidate.PredictedGoal);
+            }
+
+            if (!continuationOwner)
+            {
+                return false;
+            }
+
+            PEGANpcPursuitContinuation continuation = input.PursuitContinuation.Value;
+            return candidate.ActionId switch
+            {
+                PEGANpcPlanningActionId.ApproachKnownRick =>
+                    !continuation.LastKnownApproachAttempted &&
+                    !continuation.LastKnownPositionReached &&
+                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.CharacterPosition &&
+                    candidate.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.SubjectActorId),
+                PEGANpcPlanningActionId.InvestigateLastKnownRickPosition =>
+                    continuation.LastKnownPositionReached &&
+                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.LocalObservationPosition &&
+                    candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample,
+                _ => false
+            };
+        }
 
         private static PEGANpcPlanSelectionResult InvalidResult(
             PEGANpcPlanningValidationMode mode,
