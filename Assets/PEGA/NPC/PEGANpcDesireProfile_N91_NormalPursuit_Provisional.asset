@@ -26,3 +26,12 @@ MonoBehaviour:
       maximumSatisfaction: 1
       satisfactionWeightModifier: 0
       maximumCompletedExecutions: -1
+    - desireId: n91-normal-known-gang-escape-n05
+      displayName: Escapar por saída conhecida (N05 provisório)
+      enabledForContext: 1
+      desiredGoal: 10
+      baseWeight: 2
+      satisfactionGain: 1
+      maximumSatisfaction: 1
+      satisfactionWeightModifier: 0
+      maximumCompletedExecutions: -1
