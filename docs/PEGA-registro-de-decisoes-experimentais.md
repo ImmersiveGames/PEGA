@@ -88,6 +88,21 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Decisão atual:** não adicionar disparador artificial, não confundir com os dois NPCs estáticos e não remover o sistema por estar inativo na amostra.
 
+### PEGA-ARQ-005 — Configuração explícita de referências de Actor não escala para muitos NPCs
+
+**Classificação:** uso confirmado + hipótese arquitetural de escalabilidade.  
+**Estado:** preservar a composição atual; reavaliar após a checagem dos demais mecanismos do NPC.
+
+**Evidência observada:** o prefab `PEGA_NPCActorRuntimeBase` contém `ActorOccurrenceReferenceBinding` configurado com referência explícita a um asset de Player Slot. `PEGANpcPerceptionSource` e `PEGANpcAutonomy` dependem desse componente; a percepção o utiliza para resolver a ocorrência atual do alvo. O padrão atende ao recorte atual com Rick/P1.
+
+**Questão arquitetural:** exigir que cada NPC receba manualmente referências a slots e outros assets de contexto já conhecidos ou gerenciados pelo Framework pode gerar configuração repetitiva, risco de inconsistência e custo de manutenção desproporcional quando houver dezenas ou centenas de instâncias. Precisamos distinguir referências que fazem parte da intenção de gameplay do NPC daquelas que poderiam ser obtidas legitimamente do contexto ativo. **Ainda não está demonstrado** se o Framework oferece descoberta ou resolução contextual suficiente, nem se o binding atual exige essa configuração em todos os modos de uso.
+
+**O que investigar:** contratos efetivos de `ActorOccurrenceReferenceBinding`, seus modos de seleção e o ciclo de resolução; fontes oficiais de contexto ativo e limites de suas responsabilidades. Avaliar se a configuração explícita é uma necessidade semântica ou apenas uma escolha da demonstração, sem pressupor resolução global automática nem introduzir acoplamentos ocultos.
+
+**Gatilho para reavaliação:** após a checagem dos componentes de navegação, GOAP e percepção e, em especial, antes de escalar a autoria de NPCs.
+
+**Decisão atual:** não alterar o binding nem automatizar referências nesta etapa; manter a preocupação registrada para avaliação conjunta com PEGA-ARQ-001 e PEGA-ARQ-002.
+
 ## Pontos de limpeza ainda sujeitos a confirmação
 
 | Item | Evidência | Tratamento |
