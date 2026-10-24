@@ -120,6 +120,19 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Decisão atual:** não alterar a implementação nesta etapa; avaliar junto de PEGA-ARQ-001, 002 e 005.
 
+### PEGA-ARQ-007 — Desejos definidos em linha dentro do Desire Profile
+
+**Classificação:** uso confirmado + hipótese arquitetural de reutilização e escalabilidade de autoria.  
+**Estado:** registrar para revisão conjunta dos sistemas, sem alterar a demonstração.
+
+**Evidência observada:** `PEGANpcAutonomy` referencia um `PEGANpcDesireProfile` compartilhável como asset. Em `PEGANpcDesireProfile`, cada contexto contém um array serializado de `PEGANpcDesireDefinition` em linha. O `PEGANpcDesireState` mantém o estado individual do NPC e não é o problema observado.
+
+**Questão arquitetural:** embora o Profile inteiro seja reutilizável, as definições individuais de Desejo não são atualmente referenciadas como assets independentes. Isso pode dificultar compor perfis diferentes a partir de desejos comuns, centralizar ajustes e escalar a autoria de arquétipos e NPCs. Avaliar se os desejos devem ser recursos reutilizáveis e como isso se relaciona com a política contextual e o estado por NPC, respeitando os recursos existentes no ecossistema.
+
+**Gatilho para reavaliação:** revisão integrada dos achados de percepção, autonomia, GOAP, composição e escala de autoria, antes de consolidar os comportamentos definitivos.
+
+**Decisão atual:** não alterar `Autonomy`, `Desire Profile` ou `Desire State`; não antecipar formato de asset ou implementação. Complementa PEGA-ARQ-003, que trata do conteúdo provisório dos desejos, enquanto este achado trata de sua reutilização estrutural.
+
 ## Pontos de limpeza ainda sujeitos a confirmação
 
 | Item | Evidência | Tratamento |
