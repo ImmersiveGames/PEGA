@@ -44,7 +44,7 @@ namespace PEGA.Player
             _log = PEGALogging.CreateScopedLogger<PEGAPlayerMovementIntentSource>(
                 LogCategory,
                 gameObject.name);
-            _log.Info(
+            _log.Debug(
                 "Player movement intent source initialized.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("source", nameof(PEGAPlayerMovementIntentSource)),
@@ -165,7 +165,7 @@ namespace PEGA.Player
 
             if (gameplayAvailable != _lastGameplayAvailable && _hasObservedAvailability)
             {
-                _log.Info(
+                _log.Debug(
                     gameplayAvailable
                         ? "Player gameplay input became available through the Input Gate."
                         : "Player gameplay input became unavailable through the Input Gate.",
@@ -197,7 +197,7 @@ namespace PEGA.Player
 
                 if (!_hasObservedAvailability && gameplayAvailable)
                 {
-                    _log.Info(message, fields);
+                    _log.Debug(message, fields);
                 }
                 else
                 {

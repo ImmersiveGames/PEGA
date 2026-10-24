@@ -507,6 +507,7 @@ namespace PEGA.NPC
                 areEqual,
                 out PEGANpcKnowledgeFact<T> current);
             LogWriteResult(
+                factKind,
                 factName,
                 GetSubjectActorText(subjectActorId),
                 result,
@@ -551,6 +552,7 @@ namespace PEGA.NPC
                 observationTimeSeconds,
                 out PEGANpcKnowledgeFact<T> current);
             LogWriteResult(
+                factKind,
                 factName,
                 GetSubjectActorText(subjectActorId),
                 result,
@@ -676,6 +678,7 @@ namespace PEGA.NPC
         }
 
         private void LogWriteResult<T>(
+            PEGANpcKnowledgeFactKind factKind,
             string factName,
             string subjectActorId,
             PEGANpcKnowledgeWriteResult result,
@@ -728,8 +731,8 @@ namespace PEGA.NPC
                 return;
             }
 
-            _log.Info(
-                "NPC knowledge fact was updated.",
+            LogField[] fields =
+            {
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("fact", factName),
                 LogFields.Field("subjectActorId", subjectActorId),
@@ -739,7 +742,23 @@ namespace PEGA.NPC
                 LogFields.Field("origins", current.Origins),
                 LogFields.Field("observationTimeSeconds", evidenceTimeSeconds),
                 LogFields.Field("storedObservationTimeSeconds", current.ObservationTimeSeconds),
-                LogFields.Field("invalidationCauses", current.InvalidationCauses));
+                LogFields.Field("invalidationCauses", current.InvalidationCauses)
+            };
+
+            const string message = "NPC knowledge fact was updated.";
+            bool isRepeatedPositionEvidence =
+                factKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition &&
+                result == PEGANpcKnowledgeWriteResult.Replaced &&
+                previous.Status == PEGANpcKnowledgeStatus.Known &&
+                current.Status == PEGANpcKnowledgeStatus.Known;
+            if (isRepeatedPositionEvidence)
+            {
+                _log.Debug(message, fields);
+            }
+            else
+            {
+                _log.Debug(message, fields);
+            }
         }
 
         private SubjectKnowledge GetOrCreateSubject(ActorId subjectActorId)

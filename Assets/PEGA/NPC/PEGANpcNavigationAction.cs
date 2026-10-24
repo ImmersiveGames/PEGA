@@ -305,6 +305,8 @@ namespace PEGA.NPC
             return true;
         }
 
+        protected virtual bool IsExpectedPreconditionInvalidation() => false;
+
         protected virtual void Awake()
         {
             EnsureLoggerInitialized();
@@ -389,7 +391,7 @@ namespace PEGA.NPC
 
             Outcome = PEGANpcActionOutcome.Running;
             _diagnostic = string.Empty;
-            _log.Info(
+            _log.Debug(
                 "NPC navigation Action started.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", gameObject.name),
@@ -438,7 +440,8 @@ namespace PEGA.NPC
                     string.IsNullOrEmpty(preconditionDiagnostic)
                         ? "Action preconditions stopped being valid during execution."
                         : preconditionDiagnostic,
-                    PEGANpcNavigationOutcome.Invalid);
+                    PEGANpcNavigationOutcome.Invalid,
+                    IsExpectedPreconditionInvalidation());
                 return;
             }
 
@@ -502,7 +505,8 @@ namespace PEGA.NPC
         private void Complete(
             PEGANpcActionOutcome outcome,
             string diagnostic,
-            PEGANpcNavigationOutcome navigationOutcome)
+            PEGANpcNavigationOutcome navigationOutcome,
+            bool expectedPreconditionInvalidation = false)
         {
             _diagnostic = diagnostic ?? string.Empty;
             _completedAtTimeSeconds = Time.timeAsDouble;
@@ -513,7 +517,16 @@ namespace PEGA.NPC
 
             Outcome = outcome;
             PEGANpcActionExecutionSnapshot result = CurrentExecution;
-            _log.Info(
+            if (outcome == PEGANpcActionOutcome.Invalid && !expectedPreconditionInvalidation)
+            {
+                _log.Warning(
+                    "NPC navigation Action failed before reaching its target.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("action", GetType().Name),
+                    LogFields.Field("diagnostic", result.Diagnostic));
+            }
+
+            _log.Debug(
                 "NPC navigation Action finished.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", gameObject.name),

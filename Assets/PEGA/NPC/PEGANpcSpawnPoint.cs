@@ -208,7 +208,7 @@ namespace PEGA.NPC
             {
                 _acceptedEvidence = true;
                 EnsureLoggerInitialized();
-                _log.Info(
+                _log.Debug(
                     "NPC physically entered a Gang Spawn Point; the entry became a known potential escape.",
                     LogFields.Field("spawnPointId", stableSpawnPointId),
                     LogFields.Field("actorRoot", actorRoot.name),
@@ -221,7 +221,7 @@ namespace PEGA.NPC
             else
             {
                 EnsureLoggerInitialized();
-                _log.Info(
+                _log.Debug(
                     "NPC reused a known Gang Spawn Point; no duplicate escape Target was added.",
                     LogFields.Field("spawnPointId", stableSpawnPointId),
                     LogFields.Field("actorRoot", actorRoot.name),

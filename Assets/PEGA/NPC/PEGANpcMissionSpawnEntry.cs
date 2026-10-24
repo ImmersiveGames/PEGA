@@ -228,7 +228,7 @@ namespace PEGA.NPC
         protected override void OnActivityContentEntered(ActivityContentLifecycleContext context)
         {
             EnsureLoggerInitialized();
-            _log.Info(
+            _log.Debug(
                 "Mission Activity content entered; Spawn Point ingress is waiting for an explicit recipe request.",
                 LogFields.Field("activity", context.ActivityName),
                 LogFields.Field("automaticIngressStarted", false));
@@ -745,7 +745,7 @@ namespace PEGA.NPC
             PEGANpcMissionSpawnEntrySnapshot snapshot = BuildSnapshot();
             if (_outcome == PEGANpcMissionSpawnEntryOutcome.Entered)
             {
-                _log.Info(
+                _log.Debug(
                     "Larapio physically entered Mission through its Spawn Point; Gang knowledge was confirmed before NonPlayer publication.",
                     LogFields.Field("runId", _currentRunId),
                     LogFields.Field("actorId", _actorIdText),
@@ -760,6 +760,9 @@ namespace PEGA.NPC
                     LogFields.Field("occurrencePublished", _occurrencePublished),
                     LogFields.Field("perceptionEnabled", _perceptionEnabledAfterIngress),
                     LogFields.Field("autonomyEnabled", _autonomyEnabledAfterIngress));
+                _log.Info(
+                    "Thief entered Mission through a physical route.",
+                    LogFields.Field("actorRoot", _spawnedActor != null ? _spawnedActor.name : "Unavailable"));
             }
             else if (_outcome == PEGANpcMissionSpawnEntryOutcome.Cancelled)
             {
@@ -795,7 +798,7 @@ namespace PEGA.NPC
         private void LogState(string message)
         {
             EnsureLoggerInitialized();
-            _log.Info(
+            _log.Debug(
                 message,
                 LogFields.Field("runId", _currentRunId),
                 LogFields.Field("activityOwner", _activityOwner.IsValid ? _activityOwner.StableText : "unavailable"),
@@ -833,7 +836,7 @@ namespace PEGA.NPC
             if (_spawnedActor != null)
             {
                 EnsureLoggerInitialized();
-                _log.Info(
+                _log.Debug(
                     "Mission ingress released the runtime Actor owned by this Activity contribution.",
                     LogFields.Field("runId", _currentRunId),
                     LogFields.Field("actorId", _actorIdText),

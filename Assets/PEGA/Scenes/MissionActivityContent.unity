@@ -171,7 +171,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 2500000421}
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
@@ -271,6 +271,103 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2095411633}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2500000400
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2500000401}
+  - component: {fileID: 2095411630}
+  m_Layer: 0
+  m_Name: PEGA Mission Gang Knowledge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2500000401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000400}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2500000410
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2500000411}
+  - component: {fileID: 2500000207}
+  m_Layer: 0
+  m_Name: PEGA Mission Player Session Observation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2500000411
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000410}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2500000420
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2500000421}
+  m_Layer: 0
+  m_Name: PEGA Mission Thief Actors
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2500000421
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000420}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2500000422}
+  - {fileID: 2500000423}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1466658702
 GameObject:
@@ -373,6 +470,16 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 889876565}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &2500000422 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 889876565}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2500000423 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 2500000300}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1731424865
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -402,7 +509,6 @@ GameObject:
   - component: {fileID: 2095411633}
   - component: {fileID: 2095411632}
   - component: {fileID: 2095411631}
-  - component: {fileID: 2095411630}
   - component: {fileID: 2095411629}
   m_Layer: 0
   m_Name: PEGA Mission Spawn Point Ingress
@@ -435,7 +541,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2095411628}
+  m_GameObject: {fileID: 2500000400}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86967d8b37b54fe9bd4b9fcf682c158c, type: 3}
@@ -486,51 +592,6 @@ Transform:
   - {fileID: 1466658706}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2500000100
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2500000101}
-  - component: {fileID: 2500000102}
-  m_Layer: 0
-  m_Name: FOUND-01 Diagnostic
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2500000101
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000100}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2500000102
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c02a86b10e1448f6a23b19e3f4d5c601, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  phase: 0
 --- !u!1 &2500000200
 GameObject:
   m_ObjectHideFlags: 0
@@ -543,12 +604,8 @@ GameObject:
   - component: {fileID: 2500000202}
   - component: {fileID: 2500000204}
   - component: {fileID: 2500000205}
-  - component: {fileID: 2500000206}
-  - component: {fileID: 2500000207}
-  - component: {fileID: 2500000208}
-  - component: {fileID: 2500000209}
   m_Layer: 0
-  m_Name: PEGA Activity Player Join
+  m_Name: PEGA Mission Player Admission
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -612,26 +669,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   joinTrigger: {fileID: 2500000204}
---- !u!114 &2500000206
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5205dead8ba740f796635d3e23af661b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerActorCompositionAccess
-  scope: 20
 --- !u!114 &2500000207
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
+  m_GameObject: {fileID: 2500000410}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d40c4cca356b446bf782279981c9dc, type: 3}
@@ -659,51 +703,13 @@ MonoBehaviour:
   onActorCleared:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &2500000208
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
-  selectionMode: 10
-  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
-  actorDeclaration: {fileID: 0}
-  useSessionOwner: 0
-  routeOwner: {fileID: 0}
-  activityOwner: {fileID: 0}
---- !u!114 &2500000209
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2b260c94d3043a1a5d3f8a050d5af71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorVisualCompositionProof
-  proofTarget: 0
-  playerSlotProfile: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
-  playerCompositionAccess: {fileID: 2500000206}
-  playerSessionObserver: {fileID: 2500000207}
-  playerActorReference: {fileID: 2500000208}
-  nonPlayerPublication: {fileID: 2500000301}
-  petraPatrolVisual: {fileID: 7741318315126268722, guid: efd9df94d24465b4f98a7fe69ecb23a4, type: 3}
-  petraPatrolAlternateVisual: {fileID: 1466102690162510198, guid: 7b8ae13c32f77a144a18f229bd44d2be, type: 3}
 --- !u!1001 &2500000300
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 2500000421}
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
@@ -793,8 +799,8 @@ MonoBehaviour:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2500000101}
   - {fileID: 2500000201}
-  - {fileID: 2500000300}
-  - {fileID: 889876565}
+  - {fileID: 2500000411}
+  - {fileID: 2500000401}
+  - {fileID: 2500000421}
   - {fileID: 2095411633}

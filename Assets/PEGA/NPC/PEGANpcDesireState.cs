@@ -214,7 +214,7 @@ namespace PEGA.NPC
 
             updated.Sort((left, right) => string.CompareOrdinal(left.DesireId, right.DesireId));
             PEGANpcDesireSatisfactionUpdate result = new PEGANpcDesireSatisfactionUpdate(updated);
-            _log.Info(
+            _log.Debug(
                 "Completed NPC Action evaluated against active Desire predicates.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("context", activeContext.Context),

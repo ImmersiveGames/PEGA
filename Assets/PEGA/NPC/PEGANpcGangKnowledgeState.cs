@@ -109,7 +109,7 @@ namespace PEGA.NPC
             }
 
             EnsureLoggerInitialized();
-            _log.Info(
+            _log.Debug(
                 "NPC joined a Gang knowledge state.",
                 LogFields.Field("gangKnowledgeState", gameObject.name),
                 LogFields.Field("actorRoot", actorRoot.name),
@@ -246,7 +246,7 @@ namespace PEGA.NPC
             wasAdded = true;
 
             EnsureLoggerInitialized();
-            _log.Info(
+            _log.Debug(
                 "Gang learned a potential escape from physical Spawn Point use.",
                 LogFields.Field("gangKnowledgeState", gameObject.name),
                 LogFields.Field("spawnPointId", normalizedId),
@@ -258,6 +258,9 @@ namespace PEGA.NPC
                 LogFields.Field("knownPositionZ", knownPosition.z),
                 LogFields.Field("evidenceTimeSeconds", evidenceTimeSeconds),
                 LogFields.Field("memberRoot", memberRoot.name));
+            _log.Info(
+                "Gang learned a new escape route.",
+                LogFields.Field("actorRoot", memberRoot.name));
 
             PublishChange(new PEGANpcGangKnowledgeFactChangedEvent(
                 normalizedId,

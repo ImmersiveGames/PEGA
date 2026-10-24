@@ -257,7 +257,7 @@ namespace PEGA.NPC
             _agent.updateRotation = false;
             _agent.isStopped = true;
 
-            _log.Info(
+            _log.Debug(
                 "NPC NavMesh route provider configured for externally executed movement.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("agentTypeId", _agent.agentTypeID),
@@ -372,7 +372,7 @@ namespace PEGA.NPC
             }
 
             requestId = _currentRequestId;
-            _log.Info(
+            _log.Debug(
                 "NPC navigation request started.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("requestId", requestId),
@@ -416,7 +416,7 @@ namespace PEGA.NPC
             if (waitingForInitialPathResolution && !_reportedInitialPathResolutionWait)
             {
                 _reportedInitialPathResolutionWait = true;
-                _log.Info(
+                _log.Debug(
                     "NPC navigation request is waiting for Unity to initialize or resolve its new NavMesh path.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("requestId", requestId),
@@ -445,7 +445,7 @@ namespace PEGA.NPC
             {
                 _routeLengthMeters = CalculatePathLength(_agent.path.corners);
                 _hasCachedRouteLength = true;
-                _log.Info(
+                _log.Debug(
                     "NPC NavMesh path became available.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("requestId", requestId),
@@ -725,7 +725,7 @@ namespace PEGA.NPC
             float residualDivergenceMeters,
             string stage)
         {
-            _log.Info(
+            _log.Debug(
                 "NPC NavMesh simulation position was reconciled to the physical Actor position.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("requestId", _currentRequestId),

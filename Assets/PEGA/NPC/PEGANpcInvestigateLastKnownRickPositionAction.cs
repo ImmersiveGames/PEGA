@@ -333,6 +333,16 @@ namespace PEGA.NPC
             return true;
         }
 
+        protected override bool IsExpectedPreconditionInvalidation() =>
+            _hasExecutionContinuation &&
+            _executionContinuation.IsValid &&
+            _executionContinuation.LastKnownPositionReached &&
+            _knowledgeState != null && _knowledgeState.gameObject == gameObject &&
+            _approachAction != null && _approachAction.gameObject == gameObject &&
+            IsCurrentExecutionTargetWithinOpportunity(_executionTargetId, _executionContinuation) &&
+            _approachAction.IsLostContactIntentSupersededByNewRecognition(
+                _executionContinuation.ToIntent());
+
         private bool TryValidateContinuation(
             PEGANpcPursuitContinuation continuation,
             out string diagnostic)

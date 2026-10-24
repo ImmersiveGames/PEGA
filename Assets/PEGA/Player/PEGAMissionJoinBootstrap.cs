@@ -1,6 +1,9 @@
 using System.Collections;
 using Immersive.Framework.ActivityFlow;
 using Immersive.Framework.PlayerParticipation;
+using Immersive.Logging.Loggers;
+using Immersive.Logging.Records;
+using PEGA.Diagnostics;
 using UnityEngine;
 
 namespace PEGA.Player
@@ -8,6 +11,7 @@ namespace PEGA.Player
     [DisallowMultipleComponent]
     public sealed class PEGAMissionJoinBootstrap : ActivityContentBehaviour
     {
+        private const string LogCategory = "PEGA.Gameplay.PlayerJoin";
         private const string RequestSource = "PEGAMissionJoinBootstrap";
         private const string RequestReason = "pega.mission.initial-player-join";
 
@@ -16,6 +20,8 @@ namespace PEGA.Player
 
         private Coroutine _pendingRequest;
         private bool _requestClaimedForEntry;
+
+        private ScopedLogger _log;
 
         protected override void OnActivityContentEntered(ActivityContentLifecycleContext context)
         {
@@ -53,7 +59,11 @@ namespace PEGA.Player
 
             if (joinTrigger == null)
             {
-                Debug.LogError("PEGA E04 cannot request the initial Player Join: PlayerSessionJoinTrigger is missing.", this);
+                EnsureLoggerInitialized();
+                _log.Error(
+                    "PEGA E04 cannot request the initial Player Join: PlayerSessionJoinTrigger is missing.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestReason", RequestReason));
                 yield break;
             }
 
@@ -61,24 +71,39 @@ namespace PEGA.Player
             LocalPlayerJoinOutcome outcome = joinTrigger.RequestJoin(request);
             if (outcome == null)
             {
-                Debug.LogError("PEGA E04 Player Join returned no LocalPlayerJoinOutcome.", this);
+                EnsureLoggerInitialized();
+                _log.Error(
+                    "PEGA E04 Player Join returned no LocalPlayerJoinOutcome.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestReason", RequestReason));
                 yield break;
             }
 
             bool admitted = outcome.Code == LocalPlayerJoinOutcomeCode.Joined &&
                             outcome.AdmissionState == LocalPlayerJoinAdmissionState.Admitted;
-            string disposition = admitted ? "JOIN_ADMITTED" : "JOIN_NOT_ADMITTED";
-            string message =
-                $"PEGA E04 Mission Join: result='{disposition}' code='{outcome.Code}' admissionState='{outcome.AdmissionState}'.";
+            EnsureLoggerInitialized();
 
             if (admitted)
             {
-                Debug.Log(message, this);
+                _log.Debug(
+                    "PEGA E04 Mission Join was admitted.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("code", outcome.Code),
+                    LogFields.Field("admissionState", outcome.AdmissionState));
             }
             else
             {
-                Debug.LogWarning(message, this);
+                _log.Warning(
+                    "PEGA E04 Mission Join was not admitted.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("code", outcome.Code),
+                    LogFields.Field("admissionState", outcome.AdmissionState));
             }
+        }
+
+        private void EnsureLoggerInitialized()
+        {
+            _log ??= PEGALogging.CreateScopedLogger<PEGAMissionJoinBootstrap>(LogCategory, gameObject.name);
         }
     }
 }

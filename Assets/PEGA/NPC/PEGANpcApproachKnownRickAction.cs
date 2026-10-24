@@ -156,10 +156,15 @@ namespace PEGA.NPC
             if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
                 observedProfileId != rickProfileId ||
                 !identity.HasObservationTime ||
-                identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d ||
                 (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
             {
                 diagnostic = "The current Knowledge State does not contain Perception-backed recognition of Rick.";
+                return false;
+            }
+
+            if (identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d)
+            {
+                diagnostic = "Newer Perception recognized Rick after the lost-contact event; its continuation is superseded.";
                 return false;
             }
 
@@ -186,6 +191,28 @@ namespace PEGA.NPC
 
             diagnostic = string.Empty;
             return true;
+        }
+
+        internal bool IsLostContactIntentSupersededByNewRecognition(
+            PEGANpcLastKnownRickPursuitIntent intent)
+        {
+            if (!intent.IsValid ||
+                !TryResolveRickSubject(out ActorId currentSubjectActorId, out _) ||
+                currentSubjectActorId != intent.SubjectActorId ||
+                rickActorProfile == null ||
+                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out _) ||
+                !rickProfileId.IsValid)
+            {
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<ActorProfileId> identity =
+                knowledgeState.GetObservedCharacterIdentity(intent.SubjectActorId);
+            return identity.TryGetValue(out ActorProfileId observedProfileId) &&
+                observedProfileId == rickProfileId &&
+                identity.HasObservationTime &&
+                identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d &&
+                (identity.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
         }
 
         private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
@@ -225,7 +252,7 @@ namespace PEGA.NPC
                 new PEGANpcLastKnownRickPursuitIntentRequestedEvent(intent));
 
             EnsureIntentLoggerInitialized();
-            _intentLog.Info(
+            _intentLog.Debug(
                 "NPC requested continuation of Rick pursuit at the last Perception-backed position.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("subjectActorId", intent.SubjectActorId),

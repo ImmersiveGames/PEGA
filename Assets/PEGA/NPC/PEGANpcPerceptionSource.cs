@@ -682,7 +682,7 @@ namespace PEGA.NPC
             try
             {
                 int deliveredCount = _planReevaluationEvents.Publish(request);
-                _log.Info(
+                _log.Debug(
                     "NPC plan re-evaluation requested after consolidated real Rick reacquisition.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
@@ -735,7 +735,7 @@ namespace PEGA.NPC
             _lostContactObservationTimeSeconds = lossObservationTimeSeconds;
             StartLostContactReevaluationRoutine(lostContactEvadedIntervalSeconds);
 
-            _log.Info(
+            _log.Debug(
                 "Configured Rick reacquisition window started after real visual contact loss.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("targetActorId", subjectActorId.StableText),
@@ -762,7 +762,7 @@ namespace PEGA.NPC
 
             if (cancelledPendingRequest)
             {
-                _log.Info(
+                _log.Debug(
                     "Pending Rick evasion reevaluation was cancelled by real visual reacquisition.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
@@ -896,7 +896,7 @@ namespace PEGA.NPC
             try
             {
                 int deliveredCount = _planReevaluationEvents.Publish(request);
-                _log.Info(
+                _log.Debug(
                     "NPC normal Desire set reevaluation requested after Rick remained outside real visual contact for the configured interval.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
@@ -986,7 +986,7 @@ namespace PEGA.NPC
             if (isAreaPresencePerceived && (!hadAreaPresence || !previousAreaPresence) ||
                 !isAreaPresencePerceived && hadAreaPresence && previousAreaPresence)
             {
-                _log.Info(
+                _log.Debug(
                     "NPC radial area perception state changed.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", occurrence.ActorId.StableText),
@@ -1000,7 +1000,7 @@ namespace PEGA.NPC
             if (hasVisualContact && (!hadContact || !previousVisualContact) ||
                 !hasVisualContact && hadContact && previousVisualContact)
             {
-                _log.Info(
+                _log.Debug(
                     "NPC visual contact state changed.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", occurrence.ActorId.StableText),
@@ -1008,6 +1008,11 @@ namespace PEGA.NPC
                     LogFields.Field("occluded", occluded),
                     LogFields.Field("planarDistanceMeters", planarDistance),
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds));
+                _log.Info(
+                    hasVisualContact
+                        ? "NPC acquired visual contact with Rick."
+                        : "NPC lost visual contact with Rick.",
+                    LogFields.Field("actorRoot", gameObject.name));
             }
         }
 

@@ -237,7 +237,7 @@ namespace PEGA.Actors
                 return;
             }
 
-            _log.Info(
+            _log.Debug(
                 "Shared movement executor configured.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("mechanic", nameof(PEGAActorMovementMechanic)),
@@ -525,7 +525,7 @@ namespace PEGA.Actors
                 _lastLoggedMagnitude = intent.Magnitude;
                 if (isMoving)
                 {
-                    _log.Info(
+                    _log.Debug(
                         "Shared movement executor applied movement intent.",
                         LogFields.Field("actorRoot", gameObject.name),
                         LogFields.Field("mechanic", nameof(PEGAActorMovementMechanic)),
@@ -547,7 +547,7 @@ namespace PEGA.Actors
                 _lastLoggedMagnitude = intent.Magnitude;
                 if (isMoving)
                 {
-                    _log.Info(
+                    _log.Debug(
                         "Shared movement executor resumed receiving movement intent.",
                         LogFields.Field("actorRoot", gameObject.name),
                         LogFields.Field("mechanic", nameof(PEGAActorMovementMechanic)),
@@ -560,7 +560,7 @@ namespace PEGA.Actors
                 }
                 else
                 {
-                    _log.Info(
+                    _log.Debug(
                         "Shared movement executor stopped receiving movement intent.",
                         LogFields.Field("actorRoot", gameObject.name),
                         LogFields.Field("mechanic", nameof(PEGAActorMovementMechanic)),
@@ -609,7 +609,7 @@ namespace PEGA.Actors
                 _lastObservedPhysicalMotion = isMoving;
             }
 
-            _log.Info(
+            _log.Debug(
                 isMoving
                     ? "Actor movement began under the shared executor."
                     : "Actor reached rest under the shared executor.",
