@@ -103,6 +103,21 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Decisão atual:** não alterar o binding nem automatizar referências nesta etapa; manter a preocupação registrada para avaliação conjunta com PEGA-ARQ-001 e PEGA-ARQ-002.
 
+### PEGA-ARQ-006 — Perception Source especializado em Rick em vez de percepção geral
+
+**Classificação:** uso confirmado + hipótese arquitetural de generalização e escalabilidade.  
+**Estado:** manter funcional na demonstração; reavaliar após a checagem dos componentes do NPC.
+
+**Evidência observada:** `PEGANpcPerceptionSource` expõe `Rick Actor Profile` e `Player Session Observer`, além de parâmetros sensoriais genéricos (área percebida, cone de visão, oclusão, intervalo de observação). A captura do Inspector mostra o Observer vazio na instância inspecionada; isso, por si só, não comprova falha em runtime, pois pode haver vinculação antes da ativação. O código atual valida um perfil de Rick e a resolução do alvo associado ao Player Slot antes de avaliar a percepção física.
+
+**Questão arquitetural:** um sensor de NPC não deveria depender permanentemente de um Actor específico ou da Player Session para descobrir potenciais alvos; precisa ser avaliado como tratar vários Actors, Actors ausentes e personagens que não são Players. A obrigatoriedade ou injeção manual de referências por instância pode não escalar. Separar capacidades sensoriais reutilizáveis de seleção/identificação do alvo e das reações à perda de contato, sem antecipar desenho técnico.
+
+**Aspectos potencialmente reutilizáveis:** raio percebido, alcance/ângulo de visão, altura da origem, máscara de oclusão, frequência de amostragem e visualização dos sensores. O intervalo de evasão após perda de contato parece associado à decisão comportamental e deve ter sua responsabilidade reavaliada.
+
+**Gatilho para reavaliação:** após a checagem de navegação, GOAP e percepção, antes de consolidar percepção de produção ou autoria de muitos NPCs.
+
+**Decisão atual:** não alterar a implementação nesta etapa; avaliar junto de PEGA-ARQ-001, 002 e 005.
+
 ## Pontos de limpeza ainda sujeitos a confirmação
 
 | Item | Evidência | Tratamento |
