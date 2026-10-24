@@ -133,6 +133,19 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Decisão atual:** não alterar `Autonomy`, `Desire Profile` ou `Desire State`; não antecipar formato de asset ou implementação. Complementa PEGA-ARQ-003, que trata do conteúdo provisório dos desejos, enquanto este achado trata de sua reutilização estrutural.
 
+### PEGA-ARQ-008 — Actions de navegação especializadas na perseguição de Rick
+
+**Classificação:** uso confirmado no código + hipótese arquitetural de reutilização, acoplamento e escala de autoria.  
+**Estado:** preservar a demonstração; revisar em conjunto com os demais achados, sem alterações de implementação.
+
+**Evidência observada:** `PEGANpcApproachKnownRickAction` é uma Action derivada de `PEGANpcNavigationAction` e expõe referências explícitas ao `PEGANpcKnowledgeState`, ao `ActorOccurrenceReferenceBinding` de Rick e ao `ActorProfile` de Rick. `PEGANpcInvestigateLastKnownRickPositionAction` também deriva da base de navegação, mas exige a presença de `PEGANpcApproachKnownRickAction`, além de `PEGANpcKnowledgeState` e `NavMeshAgent`; contém parâmetros próprios de amostragem e limites de investigação local. A captura do Inspector mostra referências de navegação e configurações de chegada nas duas Actions.
+
+**Questão arquitetural:** aproximar-se de um alvo conhecido e investigar uma última posição são capacidades potencialmente reutilizáveis, mas as implementações atuais se vinculam explicitamente a Rick e à continuação de sua perseguição. Avaliar se há especialização excessiva, dependências entre Actions e repetição de referências ou parâmetros já disponíveis em outros componentes. A existência de uma base compartilhada de navegação não comprova, por si só, que todas essas responsabilidades estejam duplicadas. Investigar os contratos e capacidades já existentes no PEGA e no Framework antes de decidir a estrutura definitiva.
+
+**Gatilho para reavaliação:** avaliação conjunta dos achados de percepção, referências, Knowledge State, GOAP, Actions e navegação, considerando múltiplos alvos, Actors e arquétipos.
+
+**Decisão atual:** nenhuma refatoração isolada ou exigência de implementação genérica nesta etapa; registrar as especializações da demonstração e preservar comportamentos enquanto se determina quais capacidades devem ser reaproveitáveis.
+
 ## Pontos de limpeza ainda sujeitos a confirmação
 
 | Item | Evidência | Tratamento |
