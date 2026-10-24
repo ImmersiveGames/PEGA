@@ -112,6 +112,8 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Questão arquitetural:** um sensor de NPC não deveria depender permanentemente de um Actor específico ou da Player Session para descobrir potenciais alvos; precisa ser avaliado como tratar vários Actors, Actors ausentes e personagens que não são Players. A obrigatoriedade ou injeção manual de referências por instância pode não escalar. Separar capacidades sensoriais reutilizáveis de seleção/identificação do alvo e das reações à perda de contato, sem antecipar desenho técnico.
 
+**Sobreposição de referências a investigar:** o NPC já dispõe de `ActorOccurrenceReferenceBinding` para resolver a ocorrência do alvo, mas a Perception Source mantém referências adicionais ao perfil específico de Rick e ao `PlayerSessionObserver`. Essas referências têm propósitos distintos na implementação atual, portanto a duplicação de responsabilidade **não está comprovada**. Verificar se a seleção de alvo, identificação e obtenção de contexto estão sendo acopladas desnecessariamente à percepção, ou se algum contrato do Framework já supre parte dessas necessidades.
+
 **Aspectos potencialmente reutilizáveis:** raio percebido, alcance/ângulo de visão, altura da origem, máscara de oclusão, frequência de amostragem e visualização dos sensores. O intervalo de evasão após perda de contato parece associado à decisão comportamental e deve ter sua responsabilidade reavaliada.
 
 **Gatilho para reavaliação:** após a checagem de navegação, GOAP e percepção, antes de consolidar percepção de produção ou autoria de muitos NPCs.

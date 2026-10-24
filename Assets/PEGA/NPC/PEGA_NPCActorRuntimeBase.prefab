@@ -9,21 +9,21 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 400000000}
-  - component: {fileID: 114000000}
   - component: {fileID: 143000000}
-  - component: {fileID: 114000001}
-  - component: {fileID: 114000002}
-  - component: {fileID: 114000003}
-  - component: {fileID: 114000004}
-  - component: {fileID: 2765785676748957259}
-  - component: {fileID: 114000005}
-  - component: {fileID: 114000006}
   - component: {fileID: 195000001}
-  - component: {fileID: 114000008}
-  - component: {fileID: 114000009}
+  - component: {fileID: 114000000}
+  - component: {fileID: 114000001}
+  - component: {fileID: 114000004}
+  - component: {fileID: 114000006}
   - component: {fileID: 1407004870509830926}
   - component: {fileID: 114000010}
+  - component: {fileID: 114000008}
   - component: {fileID: 3705604825870797814}
+  - component: {fileID: 114000009}
+  - component: {fileID: 114000002}
+  - component: {fileID: 114000003}
+  - component: {fileID: 114000005}
+  - component: {fileID: 2765785676748957259}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -47,23 +47,6 @@ Transform:
   - {fileID: 400000001}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114000000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 948998c06f7b4e4488258471eee4f6e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorDeclaration
-  actorId: pega.mission.larapio.demonstrator
-  actorKind: 20
-  actorRole: 20
-  displayName: Larapio demonstrador
-  reason: pega.mission.npc-demonstrator
 --- !u!143 &143000000
 CharacterController:
   m_ObjectHideFlags: 0
@@ -89,6 +72,45 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!195 &195000001
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 360
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &114000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 948998c06f7b4e4488258471eee4f6e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorDeclaration
+  actorId: pega.mission.larapio.demonstrator
+  actorKind: 20
+  actorRole: 20
+  displayName: Larapio demonstrador
+  reason: pega.mission.npc-demonstrator
 --- !u!114 &114000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,6 +129,122 @@ MonoBehaviour:
   useSessionOwner: 0
   routeOwner: {fileID: 0}
   activityOwner: {fileID: 0}
+--- !u!114 &114000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
+  actorDeclaration: {fileID: 114000000}
+  compositionMount: {fileID: 400000001}
+--- !u!114 &114000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
+  playerSessionObserver: {fileID: 0}
+  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+  perceivedAreaRadiusMeters: 6
+  visionRangeMeters: 10
+  visionFieldOfViewDegrees: 100
+  observerOriginHeightMeters: 1.55
+  occlusionLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  observationIntervalSeconds: 0.25
+  lostContactEvadedIntervalSeconds: 5
+  drawPerceptionGizmos: 1
+  drawGizmosWhenUnselected: 0
+--- !u!114 &1407004870509830926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9d650ea3d357e14caf6c67f56f03608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcDesireState
+--- !u!114 &114000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 286156af9b894e1eb6460d3fefb2ff32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
+  desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
+--- !u!114 &114000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownRickAction
+  navigationSource: {fileID: 114000002}
+  arrivalRadiusMeters: 1.25
+  knowledgeState: {fileID: 2765785676748957259}
+  rickReference: {fileID: 114000001}
+  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+--- !u!114 &3705604825870797814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2b3bc9774641769b38efd77da079ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownRickPositionAction
+  navigationSource: {fileID: 114000002}
+  arrivalRadiusMeters: 1.25
+  localRadiusMeters: 3
+  maximumRouteLengthMeters: 6
+  minimumPhysicalRepositionMeters: 0.75
+  sampleSpacingMeters: 1
+  sampleDirectionsPerRing: 8
+  sampleProjectionDistanceMeters: 0.5
+  maximumVerticalDifferenceMeters: 0.35
+--- !u!114 &114000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d243b51d1194c8988a2d61a543a64ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcTravelToEscapeAction
+  navigationSource: {fileID: 114000002}
+  arrivalRadiusMeters: 1.25
 --- !u!114 &114000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,32 +289,6 @@ MonoBehaviour:
   closedCurveSpeedRetention: 0.9
   reversalBrakingAcceleration: 8
   rotationSpeed: 360
---- !u!114 &114000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 497580d5233f47d08bacebd1228037aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
-  actorDeclaration: {fileID: 114000000}
-  compositionMount: {fileID: 400000001}
---- !u!114 &2765785676748957259
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
 --- !u!114 &114000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -192,7 +304,7 @@ MonoBehaviour:
   turnMaximumSpeedMetersPerSecond: 1
   turnMinimumAngleDegrees: 60
   turnRearmAngleDegrees: 20
---- !u!114 &114000006
+--- !u!114 &2765785676748957259
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -201,121 +313,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 100000000}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
+  m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
-  playerSessionObserver: {fileID: 0}
-  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
-  perceivedAreaRadiusMeters: 6
-  visionRangeMeters: 10
-  visionFieldOfViewDegrees: 100
-  observerOriginHeightMeters: 1.55
-  occlusionLayers:
-    serializedVersion: 2
-    m_Bits: 64
-  observationIntervalSeconds: 0.25
-  lostContactEvadedIntervalSeconds: 5
-  drawPerceptionGizmos: 1
-  drawGizmosWhenUnselected: 0
---- !u!195 &195000001
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 360
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
---- !u!114 &114000008
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownRickAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  knowledgeState: {fileID: 2765785676748957259}
-  rickReference: {fileID: 114000001}
-  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
---- !u!114 &114000009
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d243b51d1194c8988a2d61a543a64ed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcTravelToEscapeAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
---- !u!114 &1407004870509830926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9d650ea3d357e14caf6c67f56f03608, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcDesireState
---- !u!114 &114000010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 286156af9b894e1eb6460d3fefb2ff32, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
-  desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
---- !u!114 &3705604825870797814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d2b3bc9774641769b38efd77da079ed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownRickPositionAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  localRadiusMeters: 3
-  maximumRouteLengthMeters: 6
-  minimumPhysicalRepositionMeters: 0.75
-  sampleSpacingMeters: 1
-  sampleDirectionsPerRing: 8
-  sampleProjectionDistanceMeters: 0.5
-  maximumVerticalDifferenceMeters: 0.35
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
