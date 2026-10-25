@@ -20,15 +20,9 @@ namespace PEGA.NPC
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
     [RequireComponent(typeof(PEGANpcDesireState))]
     [RequireComponent(typeof(PEGANpcPerceptionSource))]
-    [RequireComponent(typeof(PEGANpcApproachKnownRickAction))]
-    [RequireComponent(typeof(PEGANpcInvestigateLastKnownRickPositionAction))]
-    [RequireComponent(typeof(PEGANpcTravelToEscapeAction))]
     public sealed class PEGANpcAutonomy : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
-        private const PEGAActorMovementSpeedRegime EscapeMovementSpeedRegime =
-            PEGAActorMovementSpeedRegime.Pursuit;
-
         [SerializeField]
         [Tooltip("Profile de Desejos atribuído a este NPC. O profile atual de N01 é provisório para a demonstração na Mission.")]
         private PEGANpcDesireProfile desireProfile;
@@ -46,13 +40,21 @@ namespace PEGA.NPC
         private PEGANpcDesireState _desireState;
 
         [System.NonSerialized]
-        private PEGANpcApproachKnownRickAction _approachAction;
+        private readonly List<IPEGANpcActionProvider> _actionProviders = new List<IPEGANpcActionProvider>();
 
         [System.NonSerialized]
-        private PEGANpcInvestigateLastKnownRickPositionAction _investigateAction;
+        private readonly Dictionary<PEGANpcPlanningActionId, IPEGANpcActionProvider> _actionProvidersById =
+            new Dictionary<PEGANpcPlanningActionId, IPEGANpcActionProvider>();
 
         [System.NonSerialized]
-        private PEGANpcTravelToEscapeAction _travelToEscapeAction;
+        private readonly Dictionary<IPEGANpcActionProvider, IEventBinding> _actionOutcomeBindings =
+            new Dictionary<IPEGANpcActionProvider, IEventBinding>();
+
+        [System.NonSerialized]
+        private IPEGANpcActionProvider _pursuitAction;
+
+        [System.NonSerialized]
+        private IPEGANpcLostContactPursuitProvider _lostContactPursuitProvider;
 
         [System.NonSerialized]
         private PEGANpcGangMembership _gangMembership;
@@ -73,16 +75,7 @@ namespace PEGA.NPC
         private IEventBinding _lostContactPursuitIntentBinding;
 
         [System.NonSerialized]
-        private IEventBinding _actionOutcomeBinding;
-
-        [System.NonSerialized]
-        private IEventBinding _investigateActionOutcomeBinding;
-
-        [System.NonSerialized]
         private IEventBinding _gangKnowledgeChangeBinding;
-
-        [System.NonSerialized]
-        private IEventBinding _travelActionOutcomeBinding;
 
         [System.NonSerialized]
         private ScopedLogger _log;
@@ -244,10 +237,21 @@ namespace PEGA.NPC
 
             _knowledgeChangeBinding ??= _knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
             _planReevaluationBinding ??= _perceptionSource.SubscribeToPlanReevaluationRequests(OnPlanReevaluationRequested);
-            _lostContactPursuitIntentBinding ??= _approachAction.SubscribeToLostContactPursuitIntents(OnLostContactPursuitIntentRequested);
-            _actionOutcomeBinding ??= _approachAction.SubscribeToTerminalOutcomes(OnApproachActionTerminalOutcome);
-            _investigateActionOutcomeBinding ??= _investigateAction.SubscribeToTerminalOutcomes(OnInvestigationActionTerminalOutcome);
-            _travelActionOutcomeBinding ??= _travelToEscapeAction.SubscribeToTerminalOutcomes(OnTravelActionTerminalOutcome);
+            if (_lostContactPursuitIntentBinding == null && _lostContactPursuitProvider != null)
+            {
+                _lostContactPursuitIntentBinding = _lostContactPursuitProvider
+                    .SubscribeToLostContactPursuitIntents(OnLostContactPursuitIntentRequested);
+            }
+
+            for (int index = 0; index < _actionProviders.Count; index++)
+            {
+                IPEGANpcActionProvider provider = _actionProviders[index];
+                if (!_actionOutcomeBindings.ContainsKey(provider))
+                {
+                    _actionOutcomeBindings.Add(provider, provider.SubscribeToTerminalOutcomes(
+                        terminalEvent => HandleActionTerminalOutcome(provider, terminalEvent)));
+                }
+            }
             if (_gangKnowledgeState != null)
             {
                 _gangKnowledgeChangeBinding ??= _gangKnowledgeState.SubscribeToChanges(OnGangKnowledgeChanged);
@@ -285,29 +289,17 @@ namespace PEGA.NPC
                 _planReevaluationBinding = null;
             }
 
-            if (_approachAction != null && _actionOutcomeBinding != null)
+            if (_lostContactPursuitProvider != null && _lostContactPursuitIntentBinding != null)
             {
-                _approachAction.UnsubscribeFromTerminalOutcomes(_actionOutcomeBinding);
-                _actionOutcomeBinding = null;
-            }
-
-            if (_investigateAction != null && _investigateActionOutcomeBinding != null)
-            {
-                _investigateAction.UnsubscribeFromTerminalOutcomes(_investigateActionOutcomeBinding);
-                _investigateActionOutcomeBinding = null;
-            }
-
-            if (_approachAction != null && _lostContactPursuitIntentBinding != null)
-            {
-                _approachAction.UnsubscribeFromLostContactPursuitIntents(_lostContactPursuitIntentBinding);
+                _lostContactPursuitProvider.UnsubscribeFromLostContactPursuitIntents(_lostContactPursuitIntentBinding);
                 _lostContactPursuitIntentBinding = null;
             }
 
-            if (_travelToEscapeAction != null && _travelActionOutcomeBinding != null)
+            foreach (KeyValuePair<IPEGANpcActionProvider, IEventBinding> binding in _actionOutcomeBindings)
             {
-                _travelToEscapeAction.UnsubscribeFromTerminalOutcomes(_travelActionOutcomeBinding);
-                _travelActionOutcomeBinding = null;
+                binding.Key.UnsubscribeFromTerminalOutcomes(binding.Value);
             }
+            _actionOutcomeBindings.Clear();
 
             if (_gangKnowledgeState != null && _gangKnowledgeChangeBinding != null)
             {
@@ -337,8 +329,13 @@ namespace PEGA.NPC
             _bootstrapPending = false;
             ClearQueuedEvaluation();
 
-            if (hasLostContactIntent &&
-                !_approachAction.IsCurrentLostContactPursuitIntent(lostContactIntent, out string lostIntentDiagnostic))
+            string lostIntentDiagnostic = string.Empty;
+            bool lostIntentStillCurrent = !hasLostContactIntent ||
+                (_lostContactPursuitProvider != null &&
+                 _lostContactPursuitProvider.IsCurrentLostContactPursuitIntent(
+                     lostContactIntent,
+                     out lostIntentDiagnostic));
+            if (hasLostContactIntent && !lostIntentStillCurrent)
             {
                 causes &= ~EvaluationCause.LastKnownPursuitIntent;
                 hasLostContactIntent = false;
@@ -347,18 +344,12 @@ namespace PEGA.NPC
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", lostContactIntent.SubjectActorId.StableText),
                     LogFields.Field("contactLossObservationTimeSeconds", lostContactIntent.ContactLossObservationTimeSeconds),
-                    LogFields.Field("diagnostic", lostIntentDiagnostic));
+                    LogFields.Field("diagnostic", _lostContactPursuitProvider == null
+                        ? "No local provider owns the pursuit continuation."
+                        : lostIntentDiagnostic));
             }
 
             if (!_bootstrapPending && causes == EvaluationCause.None && !_planEvaluationQueued)
-            {
-                return;
-            }
-
-            if ((causes & EvaluationCause.InitialKnowledge) != 0 &&
-                (causes & ~EvaluationCause.InitialKnowledge) == 0 &&
-                !TryGetCurrentPerceptionBackedRick(out _) &&
-                !HasCurrentGangEscapeTargets())
             {
                 return;
             }
@@ -377,17 +368,17 @@ namespace PEGA.NPC
             _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
             _perceptionSource = GetComponent<PEGANpcPerceptionSource>();
             _desireState = GetComponent<PEGANpcDesireState>();
-            _approachAction = GetComponent<PEGANpcApproachKnownRickAction>();
-            _investigateAction = GetComponent<PEGANpcInvestigateLastKnownRickPositionAction>();
-            _travelToEscapeAction = GetComponent<PEGANpcTravelToEscapeAction>();
+            if (!TryDiscoverActionProviders(out diagnostic))
+            {
+                return false;
+            }
             _gangMembership = GetComponent<PEGANpcGangMembership>();
             _gangKnowledgeState = _gangMembership != null ? _gangMembership.GangKnowledgeState : null;
 
             if (_actorReference == null || _knowledgeState == null || _perceptionSource == null ||
-                _desireState == null || _approachAction == null || _investigateAction == null ||
-                _travelToEscapeAction == null)
+                _desireState == null || _actionProviders.Count == 0)
             {
-                diagnostic = "Actor reference, Knowledge State, Perception Source, Desire State, pursuit Actions and Travel to Escape Action must exist on this NPC root.";
+                diagnostic = "Actor reference, Knowledge State, Perception Source, Desire State and at least one local Action provider must exist on this NPC root.";
                 return false;
             }
 
@@ -406,61 +397,93 @@ namespace PEGA.NPC
             return true;
         }
 
+        private bool TryDiscoverActionProviders(out string diagnostic)
+        {
+            _actionProviders.Clear();
+            _actionProvidersById.Clear();
+            _pursuitAction = null;
+            _lostContactPursuitProvider = null;
+            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+            for (int index = 0; index < components.Length; index++)
+            {
+                MonoBehaviour component = components[index];
+                if (!(component is IPEGANpcActionProvider provider))
+                {
+                    continue;
+                }
+
+                PEGANpcActionContract contract = provider.Contract;
+                if (component.gameObject != gameObject || !contract.IsValid)
+                {
+                    diagnostic = $"Local Action provider at component index {index} has an invalid root or Action contract.";
+                    return false;
+                }
+
+                if (_actionProvidersById.ContainsKey(contract.ActionId))
+                {
+                    diagnostic = $"More than one local Action provider uses stable Action ID '{contract.ActionId}'.";
+                    return false;
+                }
+
+                _actionProviders.Add(provider);
+                _actionProvidersById.Add(contract.ActionId, provider);
+                if (component is IPEGANpcLostContactPursuitProvider pursuitProvider)
+                {
+                    if (_lostContactPursuitProvider != null)
+                    {
+                        diagnostic = "Only one local Action provider may own the current lost-contact pursuit capability.";
+                        return false;
+                    }
+
+                    _lostContactPursuitProvider = pursuitProvider;
+                    _pursuitAction = provider;
+                }
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
         {
-            if (change == null ||
-                !change.HasValueOrStatusChanged ||
-                change.EvidenceOrigin != PEGANpcEvidenceOrigin.Perception ||
-                !change.SubjectActorId.HasValue ||
-                !TryGetCurrentActorId(out ActorId rickActorId) ||
-                change.SubjectActorId.Value != rickActorId)
+            if (change == null || !change.HasValueOrStatusChanged)
             {
                 return;
             }
 
-            if (!_initialSelectionConsumed)
+            bool isRelevantToAnyProvider = false;
+            for (int index = 0; index < _actionProviders.Count; index++)
             {
-                if (change.FactKind != PEGANpcKnowledgeFactKind.RickVisualContact ||
-                    change.CurrentStatus != PEGANpcKnowledgeStatus.Known)
+                if (_actionProviders[index] is IPEGANpcKnowledgeChangeRelevanceProvider relevanceProvider &&
+                    relevanceProvider.IsRelevantKnowledgeChange(change))
                 {
-                    return;
+                    isRelevantToAnyProvider = true;
+                    break;
                 }
-
-                PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetRickVisualContact(rickActorId);
-                if (contact.TryGetValue(out bool hasVisualContact) &&
-                    hasVisualContact &&
-                    contact.HasObservationTime &&
-                    Math.Abs(contact.ObservationTimeSeconds - change.ObservationTimeSeconds) <= 0.000001d &&
-                    (contact.Origins & PEGANpcEvidenceOrigin.Perception) != 0)
-                {
-                    QueueEvaluation(EvaluationCause.InitialKnowledge);
-                }
-
-                return;
             }
 
-            if (_latestSelection == null || !_latestSelection.IsValid)
+            if (!isRelevantToAnyProvider)
             {
-                return;
-            }
-
-            PEGANpcPlanChangeAssessment assessment =
-                PEGANpcPlanChangeRelevanceEvaluator.EvaluateKnowledgeChange(
-                    _latestSelection,
-                    change,
-                    rickActorId);
-            if (!assessment.RequiresReevaluation)
-            {
+                _log.Debug(
+                    "Knowledge State change did not affect any registered Action provider's planning inputs.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("subjectActorId", change.SubjectActorId.HasValue
+                        ? change.SubjectActorId.Value.StableText
+                        : string.Empty),
+                    LogFields.Field("factKind", change.FactKind),
+                    LogFields.Field("evidenceOrigin", change.EvidenceOrigin));
                 return;
             }
 
             _log.Debug(
-                "Perception-backed Knowledge State change queued event-driven GOAP reevaluation.",
+                "Knowledge State change queued provider-driven GOAP reevaluation.",
                 LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("subjectActorId", rickActorId.StableText),
+                LogFields.Field("subjectActorId", change.SubjectActorId.HasValue
+                    ? change.SubjectActorId.Value.StableText
+                    : string.Empty),
                 LogFields.Field("factKind", change.FactKind),
                 LogFields.Field("observationTimeSeconds", change.ObservationTimeSeconds),
-                LogFields.Field("relevance", assessment.Reason),
+                LogFields.Field("evidenceOrigin", change.EvidenceOrigin),
                 LogFields.Field("activeRequestId", _activeActionRequestId));
             QueueEvaluation(EvaluationCause.RelevantKnowledgeChange);
         }
@@ -471,13 +494,7 @@ namespace PEGA.NPC
                 change.EvidenceOrigin != PEGANpcGangKnowledgeEvidenceOrigin.SpawnPointPhysicalIngress ||
                 _gangKnowledgeState == null ||
                 _gangMembership == null ||
-                _gangMembership.GangKnowledgeState != _gangKnowledgeState ||
-                change.Target.Kind != PEGANpcPlanningTargetKind.EscapeDestination ||
-                change.Target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState ||
-                !IsCurrentGangEscapeTarget(
-                    change.Target.TargetId,
-                    change.Target.KnownPosition,
-                    change.Target.EvidenceTimeSeconds))
+                _gangMembership.GangKnowledgeState != _gangKnowledgeState)
             {
                 return;
             }
@@ -486,9 +503,6 @@ namespace PEGA.NPC
                 "Legitimate Gang Spawn Point knowledge queued event-driven GOAP reevaluation.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("spawnPointId", change.SpawnPointId),
-                LogFields.Field("targetId", change.Target.TargetId),
-                LogFields.Field("targetKind", change.Target.Kind),
-                LogFields.Field("targetProvenance", change.Target.Provenance),
                 LogFields.Field("evidenceOrigin", change.EvidenceOrigin),
                 LogFields.Field("evidenceTimeSeconds", change.EvidenceTimeSeconds));
             QueueEvaluation(EvaluationCause.GangKnowledgeChange);
@@ -553,7 +567,8 @@ namespace PEGA.NPC
         private void OnLostContactPursuitIntentRequested(
             PEGANpcLastKnownRickPursuitIntentRequestedEvent intentEvent)
         {
-            if (intentEvent == null || !intentEvent.Intent.IsValid)
+            if (_lostContactPursuitProvider == null || _pursuitAction == null ||
+                intentEvent == null || !intentEvent.Intent.IsValid)
             {
                 _log.Warning(
                     "NPC ignored a lost-contact pursuit intent that did not match its current legitimate Knowledge State.",
@@ -563,7 +578,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            if (!_approachAction.IsCurrentLostContactPursuitIntent(intentEvent.Intent, out string diagnostic))
+            if (!_lostContactPursuitProvider.IsCurrentLostContactPursuitIntent(intentEvent.Intent, out string diagnostic))
             {
                 _log.Warning(
                     "NPC ignored a lost-contact pursuit intent that did not match its current legitimate Knowledge State.",
@@ -601,10 +616,10 @@ namespace PEGA.NPC
             }
 
             bool approachAlreadyRunning = _hasActivePlan &&
-                _activePlan.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
-                _approachAction.Outcome == PEGANpcActionOutcome.Running;
+                _activePlan.ActionId == _pursuitAction.Contract.ActionId &&
+                _pursuitAction.Outcome == PEGANpcActionOutcome.Running;
             bool alreadyAtLastKnown = PlanarDistance(transform.position, intentEvent.Intent.LastKnownPosition) <=
-                _approachAction.DeclaredEffect.TargetRadiusMeters;
+                _pursuitAction.DeclaredEffect.TargetRadiusMeters;
             bool lastKnownPositionAlreadyReached = alreadyAtLastKnown;
             _activePursuitContinuation = new PEGANpcPursuitContinuation(
                 desireId,
@@ -649,8 +664,12 @@ namespace PEGA.NPC
         private bool TryGetPursuitDesireOwner(ActorId subjectActorId, out string desireId)
         {
             desireId = string.Empty;
+            if (_pursuitAction == null || _lostContactPursuitProvider == null)
+            {
+                return false;
+            }
             if (_hasActivePlan &&
-                _activePlan.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
+                _activePlan.ActionId == _pursuitAction.Contract.ActionId &&
                 _activePlan.TargetId == PEGANpcPlanningTargetId.ForActor(subjectActorId))
             {
                 desireId = _activePlan.DesireId;
@@ -663,7 +682,7 @@ namespace PEGA.NPC
             }
 
             PEGANpcPlanSnapshot selected = _latestSelection.SelectedPlan;
-            if (selected.ActionId != PEGANpcPlanningActionId.ApproachKnownRick ||
+            if (selected.ActionId != _pursuitAction.Contract.ActionId ||
                 selected.TargetId != PEGANpcPlanningTargetId.ForActor(subjectActorId))
             {
                 return false;
@@ -839,7 +858,8 @@ namespace PEGA.NPC
                 LogFields.Field("distanceToLastKnownMeters", _hasActivePursuitContinuation
                     ? PlanarDistance(transform.position, _activePursuitContinuation.LastKnownPosition)
                     : -1f),
-                LogFields.Field("approachRunning", _approachAction.Outcome == PEGANpcActionOutcome.Running),
+                LogFields.Field("pursuitActionRunning", _pursuitAction != null &&
+                    _pursuitAction.Outcome == PEGANpcActionOutcome.Running),
                 LogFields.Field("diagnostic", selection.Diagnostic));
 
             if (!selection.IsValid ||
@@ -864,31 +884,20 @@ namespace PEGA.NPC
                 return;
             }
 
-            bool selectedTargetIsValid = selectedPlan.ActionId switch
+            IPEGANpcActionProvider selectedProvider = GetAction(selectedPlan.ActionId);
+            string targetDiagnostic = string.Empty;
+            if (selectedProvider == null || !selectedProvider.IsCurrentPlanValid(
+                    selectedPlan,
+                    _hasActivePursuitContinuation
+                        ? _activePursuitContinuation
+                        : (PEGANpcPursuitContinuation?)null,
+                    out _,
+                    out _,
+                    out targetDiagnostic))
             {
-                PEGANpcPlanningActionId.ApproachKnownRick =>
-                    selectedPlan.TargetProvenance == PEGANpcPlanningTargetProvenance.KnowledgeState &&
-                    selectedPlan.TargetKind == PEGANpcPlanningTargetKind.CharacterPosition &&
-                    selectedPlan.TargetId == PEGANpcPlanningTargetId.ForActor(rickActorId),
-                PEGANpcPlanningActionId.TravelToEscapeTarget =>
-                    !_hasActivePursuitContinuation &&
-                    selectedPlan.Purpose == PEGANpcPlanPurpose.DesireGoal &&
-                    selectedPlan.TargetProvenance == PEGANpcPlanningTargetProvenance.KnowledgeState &&
-                    selectedPlan.TargetKind == PEGANpcPlanningTargetKind.EscapeDestination &&
-                    IsCurrentGangEscapeTarget(
-                        selectedPlan.TargetId,
-                        selectedPlan.TargetPosition,
-                        selectedPlan.EvidenceTimeSeconds),
-                PEGANpcPlanningActionId.InvestigateLastKnownRickPosition =>
-                    _hasActivePursuitContinuation &&
-                    selectedPlan.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep &&
-                    selectedPlan.TargetProvenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge &&
-                    selectedPlan.TargetKind == PEGANpcPlanningTargetKind.LocalObservationPosition,
-                _ => false
-            };
-            if (!selectedTargetIsValid)
-            {
-                HandleNoSelectedPlan(selection, causes, "The selected GOAP plan has an unsupported Action/Target contract.");
+                HandleNoSelectedPlan(selection, causes, string.IsNullOrWhiteSpace(targetDiagnostic)
+                    ? "The selected GOAP plan has no current Action provider or its target is no longer valid."
+                    : targetDiagnostic);
                 return;
             }
 
@@ -900,7 +909,9 @@ namespace PEGA.NPC
                 causes);
             if (_hasActivePlan)
             {
-                if (GetActionOutcome(_activePlan.ActionId) == PEGANpcActionOutcome.Running &&
+                bool activeActionIsRunning =
+                    GetActionOutcome(_activePlan.ActionId) == PEGANpcActionOutcome.Running;
+                if (activeActionIsRunning &&
                     AreEquivalentPlans(_activePlan, selectedPlan))
                 {
                     // O plano em execução continua vinculado ao destino físico do request original.
@@ -923,6 +934,51 @@ namespace PEGA.NPC
                         LogFields.Field("predictedEffect", selectedPlan.PredictedEffect),
                         LogFields.Field("predictedGoal", selectedPlan.PredictedGoal));
                     return;
+                }
+
+                if (activeActionIsRunning && AreSamePlanDecision(_activePlan, selectedPlan))
+                {
+                    IPEGANpcActionProvider activeProvider = GetAction(_activePlan.ActionId);
+                    long requestIdBeforeUpdate = _activeActionRequestId;
+                    string updateDiagnostic = "The Action provider does not support updating a running execution target.";
+                    if (activeProvider is IPEGANpcExecutionTargetUpdater targetUpdater &&
+                        activeProvider.CurrentExecution.RequestId == requestIdBeforeUpdate &&
+                        targetUpdater.TryUpdateExecutionTarget(
+                            _activePlan,
+                            selectedPlan,
+                            out updateDiagnostic) &&
+                        activeProvider.CurrentExecution.RequestId == requestIdBeforeUpdate)
+                    {
+                        Vector3 previousTargetPosition = _activePlan.TargetPosition;
+                        _activePlan = selectedPlan;
+                        _activePlanOpportunity = selectedOpportunity;
+                        _log.Debug(
+                            "NPC updated the target of the same running GOAP decision without replacing its execution request.",
+                            LogFields.Field("actorRoot", gameObject.name),
+                            LogFields.Field("causes", causes),
+                            LogFields.Field("requestId", requestIdBeforeUpdate),
+                            LogFields.Field("desireId", selectedPlan.DesireId),
+                            LogFields.Field("actionId", selectedPlan.ActionId),
+                            LogFields.Field("targetId", selectedPlan.TargetId),
+                            LogFields.Field("previousTargetPosition", previousTargetPosition),
+                            LogFields.Field("updatedTargetPosition", selectedPlan.TargetPosition),
+                            LogFields.Field("evidenceTimeSeconds", selectedPlan.EvidenceTimeSeconds));
+                        return;
+                    }
+
+                    string targetUpdateDiagnostic = activeProvider is IPEGANpcExecutionTargetUpdater
+                        ? (activeProvider.CurrentExecution.RequestId != requestIdBeforeUpdate
+                            ? "The active execution request changed while its target update was being applied."
+                            : updateDiagnostic)
+                        : "The Action provider does not support updating a running execution target.";
+                    _log.Debug(
+                        "NPC will replace the active request because its provider could not apply the selected target update.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("requestId", requestIdBeforeUpdate),
+                        LogFields.Field("desireId", selectedPlan.DesireId),
+                        LogFields.Field("actionId", selectedPlan.ActionId),
+                        LogFields.Field("targetId", selectedPlan.TargetId),
+                        LogFields.Field("diagnostic", targetUpdateDiagnostic));
                 }
 
                 if (GetActionOutcome(_activePlan.ActionId) == PEGANpcActionOutcome.Running &&
@@ -1037,16 +1093,9 @@ namespace PEGA.NPC
 
         private bool IsEffectAlreadySatisfiedAtCurrentPosition(PEGANpcPlanSnapshot plan)
         {
-            PEGANpcNavigationAction action = GetAction(plan.ActionId);
-            PEGANpcActionEffectDeclaration effect = action != null ? action.DeclaredEffect : default;
-            return effect.IsTargetResolved &&
-                   effect.Kind == plan.PredictedEffect &&
-                   IsFiniteNonNegative(effect.TargetRadiusMeters) &&
-                   PlanarDistance(transform.position, plan.TargetPosition) <= effect.TargetRadiusMeters;
+            IPEGANpcActionProvider action = GetAction(plan.ActionId);
+            return action != null && action.IsEffectAlreadySatisfiedAtPosition(plan, transform.position);
         }
-
-        private static bool IsFiniteNonNegative(float value) =>
-            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
 
         private bool TryBuildLiveSelection(
             out ActorId rickActorId,
@@ -1062,7 +1111,8 @@ namespace PEGA.NPC
             diagnostic = string.Empty;
             if (_hasActivePursuitContinuation)
             {
-                if (!TryGetCurrentActorId(out rickActorId))
+                if (_lostContactPursuitProvider == null || _pursuitAction == null ||
+                    !TryGetCurrentActorId(out rickActorId))
                 {
                     diagnostic = "The active pursuit continuation has no current Player Actor occurrence.";
                     return false;
@@ -1083,7 +1133,7 @@ namespace PEGA.NPC
                 }
 
                 if (_activePursuitContinuation.SubjectActorId != rickActorId ||
-                    !_approachAction.IsCurrentLostContactPursuitIntent(
+                    !_lostContactPursuitProvider.IsCurrentLostContactPursuitIntent(
                         _activePursuitContinuation.ToIntent(),
                         out diagnostic))
                 {
@@ -1095,92 +1145,121 @@ namespace PEGA.NPC
 
                 if (!_activePursuitContinuation.LastKnownPositionReached &&
                     PlanarDistance(transform.position, _activePursuitContinuation.LastKnownPosition) <=
-                    _approachAction.DeclaredEffect.TargetRadiusMeters)
+                    _pursuitAction.DeclaredEffect.TargetRadiusMeters)
                 {
                     _activePursuitContinuation = _activePursuitContinuation.WithLastKnownPositionReached();
                 }
+            }
 
-                if (TryCreateApproachContinuationCandidate(
+            bool hasVisualContact = false;
+            if (!rickActorId.IsValid && TryGetCurrentActorId(out ActorId currentActorId))
+            {
+                rickActorId = currentActorId;
+            }
+
+            if (rickActorId.IsValid && HasPerceptionBackedRickPosition(rickActorId))
+            {
+                PEGANpcKnowledgeFact<Vector3> knownPosition = _knowledgeState.GetLastObservedRickPosition(rickActorId);
+                if (knownPosition.TryGetValue(out Vector3 position) && knownPosition.HasObservationTime)
+                {
+                    targets.Add(PEGANpcPlanningTarget.FromKnownActorPosition(
                         rickActorId,
-                        continuationKnownPosition,
-                        continuationPosition.ObservationTimeSeconds,
-                        out PEGANpcPlanningTarget approachTarget,
-                        out PEGANpcPlanningActionCandidate approachCandidate,
-                        out string approachDiagnostic))
-                {
-                    targets.Add(approachTarget);
-                    actionCandidates.Add(approachCandidate);
-                }
-                else if (string.IsNullOrEmpty(approachDiagnostic))
-                {
-                    diagnostic = "No last-known approach candidate is required for this continuation phase.";
+                        position,
+                        knownPosition.ObservationTimeSeconds));
                 }
 
-                if (_activePursuitContinuation.LastKnownPositionReached)
+                PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetRickVisualContact(rickActorId);
+                hasVisualContact = contact.TryGetValue(out bool contactValue) && contactValue &&
+                    (contact.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
+            }
+
+            if (!_hasActivePursuitContinuation && _gangMembership != null &&
+                _gangMembership.TryGetKnownEscapeTargets(out IReadOnlyList<PEGANpcPlanningTarget> escapeTargets, out _))
+            {
+                for (int index = 0; index < escapeTargets.Count; index++)
                 {
-                    if (!_investigateAction.TryCreatePlanningCandidates(
-                            _activePursuitContinuation,
-                            _attemptedInvestigationTargets,
-                            out IReadOnlyList<PEGANpcPlanningTarget> localTargets,
-                            out IReadOnlyList<PEGANpcPlanningActionCandidate> localCandidates,
-                            out string localDiagnostic))
+                    PEGANpcPlanningTarget target = escapeTargets[index];
+                    if (target.IsValid && target.HasEvidenceTime &&
+                        target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState)
                     {
-                        diagnostic = localDiagnostic;
-                        return false;
-                    }
-
-                    if (localCandidates.Count == 0)
-                    {
-                        _log.Debug(
-                            "NPC has no usable local investigation route for the current lost-contact opportunity.",
-                            LogFields.Field("actorRoot", gameObject.name),
-                            LogFields.Field("distanceToLastKnownMeters",
-                                PlanarDistance(transform.position, _activePursuitContinuation.LastKnownPosition)),
-                            LogFields.Field("attemptedLocalTargetCount", _attemptedInvestigationTargets.Count),
-                            LogFields.Field("diagnostic", localDiagnostic));
-                    }
-
-                    for (int index = 0; index < localTargets.Count; index++)
-                    {
-                        targets.Add(localTargets[index]);
-                    }
-
-                    for (int index = 0; index < localCandidates.Count; index++)
-                    {
-                        actionCandidates.Add(localCandidates[index]);
+                        if (!TryAddTargetUnique(targets, target))
+                        {
+                            diagnostic = $"Gang Knowledge State returned conflicting data for Target '{target.TargetId}'.";
+                            return false;
+                        }
                     }
                 }
             }
-            else
+
+            IReadOnlyList<PEGANpcPlanningTarget> providerInputTargets =
+                Array.AsReadOnly(targets.ToArray());
+            PEGANpcPlanningTargetId[] attemptedInvestigationTargets =
+                new PEGANpcPlanningTargetId[_attemptedInvestigationTargets.Count];
+            _attemptedInvestigationTargets.CopyTo(attemptedInvestigationTargets);
+            Array.Sort(attemptedInvestigationTargets);
+            PEGANpcActionPlanningContext actionContext = new PEGANpcActionPlanningContext(
+                rickActorId,
+                hasVisualContact,
+                _hasActivePursuitContinuation
+                    ? _activePursuitContinuation
+                    : (PEGANpcPursuitContinuation?)null,
+                Array.AsReadOnly(attemptedInvestigationTargets),
+                providerInputTargets);
+            for (int providerIndex = 0; providerIndex < _actionProviders.Count; providerIndex++)
             {
-                if (TryGetCurrentActorId(out rickActorId) &&
-                    HasPerceptionBackedRickPosition(rickActorId))
+                IPEGANpcActionProvider provider = _actionProviders[providerIndex];
+                if (!provider.TryCreatePlanningCandidates(
+                        actionContext,
+                        out IReadOnlyList<PEGANpcPlanningTarget> providerTargets,
+                        out IReadOnlyList<PEGANpcPlanningActionCandidate> providerCandidates,
+                        out string providerDiagnostic))
                 {
-                    PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetRickVisualContact(rickActorId);
-                    if (contact.TryGetValue(out bool hasVisualContact) &&
-                        hasVisualContact &&
-                        (contact.Origins & PEGANpcEvidenceOrigin.Perception) != 0)
+                    if (!string.IsNullOrWhiteSpace(providerDiagnostic))
                     {
-                        if (_approachAction.TryCreatePlanningCandidate(
-                                out PEGANpcPlanningTarget target,
-                                out PEGANpcPlanningActionCandidate candidate,
-                                out string approachDiagnostic))
-                        {
-                            targets.Add(target);
-                            actionCandidates.Add(candidate);
-                        }
-                        else if (!string.IsNullOrWhiteSpace(approachDiagnostic))
-                        {
-                            _log.Debug(
-                                "NPC excluded Approach Known Rick because its real Perception-backed route candidate is unavailable.",
-                                LogFields.Field("actorRoot", gameObject.name),
-                                LogFields.Field("targetActorId", rickActorId.StableText),
-                                LogFields.Field("diagnostic", approachDiagnostic));
-                        }
+                        _log.Debug(
+                            "NPC Action provider did not offer candidates for the current planning inputs.",
+                            LogFields.Field("actorRoot", gameObject.name),
+                            LogFields.Field("actionId", provider.Contract.ActionId),
+                            LogFields.Field("diagnostic", providerDiagnostic));
+                    }
+
+                    continue;
+                }
+
+                if (providerTargets == null || providerCandidates == null)
+                {
+                    diagnostic = $"Action provider '{provider.Contract.ActionId}' returned null candidate collections.";
+                    return false;
+                }
+
+                for (int targetIndex = 0; targetIndex < providerTargets.Count; targetIndex++)
+                {
+                    if (!TryAddTargetUnique(targets, providerTargets[targetIndex]))
+                    {
+                        diagnostic = $"Action provider '{provider.Contract.ActionId}' returned conflicting data for Target '{providerTargets[targetIndex].TargetId}'.";
+                        return false;
                     }
                 }
 
-                AddKnownGangEscapeCandidates(targets, actionCandidates);
+                for (int candidateIndex = 0; candidateIndex < providerCandidates.Count; candidateIndex++)
+                {
+                    PEGANpcPlanningActionCandidate candidate = providerCandidates[candidateIndex];
+                    if (candidate.Action != provider || !provider.CanOfferCandidate(
+                            candidate,
+                            _hasActivePursuitContinuation
+                                ? _activePursuitContinuation
+                                : (PEGANpcPursuitContinuation?)null))
+                    {
+                        _log.Warning(
+                            "NPC ignored a candidate that was not offered by its registered Action provider contract.",
+                            LogFields.Field("actorRoot", gameObject.name),
+                            LogFields.Field("actionId", provider.Contract.ActionId),
+                            LogFields.Field("candidateActionId", candidate.ActionId));
+                        continue;
+                    }
+
+                    actionCandidates.Add(candidate);
+                }
             }
 
             candidates = Array.AsReadOnly(actionCandidates.ToArray());
@@ -1200,6 +1279,28 @@ namespace PEGA.NPC
             return selection.IsValid;
         }
 
+        private static bool TryAddTargetUnique(
+            List<PEGANpcPlanningTarget> targets,
+            PEGANpcPlanningTarget candidate)
+        {
+            for (int index = 0; index < targets.Count; index++)
+            {
+                if (targets[index].TargetId == candidate.TargetId)
+                {
+                    PEGANpcPlanningTarget existing = targets[index];
+                    return existing.Kind == candidate.Kind &&
+                           existing.Provenance == candidate.Provenance &&
+                           existing.KnownPosition.Equals(candidate.KnownPosition) &&
+                           existing.HasEvidenceTime == candidate.HasEvidenceTime &&
+                           (!existing.HasEvidenceTime || Math.Abs(existing.EvidenceTimeSeconds - candidate.EvidenceTimeSeconds) <= 0.000001d) &&
+                           Math.Abs(existing.MaximumRouteDistanceFromAnchorMeters - candidate.MaximumRouteDistanceFromAnchorMeters) <= 0.000001f;
+                }
+            }
+
+            targets.Add(candidate);
+            return true;
+        }
+
         private bool HasPerceptionBackedRickPosition(ActorId actorId)
         {
             PEGANpcKnowledgeFact<ActorProfileId> identity =
@@ -1211,166 +1312,6 @@ namespace PEGA.NPC
                    position.TryGetValue(out _) &&
                    position.HasObservationTime &&
                    (position.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
-        }
-
-        private void AddKnownGangEscapeCandidates(
-            List<PEGANpcPlanningTarget> targets,
-            List<PEGANpcPlanningActionCandidate> actionCandidates)
-        {
-            if (_gangMembership == null)
-            {
-                return;
-            }
-
-            if (!_gangMembership.TryGetKnownEscapeTargets(
-                    out IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
-                    out string membershipDiagnostic))
-            {
-                if (!string.IsNullOrWhiteSpace(membershipDiagnostic))
-                {
-                    _log.Debug(
-                        "NPC has no Gang knowledge membership from which an escape Target can be resolved.",
-                        LogFields.Field("actorRoot", gameObject.name),
-                        LogFields.Field("diagnostic", membershipDiagnostic));
-                }
-
-                return;
-            }
-
-            for (int index = 0; index < knownTargets.Count; index++)
-            {
-                PEGANpcPlanningTarget target = knownTargets[index];
-                if (!target.IsValid ||
-                    !target.HasEvidenceTime ||
-                    target.Kind != PEGANpcPlanningTargetKind.EscapeDestination ||
-                    target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState)
-                {
-                    _log.Warning(
-                        "NPC ignored a Gang escape Target that did not satisfy the live Knowledge State contract.",
-                        LogFields.Field("actorRoot", gameObject.name),
-                        LogFields.Field("targetId", target.TargetId),
-                        LogFields.Field("targetKind", target.Kind),
-                        LogFields.Field("targetProvenance", target.Provenance));
-                    continue;
-                }
-
-                targets.Add(target);
-                if (_travelToEscapeAction.TryCreatePlanningCandidate(
-                        target,
-                        EscapeMovementSpeedRegime,
-                        out PEGANpcPlanningActionCandidate candidate,
-                        out string routeDiagnostic))
-                {
-                    actionCandidates.Add(candidate);
-                    continue;
-                }
-
-                _log.Debug(
-                    "NPC knows a Gang escape Target, but its current NavMesh route is not a complete usable plan candidate.",
-                    LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("targetId", target.TargetId),
-                    LogFields.Field("targetPosition", target.KnownPosition),
-                    LogFields.Field("targetEvidenceTimeSeconds", target.EvidenceTimeSeconds),
-                    LogFields.Field("speedRegime", EscapeMovementSpeedRegime),
-                    LogFields.Field("diagnostic", routeDiagnostic));
-            }
-        }
-
-        private bool HasCurrentGangEscapeTargets()
-        {
-            if (_gangMembership == null ||
-                !_gangMembership.TryGetKnownEscapeTargets(
-                    out IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
-                    out _))
-            {
-                return false;
-            }
-
-            for (int index = 0; index < knownTargets.Count; index++)
-            {
-                PEGANpcPlanningTarget target = knownTargets[index];
-                if (target.IsValid &&
-                    target.Kind == PEGANpcPlanningTargetKind.EscapeDestination &&
-                    target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool IsCurrentGangEscapeTarget(
-            PEGANpcPlanningTargetId targetId,
-            Vector3 targetPosition,
-            double evidenceTimeSeconds)
-        {
-            if (_gangMembership == null ||
-                !_gangMembership.TryGetKnownEscapeTargets(
-                    out IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
-                    out _))
-            {
-                return false;
-            }
-
-            for (int index = 0; index < knownTargets.Count; index++)
-            {
-                PEGANpcPlanningTarget target = knownTargets[index];
-                if (target.TargetId == targetId &&
-                    target.IsValid &&
-                    target.HasEvidenceTime &&
-                    target.Kind == PEGANpcPlanningTargetKind.EscapeDestination &&
-                    target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState &&
-                    target.KnownPosition.Equals(targetPosition) &&
-                    Math.Abs(target.EvidenceTimeSeconds - evidenceTimeSeconds) <= 0.000001d)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool TryCreateApproachContinuationCandidate(
-            ActorId rickActorId,
-            Vector3 knownPosition,
-            double evidenceTimeSeconds,
-            out PEGANpcPlanningTarget target,
-            out PEGANpcPlanningActionCandidate candidate,
-            out string diagnostic)
-        {
-            target = default;
-            candidate = default;
-            diagnostic = string.Empty;
-            if (_activePursuitContinuation.LastKnownApproachAttempted ||
-                _activePursuitContinuation.LastKnownPositionReached ||
-                PlanarDistance(transform.position, _activePursuitContinuation.LastKnownPosition) <=
-                _approachAction.DeclaredEffect.TargetRadiusMeters)
-            {
-                return false;
-            }
-
-            if (!_approachAction.TryCreatePlanningCandidate(
-                    out target,
-                    out candidate,
-                    out diagnostic))
-            {
-                return false;
-            }
-
-            if (target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState ||
-                target.TargetId != PEGANpcPlanningTargetId.ForActor(rickActorId) ||
-                candidate.ActionId != PEGANpcPlanningActionId.ApproachKnownRick ||
-                !target.KnownPosition.Equals(_activePursuitContinuation.LastKnownPosition) ||
-                Math.Abs(target.EvidenceTimeSeconds - _activePursuitContinuation.PositionEvidenceTimeSeconds) > 0.000001d ||
-                !knownPosition.Equals(_activePursuitContinuation.LastKnownPosition) ||
-                Math.Abs(evidenceTimeSeconds - _activePursuitContinuation.PositionEvidenceTimeSeconds) > 0.000001d)
-            {
-                diagnostic = "The continuation Approach candidate is not bound to the preserved last Perception position.";
-                return false;
-            }
-
-            return true;
         }
 
         private void HandleNoSelectedPlan(
@@ -1387,7 +1328,7 @@ namespace PEGA.NPC
                     out Vector3 knownPosition,
                     out double positionEvidenceTimeSeconds))
             {
-                PEGANpcNavigationAction preservedAction = GetAction(_activePlan.ActionId);
+                IPEGANpcActionProvider preservedAction = GetAction(_activePlan.ActionId);
                 _log.Debug(
                     "NPC preserved its running Action because its current Desire, legitimate Knowledge evidence and execution remain valid despite no replacement plan being selectable.",
                     LogFields.Field("actorRoot", gameObject.name),
@@ -1437,7 +1378,7 @@ namespace PEGA.NPC
         {
             knownPosition = default;
             positionEvidenceTimeSeconds = 0d;
-            PEGANpcNavigationAction activeAction = _hasActivePlan ? GetAction(_activePlan.ActionId) : null;
+            IPEGANpcActionProvider activeAction = _hasActivePlan ? GetAction(_activePlan.ActionId) : null;
             PEGANpcActionExecutionSnapshot execution = activeAction != null
                 ? activeAction.CurrentExecution
                 : default;
@@ -1446,120 +1387,48 @@ namespace PEGA.NPC
                 activeAction == null ||
                 execution.Outcome != PEGANpcActionOutcome.Running ||
                 execution.RequestId != _activeActionRequestId ||
-                !activeEffect.IsTargetResolved ||
                 activeEffect.Kind != _activePlan.PredictedEffect ||
-                PlanarDistance(activeEffect.TargetPosition, _activePlan.TargetPosition) > 0.001f)
+                (activeEffect.IsTargetResolved &&
+                 PlanarDistance(activeEffect.TargetPosition, _activePlan.TargetPosition) > 0.001f))
+            {
+                return false;
+            }
+
+            bool isContinuationStep = _activePlan.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep;
+            if (_hasActivePursuitContinuation != isContinuationStep)
             {
                 return false;
             }
 
             if (_hasActivePursuitContinuation &&
-                _activePlan.Purpose != PEGANpcPlanPurpose.PursuitContinuationStep)
+                (_activePursuitContinuation.SubjectActorId != _activePlan.TargetId.InvestigationSubjectActorId &&
+                 _activePlan.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample))
             {
                 return false;
             }
 
-            if (!_hasActivePursuitContinuation &&
-                _activePlan.ActionId == PEGANpcPlanningActionId.TravelToEscapeTarget)
-            {
-                if (activeAction != _travelToEscapeAction ||
-                    _activePlan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
-                    _activePlan.TargetKind != PEGANpcPlanningTargetKind.EscapeDestination ||
-                    _activePlan.TargetProvenance != PEGANpcPlanningTargetProvenance.KnowledgeState ||
-                    !IsCurrentGangEscapeTarget(
-                        _activePlan.TargetId,
-                        _activePlan.TargetPosition,
-                        _activePlan.EvidenceTimeSeconds) ||
-                    !IsDesireApplicable(_activePlan.DesireId))
-                {
-                    return false;
-                }
-
-                knownPosition = _activePlan.TargetPosition;
-                positionEvidenceTimeSeconds = _activePlan.EvidenceTimeSeconds;
-                return true;
-            }
-
-            if (!TryGetCurrentActorId(out ActorId currentActorId))
+            if (_hasActivePursuitContinuation &&
+                !_lostContactPursuitProvider.IsCurrentLostContactPursuitIntent(
+                    _activePursuitContinuation.ToIntent(),
+                    out _))
             {
                 return false;
             }
 
-            if (_activePlan.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep)
-            {
-                if (!_hasActivePursuitContinuation ||
-                    _activePursuitContinuation.SubjectActorId != currentActorId ||
-                    !_approachAction.IsCurrentLostContactPursuitIntent(
-                        _activePursuitContinuation.ToIntent(),
-                        out _))
-                {
-                    return false;
-                }
-
-                if (_activePlan.ActionId == PEGANpcPlanningActionId.ApproachKnownRick)
-                {
-                    if (activeAction != _approachAction ||
-                        _activePlan.TargetId != PEGANpcPlanningTargetId.ForActor(currentActorId) ||
-                        _activePlan.TargetKind != PEGANpcPlanningTargetKind.CharacterPosition ||
-                        !_approachAction.TryGetKnownRickPosition(out Vector3 currentKnownPosition, out _) ||
-                        !IsTargetPositionWithinActionTolerance(
-                            currentKnownPosition,
-                            _activePlan.TargetPosition,
-                            _activePlan.ActionId))
-                    {
-                        return false;
-                    }
-                }
-                else if (_activePlan.ActionId == PEGANpcPlanningActionId.InvestigateLastKnownRickPosition)
-                {
-                    if (activeAction != _investigateAction ||
-                        _activePlan.TargetKind != PEGANpcPlanningTargetKind.LocalObservationPosition ||
-                        !_investigateAction.IsLocalTargetUsable(
-                            _activePlan,
-                            _activePursuitContinuation,
-                            out _,
-                            requireFurtherPhysicalMovement: false))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-
-                knownPosition = _activePursuitContinuation.LastKnownPosition;
-                positionEvidenceTimeSeconds = _activePursuitContinuation.PositionEvidenceTimeSeconds;
-                return true;
-            }
-
-            if (_activePlan.TargetId != PEGANpcPlanningTargetId.ForActor(currentActorId))
+            PEGANpcPursuitContinuation? continuation = _hasActivePursuitContinuation
+                ? _activePursuitContinuation
+                : (PEGANpcPursuitContinuation?)null;
+            if (!activeAction.IsCurrentPlanValid(
+                    _activePlan,
+                    continuation,
+                    out knownPosition,
+                    out positionEvidenceTimeSeconds,
+                    out _))
             {
                 return false;
             }
 
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
-                _knowledgeState.GetObservedCharacterIdentity(currentActorId);
-            PEGANpcKnowledgeFact<Vector3> position =
-                _knowledgeState.GetLastObservedRickPosition(currentActorId);
-            if (!identity.TryGetValue(out _) ||
-                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
-                !position.TryGetValue(out knownPosition) ||
-                !position.HasObservationTime ||
-                (position.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
-                position.ObservationTimeSeconds < _activePlan.EvidenceTimeSeconds ||
-                !_approachAction.TryGetKnownRickPosition(out _, out _) ||
-                !IsTargetPositionWithinActionTolerance(
-                    knownPosition,
-                    _activePlan.TargetPosition,
-                    _activePlan.ActionId))
-            {
-                return false;
-            }
-
-            positionEvidenceTimeSeconds = position.ObservationTimeSeconds;
-
-            return IsDesireApplicable(_activePlan.DesireId);
+            return isContinuationStep || IsDesireApplicable(_activePlan.DesireId);
         }
 
         private bool CancelActivePlanForReplacement(string diagnostic)
@@ -1569,7 +1438,7 @@ namespace PEGA.NPC
                 return true;
             }
 
-            PEGANpcNavigationAction action = GetAction(_activePlan.ActionId);
+            IPEGANpcActionProvider action = GetAction(_activePlan.ActionId);
             if (action == null || action.Outcome != PEGANpcActionOutcome.Running)
             {
                 ClearActivePlan();
@@ -1617,7 +1486,7 @@ namespace PEGA.NPC
 
             PEGANpcPlanSnapshot pausedPlan = _activePlan;
             long pausedRequestId = _activeActionRequestId;
-            PEGANpcNavigationAction action = GetAction(pausedPlan.ActionId);
+            IPEGANpcActionProvider action = GetAction(pausedPlan.ActionId);
             if (action == null || action.Outcome != PEGANpcActionOutcome.Running)
             {
                 ClearActivePlan();
@@ -1660,8 +1529,10 @@ namespace PEGA.NPC
         {
             PEGANpcPlanSnapshot plan = selection.SelectedPlan;
             _initialSelectionConsumed = true;
-            if (_hasActivePursuitContinuation &&
-                plan.ActionId == PEGANpcPlanningActionId.InvestigateLastKnownRickPosition)
+            IPEGANpcActionProvider action = candidate.Action ?? GetAction(plan.ActionId);
+            bool recordAttemptedTarget = action is IPEGANpcAttemptedTargetProvider attemptedTargetProvider &&
+                                         attemptedTargetProvider.ShouldRecordAttemptedTarget(candidate);
+            if (recordAttemptedTarget)
             {
                 _attemptedInvestigationTargets.Add(plan.TargetId);
             }
@@ -1698,35 +1569,14 @@ namespace PEGA.NPC
             _activePlanOpportunity = opportunity;
             _activeActionRequestId = 0;
             _hasActivePlan = true;
-            PEGANpcNavigationAction action = GetAction(plan.ActionId);
-            bool started;
+            PEGANpcPursuitContinuation? continuation = _hasActivePursuitContinuation
+                ? _activePursuitContinuation
+                : (PEGANpcPursuitContinuation?)null;
             string startDiagnostic = string.Empty;
-            switch (plan.ActionId)
+            bool started = action != null && action.TryStart(plan, continuation, out startDiagnostic);
+            if (action == null)
             {
-                case PEGANpcPlanningActionId.ApproachKnownRick:
-                    started = _approachAction.TryStart(out startDiagnostic);
-                    break;
-                case PEGANpcPlanningActionId.TravelToEscapeTarget:
-                    started = _travelToEscapeAction.TryStart(
-                        plan.TargetPosition,
-                        candidate.SpeedRegime,
-                        out startDiagnostic);
-                    break;
-                case PEGANpcPlanningActionId.InvestigateLastKnownRickPosition:
-                    started = _hasActivePursuitContinuation && _investigateAction.TryStart(
-                        plan,
-                        _activePursuitContinuation,
-                        out startDiagnostic);
-                    if (!_hasActivePursuitContinuation)
-                    {
-                        startDiagnostic = "Local investigation requires an active pursuit continuation.";
-                    }
-
-                    break;
-                default:
-                    started = false;
-                    startDiagnostic = "The selected GOAP Action is not supported by this autonomy component.";
-                    break;
+                startDiagnostic = "The selected Action provider is no longer attached to this Actor.";
             }
 
             if (!started)
@@ -1759,7 +1609,7 @@ namespace PEGA.NPC
             if (objectiveChanged && _hasActivePlan)
             {
                 _log.Info(
-                    DescribeBehaviorStart(plan.ActionId),
+                    action.Contract.StartMessage,
                     LogFields.Field("actorRoot", gameObject.name));
                 _hasLoggedObjective = true;
                 _lastLoggedDesireId = plan.DesireId;
@@ -1769,7 +1619,7 @@ namespace PEGA.NPC
             }
 
             _log.Debug(
-                "NPC autonomously started the selected GOAP Action through its existing physical navigation path.",
+                "NPC autonomously started the selected Action through its provider contract.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("causes", causes),
                 LogFields.Field("requestId", _activeActionRequestId),
@@ -1782,17 +1632,8 @@ namespace PEGA.NPC
                 LogFields.Field("attemptedInvestigationTargetCount", _attemptedInvestigationTargets.Count));
         }
 
-        private void OnApproachActionTerminalOutcome(PEGANpcActionTerminalOutcomeEvent terminalEvent) =>
-            HandleActionTerminalOutcome(_approachAction, terminalEvent);
-
-        private void OnInvestigationActionTerminalOutcome(PEGANpcActionTerminalOutcomeEvent terminalEvent) =>
-            HandleActionTerminalOutcome(_investigateAction, terminalEvent);
-
-        private void OnTravelActionTerminalOutcome(PEGANpcActionTerminalOutcomeEvent terminalEvent) =>
-            HandleActionTerminalOutcome(_travelToEscapeAction, terminalEvent);
-
         private void HandleActionTerminalOutcome(
-            PEGANpcNavigationAction sourceAction,
+            IPEGANpcActionProvider sourceAction,
             PEGANpcActionTerminalOutcomeEvent terminalEvent)
         {
             if (terminalEvent == null)
@@ -1806,7 +1647,7 @@ namespace PEGA.NPC
                 _log.Debug(
                     "NPC ignored a terminal result from an Action that does not own its active GOAP plan.",
                     LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("sourceAction", sourceAction != null ? sourceAction.GetType().Name : string.Empty),
+                    LogFields.Field("sourceAction", sourceAction != null ? sourceAction.Contract.ActionId : default),
                     LogFields.Field("requestId", execution.RequestId),
                     LogFields.Field("actionOutcome", execution.Outcome));
                 return;
@@ -1856,14 +1697,14 @@ namespace PEGA.NPC
 
             PEGANpcPlanSnapshot completedPlan = _activePlan;
             bool approachBelongsToLostContactOpportunity = _hasActivePursuitContinuation &&
-                completedPlan.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
+                completedPlan.ActionId == _pursuitAction.Contract.ActionId &&
                 completedPlan.TargetId ==
                 PEGANpcPlanningTargetId.ForActor(_activePursuitContinuation.SubjectActorId);
             if (approachBelongsToLostContactOpportunity)
             {
                 bool reachedLastKnownPosition =
                     PlanarDistance(transform.position, _activePursuitContinuation.LastKnownPosition) <=
-                    _approachAction.DeclaredEffect.TargetRadiusMeters;
+                    _pursuitAction.DeclaredEffect.TargetRadiusMeters;
                 if (reachedLastKnownPosition)
                 {
                     _activePursuitContinuation = _activePursuitContinuation.WithLastKnownPositionReached();
@@ -2052,7 +1893,7 @@ namespace PEGA.NPC
         private bool TryGetEffectMatchingActivePlan(
             PEGANpcActionExecutionSnapshot execution,
             PEGANpcPlanSnapshot plan,
-            PEGANpcNavigationAction action,
+            IPEGANpcActionProvider action,
             out PEGANpcObservedActionEffect observedEffect,
             out string diagnostic)
         {
@@ -2060,16 +1901,19 @@ namespace PEGA.NPC
             if (action == null || GetAction(plan.ActionId) != action ||
                 !action.TryGetObservedEffect(out observedEffect))
             {
-                diagnostic = "The active GOAP Action has no physically observed Effect.";
+                diagnostic = "The active GOAP Action provider has no observed Effect.";
                 return false;
             }
 
             if (!observedEffect.IsValid ||
+                !execution.EffectObserved ||
                 observedEffect.RequestId <= 0 ||
                 observedEffect.RequestId != execution.RequestId ||
+                execution.DeclaredEffect.Kind != plan.PredictedEffect ||
                 observedEffect.Kind != plan.PredictedEffect ||
                 observedEffect.GoalKind != plan.PredictedGoal ||
-                (observedEffect.TargetPosition - plan.TargetPosition).sqrMagnitude > 0.000001f)
+                (execution.DeclaredEffect.IsTargetResolved &&
+                 (observedEffect.TargetPosition - plan.TargetPosition).sqrMagnitude > 0.000001f))
             {
                 diagnostic = "The observed Action Effect does not match the active plan's request, predicted Effect, goal or known Target.";
                 return false;
@@ -2157,6 +2001,10 @@ namespace PEGA.NPC
         }
 
         private bool AreEquivalentPlans(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right) =>
+            AreSamePlanDecision(left, right) &&
+            IsTargetPositionWithinActionTolerance(left.TargetPosition, right.TargetPosition, left.ActionId);
+
+        private static bool AreSamePlanDecision(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right) =>
             left.ActionId == right.ActionId &&
             left.Purpose == right.Purpose &&
             left.PredictedEffect == right.PredictedEffect &&
@@ -2165,7 +2013,7 @@ namespace PEGA.NPC
             left.TargetKind == right.TargetKind &&
             left.TargetProvenance == right.TargetProvenance &&
             right.EvidenceTimeSeconds >= left.EvidenceTimeSeconds &&
-            IsTargetPositionWithinActionTolerance(left.TargetPosition, right.TargetPosition, left.ActionId) &&
+            Mathf.Abs(left.MaximumRouteDistanceFromAnchorMeters - right.MaximumRouteDistanceFromAnchorMeters) <= 0.0001f &&
             left.SpeedRegime == right.SpeedRegime &&
             string.Equals(left.DesireId, right.DesireId, StringComparison.Ordinal);
 
@@ -2173,9 +2021,9 @@ namespace PEGA.NPC
             PEGANpcPlanSnapshot current,
             PEGANpcPlanSnapshot selected) =>
             _hasActivePursuitContinuation &&
-            current.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
+            current.ActionId == _pursuitAction.Contract.ActionId &&
             current.Purpose == PEGANpcPlanPurpose.DesireGoal &&
-            selected.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
+            selected.ActionId == _pursuitAction.Contract.ActionId &&
             selected.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep &&
             current.PredictedEffect == selected.PredictedEffect &&
             current.PredictedGoal == selected.PredictedGoal &&
@@ -2188,30 +2036,19 @@ namespace PEGA.NPC
             string.Equals(current.DesireId, selected.DesireId, StringComparison.Ordinal) &&
             string.Equals(selected.DesireId, _activePursuitContinuation.DesireId, StringComparison.Ordinal);
 
-        private bool IsTargetPositionWithinActionTolerance(
-            Vector3 left,
-            Vector3 right,
-            PEGANpcPlanningActionId actionId)
+        private bool IsTargetPositionWithinActionTolerance(Vector3 left, Vector3 right, PEGANpcPlanningActionId actionId)
         {
-            PEGANpcNavigationAction action = GetAction(actionId);
-            float toleranceMeters = action != null ? action.DeclaredEffect.TargetRadiusMeters : 0f;
-            return toleranceMeters >= 0f &&
-                   !float.IsNaN(toleranceMeters) &&
-                   !float.IsInfinity(toleranceMeters) &&
-                   PlanarDistance(left, right) <= toleranceMeters;
+            IPEGANpcActionProvider action = GetAction(actionId);
+            return action != null && (!action.Contract.RequiresNavigation ||
+                                      action.IsTargetPositionWithinTolerance(left, right));
         }
 
-        private PEGANpcNavigationAction GetAction(PEGANpcPlanningActionId actionId) => actionId switch
-        {
-            PEGANpcPlanningActionId.ApproachKnownRick => _approachAction,
-            PEGANpcPlanningActionId.TravelToEscapeTarget => _travelToEscapeAction,
-            PEGANpcPlanningActionId.InvestigateLastKnownRickPosition => _investigateAction,
-            _ => null
-        };
+        private IPEGANpcActionProvider GetAction(PEGANpcPlanningActionId actionId) =>
+            _actionProvidersById.TryGetValue(actionId, out IPEGANpcActionProvider action) ? action : null;
 
         private PEGANpcActionOutcome GetActionOutcome(PEGANpcPlanningActionId actionId)
         {
-            PEGANpcNavigationAction action = GetAction(actionId);
+            IPEGANpcActionProvider action = GetAction(actionId);
             return action != null ? action.Outcome : PEGANpcActionOutcome.NotStarted;
         }
 
@@ -2225,11 +2062,15 @@ namespace PEGA.NPC
             PEGANpcDesireStateSnapshot satisfaction = _desireState.GetSnapshot();
             for (int index = 0; index < _normalContext.Desires.Count; index++)
             {
-                PEGANpcDesireDefinition definition = _normalContext.Desires[index];
-                if (string.Equals(definition.DesireId, desireId, StringComparison.Ordinal))
+                PEGANpcDesireConfiguration configuration = _normalContext.Desires[index];
+                PEGANpcDesireDefinition definition = configuration != null
+                    ? configuration.Definition
+                    : null;
+                if (definition != null &&
+                    string.Equals(definition.DesireId, desireId, StringComparison.Ordinal))
                 {
                     satisfaction.TryGet(desireId, out PEGANpcDesireSatisfactionSnapshot current);
-                    return definition.IsApplicable(current);
+                    return configuration.IsApplicable(current);
                 }
             }
 
@@ -2274,21 +2115,6 @@ namespace PEGA.NPC
             }
 
             return string.Join(",", values);
-        }
-
-        private static string DescribeBehaviorStart(PEGANpcPlanningActionId actionId)
-        {
-            switch (actionId)
-            {
-                case PEGANpcPlanningActionId.ApproachKnownRick:
-                    return "NPC began pursuing Rick.";
-                case PEGANpcPlanningActionId.TravelToEscapeTarget:
-                    return "NPC began escaping to a known exit.";
-                case PEGANpcPlanningActionId.InvestigateLastKnownRickPosition:
-                    return "NPC began searching Rick's last known position.";
-                default:
-                    return "NPC began a selected gameplay behavior.";
-            }
         }
 
         private void ClearLoggedObjective()

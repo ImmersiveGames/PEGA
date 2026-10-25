@@ -184,12 +184,13 @@ namespace PEGA.NPC
                 else
                 {
                     _highestRecordedRequestId = observedEffect.RequestId;
-                    IReadOnlyList<PEGANpcDesireDefinition> definitions = activeContext.Desires;
-                    for (int index = 0; index < definitions.Count; index++)
+                    IReadOnlyList<PEGANpcDesireConfiguration> configurations = activeContext.Desires;
+                    for (int index = 0; index < configurations.Count; index++)
                     {
-                        PEGANpcDesireDefinition definition = definitions[index];
+                        PEGANpcDesireConfiguration configuration = configurations[index];
+                        PEGANpcDesireDefinition definition = configuration.Definition;
                         PEGANpcDesireSatisfactionSnapshot current = GetSatisfaction(definition.DesireId);
-                        if (!definition.Matches(observedEffect) || !definition.CanRecordSatisfaction(current))
+                        if (!definition.Matches(observedEffect) || !configuration.CanRecordSatisfaction(current))
                         {
                             continue;
                         }
@@ -200,8 +201,8 @@ namespace PEGA.NPC
                         }
 
                         float nextSatisfaction = Mathf.Min(
-                            definition.MaximumSatisfaction,
-                            current.Satisfaction + definition.SatisfactionGain);
+                            configuration.MaximumSatisfaction,
+                            current.Satisfaction + configuration.SatisfactionGain);
                         Entry entry = new Entry(nextSatisfaction, current.CompletedExecutions + 1);
                         _entries[definition.DesireId] = entry;
                         updated.Add(new PEGANpcDesireSatisfactionSnapshot(

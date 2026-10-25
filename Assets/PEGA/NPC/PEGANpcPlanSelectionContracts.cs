@@ -5,7 +5,6 @@ using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using PEGA.Actors;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace PEGA.NPC
 {
@@ -13,13 +12,6 @@ namespace PEGA.NPC
     {
         LiveKnowledge = 0,
         IsolatedFixture = 10
-    }
-
-    public enum PEGANpcPlanningTargetKind
-    {
-        CharacterPosition = 0,
-        EscapeDestination = 10,
-        LocalObservationPosition = 20
     }
 
     public enum PEGANpcPlanningTargetProvenance
@@ -33,14 +25,9 @@ namespace PEGA.NPC
     {
         Actor = 0,
         StableDataId = 10,
-        InvestigationSample = 20
-    }
-
-    public enum PEGANpcPlanningActionId
-    {
-        ApproachKnownRick = 10,
-        TravelToEscapeTarget = 20,
-        InvestigateLastKnownRickPosition = 30
+        InvestigationSample = 20,
+        CharacterSeparationDestination = 30,
+        PerceivedAreaInvestigationSample = 40
     }
 
     public enum PEGANpcPlanPurpose
@@ -53,7 +40,8 @@ namespace PEGA.NPC
     {
         Complete = 0,
         Partial = 10,
-        Invalid = 20
+        Invalid = 20,
+        NotRequired = 30
     }
 
     public readonly struct PEGANpcPlanningTargetId : IEquatable<PEGANpcPlanningTargetId>,
@@ -63,19 +51,22 @@ namespace PEGA.NPC
         private readonly string _stableDataId;
         private readonly double _contactLossObservationTimeSeconds;
         private readonly int _sampleOrdinal;
+        private readonly double _presenceObservationTimeSeconds;
 
         private PEGANpcPlanningTargetId(
             PEGANpcPlanningTargetIdentityKind identityKind,
             ActorId actorId,
             string stableDataId,
             double contactLossObservationTimeSeconds = 0d,
-            int sampleOrdinal = 0)
+            int sampleOrdinal = 0,
+            double presenceObservationTimeSeconds = 0d)
         {
             IdentityKind = identityKind;
             _actorId = actorId;
             _stableDataId = stableDataId ?? string.Empty;
             _contactLossObservationTimeSeconds = contactLossObservationTimeSeconds;
             _sampleOrdinal = sampleOrdinal;
+            _presenceObservationTimeSeconds = presenceObservationTimeSeconds;
         }
 
         public PEGANpcPlanningTargetIdentityKind IdentityKind { get; }
@@ -87,6 +78,10 @@ namespace PEGA.NPC
             PEGANpcPlanningTargetIdentityKind.InvestigationSample =>
                 _actorId.IsValid &&
                 IsNonNegativeFinite(_contactLossObservationTimeSeconds) &&
+                _sampleOrdinal >= 0,
+            PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.IsValid,
+            PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
+                IsNonNegativeFinite(_presenceObservationTimeSeconds) &&
                 _sampleOrdinal >= 0,
             _ => false
         };
@@ -101,14 +96,25 @@ namespace PEGA.NPC
                 _contactLossObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
                 "|",
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
+            PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.StableText ?? string.Empty,
+            PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample => string.Concat(
+                _presenceObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
+                "|",
+                _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
             _ => string.Empty
         };
 
         internal ActorId InvestigationSubjectActorId => _actorId;
 
+        internal ActorId CharacterSeparationSubjectActorId => _actorId;
+
         internal double InvestigationLossTimeSeconds => _contactLossObservationTimeSeconds;
 
         internal int InvestigationSampleOrdinal => _sampleOrdinal;
+
+        internal double PerceivedAreaEvidenceTimeSeconds => _presenceObservationTimeSeconds;
+
+        internal int PerceivedAreaSampleOrdinal => _sampleOrdinal;
 
         internal static PEGANpcPlanningTargetId ForActor(ActorId actorId) =>
             actorId.IsValid
@@ -135,6 +141,27 @@ namespace PEGA.NPC
                     sampleOrdinal)
                 : default;
 
+        internal static PEGANpcPlanningTargetId ForPerceivedAreaInvestigationSample(
+            double presenceObservationTimeSeconds,
+            int sampleOrdinal) =>
+            IsNonNegativeFinite(presenceObservationTimeSeconds) &&
+            sampleOrdinal >= 0
+                ? new PEGANpcPlanningTargetId(
+                    PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample,
+                    default,
+                    string.Empty,
+                    sampleOrdinal: sampleOrdinal,
+                    presenceObservationTimeSeconds: presenceObservationTimeSeconds)
+                : default;
+
+        internal static PEGANpcPlanningTargetId ForCharacterSeparationDestination(ActorId subjectActorId) =>
+            subjectActorId.IsValid
+                ? new PEGANpcPlanningTargetId(
+                    PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination,
+                    subjectActorId,
+                    string.Empty)
+                : default;
+
         public bool Equals(PEGANpcPlanningTargetId other)
         {
             if (IdentityKind != other.IdentityKind)
@@ -151,6 +178,10 @@ namespace PEGA.NPC
                     _actorId == other._actorId &&
                     _contactLossObservationTimeSeconds.Equals(other._contactLossObservationTimeSeconds) &&
                     _sampleOrdinal == other._sampleOrdinal,
+                PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId == other._actorId,
+                PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
+                    _presenceObservationTimeSeconds.Equals(other._presenceObservationTimeSeconds) &&
+                    _sampleOrdinal == other._sampleOrdinal,
                 _ => false
             };
         }
@@ -163,10 +194,20 @@ namespace PEGA.NPC
             unchecked
             {
                 int hash = (int)IdentityKind * 397;
-                if (IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample)
+                if (IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample ||
+                    IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
                 {
-                    long timeBits = BitConverter.DoubleToInt64Bits(_contactLossObservationTimeSeconds);
-                    hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(_actorId.StableText ?? string.Empty);
+                    bool isPerceivedAreaSample =
+                        IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
+                    double evidenceTime = isPerceivedAreaSample
+                        ? _presenceObservationTimeSeconds
+                        : _contactLossObservationTimeSeconds;
+                    long timeBits = BitConverter.DoubleToInt64Bits(evidenceTime);
+                    if (!isPerceivedAreaSample)
+                    {
+                        hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(_actorId.StableText ?? string.Empty);
+                    }
+
                     hash = (hash * 397) ^ (int)timeBits;
                     hash = (hash * 397) ^ (int)(timeBits >> 32);
                     return (hash * 397) ^ _sampleOrdinal;
@@ -195,6 +236,13 @@ namespace PEGA.NPC
                 int lossTimeOrder = _contactLossObservationTimeSeconds.CompareTo(
                     other._contactLossObservationTimeSeconds);
                 return lossTimeOrder != 0 ? lossTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
+            }
+
+            if (IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
+            {
+                int evidenceTimeOrder = _presenceObservationTimeSeconds.CompareTo(
+                    other._presenceObservationTimeSeconds);
+                return evidenceTimeOrder != 0 ? evidenceTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
             }
 
             return string.CompareOrdinal(StableOrderValue, other.StableOrderValue);
@@ -250,7 +298,7 @@ namespace PEGA.NPC
 
         internal bool IsValid =>
             TargetId.IsValid &&
-            Enum.IsDefined(typeof(PEGANpcPlanningTargetKind), Kind) &&
+            Kind.IsValid &&
             Enum.IsDefined(typeof(PEGANpcPlanningTargetProvenance), Provenance) &&
             IsFinite(KnownPosition) &&
             IsNonNegativeFinite(MaximumRouteDistanceFromAnchorMeters) &&
@@ -264,6 +312,17 @@ namespace PEGA.NPC
                 PEGANpcPlanningTargetKind.CharacterPosition,
                 PEGANpcPlanningTargetProvenance.KnowledgeState,
                 knownPosition,
+                true,
+                evidenceTimeSeconds);
+
+        internal static PEGANpcPlanningTarget FromCharacterSeparationPosition(
+            ActorId subjectActorId,
+            Vector3 derivedPosition,
+            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
+                PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId),
+                PEGANpcPlanningTargetKind.SafeSeparationPosition,
+                PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
+                derivedPosition,
                 true,
                 evidenceTimeSeconds);
 
@@ -342,41 +401,67 @@ namespace PEGA.NPC
         public int AreaMask { get; }
 
         public string Diagnostic { get; }
+
+        public static PEGANpcNavigationRouteEstimate NotRequired => new PEGANpcNavigationRouteEstimate(
+            PEGANpcPlanningRouteStatus.NotRequired,
+            0f,
+            0f,
+            -1,
+            0,
+            "This Action does not require a navigation route.");
     }
 
     public readonly struct PEGANpcPlanningActionCandidate
     {
         internal PEGANpcPlanningActionCandidate(
-            PEGANpcPlanningActionId actionId,
-            PEGANpcActionEffectKind predictedEffect,
-            PEGANpcDesireGoalKind predictedGoal,
+            PEGANpcActionContract contract,
+            IPEGANpcActionProvider action,
             PEGANpcPlanningTargetId targetId,
-            PEGANpcPlanningTargetKind requiredTargetKind,
+            bool preconditionsSatisfied,
+            PEGAActorMovementSpeedRegime speedRegime,
+            float intrinsicDurationSeconds)
+            : this(
+                contract,
+                action,
+                targetId,
+                preconditionsSatisfied,
+                speedRegime,
+                PEGANpcNavigationRouteEstimate.NotRequired,
+                intrinsicDurationSeconds)
+        {
+        }
+
+        internal PEGANpcPlanningActionCandidate(
+            PEGANpcActionContract contract,
+            IPEGANpcActionProvider action,
+            PEGANpcPlanningTargetId targetId,
             bool preconditionsSatisfied,
             PEGAActorMovementSpeedRegime speedRegime,
             PEGANpcNavigationRouteEstimate routeEstimate,
             float intrinsicDurationSeconds)
         {
-            ActionId = actionId;
-            PredictedEffect = predictedEffect;
-            PredictedGoal = predictedGoal;
+            Contract = contract;
+            Action = action;
             TargetId = targetId;
-            RequiredTargetKind = requiredTargetKind;
             PreconditionsSatisfied = preconditionsSatisfied;
             SpeedRegime = speedRegime;
             RouteEstimate = routeEstimate;
             IntrinsicDurationSeconds = intrinsicDurationSeconds;
         }
 
-        public PEGANpcPlanningActionId ActionId { get; }
+        public PEGANpcActionContract Contract { get; }
 
-        public PEGANpcActionEffectKind PredictedEffect { get; }
+        internal IPEGANpcActionProvider Action { get; }
 
-        public PEGANpcDesireGoalKind PredictedGoal { get; }
+        public PEGANpcPlanningActionId ActionId => Contract.ActionId;
+
+        public PEGANpcActionEffectKind PredictedEffect => Contract.EffectKind;
+
+        public PEGANpcDesireGoalKind PredictedGoal => Contract.GoalKind;
 
         public PEGANpcPlanningTargetId TargetId { get; }
 
-        public PEGANpcPlanningTargetKind RequiredTargetKind { get; }
+        public PEGANpcPlanningTargetKind RequiredTargetKind => Contract.TargetKind;
 
         public bool PreconditionsSatisfied { get; }
 
@@ -385,6 +470,14 @@ namespace PEGA.NPC
         public PEGANpcNavigationRouteEstimate RouteEstimate { get; }
 
         public float IntrinsicDurationSeconds { get; }
+
+        internal bool IsBoundToActionContract => Action == null ||
+            (Action.Contract.IsValid &&
+             Action.Contract.ActionId == Contract.ActionId &&
+             Action.Contract.EffectKind == Contract.EffectKind &&
+             Action.Contract.GoalKind == Contract.GoalKind &&
+             Action.Contract.TargetKind == Contract.TargetKind &&
+             Action.Contract.RequiresNavigation == Contract.RequiresNavigation);
 
         internal static PEGANpcPlanningActionCandidate DetachedFixture(
             PEGANpcPlanningActionId actionId,
@@ -406,11 +499,15 @@ namespace PEGA.NPC
                 0,
                 "Detached validation fixture.");
             return new PEGANpcPlanningActionCandidate(
-                actionId,
-                predictedEffect,
-                predictedGoal,
+                new PEGANpcActionContract(
+                    actionId,
+                    predictedEffect,
+                    predictedGoal,
+                    target.Kind,
+                    routeStatus != PEGANpcPlanningRouteStatus.NotRequired,
+                    "Detached fixture Action."),
+                null,
                 target.TargetId,
-                target.Kind,
                 preconditionsSatisfied,
                 speedRegime,
                 estimate,
@@ -585,23 +682,16 @@ namespace PEGA.NPC
             for (int index = 0; index < ActionCandidates.Count; index++)
             {
                 PEGANpcPlanningActionCandidate candidate = ActionCandidates[index];
-                if (!Enum.IsDefined(typeof(PEGANpcPlanningActionId), candidate.ActionId) ||
-                    !Enum.IsDefined(typeof(PEGANpcActionEffectKind), candidate.PredictedEffect) ||
+                if (!candidate.Contract.IsValid ||
                     !Enum.IsDefined(typeof(PEGANpcDesireGoalKind), candidate.PredictedGoal) ||
-                    !Enum.IsDefined(typeof(PEGANpcPlanningTargetKind), candidate.RequiredTargetKind) ||
-                    !Enum.IsDefined(typeof(PEGAActorMovementSpeedRegime), candidate.SpeedRegime) ||
+                    !candidate.RequiredTargetKind.IsValid ||
+                    (candidate.Contract.RequiresNavigation &&
+                     !Enum.IsDefined(typeof(PEGAActorMovementSpeedRegime), candidate.SpeedRegime)) ||
                     !candidate.TargetId.IsValid ||
-                    !HasCompatibleActionContract(candidate))
+                    !candidate.IsBoundToActionContract ||
+                    (ValidationMode == PEGANpcPlanningValidationMode.LiveKnowledge && candidate.Action == null))
                 {
                     diagnostic = $"Action candidate at index {index} has an invalid or incompatible Action/Effect/Target contract.";
-                    return false;
-                }
-
-                if (candidate.ActionId == PEGANpcPlanningActionId.InvestigateLastKnownRickPosition &&
-                    (!PursuitContinuation.HasValue ||
-                     candidate.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.InvestigationSample))
-                {
-                    diagnostic = $"Action candidate at index {index} requires an active typed pursuit continuation.";
                     return false;
                 }
 
@@ -652,24 +742,6 @@ namespace PEGA.NPC
             return Array.AsReadOnly(copy);
         }
 
-        private static bool HasCompatibleActionContract(PEGANpcPlanningActionCandidate candidate) =>
-            candidate.ActionId switch
-            {
-                PEGANpcPlanningActionId.ApproachKnownRick =>
-                    candidate.PredictedEffect == PEGANpcActionEffectKind.ApproachKnownRickPosition &&
-                    candidate.PredictedGoal == PEGANpcDesireGoalKind.ReachKnownCharacterPosition &&
-                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.CharacterPosition,
-                PEGANpcPlanningActionId.TravelToEscapeTarget =>
-                    candidate.PredictedEffect == PEGANpcActionEffectKind.ReachSelectedEscapeDestination &&
-                    candidate.PredictedGoal == PEGANpcDesireGoalKind.ReachKnownEscapeDestination &&
-                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.EscapeDestination,
-                PEGANpcPlanningActionId.InvestigateLastKnownRickPosition =>
-                    candidate.PredictedEffect == PEGANpcActionEffectKind.ReachLocalObservationPosition &&
-                    candidate.PredictedGoal == PEGANpcDesireGoalKind.ReachKnownCharacterPosition &&
-                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.LocalObservationPosition,
-                _ => false
-            };
-
         private static bool HasCompatibleLiveTarget(
             PEGANpcPlanningTarget target,
             PEGANpcPursuitContinuation? pursuitContinuation)
@@ -679,21 +751,30 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (target.Kind == PEGANpcPlanningTargetKind.CharacterPosition)
+            if (target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState)
             {
-                return target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState &&
-                       target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.Actor;
-            }
-
-            if (target.Kind == PEGANpcPlanningTargetKind.EscapeDestination)
-            {
-                return target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState &&
+                return target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.Actor ||
                        target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.StableDataId;
             }
 
-            if (target.Kind != PEGANpcPlanningTargetKind.LocalObservationPosition ||
+            if (target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge &&
+                target.Kind == PEGANpcPlanningTargetKind.SafeSeparationPosition &&
+                target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination)
+            {
+                return target.TargetId.CharacterSeparationSubjectActorId.IsValid;
+            }
+
+            if (target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge &&
+                target.Kind == PEGANpcPlanningTargetKind.LocalObservationPosition &&
+                target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
+            {
+                return Math.Abs(target.EvidenceTimeSeconds -
+                                target.TargetId.PerceivedAreaEvidenceTimeSeconds) <= 0.000001d;
+            }
+
+            if (target.Provenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 !pursuitContinuation.HasValue ||
-                target.Provenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                target.Kind != PEGANpcPlanningTargetKind.LocalObservationPosition ||
                 target.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.InvestigationSample)
             {
                 return false;

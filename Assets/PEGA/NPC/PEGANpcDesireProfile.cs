@@ -12,7 +12,9 @@ namespace PEGA.NPC
     public enum PEGANpcDesireGoalKind
     {
         ReachKnownCharacterPosition = 0,
-        ReachKnownEscapeDestination = 10
+        ReachKnownEscapeDestination = 10,
+        MaintainSafeSeparationFromKnownCharacter = 20,
+        InvestigatePerceivedAreaPresence = 30
     }
 
     [CreateAssetMenu(
@@ -104,8 +106,8 @@ namespace PEGA.NPC
         private PEGANpcPlanSelectionPolicy planSelectionPolicy = new PEGANpcPlanSelectionPolicy();
 
         [SerializeField]
-        [Tooltip("Definições individuais de Desejo para este Contexto.")]
-        private PEGANpcDesireDefinition[] desires = Array.Empty<PEGANpcDesireDefinition>();
+        [Tooltip("Configurações deste Perfil/Contexto que referenciam definições reutilizáveis de Desejo.")]
+        private PEGANpcDesireConfiguration[] desires = Array.Empty<PEGANpcDesireConfiguration>();
 
         public PEGANpcDesireContextDefinition()
         {
@@ -114,23 +116,24 @@ namespace PEGA.NPC
         internal PEGANpcDesireContextDefinition(
             PEGANpcDesireContext context,
             float costReferenceSeconds,
-            PEGANpcDesireDefinition[] desires)
+            PEGANpcDesireConfiguration[] desires)
         {
             this.context = context;
             planSelectionPolicy = new PEGANpcPlanSelectionPolicy(costReferenceSeconds);
             this.desires = desires != null
-                ? (PEGANpcDesireDefinition[])desires.Clone()
-                : Array.Empty<PEGANpcDesireDefinition>();
+                ? (PEGANpcDesireConfiguration[])desires.Clone()
+                : Array.Empty<PEGANpcDesireConfiguration>();
         }
 
         public PEGANpcDesireContext Context => context;
 
         public PEGANpcPlanSelectionPolicy PlanSelectionPolicy => planSelectionPolicy;
 
-        public IReadOnlyList<PEGANpcDesireDefinition> Desires =>
-            Array.AsReadOnly(desires ?? Array.Empty<PEGANpcDesireDefinition>());
+        public IReadOnlyList<PEGANpcDesireConfiguration> Desires =>
+            Array.AsReadOnly(desires ?? Array.Empty<PEGANpcDesireConfiguration>());
 
-        internal PEGANpcDesireDefinition[] Definitions => desires ?? Array.Empty<PEGANpcDesireDefinition>();
+        internal PEGANpcDesireConfiguration[] Configurations =>
+            desires ?? Array.Empty<PEGANpcDesireConfiguration>();
 
         internal bool TryValidate(HashSet<string> allDesireIds, out string diagnostic)
         {
@@ -157,22 +160,23 @@ namespace PEGA.NPC
 
             for (int index = 0; index < desires.Length; index++)
             {
-                PEGANpcDesireDefinition desire = desires[index];
-                if (desire == null)
+                PEGANpcDesireConfiguration configuration = desires[index];
+                if (configuration == null)
                 {
-                    diagnostic = $"Desire definition at index {index} is null.";
+                    diagnostic = $"Desire configuration at index {index} is null.";
                     return false;
                 }
 
-                if (!desire.TryValidate(out diagnostic))
+                if (!configuration.TryValidate(out diagnostic))
                 {
-                    diagnostic = $"Desire at index {index}: {diagnostic}";
+                    diagnostic = $"Desire configuration at index {index}: {diagnostic}";
                     return false;
                 }
 
-                if (!allDesireIds.Add(desire.DesireId))
+                PEGANpcDesireDefinition definition = configuration.Definition;
+                if (!allDesireIds.Add(definition.DesireId))
                 {
-                    diagnostic = $"Desire ID '{desire.DesireId}' is duplicated in this profile.";
+                    diagnostic = $"Desire ID '{definition.DesireId}' is duplicated in this profile.";
                     return false;
                 }
             }
@@ -238,168 +242,4 @@ namespace PEGA.NPC
             value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
-    [Serializable]
-    public sealed class PEGANpcDesireDefinition
-    {
-        [SerializeField]
-        [Tooltip("ID estável PEGA, único dentro do profile e usado pelo ledger individual.")]
-        private string desireId;
-
-        [SerializeField]
-        [Tooltip("Nome legível para diagnóstico e configuração.")]
-        private string displayName;
-
-        [SerializeField]
-        [Tooltip("Quando desativado, este Desejo não é aplicável no Contexto.")]
-        private bool enabledForContext = true;
-
-        [SerializeField]
-        [Tooltip("Predicado de estado desejado, avaliado separadamente dos efeitos das Actions disponíveis.")]
-        private PEGANpcDesireGoalKind desiredGoal;
-
-        [SerializeField, Min(0.001f)]
-        [Tooltip("Peso base do Desejo antes do modificador de satisfação.")]
-        private float baseWeight = 1f;
-
-        [SerializeField, Min(0.001f)]
-        [Tooltip("Acréscimo de satisfação aplicado por execução concluída que cumpre o efeito desejado.")]
-        private float satisfactionGain = 1f;
-
-        [SerializeField, Min(0.001f)]
-        [Tooltip("Teto da satisfação acumulada e referência para o modificador de peso; não limita a reaplicabilidade do Desejo.")]
-        private float maximumSatisfaction = 1f;
-
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Fração máxima de redução do peso base conforme a satisfação acumulada progride.")]
-        private float satisfactionWeightModifier;
-
-        [SerializeField, Min(-1)]
-        [Tooltip("Máximo de execuções que podem satisfazer este Desejo; -1 significa ilimitado.")]
-        private int maximumCompletedExecutions = -1;
-
-        public PEGANpcDesireDefinition()
-        {
-        }
-
-        internal PEGANpcDesireDefinition(
-            string desireId,
-            string displayName,
-            bool enabledForContext,
-            PEGANpcDesireGoalKind desiredGoal,
-            float baseWeight,
-            float satisfactionGain,
-            float maximumSatisfaction,
-            float satisfactionWeightModifier,
-            int maximumCompletedExecutions)
-        {
-            this.desireId = desireId;
-            this.displayName = displayName;
-            this.enabledForContext = enabledForContext;
-            this.desiredGoal = desiredGoal;
-            this.baseWeight = baseWeight;
-            this.satisfactionGain = satisfactionGain;
-            this.maximumSatisfaction = maximumSatisfaction;
-            this.satisfactionWeightModifier = satisfactionWeightModifier;
-            this.maximumCompletedExecutions = maximumCompletedExecutions;
-        }
-
-        public string DesireId => desireId;
-
-        public string DisplayName => displayName;
-
-        public PEGANpcDesireGoalKind DesiredGoal => desiredGoal;
-
-        public float BaseWeight => baseWeight;
-
-        public float SatisfactionGain => satisfactionGain;
-
-        public float MaximumSatisfaction => maximumSatisfaction;
-
-        public float SatisfactionWeightModifier => satisfactionWeightModifier;
-
-        public int MaximumCompletedExecutions => maximumCompletedExecutions;
-
-        public bool IsApplicable(PEGANpcDesireSatisfactionSnapshot satisfaction)
-        {
-            if (!enabledForContext)
-            {
-                return false;
-            }
-
-            return maximumCompletedExecutions < 0 ||
-                   satisfaction.CompletedExecutions < maximumCompletedExecutions;
-        }
-
-        public float EvaluateEffectiveWeight(PEGANpcDesireSatisfactionSnapshot satisfaction)
-        {
-            float normalizedSatisfaction = maximumSatisfaction > 0f
-                ? Mathf.Clamp01(satisfaction.Satisfaction / maximumSatisfaction)
-                : 1f;
-            float satisfactionFactor = 1f - satisfactionWeightModifier * normalizedSatisfaction;
-            return baseWeight * Mathf.Max(0f, satisfactionFactor);
-        }
-
-        internal bool Matches(PEGANpcObservedActionEffect observedEffect) =>
-            observedEffect.IsValid && observedEffect.GoalKind == desiredGoal;
-
-        internal bool CanRecordSatisfaction(PEGANpcDesireSatisfactionSnapshot satisfaction) =>
-            enabledForContext &&
-            (maximumCompletedExecutions < 0 ||
-             satisfaction.CompletedExecutions < maximumCompletedExecutions);
-
-        internal bool TryValidate(out string diagnostic)
-        {
-            diagnostic = string.Empty;
-            if (string.IsNullOrWhiteSpace(desireId))
-            {
-                diagnostic = "Desire ID must be a non-empty stable PEGA identifier.";
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                diagnostic = $"Desire '{desireId}' requires a readable display name.";
-                return false;
-            }
-
-            if (!Enum.IsDefined(typeof(PEGANpcDesireGoalKind), desiredGoal))
-            {
-                diagnostic = $"Desire '{desireId}' uses an unsupported goal predicate.";
-                return false;
-            }
-
-            if (!IsPositiveFinite(baseWeight))
-            {
-                diagnostic = $"Desire '{desireId}' base weight must be finite and greater than zero.";
-                return false;
-            }
-
-            if (!IsPositiveFinite(satisfactionGain) || !IsPositiveFinite(maximumSatisfaction) ||
-                satisfactionGain > maximumSatisfaction)
-            {
-                diagnostic = $"Desire '{desireId}' satisfaction gain and maximum must be finite, positive, and gain cannot exceed the maximum.";
-                return false;
-            }
-
-            if (!IsNonNegativeFinite(satisfactionWeightModifier) || satisfactionWeightModifier > 1f)
-            {
-                diagnostic = $"Desire '{desireId}' satisfaction weight modifier must be between zero and one.";
-                return false;
-            }
-
-            if (maximumCompletedExecutions == 0 || maximumCompletedExecutions < -1)
-            {
-                diagnostic = $"Desire '{desireId}' execution limit must be -1 (unlimited) or a positive count.";
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsPositiveFinite(float value) =>
-            value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
-
-        private static bool IsNonNegativeFinite(float value) =>
-            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
-    }
 }

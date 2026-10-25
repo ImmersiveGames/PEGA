@@ -9,9 +9,10 @@ namespace PEGA.NPC
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/NPC/Actions/Investigate Last Known Rick Position")]
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
-    [RequireComponent(typeof(PEGANpcApproachKnownRickAction))]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class PEGANpcInvestigateLastKnownRickPositionAction : PEGANpcNavigationAction
+    public sealed class PEGANpcInvestigateLastKnownRickPositionAction : PEGANpcNavigationAction,
+        IPEGANpcKnowledgeChangeRelevanceProvider,
+        IPEGANpcAttemptedTargetProvider
     {
         private const float PositionDeduplicationToleranceMeters = 0.1f;
         private const float PositionComparisonEpsilonMeters = 0.001f;
@@ -46,7 +47,7 @@ namespace PEGA.NPC
         private float maximumVerticalDifferenceMeters = 0.35f;
 
         private PEGANpcKnowledgeState _knowledgeState;
-        private PEGANpcApproachKnownRickAction _approachAction;
+        private IPEGANpcLostContactPursuitProvider _approachAction;
         private NavMeshAgent _agent;
         private PEGANpcPursuitContinuation _executionContinuation;
         private PEGANpcPlanningTargetId _executionTargetId;
@@ -57,6 +58,14 @@ namespace PEGA.NPC
 
         protected override PEGANpcDesireGoalKind ActionGoalKind =>
             PEGANpcDesireGoalKind.ReachKnownCharacterPosition;
+
+        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
+            PEGANpcPlanningActionId.InvestigateLastKnownRickPosition,
+            ActionEffectKind,
+            ActionGoalKind,
+            PEGANpcPlanningTargetKind.LocalObservationPosition,
+            true,
+            "NPC began searching Rick's last known position.");
 
         internal bool IsLocalTargetUsable(
             PEGANpcPlanSnapshot plan,
@@ -240,11 +249,9 @@ namespace PEGA.NPC
                         continuation.PositionEvidenceTimeSeconds,
                         maximumCornerDistanceMeters);
                     var candidate = new PEGANpcPlanningActionCandidate(
-                        PEGANpcPlanningActionId.InvestigateLastKnownRickPosition,
-                        ActionEffectKind,
-                        ActionGoalKind,
+                        Contract,
+                        this,
                         targetId,
-                        PEGANpcPlanningTargetKind.LocalObservationPosition,
                         true,
                         PEGAActorMovementSpeedRegime.Pursuit,
                         route,
@@ -264,6 +271,104 @@ namespace PEGA.NPC
                   $"firstRouteDiagnostic={firstRouteDiagnostic}"
                 : string.Empty;
             return true;
+        }
+
+        public override bool TryCreatePlanningCandidates(
+            PEGANpcActionPlanningContext context,
+            out IReadOnlyList<PEGANpcPlanningTarget> targets,
+            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            out string diagnostic)
+        {
+            if (!context.PursuitContinuation.HasValue)
+            {
+                targets = Array.AsReadOnly(Array.Empty<PEGANpcPlanningTarget>());
+                candidates = Array.AsReadOnly(Array.Empty<PEGANpcPlanningActionCandidate>());
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            bool created = TryCreatePlanningCandidates(
+                context.PursuitContinuation.Value,
+                context.AttemptedInvestigationTargets,
+                out targets,
+                out candidates,
+                out diagnostic);
+            return created && (candidates.Count > 0 || string.IsNullOrWhiteSpace(diagnostic));
+        }
+
+        public override bool CanOfferCandidate(
+            PEGANpcPlanningActionCandidate candidate,
+            PEGANpcPursuitContinuation? continuation) =>
+            CandidateMatchesContract(candidate) && continuation.HasValue &&
+            continuation.Value.LastKnownPositionReached &&
+            candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample;
+
+        public bool ShouldRecordAttemptedTarget(PEGANpcPlanningActionCandidate candidate) =>
+            CandidateMatchesContract(candidate) &&
+            candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample;
+
+        public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
+        {
+            if (change == null || !change.HasValueOrStatusChanged ||
+                !_hasExecutionContinuation ||
+                !change.SubjectActorId.HasValue ||
+                change.SubjectActorId.Value != _executionContinuation.SubjectActorId)
+            {
+                return false;
+            }
+
+            return change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
+                change.FactKind == PEGANpcKnowledgeFactKind.RickVisualContact ||
+                change.FactKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition;
+        }
+
+        public override bool IsCurrentPlanValid(
+            PEGANpcPlanSnapshot plan,
+            PEGANpcPursuitContinuation? continuation,
+            out Vector3 currentKnownPosition,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
+            currentKnownPosition = default;
+            evidenceTimeSeconds = 0d;
+            diagnostic = string.Empty;
+            if (!continuation.HasValue || !IsLocalTargetUsable(
+                    plan,
+                    continuation.Value,
+                    out diagnostic,
+                    requireFurtherPhysicalMovement: false))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Investigation requires its active Knowledge-backed pursuit continuation."
+                    : diagnostic;
+                return false;
+            }
+
+            currentKnownPosition = continuation.Value.LastKnownPosition;
+            evidenceTimeSeconds = continuation.Value.PositionEvidenceTimeSeconds;
+            return true;
+        }
+
+        public override bool TryStart(
+            PEGANpcPlanSnapshot plan,
+            PEGANpcPursuitContinuation? continuation,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!continuation.HasValue || !IsLocalTargetUsable(
+                    plan,
+                    continuation.Value,
+                    out diagnostic,
+                    requireFurtherPhysicalMovement: true))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Investigation requires a current physically actionable local target in its active pursuit continuation."
+                    : diagnostic;
+                RejectStart(diagnostic);
+                return false;
+            }
+
+            return TryStart(plan, continuation.Value, out diagnostic);
         }
 
         public bool TryStart(
@@ -298,8 +403,22 @@ namespace PEGA.NPC
         {
             base.Awake();
             _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
-            _approachAction = GetComponent<PEGANpcApproachKnownRickAction>();
+            _approachAction = FindLostContactPursuitProvider();
             _agent = GetComponent<NavMeshAgent>();
+        }
+
+        private IPEGANpcLostContactPursuitProvider FindLostContactPursuitProvider()
+        {
+            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+            for (int index = 0; index < components.Length; index++)
+            {
+                if (components[index] is IPEGANpcLostContactPursuitProvider provider)
+                {
+                    return provider;
+                }
+            }
+
+            return null;
         }
 
         protected override void OnDisable()
@@ -338,7 +457,7 @@ namespace PEGA.NPC
             _executionContinuation.IsValid &&
             _executionContinuation.LastKnownPositionReached &&
             _knowledgeState != null && _knowledgeState.gameObject == gameObject &&
-            _approachAction != null && _approachAction.gameObject == gameObject &&
+            _approachAction != null &&
             IsCurrentExecutionTargetWithinOpportunity(_executionTargetId, _executionContinuation) &&
             _approachAction.IsLostContactIntentSupersededByNewRecognition(
                 _executionContinuation.ToIntent());
@@ -351,7 +470,7 @@ namespace PEGA.NPC
             if (!continuation.IsValid ||
                 !continuation.LastKnownPositionReached ||
                 _knowledgeState == null || _knowledgeState.gameObject != gameObject ||
-                _approachAction == null || _approachAction.gameObject != gameObject)
+                _approachAction == null)
             {
                 diagnostic = "A valid continuation that physically reached the last-known position and this NPC's Knowledge State/Approach Action are required.";
                 return false;

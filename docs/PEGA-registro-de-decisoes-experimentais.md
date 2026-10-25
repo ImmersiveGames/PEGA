@@ -120,31 +120,31 @@ O Framework oferece `ActorOccurrenceReferenceBinding` e resolução de ocorrênc
 
 **Decisão atual:** não alterar a implementação nesta etapa; avaliar junto de PEGA-ARQ-001, 002 e 005.
 
-### PEGA-ARQ-007 — Desejos definidos em linha dentro do Desire Profile
-
-**Classificação:** uso confirmado + hipótese arquitetural de reutilização e escalabilidade de autoria.  
-**Estado:** registrar para revisão conjunta dos sistemas, sem alterar a demonstração.
-
-**Evidência observada:** `PEGANpcAutonomy` referencia um `PEGANpcDesireProfile` compartilhável como asset. Em `PEGANpcDesireProfile`, cada contexto contém um array serializado de `PEGANpcDesireDefinition` em linha. O `PEGANpcDesireState` mantém o estado individual do NPC e não é o problema observado.
-
-**Questão arquitetural:** embora o Profile inteiro seja reutilizável, as definições individuais de Desejo não são atualmente referenciadas como assets independentes. Isso pode dificultar compor perfis diferentes a partir de desejos comuns, centralizar ajustes e escalar a autoria de arquétipos e NPCs. Avaliar se os desejos devem ser recursos reutilizáveis e como isso se relaciona com a política contextual e o estado por NPC, respeitando os recursos existentes no ecossistema.
-
-**Gatilho para reavaliação:** revisão integrada dos achados de percepção, autonomia, GOAP, composição e escala de autoria, antes de consolidar os comportamentos definitivos.
-
-**Decisão atual:** não alterar `Autonomy`, `Desire Profile` ou `Desire State`; não antecipar formato de asset ou implementação. Complementa PEGA-ARQ-003, que trata do conteúdo provisório dos desejos, enquanto este achado trata de sua reutilização estrutural.
-
 ### PEGA-ARQ-008 — Actions de navegação especializadas na perseguição de Rick
 
-**Classificação:** uso confirmado no código + hipótese arquitetural de reutilização, acoplamento e escala de autoria.  
+**Classificação:** uso confirmado no código + hipótese arquitetural de reutilização, acoplamento e escala de autoria.
 **Estado:** preservar a demonstração; revisar em conjunto com os demais achados, sem alterações de implementação.
 
-**Evidência observada:** `PEGANpcApproachKnownRickAction` é uma Action derivada de `PEGANpcNavigationAction` e expõe referências explícitas ao `PEGANpcKnowledgeState`, ao `ActorOccurrenceReferenceBinding` de Rick e ao `ActorProfile` de Rick. `PEGANpcInvestigateLastKnownRickPositionAction` também deriva da base de navegação, mas exige a presença de `PEGANpcApproachKnownRickAction`, além de `PEGANpcKnowledgeState` e `NavMeshAgent`; contém parâmetros próprios de amostragem e limites de investigação local. A captura do Inspector mostra referências de navegação e configurações de chegada nas duas Actions.
+**Evidência estática observada:** `PEGANpcApproachKnownRickAction` deriva de `PEGANpcNavigationAction` e mantém referências serializadas ao `PEGANpcKnowledgeState`, ao `ActorOccurrenceReferenceBinding` de Rick e ao `ActorProfile` de Rick. `PEGANpcInvestigateLastKnownRickPositionAction` também deriva da base de navegação e exige `PEGANpcKnowledgeState` e `NavMeshAgent`; para obter o estado da continuação da perseguição, resolve entre os componentes do Actor um provider que implementa `IPEGANpcLostContactPursuitProvider`. Portanto, a dependência é expressa pelo contrato do provider, não por uma referência obrigatória à classe concreta `PEGANpcApproachKnownRickAction`. A Action de investigação mantém parâmetros próprios para amostragem e limites da investigação local.
 
-**Questão arquitetural:** aproximar-se de um alvo conhecido e investigar uma última posição são capacidades potencialmente reutilizáveis, mas as implementações atuais se vinculam explicitamente a Rick e à continuação de sua perseguição. Avaliar se há especialização excessiva, dependências entre Actions e repetição de referências ou parâmetros já disponíveis em outros componentes. A existência de uma base compartilhada de navegação não comprova, por si só, que todas essas responsabilidades estejam duplicadas. Investigar os contratos e capacidades já existentes no PEGA e no Framework antes de decidir a estrutura definitiva.
+**Questão arquitetural:** aproximar-se de um alvo conhecido e investigar uma última posição são capacidades potencialmente reutilizáveis. A aproximação continua vinculada explicitamente à identidade de Rick; a investigação da última posição usa um contrato de provider ligado à continuação de perseguição. Avaliar se essa especialização e esse vínculo entre capacidades continuam adequados quando houver múltiplos alvos e arquétipos. A existência de uma base compartilhada de navegação ou de um contrato de provider não comprova, por si só, que todas as responsabilidades estejam desacopladas. Investigar os contratos e capacidades já existentes no PEGA e no Framework antes de decidir a estrutura definitiva.
 
 **Gatilho para reavaliação:** avaliação conjunta dos achados de percepção, referências, Knowledge State, GOAP, Actions e navegação, considerando múltiplos alvos, Actors e arquétipos.
 
 **Decisão atual:** nenhuma refatoração isolada ou exigência de implementação genérica nesta etapa; registrar as especializações da demonstração e preservar comportamentos enquanto se determina quais capacidades devem ser reaproveitáveis.
+
+## Achados arquiteturais encerrados
+
+### PEGA-ARQ-007 — Definições reutilizáveis de Desejo
+
+**Classificação:** encerrado — reutilização estrutural implementada.
+**Estado:** a preocupação original descrevia a implementação anterior e não permanece como achado aberto.
+
+**Histórico:** o achado registrava que as definições de Desejo eram serializadas em linha dentro do `PEGANpcDesireProfile`, o que limitava sua reutilização independente.
+
+**Evidência estática atual:** cada contexto do `PEGANpcDesireProfile` referencia assets `PEGANpcDesireConfiguration`, e cada configuração referencia um asset reutilizável `PEGANpcDesireDefinition`. Os perfis da demonstração podem compartilhar as mesmas definições e variar seus pesos por configuração. `PEGANpcDesireState` continua mantendo satisfação e execuções por Actor, sem compartilhar estado entre os NPCs.
+
+**Decisão consolidada:** manter separadas as definições reutilizáveis, as configurações por perfil/contexto e a satisfação individual. Reabrir este achado somente diante de evidência de duplicação de definições ou de compartilhamento indevido de estado.
 
 ## Pontos de limpeza ainda sujeitos a confirmação
 

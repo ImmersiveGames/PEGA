@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
@@ -10,7 +11,9 @@ namespace PEGA.NPC
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/NPC/Actions/Approach Known Rick")]
-    public sealed class PEGANpcApproachKnownRickAction : PEGANpcNavigationAction
+    public sealed class PEGANpcApproachKnownRickAction : PEGANpcNavigationAction,
+        IPEGANpcLostContactPursuitProvider,
+        IPEGANpcKnowledgeChangeRelevanceProvider
     {
         private const string IntentLogCategory = "PEGA.Gameplay.NPC.PursuitIntent";
 
@@ -19,6 +22,14 @@ namespace PEGA.NPC
 
         protected override PEGANpcDesireGoalKind ActionGoalKind =>
             PEGANpcDesireGoalKind.ReachKnownCharacterPosition;
+
+        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
+            PEGANpcPlanningActionId.ApproachKnownRick,
+            ActionEffectKind,
+            ActionGoalKind,
+            PEGANpcPlanningTargetKind.CharacterPosition,
+            true,
+            "NPC began pursuing Rick.");
 
         [Header("Known Target")]
         [SerializeField]
@@ -123,7 +134,22 @@ namespace PEGA.NPC
             return TryGetKnownRickEvidence(out _, out position, out _, out diagnostic);
         }
 
-        internal bool IsCurrentLostContactPursuitIntent(
+        public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
+        {
+            if (change == null || !change.HasValueOrStatusChanged ||
+                !change.SubjectActorId.HasValue ||
+                !TryResolveRickSubject(out ActorId subjectActorId, out _) ||
+                change.SubjectActorId.Value != subjectActorId)
+            {
+                return false;
+            }
+
+            return change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
+                change.FactKind == PEGANpcKnowledgeFactKind.RickVisualContact ||
+                change.FactKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition;
+        }
+
+        public bool IsCurrentLostContactPursuitIntent(
             PEGANpcLastKnownRickPursuitIntent intent,
             out string diagnostic)
         {
@@ -193,7 +219,7 @@ namespace PEGA.NPC
             return true;
         }
 
-        internal bool IsLostContactIntentSupersededByNewRecognition(
+        public bool IsLostContactIntentSupersededByNewRecognition(
             PEGANpcLastKnownRickPursuitIntent intent)
         {
             if (!intent.IsValid ||
@@ -379,17 +405,171 @@ namespace PEGA.NPC
                 knownPosition,
                 evidenceTimeSeconds);
             candidate = new PEGANpcPlanningActionCandidate(
-                PEGANpcPlanningActionId.ApproachKnownRick,
-                ActionEffectKind,
-                ActionGoalKind,
+                Contract,
+                this,
                 target.TargetId,
-                PEGANpcPlanningTargetKind.CharacterPosition,
                 true,
                 PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
                 routeEstimate,
                 IntrinsicDurationSeconds);
             diagnostic = string.Empty;
             return true;
+        }
+
+        public override bool TryCreatePlanningCandidates(
+            PEGANpcActionPlanningContext context,
+            out IReadOnlyList<PEGANpcPlanningTarget> targets,
+            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            out string diagnostic)
+        {
+            List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
+            List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
+            targets = Array.AsReadOnly(targetList.ToArray());
+            candidates = Array.AsReadOnly(candidateList.ToArray());
+            if (context.PursuitContinuation.HasValue)
+            {
+                PEGANpcPursuitContinuation continuation = context.PursuitContinuation.Value;
+                if (continuation.LastKnownApproachAttempted || continuation.LastKnownPositionReached ||
+                    context.PlayerActorId != continuation.SubjectActorId ||
+                    PlanarDistance(transform.position, continuation.LastKnownPosition) <= ArrivalRadiusMeters)
+                {
+                    diagnostic = string.Empty;
+                    return true;
+                }
+
+                if (!TryCreatePlanningCandidate(out PEGANpcPlanningTarget candidateTarget,
+                        out PEGANpcPlanningActionCandidate candidate, out diagnostic))
+                {
+                    return false;
+                }
+
+                if (candidateTarget.TargetId != PEGANpcPlanningTargetId.ForActor(continuation.SubjectActorId) ||
+                    !candidateTarget.KnownPosition.Equals(continuation.LastKnownPosition) ||
+                    Math.Abs(candidateTarget.EvidenceTimeSeconds - continuation.PositionEvidenceTimeSeconds) > 0.000001d)
+                {
+                    diagnostic = "The continuation Approach candidate is not bound to the preserved last Perception position.";
+                    return false;
+                }
+
+                targetList.Add(candidateTarget);
+                candidateList.Add(candidate);
+                targets = Array.AsReadOnly(targetList.ToArray());
+                candidates = Array.AsReadOnly(candidateList.ToArray());
+                return true;
+            }
+
+            if (!context.PlayerActorId.IsValid || !context.HasPerceptionBackedVisualContact)
+            {
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            if (!TryCreatePlanningCandidate(out PEGANpcPlanningTarget target,
+                    out PEGANpcPlanningActionCandidate normalCandidate, out diagnostic))
+            {
+                return false;
+            }
+
+            if (target.TargetId != PEGANpcPlanningTargetId.ForActor(context.PlayerActorId))
+            {
+                diagnostic = "Approach candidate does not match the current Player Actor occurrence.";
+                return false;
+            }
+
+            targets = Array.AsReadOnly(new[] { target });
+            candidates = Array.AsReadOnly(new[] { normalCandidate });
+            return true;
+        }
+
+        public override bool CanOfferCandidate(
+            PEGANpcPlanningActionCandidate candidate,
+            PEGANpcPursuitContinuation? continuation) =>
+            CandidateMatchesContract(candidate) &&
+            (!continuation.HasValue ||
+             (!continuation.Value.LastKnownApproachAttempted &&
+              !continuation.Value.LastKnownPositionReached &&
+              candidate.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.Value.SubjectActorId)));
+
+        public override bool IsCurrentPlanValid(
+            PEGANpcPlanSnapshot plan,
+            PEGANpcPursuitContinuation? continuation,
+            out Vector3 currentKnownPosition,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
+            currentKnownPosition = default;
+            evidenceTimeSeconds = 0d;
+            diagnostic = string.Empty;
+            if (continuation.HasValue)
+            {
+                PEGANpcPursuitContinuation current = continuation.Value;
+                if (plan.Purpose != PEGANpcPlanPurpose.PursuitContinuationStep ||
+                    plan.TargetId != PEGANpcPlanningTargetId.ForActor(current.SubjectActorId) ||
+                    !IsCurrentLostContactPursuitIntent(current.ToIntent(), out diagnostic) ||
+                    !TryGetKnownRickPosition(out currentKnownPosition, out diagnostic) ||
+                    !IsTargetPositionWithinTolerance(currentKnownPosition, plan.TargetPosition))
+                {
+                    diagnostic = string.IsNullOrEmpty(diagnostic)
+                        ? "The Approach plan no longer matches its live pursuit continuation or known target."
+                        : diagnostic;
+                    return false;
+                }
+
+                evidenceTimeSeconds = current.PositionEvidenceTimeSeconds;
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            if (plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+                plan.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.Actor ||
+                !TryGetKnownRickPosition(out currentKnownPosition, out diagnostic) ||
+                plan.TargetId != PEGANpcPlanningTargetId.ForActor(GetCurrentRickActorId()) ||
+                !IsTargetPositionWithinTolerance(currentKnownPosition, plan.TargetPosition))
+            {
+                diagnostic = string.IsNullOrEmpty(diagnostic)
+                    ? "The Approach plan no longer matches the current known Player target."
+                    : diagnostic;
+                return false;
+            }
+
+            evidenceTimeSeconds = plan.EvidenceTimeSeconds;
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        public override bool TryStart(
+            PEGANpcPlanSnapshot plan,
+            PEGANpcPursuitContinuation? continuation,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            bool continuationMatches = continuation.HasValue
+                ? plan.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep &&
+                  plan.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.Value.SubjectActorId) &&
+                  IsCurrentLostContactPursuitIntent(continuation.Value.ToIntent(), out diagnostic)
+                : plan.Purpose == PEGANpcPlanPurpose.DesireGoal;
+            if (plan.ActionId != Contract.ActionId || !continuationMatches ||
+                !TryGetKnownRickPosition(out Vector3 position, out diagnostic) ||
+                !IsTargetPositionWithinTolerance(position, plan.TargetPosition))
+            {
+                diagnostic = string.IsNullOrEmpty(diagnostic)
+                    ? "The selected Approach plan is stale for this Action's known target."
+                    : diagnostic;
+                RejectStart(diagnostic);
+                return false;
+            }
+
+            return TryStartNavigation(position, PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit, out diagnostic);
+        }
+
+        private ActorId GetCurrentRickActorId() =>
+            TryResolveRickSubject(out ActorId actorId, out _) ? actorId : default;
+
+        private static float PlanarDistance(Vector3 left, Vector3 right)
+        {
+            Vector3 delta = left - right;
+            delta.y = 0f;
+            return delta.magnitude;
         }
 
         private bool TryGetKnownRickEvidence(

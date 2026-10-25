@@ -17,21 +17,5 @@ MonoBehaviour:
     planSelectionPolicy:
       costReferenceSeconds: 10
     desires:
-    - desireId: n91-normal-known-rick-pursuit-n01
-      displayName: Perseguir Rick reconhecido (N01 provisório)
-      enabledForContext: 1
-      desiredGoal: 0
-      baseWeight: 1
-      satisfactionGain: 1
-      maximumSatisfaction: 1
-      satisfactionWeightModifier: 0
-      maximumCompletedExecutions: -1
-    - desireId: n91-normal-known-gang-escape-n05
-      displayName: Escapar por saída conhecida (N05 provisório)
-      enabledForContext: 1
-      desiredGoal: 10
-      baseWeight: 2
-      satisfactionGain: 1
-      maximumSatisfaction: 1
-      satisfactionWeightModifier: 0
-      maximumCompletedExecutions: -1
+    - {fileID: 11400000, guid: 177736f2fcd348e09dc9a05bb24b81d4, type: 2}
+    - {fileID: 11400000, guid: 0be9cf1f3f3c4e79b751a432f8012ee5, type: 2}

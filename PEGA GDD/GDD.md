@@ -303,7 +303,7 @@ Cada Desejo declara, no mínimo, **identificador, Contexto, peso base, condiçõ
 
 Desejos podem ter predicados de conclusão compostos; qualquer cadeia de Actions que produza o estado exigido pode satisfazê-los. O Desejo não precisa conhecer qual caminho foi usado para chegar à conclusão.
 
-Existe ainda uma **camada individual de Contingência**, sem criar um novo Contexto global. Se nenhum Desejo normal do Contexto vigente possuir plano válido, tornam-se elegíveis Desejos de Contingência configurados para o arquétipo, como 'Vagar', 'Esconder-se', 'Manter Distância', 'Reagrupar' ou 'Esperar'. Eles usam exatamente o mesmo sistema de peso, custo, satisfação, predicados e Actions. Assim que qualquer Desejo normal volta a possuir plano válido, a contingência deixa de ser elegível. Se nem mesmo um Desejo de Contingência possuir plano, a IA entra em **Idle técnico** como proteção operacional, não como intenção de gameplay.
+Existe ainda uma **camada individual de Contingência**, sem criar um novo Contexto global. Se nenhum Desejo normal do Contexto vigente possuir plano válido, tornam-se elegíveis Desejos de Contingência configurados para o arquétipo, como 'Vagar', 'Esconder-se', 'Reagrupar' ou 'Esperar'. **Manter Distância / Autopreservação pode ser um Desejo normal**, competindo por peso e custo com perseguição e outros objetivos; só funciona como Contingência quando configurado nessa camada. Desejos normais e de Contingência usam o mesmo sistema de peso, custo, satisfação, predicados e Actions. Assim que qualquer Desejo normal volta a possuir plano válido, a contingência deixa de ser elegível. Se nem mesmo um Desejo de Contingência possuir plano, a IA entra em **Idle técnico** como proteção operacional, não como intenção de gameplay.
 
 Um Desejo pode ser aplicável e ainda assim não participar da escolha se nenhum plano válido puder ser construído com o conhecimento e as Actions disponíveis. Novas informações ou mudanças de estado podem torná-lo planejável novamente.
 
@@ -360,10 +360,13 @@ Ao concluir, cancelar, invalidar ou interromper a Action, seu proprietário libe
 
 Cofres candidatos são POIs conhecidos inicialmente. A invasão pode começar tentando alcançar e investigar um desses pontos. Se o objetivo não for encontrado ou uma solução necessária não for conhecida, o GOAP pode escolher outra oportunidade conhecida ou investigar uma Área ainda não explorada.
 
-Existem duas formas principais de adquirir informação:
+As principais formas de adquirir informação são:
 
 - **Aquisição visual passiva:** durante deslocamentos e outras Actions, a Área de Visão registra automaticamente informação visível e relevante, sem custo adicional de tempo.
 - **Investigação ativa de Área:** quando o plano necessita de informação ainda desconhecida, o larápio pode navegar até uma Área e executar uma investigação temporizada. A animação pode representar procura física, mas mecanicamente basta permanecer na Área durante o tempo configurado. Ao concluir, a informação compatível é adquirida e compartilhada com a gangue.
+- **Investigação de presença radial:** uma presença ainda não identificada pode habilitar o Desejo normal **Investigar presença percebida**. A tentativa busca pontos de observação derivados da posição conhecida do próprio larápio dentro da Área Percebida registrada; não usa a posição oculta nem revela a identidade do alvo. Cada ponto é uma tentativa finita, concluída somente quando a chegada física é observada. Concluir sem contato visual não comprova ausência, e a mesma evidência não oferece novamente os pontos já tentados. Se a visão identificar o alvo durante a busca, os novos fatos de identidade e posição permitem ao GOAP reconsiderar seus Desejos normais.
+
+Essa busca local é diferente tanto da investigação temporizada de uma Área explorável quanto da continuação de perseguição até a última posição conhecida de um alvo já identificado.
 
 Uma investigação comum não esgota necessariamente toda a informação existente. Conteúdo especializado só é revelado quando o arquétipo possui a capacidade apropriada. Assim, uma Área já investigada por um larápio comum pode continuar oferecendo uma oportunidade relevante para um especialista.
 
@@ -600,10 +603,10 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 | Escondido | Personagem usa objeto ou cenário para ocultação. |
 | Ocultado | Personagem não aparece em câmera, minimapa ou percepção por certo tempo. |
 | Confrontando | Personagem usa confronto porque isso atende a um objetivo concreto, como recuperar um item desejado ou remover um bloqueio. |
-| Fugindo | Personagem tenta escapar do cenário. |
+| Fugindo | Personagem tenta deixar o cenário por uma saída válida. |
 | Furtando | Personagem busca item de desejo. |
 | Perseguindo | Personagem segue alvo específico. |
-| Escapando | Personagem tenta sair de perigo imediato. |
+| Evadindo | Personagem reduz a aproximação de uma ameaça conhecida e permanece no cenário; isso não equivale a fugir por uma saída. |
 
 ## Inimigos e gangues
 
@@ -660,7 +663,7 @@ Larápios de gangues rivais **só entram em confronto entre si por causa do obje
 :::decision
 **Decisão:** percepção básica é determinística e dividida em uma **Área Percebida radial** e um **cone frontal de Visão**, ambos com parâmetros configuráveis e bloqueados por obstáculos configurados.
 
-- **Área Percebida:** permite detectar a presença de um ator ou elemento relevante no raio configurado ao redor do larápio, inclusive fora de sua visão frontal. Essa consciência não equivale a confirmação visual e não determina automaticamente a reação.
+- **Área Percebida:** permite detectar a presença de um ator ou elemento relevante no raio configurado ao redor do larápio, inclusive fora de sua visão frontal. Essa consciência não equivale a confirmação visual nem fornece identidade ou posição do alvo. Quando a presença permanece não identificada, o Desejo normal **Investigar presença percebida** pode competir com os demais Desejos e procurar informação sem consultar o World State oculto.
 - **Cone de Visão:** fornece confirmação visual direta dentro de seu alcance e ângulo configurados e permite respostas mais imediatas.
 - **Obstrução:** paredes e outros obstáculos configurados para bloquear percepção impedem essa consciência através deles.
 
@@ -756,6 +759,8 @@ Antes da Fuga Final, a posse conhecida do objetivo principal pode alterar Desejo
 **Decisão:** uma gangue conhece como saída potencial toda entrada já utilizada por qualquer um de seus membros e toda saída adicional descoberta durante exploração.
 
 Quando um larápio possui um Desejo de escapar, as saídas conhecidas e compatíveis entram como Targets candidatos. O GOAP avalia os planos completos e seus custos temporais; por isso, uma saída próxima tende a ser atraente, mas não existe uma heurística separada de **sempre escolher a mais próxima**.
+
+Escapar é um objetivo de deixar o cenário por uma saída válida. **Autopreservação / Manter Distância** é um Desejo distinto: com base na posição conhecida de uma ameaça, o larápio busca uma posição que reduza a aproximação e permanece no cenário. Essa evasão usa um Target espacial derivado do conhecimento, não uma saída; alcançá-lo não satisfaz Escapar nem resolve o larápio como **Escapou**. Como Desejo normal, pode competir com perseguir a mesma ameaça conforme a prioridade configurada. A Action de escapar continua disponível quando a configuração de Desejos ou o Contexto exigir a saída definitiva.
 
 Se uma rota ou saída conhecida estiver bloqueada, a nova informação atualiza o Knowledge State e os planos afetados são recalculados. Se nenhum plano de escape puder ser construído, esse Desejo deixa de participar da escolha naquele ciclo. **Investigar não é acionado automaticamente**: só ocorrerá se o próprio Desejo `Investigar` estiver elegível e produzir o melhor plano entre os Desejos normais; se nenhum Desejo normal tiver plano, aplicam-se os Desejos de Contingência.
 :::

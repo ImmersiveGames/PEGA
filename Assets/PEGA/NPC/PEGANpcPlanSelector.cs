@@ -51,28 +51,29 @@ namespace PEGA.NPC
             }
 
             List<PEGANpcDesirePlanEvaluation> evaluations =
-                new List<PEGANpcDesirePlanEvaluation>(activeContext.Definitions.Length);
+                new List<PEGANpcDesirePlanEvaluation>(activeContext.Configurations.Length);
             List<PEGANpcPlanSnapshot> allPlans = new List<PEGANpcPlanSnapshot>();
             PEGANpcPlanSnapshot selectedPlan = default;
             bool hasSelectedPlan = false;
 
-            for (int desireIndex = 0; desireIndex < activeContext.Definitions.Length; desireIndex++)
+            for (int desireIndex = 0; desireIndex < activeContext.Configurations.Length; desireIndex++)
             {
-                PEGANpcDesireDefinition desire = activeContext.Definitions[desireIndex];
-                if (desire == null)
+                PEGANpcDesireConfiguration configuration = activeContext.Configurations[desireIndex];
+                if (configuration == null || configuration.Definition == null)
                 {
-                    return InvalidResult(mode, context, $"Desire at index {desireIndex} is null.");
+                    return InvalidResult(mode, context, $"Desire configuration or definition at index {desireIndex} is null.");
                 }
 
+                PEGANpcDesireDefinition desire = configuration.Definition;
                 satisfaction.TryGet(desire.DesireId, out PEGANpcDesireSatisfactionSnapshot currentSatisfaction);
-                bool applicable = desire.IsApplicable(currentSatisfaction);
+                bool applicable = configuration.IsApplicable(currentSatisfaction);
                 bool continuationOwner = input.PursuitContinuation.HasValue &&
                     string.Equals(
                         input.PursuitContinuation.Value.DesireId,
                         desire.DesireId,
                         StringComparison.Ordinal);
                 float effectiveWeight = applicable
-                    ? desire.EvaluateEffectiveWeight(currentSatisfaction)
+                    ? configuration.EvaluateEffectiveWeight(currentSatisfaction)
                     : 0f;
                 List<PEGANpcPlanSnapshot> desirePlans = new List<PEGANpcPlanSnapshot>();
 
@@ -89,8 +90,11 @@ namespace PEGA.NPC
                             continue;
                         }
 
-                        float estimatedSeconds = candidate.RouteEstimate.RouteLengthMeters /
-                                                 candidate.RouteEstimate.EffectiveSpeedMetersPerSecond +
+                        float travelSeconds = candidate.Contract.RequiresNavigation
+                            ? candidate.RouteEstimate.RouteLengthMeters /
+                              candidate.RouteEstimate.EffectiveSpeedMetersPerSecond
+                            : 0f;
+                        float estimatedSeconds = travelSeconds +
                                                  candidate.IntrinsicDurationSeconds;
                         float costPreference = activeContext.EvaluateCostPreference(estimatedSeconds);
                         float score = effectiveWeight * costPreference;
@@ -132,7 +136,7 @@ namespace PEGA.NPC
                     : desirePlans.Count == 0
                         ? input.PursuitContinuation.HasValue && !continuationOwner
                             ? "Desire is outside the active pursuit continuation owner."
-                            : "Desire is applicable, but no compatible Action has a known Target and complete valid route."
+                            : "Desire is applicable, but no compatible Action has a known Target and valid cost estimate."
                         : string.Empty;
                 evaluations.Add(new PEGANpcDesirePlanEvaluation(
                     desire.DesireId,
@@ -177,13 +181,7 @@ namespace PEGA.NPC
                 : left.TargetId.CompareTo(right.TargetId);
         }
 
-        internal static string GetStableActionId(PEGANpcPlanningActionId actionId) => actionId switch
-        {
-            PEGANpcPlanningActionId.ApproachKnownRick => "approach-known-rick",
-            PEGANpcPlanningActionId.TravelToEscapeTarget => "travel-to-escape-target",
-            PEGANpcPlanningActionId.InvestigateLastKnownRickPosition => "investigate-last-known-rick-position",
-            _ => "invalid-action"
-        };
+        internal static string GetStableActionId(PEGANpcPlanningActionId actionId) => actionId.StableText;
 
         private static bool IsCandidateAllowed(
             PEGANpcPlanningInput input,
@@ -198,8 +196,7 @@ namespace PEGA.NPC
 
             if (!input.PursuitContinuation.HasValue)
             {
-                return candidate.ActionId != PEGANpcPlanningActionId.InvestigateLastKnownRickPosition &&
-                       candidate.RequiredTargetKind == GetRequiredTargetKind(candidate.PredictedGoal);
+                return candidate.Action == null || candidate.Action.CanOfferCandidate(candidate, null);
             }
 
             if (!continuationOwner)
@@ -208,19 +205,7 @@ namespace PEGA.NPC
             }
 
             PEGANpcPursuitContinuation continuation = input.PursuitContinuation.Value;
-            return candidate.ActionId switch
-            {
-                PEGANpcPlanningActionId.ApproachKnownRick =>
-                    !continuation.LastKnownApproachAttempted &&
-                    !continuation.LastKnownPositionReached &&
-                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.CharacterPosition &&
-                    candidate.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.SubjectActorId),
-                PEGANpcPlanningActionId.InvestigateLastKnownRickPosition =>
-                    continuation.LastKnownPositionReached &&
-                    candidate.RequiredTargetKind == PEGANpcPlanningTargetKind.LocalObservationPosition &&
-                    candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample,
-                _ => false
-            };
+            return candidate.Action != null && candidate.Action.CanOfferCandidate(candidate, continuation);
         }
 
         private static PEGANpcPlanSelectionResult InvalidResult(
@@ -236,22 +221,16 @@ namespace PEGA.NPC
             default,
             diagnostic);
 
-        private static PEGANpcPlanningTargetKind GetRequiredTargetKind(
-            PEGANpcDesireGoalKind goal) => goal switch
-        {
-            PEGANpcDesireGoalKind.ReachKnownCharacterPosition =>
-                PEGANpcPlanningTargetKind.CharacterPosition,
-            PEGANpcDesireGoalKind.ReachKnownEscapeDestination =>
-                PEGANpcPlanningTargetKind.EscapeDestination,
-            _ => (PEGANpcPlanningTargetKind)(-1)
-        };
-
         private static bool IsUsableCandidate(PEGANpcPlanningActionCandidate candidate)
         {
             PEGANpcNavigationRouteEstimate route = candidate.RouteEstimate;
-            return route.Status == PEGANpcPlanningRouteStatus.Complete &&
-                   IsNonNegativeFinite(route.RouteLengthMeters) &&
-                   IsPositiveFinite(route.EffectiveSpeedMetersPerSecond) &&
+            bool usableRoute = candidate.Contract.RequiresNavigation
+                ? route.Status == PEGANpcPlanningRouteStatus.Complete &&
+                  IsNonNegativeFinite(route.RouteLengthMeters) &&
+                  IsPositiveFinite(route.EffectiveSpeedMetersPerSecond)
+                : route.Status == PEGANpcPlanningRouteStatus.NotRequired &&
+                  route.RouteLengthMeters == 0f && route.EffectiveSpeedMetersPerSecond == 0f;
+            return usableRoute &&
                    IsNonNegativeFinite(candidate.IntrinsicDurationSeconds);
         }
 

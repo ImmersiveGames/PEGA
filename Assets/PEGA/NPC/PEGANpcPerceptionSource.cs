@@ -503,7 +503,8 @@ namespace PEGA.NPC
                 hasVisualContact);
 #endif
 
-            PEGANpcKnowledgeFact<bool> previousArea = _knowledgeState.GetPerceivedAreaPresence();
+            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea =
+                _knowledgeState.GetPerceivedAreaPresence();
             PEGANpcKnowledgeFact<bool> previousContact =
                 _knowledgeState.GetRickVisualContact(occurrence.ActorId);
             bool hadPreviousContact = previousContact.TryGetValue(out bool previousVisualContact);
@@ -576,8 +577,10 @@ namespace PEGA.NPC
 
         private void PublishAreaPresenceIfChanged(bool isPresent, double observationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<bool> presence = _knowledgeState.GetPerceivedAreaPresence();
-            if (presence.TryGetValue(out bool previousPresence) && previousPresence == isPresent)
+            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> presence =
+                _knowledgeState.GetPerceivedAreaPresence();
+            if (presence.TryGetValue(out PEGANpcPerceivedAreaPresence previousPresence) &&
+                previousPresence.IsPresent == isPresent)
             {
                 return;
             }
@@ -588,7 +591,10 @@ namespace PEGA.NPC
             }
 
             _knowledgeState.ObservePerceivedAreaPresence(
-                isPresent,
+                new PEGANpcPerceivedAreaPresence(
+                    isPresent,
+                    isPresent ? transform.position : Vector3.zero,
+                    perceivedAreaRadiusMeters),
                 PEGANpcEvidenceOrigin.Perception,
                 observationTimeSeconds);
         }
@@ -969,7 +975,7 @@ namespace PEGA.NPC
 
         private void LogPerceptionTransition(
             ActorOccurrence occurrence,
-            PEGANpcKnowledgeFact<bool> previousArea,
+            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea,
             PEGANpcKnowledgeFact<bool> previousContact,
             bool isAreaPresencePerceived,
             bool hasVisualContact,
@@ -982,9 +988,10 @@ namespace PEGA.NPC
                 return;
             }
 
-            bool hadAreaPresence = previousArea.TryGetValue(out bool previousAreaPresence);
-            if (isAreaPresencePerceived && (!hadAreaPresence || !previousAreaPresence) ||
-                !isAreaPresencePerceived && hadAreaPresence && previousAreaPresence)
+            bool hadAreaPresence = previousArea.TryGetValue(
+                out PEGANpcPerceivedAreaPresence previousAreaPresence);
+            if (isAreaPresencePerceived && (!hadAreaPresence || !previousAreaPresence.IsPresent) ||
+                !isAreaPresencePerceived && hadAreaPresence && previousAreaPresence.IsPresent)
             {
                 _log.Debug(
                     "NPC radial area perception state changed.",

@@ -26,5 +26,5 @@ MonoBehaviour:
   - ruleId: pega_gameplay_observation
     enabled: 1
     namespacePrefix: PEGA.Gameplay
-    minimumLevel: 2
+    minimumLevel: 1
   typeRules: []

@@ -52,6 +52,38 @@ namespace PEGA.NPC
         LastObservedRickPosition
     }
 
+    /// <summary>Evidência radial ancorada à posição conhecida do observador, nunca à posição oculta do alvo.</summary>
+    public readonly struct PEGANpcPerceivedAreaPresence
+    {
+        internal PEGANpcPerceivedAreaPresence(
+            bool isPresent,
+            Vector3 observerPosition,
+            float perceivedAreaRadiusMeters)
+        {
+            IsPresent = isPresent;
+            ObserverPosition = observerPosition;
+            PerceivedAreaRadiusMeters = perceivedAreaRadiusMeters;
+        }
+
+        public bool IsPresent { get; }
+
+        public Vector3 ObserverPosition { get; }
+
+        public float PerceivedAreaRadiusMeters { get; }
+
+        internal bool IsValid =>
+            IsFinite(ObserverPosition) &&
+            !float.IsNaN(PerceivedAreaRadiusMeters) &&
+            !float.IsInfinity(PerceivedAreaRadiusMeters) &&
+            PerceivedAreaRadiusMeters > 0f;
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
     /// <summary>Descreve uma mudança de fato já aceita por um Knowledge State.</summary>
     public sealed class PEGANpcKnowledgeFactChangedEvent : IEvent
     {
@@ -152,7 +184,7 @@ namespace PEGA.NPC
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
         [NonSerialized]
-        private KnowledgeFactCell<bool> _perceivedAreaPresence;
+        private KnowledgeFactCell<PEGANpcPerceivedAreaPresence> _perceivedAreaPresence;
 
         [NonSerialized]
         private Dictionary<ActorId, SubjectKnowledge> _knowledgeBySubject;
@@ -215,7 +247,7 @@ namespace PEGA.NPC
             _knowledgeChangeEvents = null;
         }
 
-        public PEGANpcKnowledgeFact<bool> GetPerceivedAreaPresence()
+        public PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> GetPerceivedAreaPresence()
         {
             EnsureStateInitialized();
             return _perceivedAreaPresence.Snapshot;
@@ -249,17 +281,28 @@ namespace PEGA.NPC
         }
 
         public PEGANpcKnowledgeWriteResult ObservePerceivedAreaPresence(
-            bool isPresent,
+            PEGANpcPerceivedAreaPresence perceivedPresence,
             PEGANpcEvidenceOrigin origin,
             double observationTimeSeconds)
         {
             EnsureStateInitialized();
+            if (!perceivedPresence.IsValid)
+            {
+                return RejectEvidence(
+                    "perceivedAreaPresence",
+                    string.Empty,
+                    origin,
+                    observationTimeSeconds,
+                    "radial presence evidence requires a finite observer position and positive finite area radius",
+                    _perceivedAreaPresence.Snapshot);
+            }
+
             return Observe(
                 PEGANpcKnowledgeFactKind.PerceivedAreaPresence,
                 "perceivedAreaPresence",
                 null,
                 _perceivedAreaPresence,
-                isPresent,
+                perceivedPresence,
                 AreEqual,
                 origin,
                 observationTimeSeconds);
@@ -784,7 +827,7 @@ namespace PEGA.NPC
         {
             if (_perceivedAreaPresence == null)
             {
-                _perceivedAreaPresence = new KnowledgeFactCell<bool>();
+                _perceivedAreaPresence = new KnowledgeFactCell<PEGANpcPerceivedAreaPresence>();
             }
 
             if (_knowledgeBySubject == null)
@@ -836,6 +879,13 @@ namespace PEGA.NPC
         }
 
         private static bool AreEqual(bool left, bool right) => left == right;
+
+        private static bool AreEqual(
+            PEGANpcPerceivedAreaPresence left,
+            PEGANpcPerceivedAreaPresence right) =>
+            left.IsPresent == right.IsPresent &&
+            AreExactlyEqual(left.ObserverPosition, right.ObserverPosition) &&
+            left.PerceivedAreaRadiusMeters == right.PerceivedAreaRadiusMeters;
 
         private static bool AreEqual(ActorProfileId left, ActorProfileId right) => left.Equals(right);
 

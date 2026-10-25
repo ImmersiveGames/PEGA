@@ -57,8 +57,7 @@ namespace PEGA.NPC
                 return NoChange();
             }
 
-            PEGANpcPlanningTargetId subjectTargetId = PEGANpcPlanningTargetId.ForActor(rickSubjectActorId);
-            if (HasApproachPlanForTarget(currentSelection, subjectTargetId))
+            if (HasCharacterPlanForTarget(currentSelection, rickSubjectActorId))
             {
                 PEGANpcPlanChangeReason reason = change.FactKind switch
                 {
@@ -77,7 +76,7 @@ namespace PEGA.NPC
                 return NoChange();
             }
 
-            return HasApplicableCharacterPositionDesire(currentSelection)
+            return HasApplicableCharacterGoalDesire(currentSelection)
                 ? new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.CharacterTargetMayEnablePlan)
                 : NoChange();
         }
@@ -106,9 +105,8 @@ namespace PEGA.NPC
             PEGANpcPlanSnapshot selectedPlan = currentSelection.SelectedPlan;
             PEGANpcActionExecutionSnapshot execution = outcome.Execution;
             if (execution.RequestId != activeRequestId ||
-                !TryGetExpectedEffect(selectedPlan.ActionId, out PEGANpcActionEffectKind expectedEffect) ||
-                selectedPlan.PredictedEffect != expectedEffect ||
-                execution.DeclaredEffect.Kind != expectedEffect)
+                !selectedPlan.PredictedEffect.IsValid ||
+                execution.DeclaredEffect.Kind != selectedPlan.PredictedEffect)
             {
                 return NoChange();
             }
@@ -165,15 +163,21 @@ namespace PEGA.NPC
             factKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
             factKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition;
 
-        private static bool HasApproachPlanForTarget(
+        private static bool HasCharacterPlanForTarget(
             PEGANpcPlanSelectionResult selection,
-            PEGANpcPlanningTargetId targetId)
+            ActorId subjectActorId)
         {
             for (int index = 0; index < selection.CandidatePlans.Count; index++)
             {
                 PEGANpcPlanSnapshot candidate = selection.CandidatePlans[index];
-                if (candidate.ActionId == PEGANpcPlanningActionId.ApproachKnownRick &&
-                    candidate.TargetId == targetId)
+                bool approachPlan = candidate.PredictedGoal == PEGANpcDesireGoalKind.ReachKnownCharacterPosition &&
+                    candidate.TargetKind == PEGANpcPlanningTargetKind.CharacterPosition &&
+                    candidate.TargetId == PEGANpcPlanningTargetId.ForActor(subjectActorId);
+                bool separationPlan = candidate.PredictedGoal == PEGANpcDesireGoalKind.MaintainSafeSeparationFromKnownCharacter &&
+                    candidate.TargetKind == PEGANpcPlanningTargetKind.SafeSeparationPosition &&
+                    candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination &&
+                    candidate.TargetId.CharacterSeparationSubjectActorId == subjectActorId;
+                if (approachPlan || separationPlan)
                 {
                     return true;
                 }
@@ -182,13 +186,14 @@ namespace PEGA.NPC
             return false;
         }
 
-        private static bool HasApplicableCharacterPositionDesire(PEGANpcPlanSelectionResult selection)
+        private static bool HasApplicableCharacterGoalDesire(PEGANpcPlanSelectionResult selection)
         {
             for (int index = 0; index < selection.DesireEvaluations.Count; index++)
             {
                 PEGANpcDesirePlanEvaluation desire = selection.DesireEvaluations[index];
                 if (desire.IsApplicable &&
-                    desire.DesiredGoal == PEGANpcDesireGoalKind.ReachKnownCharacterPosition)
+                    (desire.DesiredGoal == PEGANpcDesireGoalKind.ReachKnownCharacterPosition ||
+                     desire.DesiredGoal == PEGANpcDesireGoalKind.MaintainSafeSeparationFromKnownCharacter))
                 {
                     return true;
                 }
@@ -197,44 +202,8 @@ namespace PEGA.NPC
             return false;
         }
 
-        private static bool TryGetExpectedEffect(
-            PEGANpcPlanningActionId actionId,
-            out PEGANpcActionEffectKind effectKind)
-        {
-            switch (actionId)
-            {
-                case PEGANpcPlanningActionId.ApproachKnownRick:
-                    effectKind = PEGANpcActionEffectKind.ApproachKnownRickPosition;
-                    return true;
-                case PEGANpcPlanningActionId.TravelToEscapeTarget:
-                    effectKind = PEGANpcActionEffectKind.ReachSelectedEscapeDestination;
-                    return true;
-                case PEGANpcPlanningActionId.InvestigateLastKnownRickPosition:
-                    effectKind = PEGANpcActionEffectKind.ReachLocalObservationPosition;
-                    return true;
-                default:
-                    effectKind = default;
-                    return false;
-            }
-        }
-
         private static bool HasSuccessfulEffect(PEGANpcActionExecutionSnapshot execution)
-        {
-            PEGANpcActionEffectDeclaration effect = execution.DeclaredEffect;
-            float actualDistance = execution.ActualDistanceToTargetMeters;
-            float targetRadius = effect.TargetRadiusMeters;
-            return execution.EffectObserved &&
-                   execution.HasNavigationSnapshot &&
-                   effect.IsTargetResolved &&
-                   execution.RequestId > 0 &&
-                   effect.TargetPosition.Equals(execution.TargetPosition) &&
-                   IsNonNegativeFinite(actualDistance) &&
-                   IsNonNegativeFinite(targetRadius) &&
-                   actualDistance <= targetRadius;
-        }
-
-        private static bool IsNonNegativeFinite(float value) =>
-            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+            => execution.EffectObserved && execution.RequestId > 0;
 
         private static PEGANpcPlanChangeAssessment NoChange() =>
             new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.None);

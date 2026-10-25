@@ -385,6 +385,68 @@ namespace PEGA.NPC
             return true;
         }
 
+        public bool TryUpdateNavigationTarget(
+            long requestId,
+            Vector3 targetPosition,
+            float arrivalRadiusMeters,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!IsReady || !_hasActiveRequest || requestId <= 0 || requestId != _currentRequestId)
+            {
+                diagnostic = "Only the owner of the current active navigation request may update its target.";
+                return false;
+            }
+
+            if (!IsFinite(targetPosition) || !IsNonNegativeFinite(arrivalRadiusMeters))
+            {
+                diagnostic = "Updated navigation target and arrival radius must be finite; arrival radius cannot be negative.";
+                return false;
+            }
+
+            if (!_agent.isOnNavMesh)
+            {
+                diagnostic = "NavMeshAgent is not placed on a baked NavMesh while updating the active target.";
+                return false;
+            }
+
+            Vector3 previousTargetPosition = _targetPosition;
+            bool canCompleteWithoutPath = PlanarDistance(transform.position, targetPosition) <= arrivalRadiusMeters;
+            _agent.stoppingDistance = arrivalRadiusMeters;
+            if (canCompleteWithoutPath)
+            {
+                _agent.isStopped = true;
+                _agent.ResetPath();
+            }
+            else
+            {
+                bool wasStopped = _agent.isStopped;
+                _agent.isStopped = false;
+                if (!_agent.SetDestination(targetPosition))
+                {
+                    _agent.isStopped = wasStopped;
+                    diagnostic = "NavMeshAgent rejected the updated destination for the active request.";
+                    return false;
+                }
+            }
+
+            _targetPosition = targetPosition;
+            _canCompleteWithoutPath = canCompleteWithoutPath;
+            _hasCachedRouteLength = false;
+            _routeLengthMeters = 0f;
+            _requestStartedFrame = Time.frameCount;
+            _reportedInitialPathResolutionWait = false;
+            _log.Debug(
+                "NPC navigation request target updated without replacing its request or movement-blocking state.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("requestId", requestId),
+                LogFields.Field("previousTargetPosition", previousTargetPosition),
+                LogFields.Field("updatedTargetPosition", targetPosition),
+                LogFields.Field("canCompleteWithoutPath", canCompleteWithoutPath),
+                LogFields.Field("blockedDurationSeconds", _blockedDurationSeconds));
+            return true;
+        }
+
         public bool TryGetSnapshot(long requestId, out PEGANpcNavigationSnapshot snapshot)
         {
             snapshot = default;
