@@ -1,5 +1,13 @@
 # #105 — Ingresso real de larápio na Mission
 
+**Estado documental:** o corpo chama o desenho de “aprovado”, mas não registra aprovador ou data de aprovação. O plano associado registra a implementação e a revisão estática, deixando a autoria/postflight no Unity e a aceitação funcional sem confirmação. Este documento preserva a decisão descrita para #105; não comprova aprovação além do rótulo existente nem aceite posterior.
+
+**Data:** 2026-10-23 (registrada no nome do arquivo; o corpo original não tinha campo de data).
+
+**Escopo:** integração física de ingresso de um Actor na Mission para o cartão #105. O desenho de `ActivityContentBehaviour`, Spawn Safe e publicação após ingresso é local a esta composição Mission; não é uma regra geral de criação de Actors nem um contrato novo do Framework.
+
+**Autoridade e alcance das decisões:** o [GDD](../../../PEGA%20GDD/GDD.md) define as regras de Spawn Point, Spawn Seguro, associação à Gangue e conhecimento da entrada utilizada. A fronteira geral PEGA/Framework permanece a registrada no [ADR de pré-produção, §5](../../../PEGA%20GDD/ADR-PREPRODUCAO.md#5-immersive-framework--código-do-pega), e a arquitetura GOAP permanece nos [ADRs aceitos](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md). As observações sobre APIs/pacote resolvido são evidência técnica usada por este desenho, não decisões arquiteturais gerais. Este documento não altera os contratos do Framework.
+
 ## Objetivo
 
 Completar a integração funcional do #105 fazendo um larápio criado pelo PEGA entrar fisicamente na Mission por um Spawn Point real. O uso físico aceito pelo Spawn Point produz o fato de saída potencial no estado compartilhado da Gangue.
@@ -9,7 +17,7 @@ Completar a integração funcional do #105 fazendo um larápio criado pelo PEGA 
 - O GDD define que Spawn Points produzem os larápios e que a entrada usada por um membro se torna uma saída potencial conhecida pela Gangue. Ele também exige que o larápio pertença à Gangue desde Spawn Safe, antes de atravessar a entrada.
 - A Mission atual contém dois NPCs authorados na `MissionActivityContent`, mas não possui produtor de Actor, Spawn Safe, nem fluxo de ingresso de NPC. Os NPCs não atravessam uma entrada ao ativar a Activity.
 - O Framework resolvido publica NonPlayer já criado por `ActorOccurrencePublicationScope.TryPublish` sob um owner de Activity já committed. Ele não cria nem move o Actor. O Framework permanece apenas como autoridade de publicação/ocorrência.
-- O #105 já implementa o estado compartilhado da Gangue e a evidência física do Spawn Point. O smoke informado pelo usuário (34 PASS, 0 FAIL, 0 UNAVAILABLE) valida compartilhamento, isolamento, idempotência e navegação; essa cobertura não será repetida.
+- O #105 já implementa o estado compartilhado da Gangue e a evidência física do Spawn Point. O usuário relatou um smoke de conhecimento compartilhado com 34 PASS, 0 FAIL, 0 UNAVAILABLE, cobrindo compartilhamento entre membros atuais e tardios, isolamento entre Gangues e idempotência. Separadamente, relatou uma observação de integração na Mission: o larápio atravessou fisicamente o Spawn Point, a navegação terminou em Success, a Gangue adquiriu o Target legítimo e a ocorrência NonPlayer foi publicada; não há resumo numérico próprio para essa execução. Os 34 PASS não comprovam essa integração nem sua navegação.
 
 ## Desenho aprovado
 

@@ -1,5 +1,9 @@
 # #105 Mission Ingress Implementation Plan
 
+> **Document status:** Task-specific plan for the #105 Mission integration, not a general architecture decision or acceptance record. The plan records the implementation and static review steps as complete, while Unity scene authoring/postflight and functional acceptance remain unchecked. No later Unity result is recorded here.
+>
+> **Scope and authority:** The ingress producer and Mission composition described here apply only to this #105 integration. Gameplay rules remain governed by the [GDD](../../../PEGA%20GDD/GDD.md); the PEGA/Framework boundary remains in [ADR-PREPRODUCAO §5](../../../PEGA%20GDD/ADR-PREPRODUCAO.md#5-immersive-framework--código-do-pega), and GOAP architecture remains in its accepted [ADRs](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md). Package/API observations in the linked spec support this task's design but do not establish general architecture or authorize changing Framework contracts.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Spawn one PEGA burglar into Mission through a physical Spawn Point and let the accepted ingress create the Gang-shared potential escape fact.

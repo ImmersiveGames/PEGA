@@ -17,7 +17,8 @@ namespace PEGA.NPC
             IReadOnlyList<PEGANpcPlanningActionCandidate> actionSteps,
             float estimatedSeconds,
             float effectiveDesireWeight,
-            float costPreference)
+            float costPreference,
+            float score)
         {
             DesireId = desireId ?? string.Empty;
             DesireName = desireName ?? string.Empty;
@@ -27,7 +28,7 @@ namespace PEGA.NPC
             EstimatedSeconds = estimatedSeconds;
             EffectiveDesireWeight = effectiveDesireWeight;
             CostPreference = costPreference;
-            Score = effectiveDesireWeight * costPreference;
+            Score = score;
         }
 
         public string DesireId { get; }
@@ -344,10 +345,12 @@ namespace PEGA.NPC
                     continue;
                 }
 
-                float costPreference = activeContext.EvaluateCostPreference(estimatedSeconds);
-                float score = effectiveWeight * costPreference;
-                if (!IsPositiveFinite(effectiveWeight) || !IsPositiveFinite(costPreference) ||
-                    !IsPositiveFinite(score))
+                if (!IsPositiveFinite(effectiveWeight) ||
+                    !activeContext.TryEvaluatePlanScore(
+                        effectiveWeight,
+                        estimatedSeconds,
+                        out float costPreference,
+                        out float score))
                 {
                     diagnostic = "The causal plan has no positive finite configured Desire/cost score.";
                     continue;
@@ -361,7 +364,8 @@ namespace PEGA.NPC
                     actionSteps,
                     estimatedSeconds,
                     effectiveWeight,
-                    costPreference));
+                    costPreference,
+                    score));
             }
 
             return alternatives;

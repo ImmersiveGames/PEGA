@@ -1,5 +1,9 @@
 # #105 Gang Spawn Knowledge Implementation Plan
 
+> **Document status:** This is a task-specific plan for #105, not a general architecture decision or acceptance record. All listed plan steps are checked, while the plan explicitly leaves runtime Unity assertions pending and says to keep #105 in progress until Unity results are supplied. The checkboxes record this plan's preparation/static-review state; they do not prove gameplay acceptance.
+>
+> **Scope and authority:** The implementation choices apply to PEGA's #105 gang knowledge and Spawn Point evidence in Mission. Gameplay rules remain governed by the [GDD](../../../PEGA%20GDD/GDD.md); general GOAP/composition boundaries remain in the accepted [ADR-GOAP-01](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md) and other applicable ADRs. This plan does not establish a general Framework contract or authorize changes to one.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Record a real Spawn Point ingress as a gang-shared potential escape Target and make it queryable by current and later-bound NPC members.

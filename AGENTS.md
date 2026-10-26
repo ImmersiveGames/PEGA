@@ -19,6 +19,12 @@
 - Mudança de fonte do Immersive Framework exige tarefa separada no repositório dono e as skills instaladas `immersive-framework-package-general`, `immersive-framework-architecture-audit`, `immersive-framework-package-implementation` e, para Core/módulos, `immersive-framework-core-architecture`. Não copie skills globais ao PEGA.
 - Não execute build/import/testes Unity, Play Mode, smoke ou batchmode. Separe checagem estática de validação que requer Unity e liste as etapas manuais.
 
+## Preservação de escopo e etapa
+
+- Trate o objetivo, o artefato/camada, a operação, as exclusões e a entrega pedidos pelo usuário como contrato da tarefa. Use fontes e skills relacionadas como evidência, sem substituir ou ampliar esse contrato. Investigue camadas adjacentes somente quando houver ligação causal demonstrável com a pergunta; uma auditoria da composição estrutural de NPCs, por exemplo, não vira revisão dos mecanismos internos do GOAP apenas porque seus ADRs são relevantes.
+- Mantenha compreender, investigar, planejar, implementar e avaliar como etapas distintas. Execute somente as etapas pedidas; análise ou recomendação não autoriza implementação, e uma skill não muda o objetivo nem avança a etapa por conta própria.
+- Selecione skills pela finalidade solicitada, não por palavra-chave. Use `pega-gameplay-cycle-analysis` quando regras ou resultados observáveis do ciclo de gameplay no GDD forem objeto da análise; a simples menção a NPCs não roteia uma auditoria de composição, ownership ou hierarquia Unity para essa skill.
+
 ## Calibração e observabilidade de gameplay no Unity
 
 - Exponha no Inspector parâmetros que influenciam gameplay/balanceamento e precisam de calibração, com campos serializados, nomes legíveis, unidades (metros, graus, segundos etc.), tooltips e validação de faixas. Não serialize estado transitório apenas para expô-lo nem transforme constantes internas sem significado de design em opções de balanceamento.

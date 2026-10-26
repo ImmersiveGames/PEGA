@@ -176,15 +176,79 @@ namespace PEGA.NPC
             return true;
         }
 
-        public float EvaluateCostPreference(float estimatedSeconds)
+        public bool TryEvaluatePlanScore(
+            float effectiveDesireWeight,
+            float estimatedSeconds,
+            out float costPreference,
+            out float score)
         {
-            if (planSelectionPolicy == null || !IsNonNegativeFinite(estimatedSeconds))
+            costPreference = 0f;
+            score = 0f;
+            return planSelectionPolicy != null &&
+                   planSelectionPolicy.TryEvaluateScore(
+                       effectiveDesireWeight,
+                       estimatedSeconds,
+                       out costPreference,
+                       out score);
+        }
+
+        private static bool IsNonNegativeFinite(float value) =>
+            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    /// <summary>
+    /// Extensible policy that maps an effective Desire weight and estimated plan duration to separate
+    /// cost-preference and comparison-score values. It does not choose or execute a plan.
+    /// </summary>
+    [Serializable]
+    public abstract class PEGANpcPlanScorePolicy
+    {
+        public abstract bool TryValidate(float costReferenceSeconds, out string diagnostic);
+
+        public abstract bool TryEvaluate(
+            float effectiveDesireWeight,
+            float estimatedSeconds,
+            float costReferenceSeconds,
+            out float costPreference,
+            out float score);
+    }
+
+    /// <summary>Preserves the current reciprocal cost preference and weighted-cost product.</summary>
+    [Serializable]
+    public sealed class PEGANpcMultiplicativePlanScorePolicy : PEGANpcPlanScorePolicy
+    {
+        public override bool TryValidate(float costReferenceSeconds, out string diagnostic)
+        {
+            bool valid = IsPositiveFinite(costReferenceSeconds);
+            diagnostic = valid
+                ? string.Empty
+                : "Cost reference time must be finite and greater than zero.";
+            return valid;
+        }
+
+        public override bool TryEvaluate(
+            float effectiveDesireWeight,
+            float estimatedSeconds,
+            float costReferenceSeconds,
+            out float costPreference,
+            out float score)
+        {
+            costPreference = 0f;
+            score = 0f;
+            if (!IsPositiveFinite(effectiveDesireWeight) ||
+                !IsPositiveFinite(costReferenceSeconds) ||
+                !IsNonNegativeFinite(estimatedSeconds))
             {
-                return 0f;
+                return false;
             }
 
-            return planSelectionPolicy.EvaluateCostPreference(estimatedSeconds);
+            costPreference = 1f / (1f + estimatedSeconds / costReferenceSeconds);
+            score = effectiveDesireWeight * costPreference;
+            return IsPositiveFinite(costPreference) && IsPositiveFinite(score);
         }
+
+        private static bool IsPositiveFinite(float value) =>
+            value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
 
         private static bool IsNonNegativeFinite(float value) =>
             value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
@@ -194,8 +258,12 @@ namespace PEGA.NPC
     public sealed class PEGANpcPlanSelectionPolicy
     {
         [SerializeField, Min(0.01f)]
-        [Tooltip("Tempo de referência (s) da curva de preferência 1 / (1 + tempo estimado / referência).")]
+        [Tooltip("Tempo de referência (s) usado pela política padrão: 1 / (1 + tempo estimado / referência).")]
         private float costReferenceSeconds = 10f;
+
+        [SerializeReference]
+        [Tooltip("Política determinística que combina o peso efetivo do Desejo e a preferência pelo custo do plano.")]
+        private PEGANpcPlanScorePolicy scorePolicy = new PEGANpcMultiplicativePlanScorePolicy();
 
         public PEGANpcPlanSelectionPolicy()
         {
@@ -208,23 +276,59 @@ namespace PEGA.NPC
 
         public float CostReferenceSeconds => costReferenceSeconds;
 
-        public float EvaluateCostPreference(float estimatedSeconds)
+        public PEGANpcPlanScorePolicy ScorePolicy => scorePolicy;
+
+        public bool TryEvaluateScore(
+            float effectiveDesireWeight,
+            float estimatedSeconds,
+            out float costPreference,
+            out float score)
         {
-            if (!IsPositiveFinite(costReferenceSeconds) || !IsNonNegativeFinite(estimatedSeconds))
+            costPreference = 0f;
+            score = 0f;
+            if (scorePolicy == null ||
+                !IsPositiveFinite(effectiveDesireWeight) ||
+                !IsNonNegativeFinite(estimatedSeconds) ||
+                !scorePolicy.TryEvaluate(
+                    effectiveDesireWeight,
+                    estimatedSeconds,
+                    costReferenceSeconds,
+                    out costPreference,
+                    out score))
             {
-                return 0f;
+                costPreference = 0f;
+                score = 0f;
+                return false;
             }
 
-            return 1f / (1f + estimatedSeconds / costReferenceSeconds);
+            if (!IsPositiveFinite(costPreference) || !IsPositiveFinite(score))
+            {
+                costPreference = 0f;
+                score = 0f;
+                return false;
+            }
+
+            return true;
         }
 
         internal bool TryValidate(out string diagnostic)
         {
-            bool valid = IsPositiveFinite(costReferenceSeconds);
-            diagnostic = valid
-                ? string.Empty
-                : "Cost reference time must be finite and greater than zero.";
-            return valid;
+            if (scorePolicy == null)
+            {
+                diagnostic = "A plan score policy is required.";
+                return false;
+            }
+
+            if (!scorePolicy.TryValidate(costReferenceSeconds, out diagnostic))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Plan score policy configuration is invalid."
+                    : $"Plan score policy: {diagnostic}";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
         }
 
         private static bool IsPositiveFinite(float value) =>

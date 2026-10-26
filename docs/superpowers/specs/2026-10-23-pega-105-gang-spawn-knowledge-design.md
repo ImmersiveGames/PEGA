@@ -1,5 +1,13 @@
 # #105 — Spawn Point e conhecimento compartilhado da Gangue
 
+**Estado documental:** registro de desenho técnico para o escopo do cartão #105. A especificação não registra aprovação nem constitui evidência de aceite. O plano associado marca suas etapas preparatórias como concluídas, mas também registra que as asserções de runtime Unity permanecem pendentes; esse é o estado descrito pelo plano, sem inferência sobre validações posteriores.
+
+**Data:** 2026-10-23 (registrada no nome do arquivo; o corpo original não tinha campo de data).
+
+**Escopo:** escolhas locais do PEGA para registrar evidência física de ingresso e disponibilizar o Target resultante à Gangue na Mission. Não define a arquitetura geral de conhecimento, GOAP, Spawn Points ou ocorrência de Actors.
+
+**Autoridade e alcance das decisões:** o [GDD](../../../PEGA%20GDD/GDD.md) é a fonte das regras de gameplay sobre conhecimento compartilhado, entradas usadas e Spawn Points; os [ADRs GOAP aceitos](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md) registram as fronteiras arquiteturais gerais. As escolhas abaixo — incluindo manter `PEGANpcGangKnowledgeState` no PEGA — são decisões de implementação limitadas a #105; não criam contrato geral para o Framework nem alteram seus contratos de ocorrência do Actor.
+
 ## Intenção e resultado
 
 Quando um larápio atravessa fisicamente a entrada de um Spawn Point no sentido de ingresso, o PEGA registra essa entrada como saída potencial conhecida da Gangue. O fato fica disponível a membros já vinculados e a membros que recebam o vínculo depois, como Target de planejamento com proveniência de Knowledge State.

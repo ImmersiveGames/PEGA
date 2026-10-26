@@ -1,5 +1,9 @@
 # PEGA GOAP Desires and Plan Selection Implementation Plan
 
+> **Estado documental:** plano histórico da primeira fatia demonstrativa do #64 (2026-10-21), não registro de aceite. A especificação vinculada registra implementação/validação passada para o escopo verificado, mas este plano mantém itens sem marcação e os documentos não mapeiam essa verificação às etapas individuais. Os checkboxes foram preservados; não inferir conclusão nem não conclusão das etapas ou do aceite integral de #64 sem evidência correspondente.
+>
+> **Limite arquitetural:** seleção de um plano de uma Action é específica a esta fatia. O modelo causal posteriormente aprovado está no [GDD](../../../PEGA%20GDD/GDD.md#planejamento-inimigo-por-goap) e nos [ADRs GOAP](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [02](../../../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md) e [03](../../../PEGA%20GDD/ADRs/ADR-GOAP-03-selecao-e-estabilidade.md); a [TASKS vigente](../../../PEGA%20GDD/TASKS.md) registra #106 como fundação e #107 como integração causal à seleção real.
+
 > **Para agentes implementadores:** subskill obrigatória: `superpowers:executing-plans` (execução nativa, recomendada) ou `superpowers:subagent-driven-development`. Execute as tarefas em ordem e mantenha os passos verificáveis.
 
 **Goal:** Implementar no PEGA a configuração e avaliação de Desejos, seleção determinística de planos de uma Action para Targets conhecidos, registro individual de satisfação e uma validação temporária separada entre entrada isolada e integração com conhecimento real.

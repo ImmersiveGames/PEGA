@@ -1,6 +1,6 @@
 # PEGA GOAP Desires and Plan Selection
 
-- **Status:** Implemented; Unity manual validation passed for the verified scope. Live selection between pursuit and escape remains pending legitimate knowledge of E01.
+- **Recorded status (2026-10-21):** The original status reported implementation and Unity manual validation passed for the verified scope. The companion plan retains unchecked items, and this document set does not map the reported verification to individual plan steps. Preserve both records without inferring completion or non-completion of those steps or the full #64 acceptance. Live selection between pursuit and escape was recorded as pending legitimate knowledge of E01.
 - **Date:** 2026-10-21
 - **Scope:** First implementation slice for Trello [#64 — Desires and plan selection](https://trello.com/c/iWwXiDee/64-npc-desejos-e-escolha-de-planos)
 
@@ -18,6 +18,12 @@ Implement the first PEGA-owned Desire configuration and GOAP plan-selection capa
 - **GDD — “Fuga e escolha de saída”** says used entry points and discovered exits become known targets. It does not authorize treating every scene exit marker as NPC knowledge.
 - **OBJ-08** is broader than #64 and includes autonomous execution and re-planning. This slice only supplies Desire evaluation and a selected plan value for later consumption.
 - No GDD, MVP, TASKS, ADR, or Trello content is modified by this design.
+
+### Scope of the demonstrative slice and later architecture
+
+This document describes the first #64 slice. Its one-Action plan selection is a limitation of that slice and is not a general GOAP architecture decision. The later accepted [ADR-GOAP-01](../../../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [ADR-GOAP-02](../../../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), and [ADR-GOAP-03](../../../PEGA%20GDD/ADRs/ADR-GOAP-03-selecao-e-estabilidade.md), together with the current [GDD GOAP contract](../../../PEGA%20GDD/GDD.md#planejamento-inimigo-por-goap), define the later architectural target: Goals are independent of Actions and candidate plans may be causal chains.
+
+The current [TASKS record](../../../PEGA%20GDD/TASKS.md) separates the recorded causal foundation (#106) from its integration into real plan selection (#107). This #64 slice neither replaces that integration task nor asserts that it has been completed. The status above preserves what this document reported for its verified scope; it does not reconcile the unchecked items in the companion plan or establish broader acceptance without separate evidence.
 
 ## 3. Workspace and ecosystem evidence
 
