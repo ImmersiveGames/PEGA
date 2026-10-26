@@ -1,11 +1,11 @@
 # PEGA — Planejamento de produção do vertical slice e da Demo
 
 **Status:** backlog derivado do escopo aprovado e da estratégia vigente em ADR PP-37
-**Versão:** 0.6.0
-**Atualização:** 2026-10-16
+**Versão:** 0.8.0
+**Atualização:** 2026-10-25
 **Escopo:** capacidades de gameplay do vertical slice e evolução posterior da Demo
 
-Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
+Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra a diretriz arquitetural transversal do PEGA e decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
 
 ## Estratégia de execução vigente — PP-37
 
@@ -15,19 +15,19 @@ O ambiente de teste conjunto depende da suficiência de Player e NPCs; a composi
 
 O Immersive Framework é infraestrutura adotada pelo PEGA. Usar contratos/capacidades existentes; não criar tarefas ou checks para repetir validações genéricas de lifecycle, Input Gate, troca de Player ou comportamento interno de componentes. Corrigir falhas concretas de integração PEGA e validar gameplay pertencente ao PEGA.
 
-**Frente imediata:** evolução funcional do Player em [#80 — responsividade do controle](https://trello.com/c/5vyBuvLX), em continuidade ao movimento-base de [#34](https://trello.com/c/6pE7J5R0). O #34 continua incompleto: colisão e aceite de gameplay permanecem pendentes. A evidência estática de blockout em [#53](https://trello.com/c/t7gPfzuM) não é aceite Unity nem prioridade atual de implementação.
+**Foco vigente (PP-37):** Etapa 5 — expansão progressiva do gameplay após a perseguição central satisfatória, cujo aceite está em [#90](https://trello.com/c/CAKDavbP). Os cards de composição compartilhada #104/#103/#102, autonomia #91, replanejamento #95, arena #87 e perseguição #90 estão concluídos no Trello. O incremento técnico GOAP [#107](https://trello.com/c/4EaOKDHP) está registrado nesta etapa sem alterar a prioridade relativa das demais frentes, reabrir #91/#95 ou incorporar #70.
 
 ## 1. Player — controles e movimento para perseguição
 
 - [ ] **VS · Movimento-base e velocidades configuráveis** — movimento do Actor relativo à câmera, projeção no solo, aceleração, rotação, parada, limite diagonal e velocidades especializadas conforme GDD, sem atributo universal de Agilidade. Rastreabilidade: [#34 — movimento e colisão](https://trello.com/c/6pE7J5R0). E03–E04 do cartão permanecem pendentes; a checagem de colisão com o ambiente conjunto ocorre após a preparação do estágio 3.
-- [ ] **VS · Responsividade funcional do controle** — evoluir frenagem/desaceleração, resposta a inversões e intensidade analógica proporcional, preservando controles digitais previsíveis, orientação, direção relativa à câmera e limite de velocidade. Rastreabilidade: [#80 — resposta do controle](https://trello.com/c/5vyBuvLX). A parte funcional antecede NPCs e composição; Inspector final, tuning definitivo, extensão para Petra/P2 e sinais visuais de animação permanecem polimento posterior. Não reimplementar Input Reader/Input Gate do Framework.
+- [ ] **VS · Responsividade funcional do controle** — evoluir frenagem/desaceleração, resposta a inversões e intensidade analógica proporcional, preservando controles digitais previsíveis, orientação, direção relativa à câmera e limite de velocidade. Rastreabilidade atual: [#85 — responsividade do controle](https://trello.com/c/s7NpZaCd); E03 (calibração analógica) e E04 (aceite manual de gameplay) foram adiados e não são declarados concluídos por este backlog. Inspector final, tuning definitivo, extensão para Petra/P2 e sinais visuais de animação permanecem polimento posterior. Não reimplementar Input Reader/Input Gate do Framework.
 - Esquiva, salto, interação contextual, combate e recuperação não são pré-requisitos universais da perseguição. Antecipá-los para esta prioridade somente se uma necessidade concreta estiver sustentada pelo GDD; caso contrário, evoluem após a avaliação da perseguição central.
 
 ## 2. NPCs/larápios — movimento e autonomia para perseguição
 
-- [ ] **VS · Locomoção e comportamento autônomo com GOAP real** — evoluir movimento/velocidade de acordo com a mecânica do Actor e o GDD; usar conhecimento legítimo, percepção, Actions, Desejos e replanejamento na medida necessária para larápios reagirem, fugirem e lidarem com perda/readquisição de alvo sem informação oculta, sequência roteirizada ou FSM substituta. Rastreabilidade dos work packages: [#63 Actions](https://trello.com/c/KAbJVyUl), [#64 Desejos](https://trello.com/c/iWwXiDee), [#68 Knowledge State](https://trello.com/c/WzynxvkM), [#69 percepção](https://trello.com/c/KQmXJWoa), [#72 replanejamento](https://trello.com/c/5ruY3fkZ) e [#76 autonomia para perseguição](https://trello.com/c/T42AjD8K). #66 e #71 só entram se os casos de contingência/conflito do GDD os exigirem.
+- [ ] **VS · Locomoção e comportamento autônomo com GOAP real** — evoluir movimento/velocidade de acordo com a mecânica do Actor e o GDD; usar conhecimento legítimo, percepção, Actions, Desejos e replanejamento na medida necessária para larápios reagirem, fugirem e lidarem com perda/readquisição de alvo sem informação oculta, sequência roteirizada ou FSM substituta. Rastreabilidade dos work packages: [#63 Actions](https://trello.com/c/KAbJVyUl), [#64 Desejos](https://trello.com/c/iWwXiDee), [#68 Knowledge State](https://trello.com/c/WzynxvkM), [#69 percepção](https://trello.com/c/KQmXJWoa), [#95 replanejamento por eventos](https://trello.com/c/EvzWIaW8) e [#91 autonomia para perseguição](https://trello.com/c/UQxoJAWb). #66 e #71 só entram se os casos de contingência/conflito do GDD os exigirem.
 - A suficiência do NPC é avaliada no comportamento autônomo pertinente à perseguição, não pela conclusão de roubo, inventário ou combate. O GDD permite fuga sem loot e define o comportamento após perda de um alvo; isso permite desenvolver essa capacidade antes da expansão por itens.
-- [ ] **VS · Investigação, POIs e roubo GOAP** — desenvolver busca por oportunidade, investigação ativa, descoberta legítima e roubo com Actions executáveis depois da composição central, sem abandonar o GOAP real nem simplificar as regras do GDD. Rastreabilidade: [#70 — investigação](https://trello.com/c/hFYlIZ5l), extensões do [#63](https://trello.com/c/KAbJVyUl) e aceitação expandida do [#76](https://trello.com/c/T42AjD8K).
+- [ ] **VS · Investigação, POIs e roubo GOAP** — desenvolver busca por oportunidade, investigação ativa, descoberta legítima e roubo com Actions executáveis depois da composição central, sem abandonar o GOAP real nem simplificar as regras do GDD. Rastreabilidade: [#70 — investigação](https://trello.com/c/hFYlIZ5l), extensões do [#63](https://trello.com/c/KAbJVyUl) e aceitação expandida do [#91](https://trello.com/c/UQxoJAWb).
 - [ ] **VS-14 · Fuga Final e relógios** — manter GOAP ativo e aplicar contextos/receitas temporais conforme GDD/MVP quando o gameplay expandido e o vertical slice forem compostos. Rastreabilidade: [#73 — temporizadores e resultado](https://trello.com/c/pyQ3yyzf); contextos globais/satisfação de Desejos em [#65](https://trello.com/c/oziocz9k) e [#67](https://trello.com/c/1vUPA1IG).
 
 ## 3. Ambiente de teste conjunto
@@ -54,6 +54,11 @@ Depois da perseguição central satisfatória, desenvolver os demais resultados 
 - [ ] **VS · Feedback funcional e sinais mínimos** — comunicar os estados e timers necessários para observar o gameplay expandido; apresentação/animação finais não bloqueiam comportamento funcional.
 - [ ] **VS-16 · Aceitação integrada do vertical slice** — validar manualmente no Unity os cenários solo exigidos pelo MVP após as capacidades correspondentes estarem prontas. Registrar versão, evidência e limitações reais; não repetir testes internos genéricos do Framework.
 
+**Rastreabilidade técnica GOAP (sem reordenar as frentes de gameplay acima):**
+
+- [x] **Núcleo causal mínimo — fundação PEGA** — condições compostas, Goals independentes, Preconditions/Effects, projeção hipotética e busca causal por fatos/Targets conhecidos. O [#106](https://trello.com/c/3uReJ0J3) foi concluído com oito critérios; a compilação no Unity Editor foi reportada manualmente pelo usuário. A entrega mantém o runtime sem integração, conforme seu escopo.
+- [ ] **Integração causal à seleção real de planos dos NPCs** — usar o núcleo como autoridade única de formação de planos; preservar a comparação PEGA conjunta de Goals, Desejos e alternativas por peso, custo e características configuradas, sem escolher automaticamente o primeiro resultado; manter conhecimento legítimo, providers, progresso de Actions válidas, satisfação e replanejamento por eventos. Rastreabilidade: [#107](https://trello.com/c/4EaOKDHP). Não cria execução encadeada ainda inexistente, não reabre #91/#95 e não absorve nem bloqueia #70. Autoridades: [GDD — planejamento GOAP](GDD.md#planejamento-inimigo-por-goap), [ADR-GOAP-01](ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [ADR-GOAP-02](ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [ADR-GOAP-03](ADRs/ADR-GOAP-03-selecao-e-estabilidade.md), [ADR-GOAP-04](ADRs/ADR-GOAP-04-interacoes-informativas.md), [OBJ-08](../docs/pega-objective-specifications.md) e [PP-37](ADR-PREPRODUCAO.md#12-pp-37--primeiro-satisfazer-as-capacidades-da-perseguicao-depois-expandir-o-gameplay).
+
 ## 6. Demo — cooperação, conteúdo e refinamento
 
 - [ ] **DEM-01/02 · Dois Players e gameplay cooperativo** — entrada/seleção e controle independente de Rick/Petra, câmera/split-screen e operações compartilhadas conforme MVP; exercitar conflitos sem perda/duplicação de estado. Rastreabilidade: [#28 — entrada e seleção local](https://trello.com/c/oUlBYsNI).
@@ -79,13 +84,15 @@ Depois da perseguição central satisfatória, desenvolver os demais resultados 
 
 - [GDD — contratos completos](GDD.md)
 - [MVP — escopo por entrega](MVP.md)
-- [ADR de pré-produção — decisões de produção](ADR-PREPRODUCAO.md)
+- [ADR de pré-produção — arquitetura transversal e decisões de produção](ADR-PREPRODUCAO.md)
 - [Art Book — direção visual](ArtBook.md)
 
 ## Histórico de revisão
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.8.0 | 2026-10-25 | Reconciliado o #106 concluído, registrada a integração causal como work package GOAP da Etapa 5 e atualizado o foco vigente conforme os cards concluídos do PP-37, sem reordenar as demais frentes. |
+| 0.7.0 | 2026-10-25 | Registrado o núcleo causal mínimo do GOAP como fundação técnica própria, separada de #70; atualizadas as referências dos work packages GOAP para #91/#95. |
 | 0.6.0 | 2026-10-16 | Reordenada a produção para satisfazer Player e NPCs, preparar ambiente conjunto, compor a perseguição central e depois expandir gameplay; preservado todo o escopo final do MVP. |
 | 0.5.0 | 2026-10-16 | Reordenado o backlog por capacidades do Player, dos larápios, mecânicas compartilhadas, composição do gameplay e evolução da Demo; antecipada a parte funcional da responsividade; separadas fronteiras de Framework, Level Design, captura e depósito; registrada evidência de FOUND-01 concluído. |
 | 0.4.1 | 2026-10-10 | Corrigido o critério FOUND-01 para explicitar o Camera Output técnico exigido pelo bootstrap, sem Player Session, assignment de Player ou câmera de gameplay; registrada a evidência Unity disponível. |

@@ -12,13 +12,9 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachSelectedEscapeDestination;
 
-        protected override PEGANpcDesireGoalKind ActionGoalKind =>
-            PEGANpcDesireGoalKind.ReachKnownEscapeDestination;
-
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
             PEGANpcPlanningActionId.TravelToEscapeTarget,
             ActionEffectKind,
-            ActionGoalKind,
             PEGANpcPlanningTargetKind.EscapeDestination,
             true,
             "NPC began escaping to a known exit.");
@@ -51,7 +47,6 @@ namespace PEGA.NPC
                 Contract,
                 this,
                 knownEscapeTarget.TargetId,
-                true,
                 speedRegime,
                 routeEstimate,
                 IntrinsicDurationSeconds);
@@ -65,14 +60,31 @@ namespace PEGA.NPC
             out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
             out string diagnostic)
         {
+            targets = Array.AsReadOnly(Array.Empty<PEGANpcPlanningTarget>());
+            candidates = Array.AsReadOnly(Array.Empty<PEGANpcPlanningActionCandidate>());
             diagnostic = string.Empty;
             List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
             List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
-            for (int index = 0; index < context.KnownTargets.Count; index++)
+            PEGANpcGangMembership membership = GetComponent<PEGANpcGangMembership>();
+            if (membership == null)
             {
-                PEGANpcPlanningTarget target = context.KnownTargets[index];
+                diagnostic = "The composed escape Action requires Gang Membership to supply known escape Targets.";
+                return false;
+            }
+
+            if (!membership.TryGetKnownEscapeTargets(
+                    out IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < knownTargets.Count; index++)
+            {
+                PEGANpcPlanningTarget target = knownTargets[index];
                 if (target.Kind != Contract.TargetKind ||
-                    target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState)
+                    target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState ||
+                    !target.IsValid || !target.HasEvidenceTime)
                 {
                     continue;
                 }
@@ -105,12 +117,12 @@ namespace PEGA.NPC
 
         public override bool CanOfferCandidate(
             PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPursuitContinuation? continuation) =>
+            PEGANpcPlanContinuation? continuation) =>
             CandidateMatchesContract(candidate) && !continuation.HasValue;
 
         public override bool IsCurrentPlanValid(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -157,7 +169,7 @@ namespace PEGA.NPC
 
         public override bool TryStart(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out string diagnostic)
         {
             if (!IsCurrentPlanValid(plan, continuation, out _, out _, out diagnostic))
@@ -166,7 +178,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            return TryStart(plan.TargetPosition, plan.SpeedRegime, out diagnostic);
+            return TryStartNavigation(plan.TargetId, plan.TargetPosition, plan.SpeedRegime, out diagnostic);
         }
 
         public bool TryStart(
@@ -189,7 +201,7 @@ namespace PEGA.NPC
             PEGAActorMovementSpeedRegime speedRegime,
             out string diagnostic)
         {
-            return TryStartNavigation(selectedEscapeTarget, speedRegime, out diagnostic);
+            return TryStartNavigation(default, selectedEscapeTarget, speedRegime, out diagnostic);
         }
     }
 }

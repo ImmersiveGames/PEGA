@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using PEGA.GOAP;
 using PEGA.Diagnostics;
 using UnityEngine;
 
@@ -155,11 +156,26 @@ namespace PEGA.NPC
 
         public PEGANpcDesireSatisfactionUpdate RecordCompletedAction(
             PEGANpcObservedActionEffect observedEffect,
+            IPEGAGoapObservedStateView observedState,
             PEGANpcDesireContextDefinition activeContext)
         {
+            if (observedState == null)
+            {
+                throw new ArgumentNullException(nameof(observedState));
+            }
+
             if (activeContext == null)
             {
                 throw new ArgumentNullException(nameof(activeContext));
+            }
+
+            if (observedState.Source != PEGAGoapStateSource.WorldState ||
+                observedState.KnowledgeState == null ||
+                observedState.KnowledgeState.Source != PEGAGoapStateSource.KnowledgeState)
+            {
+                throw new ArgumentException(
+                    "Desire satisfaction requires an observed World State outcome and its separate Knowledge State.",
+                    nameof(observedState));
             }
 
             if (!activeContext.TryValidate(
@@ -175,7 +191,7 @@ namespace PEGA.NPC
                 new List<PEGANpcDesireSatisfactionSnapshot>();
             bool staleOrDuplicateObservation = false;
 
-            if (observedEffect.IsValid)
+            if (observedEffect.IsValid && observedState.ObservedEffects.Count > 0)
             {
                 if (observedEffect.RequestId <= _highestRecordedRequestId)
                 {
@@ -190,7 +206,8 @@ namespace PEGA.NPC
                         PEGANpcDesireConfiguration configuration = configurations[index];
                         PEGANpcDesireDefinition definition = configuration.Definition;
                         PEGANpcDesireSatisfactionSnapshot current = GetSatisfaction(definition.DesireId);
-                        if (!definition.Matches(observedEffect) || !configuration.CanRecordSatisfaction(current))
+                        if (definition.CreateGoal().Evaluate(observedState) != PEGAGoapTruthValue.True ||
+                            !configuration.CanRecordSatisfaction(current))
                         {
                             continue;
                         }
@@ -216,14 +233,16 @@ namespace PEGA.NPC
             updated.Sort((left, right) => string.CompareOrdinal(left.DesireId, right.DesireId));
             PEGANpcDesireSatisfactionUpdate result = new PEGANpcDesireSatisfactionUpdate(updated);
             _log.Debug(
-                "Completed NPC Action evaluated against active Desire predicates.",
+                "Completed NPC Action evaluated against active Goal conditions.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("context", activeContext.Context),
                 LogFields.Field("effect", observedEffect.Kind),
-                LogFields.Field("goal", observedEffect.GoalKind),
+                LogFields.Field("effectTargetId", observedEffect.TargetId),
+                LogFields.Field("effectTargetKind", observedEffect.TargetKind),
                 LogFields.Field("effectValid", observedEffect.IsValid),
                 LogFields.Field("requestId", observedEffect.RequestId),
                 LogFields.Field("staleOrDuplicateObservation", staleOrDuplicateObservation),
+                LogFields.Field("observedCausalEffectCount", observedState.ObservedEffects.Count),
                 LogFields.Field("updatedDesireCount", result.UpdatedCount),
                 LogFields.Field("updatedDesireIds", JoinDesireIds(result.UpdatedValues)));
             return result;

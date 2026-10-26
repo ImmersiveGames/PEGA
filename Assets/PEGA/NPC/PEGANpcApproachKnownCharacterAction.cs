@@ -10,26 +10,22 @@ using UnityEngine;
 namespace PEGA.NPC
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Approach Known Rick")]
-    public sealed class PEGANpcApproachKnownRickAction : PEGANpcNavigationAction,
-        IPEGANpcLostContactPursuitProvider,
+    [AddComponentMenu("PEGA/NPC/Actions/Approach Known Character")]
+    public sealed class PEGANpcApproachKnownCharacterAction : PEGANpcNavigationAction,
+        IPEGANpcLastKnownTargetContinuationProvider,
         IPEGANpcKnowledgeChangeRelevanceProvider
     {
-        private const string IntentLogCategory = "PEGA.Gameplay.NPC.PursuitIntent";
+        private const string IntentLogCategory = "PEGA.Gameplay.NPC.TargetContinuation";
 
         protected override PEGANpcActionEffectKind ActionEffectKind =>
-            PEGANpcActionEffectKind.ApproachKnownRickPosition;
-
-        protected override PEGANpcDesireGoalKind ActionGoalKind =>
-            PEGANpcDesireGoalKind.ReachKnownCharacterPosition;
+            PEGANpcActionEffectKind.ApproachKnownCharacterPosition;
 
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
-            PEGANpcPlanningActionId.ApproachKnownRick,
+            PEGANpcPlanningActionId.ApproachKnownCharacter,
             ActionEffectKind,
-            ActionGoalKind,
             PEGANpcPlanningTargetKind.CharacterPosition,
             true,
-            "NPC began pursuing Rick.");
+            "NPC began approaching a known character.");
 
         [Header("Known Target")]
         [SerializeField]
@@ -37,32 +33,28 @@ namespace PEGA.NPC
         private PEGANpcKnowledgeState knowledgeState;
 
         [SerializeField]
-        [Tooltip("Referência explícita ao Player cuja identidade deve estar reconhecida como Rick.")]
-        private ActorOccurrenceReferenceBinding rickReference;
-
-        [SerializeField]
-        [Tooltip("Actor Profile que identifica Rick no Knowledge State.")]
-        private ActorProfile rickActorProfile;
+        [Tooltip("Referência ao Actor cujo conhecimento pode orientar esta Action.")]
+        private ActorOccurrenceReferenceBinding targetReference;
 
         [System.NonSerialized]
         private IEventBinding _knowledgeChangeBinding;
 
         [System.NonSerialized]
-        private EventBus<PEGANpcLastKnownRickPursuitIntentRequestedEvent> _pursuitIntentEvents;
+        private EventBus<PEGANpcLastKnownTargetContinuationIntentRequestedEvent> _continuationIntentEvents;
 
         [System.NonSerialized]
         private ScopedLogger _intentLog;
 
-        public IEventBinding SubscribeToLostContactPursuitIntents(
-            Action<PEGANpcLastKnownRickPursuitIntentRequestedEvent> handler)
+        public IEventBinding SubscribeToLastKnownTargetContinuationIntents(
+            Action<PEGANpcLastKnownTargetContinuationIntentRequestedEvent> handler)
         {
             if (handler == null)
             {
                 throw new ArgumentNullException(nameof(handler));
             }
 
-            EnsurePursuitIntentEventsInitialized();
-            return _pursuitIntentEvents.Subscribe(intentEvent =>
+            EnsureContinuationIntentEventsInitialized();
+            return _continuationIntentEvents.Subscribe(intentEvent =>
             {
                 try
                 {
@@ -75,14 +67,14 @@ namespace PEGA.NPC
             });
         }
 
-        public bool UnsubscribeFromLostContactPursuitIntents(IEventBinding binding)
+        public bool UnsubscribeFromLastKnownTargetContinuationIntents(IEventBinding binding)
         {
             if (binding == null)
             {
                 throw new ArgumentNullException(nameof(binding));
             }
 
-            return _pursuitIntentEvents != null && _pursuitIntentEvents.Unsubscribe(binding);
+            return _continuationIntentEvents != null && _continuationIntentEvents.Unsubscribe(binding);
         }
 
         protected override void Awake()
@@ -97,7 +89,7 @@ namespace PEGA.NPC
             {
                 EnsureIntentLoggerInitialized();
                 _intentLog.Warning(
-                    "Lost-contact pursuit intent source requires this NPC's Knowledge State on the same root.",
+                    "Last-known target continuation requires this NPC's Knowledge State on the same root.",
                     LogFields.Field("actorRoot", gameObject.name));
                 return;
             }
@@ -124,51 +116,41 @@ namespace PEGA.NPC
                 _knowledgeChangeBinding = null;
             }
 
-            _pursuitIntentEvents?.Clear();
-            _pursuitIntentEvents = null;
+            _continuationIntentEvents?.Clear();
+            _continuationIntentEvents = null;
             base.OnDestroy();
         }
 
-        public bool TryGetKnownRickPosition(out Vector3 position, out string diagnostic)
+        public bool TryGetKnownTargetPosition(out Vector3 position, out string diagnostic)
         {
-            return TryGetKnownRickEvidence(out _, out position, out _, out diagnostic);
+            return TryGetKnownTargetEvidence(out _, out position, out _, out diagnostic);
         }
 
         public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged ||
                 !change.SubjectActorId.HasValue ||
-                !TryResolveRickSubject(out ActorId subjectActorId, out _) ||
+                !TryResolveTargetSubject(out ActorId subjectActorId, out _) ||
                 change.SubjectActorId.Value != subjectActorId)
             {
                 return false;
             }
 
             return change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
-                change.FactKind == PEGANpcKnowledgeFactKind.RickVisualContact ||
-                change.FactKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition;
+                change.FactKind == PEGANpcKnowledgeFactKind.CharacterVisualContact ||
+                change.FactKind == PEGANpcKnowledgeFactKind.LastObservedCharacterPosition;
         }
 
-        public bool IsCurrentLostContactPursuitIntent(
-            PEGANpcLastKnownRickPursuitIntent intent,
+        public bool IsCurrentContinuationIntent(
+            PEGANpcLastKnownTargetContinuationIntent intent,
             out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (!intent.IsValid || !TryResolveRickSubject(out ActorId currentSubjectActorId, out diagnostic) ||
+            if (!intent.IsValid || !TryResolveTargetSubject(out ActorId currentSubjectActorId, out diagnostic) ||
                 currentSubjectActorId != intent.SubjectActorId)
             {
                 diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "The intent does not identify this Action's current Player occurrence."
-                    : diagnostic;
-                return false;
-            }
-
-            if (rickActorProfile == null ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out diagnostic) ||
-                !rickProfileId.IsValid)
-            {
-                diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "The Action has no valid configured Rick Actor Profile."
+                    ? "The intent does not identify this Action's currently configured target occurrence."
                     : diagnostic;
                 return false;
             }
@@ -176,21 +158,20 @@ namespace PEGA.NPC
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 knowledgeState.GetObservedCharacterIdentity(intent.SubjectActorId);
             PEGANpcKnowledgeFact<bool> contact =
-                knowledgeState.GetRickVisualContact(intent.SubjectActorId);
+                knowledgeState.GetCharacterVisualContact(intent.SubjectActorId);
             PEGANpcKnowledgeFact<Vector3> lastPosition =
-                knowledgeState.GetLastObservedRickPosition(intent.SubjectActorId);
-            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
-                observedProfileId != rickProfileId ||
+                knowledgeState.GetLastObservedCharacterPosition(intent.SubjectActorId);
+            if (!identity.TryGetValue(out _) ||
                 !identity.HasObservationTime ||
                 (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
             {
-                diagnostic = "The current Knowledge State does not contain Perception-backed recognition of Rick.";
+                diagnostic = "The current Knowledge State does not contain Perception-backed target identity.";
                 return false;
             }
 
             if (identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d)
             {
-                diagnostic = "Newer Perception recognized Rick after the lost-contact event; its continuation is superseded.";
+                diagnostic = "Newer Perception observations superseded the last-known target continuation.";
                 return false;
             }
 
@@ -219,23 +200,19 @@ namespace PEGA.NPC
             return true;
         }
 
-        public bool IsLostContactIntentSupersededByNewRecognition(
-            PEGANpcLastKnownRickPursuitIntent intent)
+        public bool IsContinuationSupersededByNewRecognition(
+            PEGANpcLastKnownTargetContinuationIntent intent)
         {
             if (!intent.IsValid ||
-                !TryResolveRickSubject(out ActorId currentSubjectActorId, out _) ||
-                currentSubjectActorId != intent.SubjectActorId ||
-                rickActorProfile == null ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out _) ||
-                !rickProfileId.IsValid)
+                !TryResolveTargetSubject(out ActorId currentSubjectActorId, out _) ||
+                currentSubjectActorId != intent.SubjectActorId)
             {
                 return false;
             }
 
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 knowledgeState.GetObservedCharacterIdentity(intent.SubjectActorId);
-            return identity.TryGetValue(out ActorProfileId observedProfileId) &&
-                observedProfileId == rickProfileId &&
+            return identity.TryGetValue(out _) &&
                 identity.HasObservationTime &&
                 identity.ObservationTimeSeconds > intent.ContactLossObservationTimeSeconds + 0.000001d &&
                 (identity.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
@@ -244,7 +221,7 @@ namespace PEGA.NPC
         private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
         {
             if (change == null ||
-                change.FactKind != PEGANpcKnowledgeFactKind.RickVisualContact ||
+                change.FactKind != PEGANpcKnowledgeFactKind.CharacterVisualContact ||
                 !change.SubjectActorId.HasValue ||
                 change.EvidenceOrigin != PEGANpcEvidenceOrigin.Perception)
             {
@@ -252,15 +229,15 @@ namespace PEGA.NPC
             }
 
             PEGANpcKnowledgeFact<bool> contact =
-                knowledgeState.GetRickVisualContact(change.SubjectActorId.Value);
+                knowledgeState.GetCharacterVisualContact(change.SubjectActorId.Value);
             if (!contact.TryGetValue(out bool hasVisualContact) || hasVisualContact)
             {
                 return;
             }
 
-            if (!TryCreateLostContactPursuitIntent(
+            if (!TryCreateLastKnownTargetContinuationIntent(
                     change,
-                    out PEGANpcLastKnownRickPursuitIntent intent,
+                    out PEGANpcLastKnownTargetContinuationIntent intent,
                     out string diagnostic))
             {
                 EnsureIntentLoggerInitialized();
@@ -273,13 +250,13 @@ namespace PEGA.NPC
                 return;
             }
 
-            EnsurePursuitIntentEventsInitialized();
-            _pursuitIntentEvents.Publish(
-                new PEGANpcLastKnownRickPursuitIntentRequestedEvent(intent));
+            EnsureContinuationIntentEventsInitialized();
+            _continuationIntentEvents.Publish(
+                new PEGANpcLastKnownTargetContinuationIntentRequestedEvent(intent));
 
             EnsureIntentLoggerInitialized();
             _intentLog.Debug(
-                "NPC requested continuation of Rick pursuit at the last Perception-backed position.",
+                "NPC requested continuation of target pursuit at the last Perception-backed position.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("subjectActorId", intent.SubjectActorId),
                 LogFields.Field("actionId", intent.ActionId),
@@ -290,25 +267,25 @@ namespace PEGA.NPC
 
         /// <summary>
         /// Produces the continuation intent for a confirmed visual-contact loss.
-        /// The destination comes only from this NPC's Knowledge State; this method never reads Rick's current transform.
+        /// The destination comes only from this NPC's Knowledge State; this method never reads target's current transform.
         /// Call it while handling the corresponding N01 knowledge-change event.
         /// </summary>
-        private bool TryCreateLostContactPursuitIntent(
+        private bool TryCreateLastKnownTargetContinuationIntent(
             PEGANpcKnowledgeFactChangedEvent contactChange,
-            out PEGANpcLastKnownRickPursuitIntent intent,
+            out PEGANpcLastKnownTargetContinuationIntent intent,
             out string diagnostic)
         {
             intent = default;
             diagnostic = string.Empty;
             if (contactChange == null ||
-                contactChange.FactKind != PEGANpcKnowledgeFactKind.RickVisualContact ||
+                contactChange.FactKind != PEGANpcKnowledgeFactKind.CharacterVisualContact ||
                 !contactChange.SubjectActorId.HasValue ||
                 !contactChange.HasValueOrStatusChanged ||
                 contactChange.PreviousStatus != PEGANpcKnowledgeStatus.Known ||
                 contactChange.CurrentStatus != PEGANpcKnowledgeStatus.Known ||
                 contactChange.EvidenceOrigin != PEGANpcEvidenceOrigin.Perception)
             {
-                diagnostic = "A changed Known-to-Known Rick visual-contact event from Perception is required.";
+                diagnostic = "A changed Known-to-Known target visual-contact event from Perception is required.";
                 return false;
             }
 
@@ -321,30 +298,20 @@ namespace PEGA.NPC
             ActorId subjectActorId = contactChange.SubjectActorId.Value;
             if (!subjectActorId.IsValid)
             {
-                diagnostic = "The contact-loss event has no valid Rick subject ActorId.";
-                return false;
-            }
-
-            if (rickActorProfile == null ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out diagnostic) ||
-                !rickProfileId.IsValid)
-            {
-                diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "The Action requires a valid Rick Actor Profile."
-                    : diagnostic;
+                diagnostic = "The contact-loss event has no valid target subject ActorId.";
                 return false;
             }
 
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
-                observedProfileId != rickProfileId)
+            if (!identity.TryGetValue(out _) ||
+                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
             {
-                diagnostic = "The subject is not legitimately known as the configured Rick Actor Profile.";
+                diagnostic = "The subject identity is not known from authorized Perception evidence.";
                 return false;
             }
 
-            PEGANpcKnowledgeFact<bool> contact = knowledgeState.GetRickVisualContact(subjectActorId);
+            PEGANpcKnowledgeFact<bool> contact = knowledgeState.GetCharacterVisualContact(subjectActorId);
             if (!contact.TryGetValue(out bool hasVisualContact) ||
                 hasVisualContact ||
                 !contact.HasObservationTime ||
@@ -356,17 +323,17 @@ namespace PEGA.NPC
             }
 
             PEGANpcKnowledgeFact<Vector3> lastPosition =
-                knowledgeState.GetLastObservedRickPosition(subjectActorId);
+                knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
             if (!lastPosition.TryGetValue(out Vector3 position) ||
                 !lastPosition.HasObservationTime ||
                 (lastPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
                 lastPosition.ObservationTimeSeconds > contact.ObservationTimeSeconds)
             {
-                diagnostic = "The NPC has no Perception-backed last Rick position at or before contact loss.";
+                diagnostic = "The NPC has no Perception-backed last target position at or before contact loss.";
                 return false;
             }
 
-            intent = new PEGANpcLastKnownRickPursuitIntent(
+            intent = new PEGANpcLastKnownTargetContinuationIntent(
                 subjectActorId,
                 position,
                 lastPosition.ObservationTimeSeconds,
@@ -382,7 +349,7 @@ namespace PEGA.NPC
         {
             target = default;
             candidate = default;
-            if (!TryGetKnownRickEvidence(
+            if (!TryGetKnownTargetEvidence(
                     out ActorId subjectActorId,
                     out Vector3 knownPosition,
                     out double evidenceTimeSeconds,
@@ -408,7 +375,6 @@ namespace PEGA.NPC
                 Contract,
                 this,
                 target.TargetId,
-                true,
                 PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
                 routeEstimate,
                 IntrinsicDurationSeconds);
@@ -426,11 +392,13 @@ namespace PEGA.NPC
             List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
-            if (context.PursuitContinuation.HasValue)
+            ActorId currentTargetActorId = context.TargetActorId;
+            if (context.PlanContinuation.HasValue)
             {
-                PEGANpcPursuitContinuation continuation = context.PursuitContinuation.Value;
-                if (continuation.LastKnownApproachAttempted || continuation.LastKnownPositionReached ||
-                    context.PlayerActorId != continuation.SubjectActorId ||
+                PEGANpcPlanContinuation continuation = context.PlanContinuation.Value;
+                if (!currentTargetActorId.IsValid ||
+                    continuation.LastKnownApproachAttempted || continuation.LastKnownPositionReached ||
+                    currentTargetActorId != continuation.SubjectActorId ||
                     PlanarDistance(transform.position, continuation.LastKnownPosition) <= ArrivalRadiusMeters)
                 {
                     diagnostic = string.Empty;
@@ -458,7 +426,7 @@ namespace PEGA.NPC
                 return true;
             }
 
-            if (!context.PlayerActorId.IsValid || !context.HasPerceptionBackedVisualContact)
+            if (!currentTargetActorId.IsValid || !context.HasPerceptionBackedTargetContact)
             {
                 diagnostic = string.Empty;
                 return true;
@@ -470,9 +438,9 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (target.TargetId != PEGANpcPlanningTargetId.ForActor(context.PlayerActorId))
+            if (target.TargetId != PEGANpcPlanningTargetId.ForActor(currentTargetActorId))
             {
-                diagnostic = "Approach candidate does not match the current Player Actor occurrence.";
+                diagnostic = "Approach candidate does not match the current target observation.";
                 return false;
             }
 
@@ -483,7 +451,7 @@ namespace PEGA.NPC
 
         public override bool CanOfferCandidate(
             PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPursuitContinuation? continuation) =>
+            PEGANpcPlanContinuation? continuation) =>
             CandidateMatchesContract(candidate) &&
             (!continuation.HasValue ||
              (!continuation.Value.LastKnownApproachAttempted &&
@@ -492,7 +460,7 @@ namespace PEGA.NPC
 
         public override bool IsCurrentPlanValid(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -502,11 +470,11 @@ namespace PEGA.NPC
             diagnostic = string.Empty;
             if (continuation.HasValue)
             {
-                PEGANpcPursuitContinuation current = continuation.Value;
-                if (plan.Purpose != PEGANpcPlanPurpose.PursuitContinuationStep ||
+                PEGANpcPlanContinuation current = continuation.Value;
+                if (plan.Purpose != PEGANpcPlanPurpose.PlanContinuationStep ||
                     plan.TargetId != PEGANpcPlanningTargetId.ForActor(current.SubjectActorId) ||
-                    !IsCurrentLostContactPursuitIntent(current.ToIntent(), out diagnostic) ||
-                    !TryGetKnownRickPosition(out currentKnownPosition, out diagnostic) ||
+                    !IsCurrentContinuationIntent(current.ToIntent(), out diagnostic) ||
+                    !TryGetKnownTargetPosition(out currentKnownPosition, out diagnostic) ||
                     !IsTargetPositionWithinTolerance(currentKnownPosition, plan.TargetPosition))
                 {
                     diagnostic = string.IsNullOrEmpty(diagnostic)
@@ -522,12 +490,12 @@ namespace PEGA.NPC
 
             if (plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
                 plan.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.Actor ||
-                !TryGetKnownRickPosition(out currentKnownPosition, out diagnostic) ||
-                plan.TargetId != PEGANpcPlanningTargetId.ForActor(GetCurrentRickActorId()) ||
+                !TryGetKnownTargetPosition(out currentKnownPosition, out diagnostic) ||
+                plan.TargetId != PEGANpcPlanningTargetId.ForActor(GetCurrentTargetActorId()) ||
                 !IsTargetPositionWithinTolerance(currentKnownPosition, plan.TargetPosition))
             {
                 diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "The Approach plan no longer matches the current known Player target."
+                        ? "The Approach plan no longer matches the current known target."
                     : diagnostic;
                 return false;
             }
@@ -539,17 +507,17 @@ namespace PEGA.NPC
 
         public override bool TryStart(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out string diagnostic)
         {
             diagnostic = string.Empty;
             bool continuationMatches = continuation.HasValue
-                ? plan.Purpose == PEGANpcPlanPurpose.PursuitContinuationStep &&
+                ? plan.Purpose == PEGANpcPlanPurpose.PlanContinuationStep &&
                   plan.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.Value.SubjectActorId) &&
-                  IsCurrentLostContactPursuitIntent(continuation.Value.ToIntent(), out diagnostic)
+                  IsCurrentContinuationIntent(continuation.Value.ToIntent(), out diagnostic)
                 : plan.Purpose == PEGANpcPlanPurpose.DesireGoal;
             if (plan.ActionId != Contract.ActionId || !continuationMatches ||
-                !TryGetKnownRickPosition(out Vector3 position, out diagnostic) ||
+                !TryGetKnownTargetPosition(out Vector3 position, out diagnostic) ||
                 !IsTargetPositionWithinTolerance(position, plan.TargetPosition))
             {
                 diagnostic = string.IsNullOrEmpty(diagnostic)
@@ -559,11 +527,15 @@ namespace PEGA.NPC
                 return false;
             }
 
-            return TryStartNavigation(position, PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit, out diagnostic);
+            return TryStartNavigation(
+                plan.TargetId,
+                position,
+                PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
+                out diagnostic);
         }
 
-        private ActorId GetCurrentRickActorId() =>
-            TryResolveRickSubject(out ActorId actorId, out _) ? actorId : default;
+        private ActorId GetCurrentTargetActorId() =>
+            TryResolveTargetSubject(out ActorId actorId, out _) ? actorId : default;
 
         private static float PlanarDistance(Vector3 left, Vector3 right)
         {
@@ -572,7 +544,7 @@ namespace PEGA.NPC
             return delta.magnitude;
         }
 
-        private bool TryGetKnownRickEvidence(
+        private bool TryGetKnownTargetEvidence(
             out ActorId subjectActorId,
             out Vector3 position,
             out double evidenceTimeSeconds,
@@ -581,30 +553,29 @@ namespace PEGA.NPC
             subjectActorId = default;
             position = default;
             evidenceTimeSeconds = 0d;
-            if (!TryResolveRickSubject(out subjectActorId, out diagnostic))
+            if (!TryResolveTargetSubject(out subjectActorId, out diagnostic))
             {
                 return false;
             }
 
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId rickProfileId, out diagnostic) ||
-                observedProfileId != rickProfileId)
+            if (!identity.TryGetValue(out _) ||
+                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
             {
                 if (string.IsNullOrEmpty(diagnostic))
                 {
-                    diagnostic = "The current Player subject is not known as the configured Rick Actor Profile.";
+                    diagnostic = "The current target identity is not known from authorized Perception evidence.";
                 }
 
                 return false;
             }
 
             PEGANpcKnowledgeFact<Vector3> lastObservedPosition =
-                knowledgeState.GetLastObservedRickPosition(subjectActorId);
+                knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
             if (!lastObservedPosition.TryGetValue(out position) || !lastObservedPosition.HasObservationTime)
             {
-                diagnostic = "This NPC has no valid last observed Rick position with evidence time.";
+                diagnostic = "This NPC has no valid last observed target position with evidence time.";
                 return false;
             }
 
@@ -615,22 +586,23 @@ namespace PEGA.NPC
 
         public bool TryStart(out string diagnostic)
         {
-            if (!TryGetKnownRickPosition(out Vector3 lastKnownPosition, out diagnostic))
+            if (!TryGetKnownTargetPosition(out Vector3 lastKnownPosition, out diagnostic))
             {
                 RejectStart(diagnostic);
                 return false;
             }
 
             return TryStartNavigation(
+                PEGANpcPlanningTargetId.ForActor(GetCurrentTargetActorId()),
                 lastKnownPosition,
                 PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
                 out diagnostic);
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic) =>
-            TryGetKnownRickPosition(out _, out diagnostic);
+            TryGetKnownTargetPosition(out _, out diagnostic);
 
-        private bool TryResolveRickSubject(out ActorId subjectActorId, out string diagnostic)
+        private bool TryResolveTargetSubject(out ActorId subjectActorId, out string diagnostic)
         {
             subjectActorId = default;
             diagnostic = string.Empty;
@@ -640,32 +612,22 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (rickReference == null || rickReference.gameObject != gameObject)
+            if (targetReference == null || targetReference.gameObject != gameObject)
             {
-                diagnostic = "The Action requires an explicit Player Actor occurrence reference on the same root.";
+                diagnostic = "The Action requires an explicit target Actor occurrence reference on the same root.";
                 return false;
             }
 
-            if (rickActorProfile == null ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId profileId, out diagnostic) ||
-                !profileId.IsValid)
+            if (!targetReference.TryGetCurrent(out ActorOccurrenceResolution resolution))
             {
-                diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "The Action requires a valid Rick Actor Profile."
-                    : diagnostic;
-                return false;
-            }
-
-            if (!rickReference.TryGetCurrent(out ActorOccurrenceResolution resolution))
-            {
-                diagnostic = $"The configured Rick Player occurrence is not currently resolved: {resolution.Status}. {resolution.Diagnostic}";
+                diagnostic = $"The configured target Actor occurrence is not currently resolved: {resolution.Status}. {resolution.Diagnostic}";
                 return false;
             }
 
             subjectActorId = resolution.Occurrence.ActorId;
             if (!subjectActorId.IsValid)
             {
-                diagnostic = "The current Rick Player occurrence has no valid ActorId.";
+                diagnostic = "The current target Actor occurrence has no valid ActorId.";
                 subjectActorId = default;
                 return false;
             }
@@ -674,21 +636,21 @@ namespace PEGA.NPC
             return true;
         }
 
-        private void EnsurePursuitIntentEventsInitialized()
+        private void EnsureContinuationIntentEventsInitialized()
         {
-            _pursuitIntentEvents ??= new EventBus<PEGANpcLastKnownRickPursuitIntentRequestedEvent>();
+            _continuationIntentEvents ??= new EventBus<PEGANpcLastKnownTargetContinuationIntentRequestedEvent>();
         }
 
         private void EnsureIntentLoggerInitialized()
         {
-            _intentLog ??= PEGALogging.CreateScopedLogger<PEGANpcApproachKnownRickAction>(
+            _intentLog ??= PEGALogging.CreateScopedLogger<PEGANpcApproachKnownCharacterAction>(
                 IntentLogCategory,
                 gameObject.name);
         }
 
         private void LogIntentSubscriberFailure(
-            Action<PEGANpcLastKnownRickPursuitIntentRequestedEvent> handler,
-            PEGANpcLastKnownRickPursuitIntentRequestedEvent intentEvent,
+            Action<PEGANpcLastKnownTargetContinuationIntentRequestedEvent> handler,
+            PEGANpcLastKnownTargetContinuationIntentRequestedEvent intentEvent,
             Exception exception)
         {
             EnsureIntentLoggerInitialized();

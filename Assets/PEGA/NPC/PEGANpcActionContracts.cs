@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using Immersive.Framework.PlayerParticipation;
+using PEGA.GOAP;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -23,9 +25,9 @@ namespace PEGA.NPC
 
         private PEGANpcPlanningActionId(string stableText) => _stableText = stableText;
 
-        public static PEGANpcPlanningActionId ApproachKnownRick { get; } = new PEGANpcPlanningActionId("approach-known-rick");
+        public static PEGANpcPlanningActionId ApproachKnownCharacter { get; } = new PEGANpcPlanningActionId("approach-known-target");
         public static PEGANpcPlanningActionId TravelToEscapeTarget { get; } = new PEGANpcPlanningActionId("travel-to-escape-target");
-        public static PEGANpcPlanningActionId InvestigateLastKnownRickPosition { get; } = new PEGANpcPlanningActionId("investigate-last-known-rick-position");
+        public static PEGANpcPlanningActionId InvestigateLastKnownCharacterPosition { get; } = new PEGANpcPlanningActionId("investigate-last-known-target-position");
         public static PEGANpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PEGANpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PEGANpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PEGANpcPlanningActionId("investigate-perceived-area-presence");
 
@@ -50,7 +52,7 @@ namespace PEGA.NPC
 
         private PEGANpcActionEffectKind(string stableText) => _stableText = stableText;
 
-        public static PEGANpcActionEffectKind ApproachKnownRickPosition { get; } = new PEGANpcActionEffectKind("approach-known-rick-position");
+        public static PEGANpcActionEffectKind ApproachKnownCharacterPosition { get; } = new PEGANpcActionEffectKind("approach-known-target-position");
         public static PEGANpcActionEffectKind ReachSelectedEscapeDestination { get; } = new PEGANpcActionEffectKind("reach-selected-escape-destination");
         public static PEGANpcActionEffectKind ReachLocalObservationPosition { get; } = new PEGANpcActionEffectKind("reach-local-observation-position");
         public static PEGANpcActionEffectKind ReachSafeSeparationPosition { get; } = new PEGANpcActionEffectKind("reach-safe-separation-position");
@@ -72,17 +74,23 @@ namespace PEGA.NPC
     {
         internal PEGANpcActionEffectDeclaration(
             PEGANpcActionEffectKind kind,
+            PEGANpcPlanningTargetId targetId,
+            PEGANpcPlanningTargetKind targetKind,
             bool isTargetResolved,
             Vector3 targetPosition,
             float targetRadiusMeters)
         {
             Kind = kind;
+            TargetId = targetId;
+            TargetKind = targetKind;
             IsTargetResolved = isTargetResolved;
             TargetPosition = targetPosition;
             TargetRadiusMeters = targetRadiusMeters;
         }
 
         public PEGANpcActionEffectKind Kind { get; }
+        public PEGANpcPlanningTargetId TargetId { get; }
+        public PEGANpcPlanningTargetKind TargetKind { get; }
         public bool IsTargetResolved { get; }
         public Vector3 TargetPosition { get; }
         public float TargetRadiusMeters { get; }
@@ -92,7 +100,8 @@ namespace PEGA.NPC
     {
         internal PEGANpcObservedActionEffect(
             PEGANpcActionEffectKind kind,
-            PEGANpcDesireGoalKind goalKind,
+            PEGANpcPlanningTargetId targetId,
+            PEGANpcPlanningTargetKind targetKind,
             long requestId,
             Vector3 targetPosition,
             float targetRadiusMeters,
@@ -100,7 +109,8 @@ namespace PEGA.NPC
             double observedAtSeconds)
         {
             Kind = kind;
-            GoalKind = goalKind;
+            TargetId = targetId;
+            TargetKind = targetKind;
             RequestId = requestId;
             TargetPosition = targetPosition;
             TargetRadiusMeters = targetRadiusMeters;
@@ -110,7 +120,8 @@ namespace PEGA.NPC
         }
 
         public PEGANpcActionEffectKind Kind { get; }
-        public PEGANpcDesireGoalKind GoalKind { get; }
+        public PEGANpcPlanningTargetId TargetId { get; }
+        public PEGANpcPlanningTargetKind TargetKind { get; }
         public long RequestId { get; }
         public Vector3 TargetPosition { get; }
         public float TargetRadiusMeters { get; }
@@ -190,14 +201,12 @@ namespace PEGA.NPC
         public PEGANpcActionContract(
             PEGANpcPlanningActionId actionId,
             PEGANpcActionEffectKind effectKind,
-            PEGANpcDesireGoalKind goalKind,
             PEGANpcPlanningTargetKind targetKind,
             bool requiresNavigation,
             string startMessage)
         {
             ActionId = actionId;
             EffectKind = effectKind;
-            GoalKind = goalKind;
             TargetKind = targetKind;
             RequiresNavigation = requiresNavigation;
             StartMessage = startMessage ?? string.Empty;
@@ -205,44 +214,44 @@ namespace PEGA.NPC
 
         public PEGANpcPlanningActionId ActionId { get; }
         public PEGANpcActionEffectKind EffectKind { get; }
-        public PEGANpcDesireGoalKind GoalKind { get; }
         public PEGANpcPlanningTargetKind TargetKind { get; }
         public bool RequiresNavigation { get; }
         public string StartMessage { get; }
 
         public bool IsValid => ActionId.IsValid && EffectKind.IsValid && TargetKind.IsValid &&
-            Enum.IsDefined(typeof(PEGANpcDesireGoalKind), GoalKind) && !string.IsNullOrWhiteSpace(StartMessage);
+            !string.IsNullOrWhiteSpace(StartMessage);
     }
 
-    /// <summary>Per-evaluation inputs that Actions may use to offer candidates from their own capabilities.</summary>
+    /// <summary>Inputs from this NPC's Knowledge State and current planning opportunity.</summary>
     public readonly struct PEGANpcActionPlanningContext
     {
         public PEGANpcActionPlanningContext(
-            ActorId playerActorId,
-            bool hasPerceptionBackedVisualContact,
-            PEGANpcPursuitContinuation? pursuitContinuation,
-            IReadOnlyCollection<PEGANpcPlanningTargetId> attemptedInvestigationTargets,
-            IReadOnlyList<PEGANpcPlanningTarget> knownTargets)
+            PEGANpcKnowledgeState knowledgeState,
+            ActorId targetActorId,
+            bool hasPerceptionBackedTargetContact,
+            PEGANpcPlanContinuation? planContinuation,
+            IReadOnlyCollection<PEGANpcPlanningTargetId> attemptedInvestigationTargets)
         {
-            PlayerActorId = playerActorId;
-            HasPerceptionBackedVisualContact = hasPerceptionBackedVisualContact;
-            PursuitContinuation = pursuitContinuation;
-            AttemptedInvestigationTargets = attemptedInvestigationTargets ?? Array.Empty<PEGANpcPlanningTargetId>();
-            KnownTargets = knownTargets ?? Array.Empty<PEGANpcPlanningTarget>();
+            KnowledgeState = knowledgeState;
+            TargetActorId = targetActorId;
+            HasPerceptionBackedTargetContact = hasPerceptionBackedTargetContact;
+            PlanContinuation = planContinuation;
+            AttemptedInvestigationTargets = attemptedInvestigationTargets ??
+                Array.Empty<PEGANpcPlanningTargetId>();
         }
 
-        public ActorId PlayerActorId { get; }
-        public bool HasPerceptionBackedVisualContact { get; }
-        public PEGANpcPursuitContinuation? PursuitContinuation { get; }
+        public PEGANpcKnowledgeState KnowledgeState { get; }
+        public ActorId TargetActorId { get; }
+        public bool HasPerceptionBackedTargetContact { get; }
+        public PEGANpcPlanContinuation? PlanContinuation { get; }
         public IReadOnlyCollection<PEGANpcPlanningTargetId> AttemptedInvestigationTargets { get; }
-        public IReadOnlyList<PEGANpcPlanningTarget> KnownTargets { get; }
     }
 
     /// <summary>
     /// A capability attached to one Actor root. Providers offer candidates and own Action-specific validation and execution;
     /// the autonomy component only ranks plans, dispatches them, and applies observed Effects to Desire State.
     /// </summary>
-    public interface IPEGANpcActionProvider
+    public interface IPEGANpcActionProvider : IPEGANpcCausalActionDefinitionProvider
     {
         PEGANpcActionContract Contract { get; }
         PEGANpcActionOutcome Outcome { get; }
@@ -256,19 +265,38 @@ namespace PEGA.NPC
             out IReadOnlyList<PEGANpcPlanningTarget> targets,
             out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
             out string diagnostic);
-        bool CanOfferCandidate(PEGANpcPlanningActionCandidate candidate, PEGANpcPursuitContinuation? continuation);
+        bool CanOfferCandidate(PEGANpcPlanningActionCandidate candidate, PEGANpcPlanContinuation? continuation);
         bool IsCurrentPlanValid(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic);
-        bool TryStart(PEGANpcPlanSnapshot plan, PEGANpcPursuitContinuation? continuation, out string diagnostic);
+        bool TryStart(PEGANpcPlanSnapshot plan, PEGANpcPlanContinuation? continuation, out string diagnostic);
         bool TryGetObservedEffect(out PEGANpcObservedActionEffect observedEffect);
         bool IsEffectAlreadySatisfiedAtPosition(PEGANpcPlanSnapshot plan, Vector3 actorPosition);
         bool IsTargetPositionWithinTolerance(Vector3 left, Vector3 right);
         bool CancelExecution(string diagnostic);
         bool InterruptExecution(string diagnostic);
+    }
+
+    /// <summary>
+    /// Supplies causal success Preconditions and Effects for an Action/known-Target application,
+    /// independently of any Desire or Goal condition.
+    /// </summary>
+    public interface IPEGANpcCausalActionDefinitionProvider
+    {
+        bool TryCreateCausalActionDefinition(
+            PEGANpcPlanningActionCandidate candidate,
+            PEGANpcGoapKnownTarget target,
+            out PEGAGoapActionDefinition actionDefinition,
+            out string diagnostic);
+
+        bool TryGetObservedCausalEffects(
+            PEGANpcPlanSnapshot plan,
+            PEGANpcObservedActionEffect observedEffect,
+            out IReadOnlyList<IPEGAGoapEffect> observedEffects,
+            out string diagnostic);
     }
 
     /// <summary>Declara quais mudanças do Knowledge State podem alterar os candidatos deste provider.</summary>
@@ -278,7 +306,23 @@ namespace PEGA.NPC
         bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change);
     }
 
-    /// <summary>Capability opcional para providers que consomem uma tentativa finita vinculada a uma evidência.</summary>
+    /// <summary>Marker published when a composed local capability changes its available planning inputs.</summary>
+    public sealed class PEGANpcPlanningInputsChangedEvent : IEvent
+    {
+        internal PEGANpcPlanningInputsChangedEvent()
+        {
+        }
+    }
+
+    /// <summary>Optional event source for planning facts that are not owned by individual Knowledge State.</summary>
+    public interface IPEGANpcPlanningInputChangeSource
+    {
+        IEventBinding SubscribeToPlanningInputChanges(Action<PEGANpcPlanningInputsChangedEvent> handler);
+
+        bool UnsubscribeFromPlanningInputChanges(IEventBinding binding);
+    }
+
+    /// <summary>Capability opcional que mantém Targets tentados de uma oportunidade finita desta Action.</summary>
     public interface IPEGANpcAttemptedTargetProvider
     {
         bool ShouldRecordAttemptedTarget(PEGANpcPlanningActionCandidate candidate);
@@ -294,13 +338,37 @@ namespace PEGA.NPC
             out string diagnostic);
     }
 
-    /// <summary>Additional domain capability used only by the existing bounded lost-contact pursuit flow.</summary>
-    public interface IPEGANpcLostContactPursuitProvider
+    /// <summary>Optional target-observation capability composed on an NPC root.</summary>
+    public interface IPEGANpcTargetObservationSource
     {
-        IEventBinding SubscribeToLostContactPursuitIntents(Action<PEGANpcLastKnownRickPursuitIntentRequestedEvent> handler);
-        bool UnsubscribeFromLostContactPursuitIntents(IEventBinding binding);
-        bool IsCurrentLostContactPursuitIntent(PEGANpcLastKnownRickPursuitIntent intent, out string diagnostic);
-        bool IsLostContactIntentSupersededByNewRecognition(PEGANpcLastKnownRickPursuitIntent intent);
-        bool TryGetKnownRickPosition(out Vector3 position, out string diagnostic);
+        bool TryGetCurrentTargetActorId(out ActorId actorId, out string diagnostic);
+
+        IEventBinding SubscribeToPlanReevaluationRequests(
+            Action<PEGANpcPlanReevaluationRequestedEvent> handler);
+
+        bool UnsubscribeFromPlanReevaluationRequests(IEventBinding binding);
+
+        bool TryBindActivityObserverBeforeActivation(
+            PlayerSessionObserver observer,
+            out string diagnostic);
     }
+
+    /// <summary>Optional capability for producing a causal continuation from known target evidence.</summary>
+    public interface IPEGANpcLastKnownTargetContinuationProvider
+    {
+        IEventBinding SubscribeToLastKnownTargetContinuationIntents(
+            Action<PEGANpcLastKnownTargetContinuationIntentRequestedEvent> handler);
+
+        bool UnsubscribeFromLastKnownTargetContinuationIntents(IEventBinding binding);
+
+        bool IsCurrentContinuationIntent(
+            PEGANpcLastKnownTargetContinuationIntent intent,
+            out string diagnostic);
+
+        bool IsContinuationSupersededByNewRecognition(
+            PEGANpcLastKnownTargetContinuationIntent intent);
+
+        bool TryGetKnownTargetPosition(out Vector3 position, out string diagnostic);
+    }
+
 }

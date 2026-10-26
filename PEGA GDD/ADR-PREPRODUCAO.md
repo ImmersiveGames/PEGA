@@ -1,13 +1,13 @@
 # PEGA — ADR de Pré-produção
 
 **Projeto:** PEGA (Unity 6)  
-**Tipo:** registro de decisões de planejamento de produção  
-**Status:** PP-01 a PP-36 e adendos anteriores preservados como histórico; PP-37 registra a estratégia de produção vigente desde 2026-10-16.
+**Tipo:** registro de decisões arquiteturais transversais e de planejamento de produção<br>
+**Status:** PP-01 a PP-36 e adendos anteriores preservados como histórico; PP-37 registra a estratégia de produção vigente desde 2026-10-16; a diretriz arquitetural transversal consta na §13 desde 2026-10-25.
 **Data-base:** 2026-10-10  
 **Destino proposto no repositório:** `PEGA GDD/ADR-PREPRODUCAO.md`  
-**Escopo:** microciclo, vertical slice técnico, Demo e estratégia de evolução do ecossistema Immersive Games.
+**Escopo:** diretrizes arquiteturais transversais do PEGA, microciclo, vertical slice técnico, Demo e estratégia de evolução do ecossistema Immersive Games.
 
-> **Precedência documental:** `GDD.md` define regras e arquitetura de gameplay; `MVP.md` define o recorte obrigatório do vertical slice e da Demo; `ArtBook.md` orienta a apresentação; este ADR registra decisões de **produção**, granularidade, estimativa, integração e responsabilidades; `TASKS.md` representa trabalho executável. Este ADR **não altera** GDD/MVP nem declara implementado aquilo que é apenas planejado. Divergências de requisitos devem ser resolvidas na fonte normativa, não por novas regras neste ADR.
+> **Precedência documental:** `GDD.md` define regras e contratos de gameplay; este ADR registra a diretriz arquitetural transversal do PEGA e decisões de **produção**, integração e responsabilidades; os ADRs técnicos em `ADRs/` registram aplicações e decisões específicas de arquitetura derivadas dos contratos do GDD, sem substituí-los; `MVP.md` define o recorte obrigatório do vertical slice e da Demo; `ArtBook.md` orienta a apresentação; `TASKS.md` representa trabalho executável. Nenhum ADR altera gameplay ou declara implementado aquilo que é apenas planejado. Divergências de regras devem ser resolvidas no GDD, não por decisões concorrentes.
 
 ## 1. Contexto e objetivo
 
@@ -231,7 +231,7 @@ GOAP, percepção/conhecimento e inventário/posse são **exemplos de candidatos
 
 ## 8. Encaminhamento e integridade
 
-1. Usar este ADR como **registro de decisões**; não gerar outro catálogo normativo de gameplay.
+1. Usar este ADR como autoridade para a diretriz arquitetural transversal do PEGA e como registro de decisões de produção; não gerar outro catálogo normativo de gameplay. As aplicações e decisões técnicas específicas de GOAP ficam nos ADRs em `ADRs/`, subordinadas ao GDD e sem duplicar suas regras.
 2. Verificar, antes de planejar implementação, a API do Framework **efetivamente instalada** e a diferença entre os protótipos/QA e as capacidades de produção do PEGA.
 3. **Encaminhamento histórico, reordenado por PP-36 e PP-37:** a primeira validação foi planejada como MC-01 a MC-04 + LD-01. O microciclo continua como referência histórica de cobertura. PP-37 agora prioriza capacidades de perseguição, composição do comportamento central e só depois sua expansão; o MVP continua regendo o escopo final do vertical slice.
 4. Planejar novas estimativas de esforço próximo à execução; converter em duração apenas com informação de capacidade suficiente.
@@ -343,3 +343,13 @@ A ordem é de prioridade e as dependências explicitadas nos itens 3 e 4 são ga
 **Autoridade e escopo:** PP-37 altera estratégia e ordem de construção, não regras do GDD nem escopo final/aceitação do MVP. Não elimina Preparação, invasão, itens/roubo, confronto, recuperação/captura, Fuga Final, resultados, Demo ou cooperação. Não cria regras para antecipação/interceptação nem critérios de “satisfatório” além dos contratos e evidências de gameplay aplicáveis.
 
 **Efeito documental:** atualizar `TASKS.md`, o roadmap operacional e Trello para tornar explícita a sequência Player → NPCs → ambiente de teste → composição central da perseguição → expansão das mecânicas → vertical slice/Demo. Preservar status, checklists, evidências, estimativas e datas; mover checks que agora pertencem a etapas posteriores sem marcá-los concluídos. Não recalcular cronograma sem base de capacidade/estimativa e não registrar validação Unity sem observação real.
+
+## 13. Diretriz arquitetural transversal do PEGA (2026-10-25)
+
+**Decisão:** os sistemas do PEGA evoluem preferencialmente por composição de capacidades e responsabilidades independentes. Novas mecânicas, comportamentos, fontes de conhecimento, critérios de avaliação e perfis devem poder ser acrescentados ou substituídos por contratos compatíveis, sem exigir alterações recorrentes em seus núcleos.
+
+- **Modularidade:** responsabilidades delimitadas e dependências justificadas.
+- **Intercambialidade:** alternativas compatíveis podem cumprir o mesmo contrato e ser combinadas por configuração.
+- **Escalabilidade:** ampliar repertório e complexidade com estrutura sustentável e custos operacionais controláveis.
+
+Esta diretriz vale para os sistemas do PEGA, inclusive quando não pertencem ao GOAP. Ela orienta decisões de arquitetura sem exigir que tudo seja abstrato, intercambiável ou configurável. Soluções específicas são legítimas quando generalizar não acrescenta reutilização ou clareza; o núcleo muda quando surgir uma necessidade semântica geral comprovada, e não apenas pela adição de uma mecânica. A diretriz não cria uma regra de gameplay, um pacote, serviço ou infraestrutura genérica obrigatórios, nem altera as fronteiras de ownership existentes.

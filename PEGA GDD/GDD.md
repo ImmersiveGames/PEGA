@@ -209,7 +209,7 @@ Abrir todos os cofres não é uma regra obrigatória. Investigar cofres é apena
 :::decision
 **Decisão:** somente os larápios usam **GOAP — Goal-Oriented Action Planning**, desde o primeiro corte do MVP. Rick e Petra são controlados pelos Players; não recebem uma IA nem uma máquina de estados substituta do GOAP.
 
-O sistema segue um princípio de **modularidade por padrão, especificidade quando necessária**. Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. Planejamento e execução são fases separadas. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
+O GOAP aplica a diretriz arquitetural transversal do PEGA para modularidade, intercambialidade e escalabilidade ([ADR de pré-produção, §13](ADR-PREPRODUCAO.md#13-diretriz-arquitetural-transversal-do-pega)). Neste domínio, Desejos, Actions, arquétipos, capacidades, modificadores, reservas, interrupções, conhecimento e parâmetros associados devem ser dados independentes e componíveis sempre que isso ampliar reutilização, balanceamento e variedade sem prejudicar legibilidade, determinismo, desempenho ou manutenção. Planejamento e execução são fases separadas. O GDD define contratos de design, não obriga uma estrutura técnica específica de Unity.
 
 A composição de gameplay respeita a separação entre **Actor**, suas **mecânicas** e o **arquétipo**. O Actor é a entidade/ocorrência sobre a qual o gameplay opera; sua composição concreta determina quais mecânicas existem. O arquétipo não materializa, adiciona nem remove componentes ou mecânicas da ocorrência. Ele configura e especializa as possibilidades oferecidas pelas mecânicas já presentes, habilitando, restringindo ou modificando capacidades, Actions, Desejos, parâmetros e modificadores.
 
@@ -223,27 +223,36 @@ Exemplos: possuir `Hack N3` não cria a mecânica de interação; habilita/espec
 
 A cadeia causal do planejamento é:
 
-**Contexto global → composição mecânica do Actor + configuração do arquétipo → conhecimento atual → Desejos aplicáveis → Actions e Targets conhecidos compatíveis → planos válidos → peso efetivo + custo temporal → escolha → execução → Effects/conhecimento → reavaliação quando algo relevante muda**
+**Contexto global → composição mecânica do Actor + configuração do arquétipo → conhecimento e capacidades disponíveis → Goals/Desejos aplicáveis → cadeias candidatas de Actions e Targets conhecidos → estados hipotéticos e avaliações pertinentes → comparação conjunta de intenção e plano → execução → resultados observados/conhecimento → reavaliação quando algo relevante muda**
 
 As responsabilidades são separadas:
 
-- **Desejo (Goal):** declara intenção, aplicabilidade e predicados de conclusão; não prescreve uma sequência fixa.
+- **Goal:** descreve uma condição de estado desejado; não prescreve uma Action nem uma sequência.
+- **Desejo:** expressa a motivação para perseguir um Goal e sua relevância configurada por arquétipo, Contexto e satisfação. Apresenta critérios de aplicabilidade e não prescreve a solução.
+- **Intenção ativa:** compromisso atual do Actor com o Desejo/Goal escolhido; pode continuar enquanto seu plano muda.
+- **Plano ativo:** sequência candidata de Actions e Targets escolhida para a intenção; sua continuidade é avaliada separadamente da intenção e da Action em execução.
+- **Action em execução:** operação real conduzida pela mecânica/provider responsável; o GOAP decide mantê-la, substituí-la ou cancelá-la, mas não assume sua autoridade física.
 - **Contexto de Desejos:** seleciona a configuração de Desejos disponível ao arquétipo em uma etapa macro do assalto.
 - **Conhecimento:** representa fatos conhecidos no escopo Individual, Gangue ou Global; o planner nunca consulta estado real oculto para obter vantagem. Percepção individual não se torna automaticamente conhecimento compartilhado.
 - **Mecânicas do Actor:** são sistemas presentes na composição concreta da ocorrência — como movimento, percepção, interação, confronto ou decisão — e fornecem a infraestrutura pela qual o gameplay é executado; nem todo Actor precisa possuir todas as mecânicas.
 - **Arquétipo:** é a composição/configuração mecânica e decisória aplicada sobre essas mecânicas existentes; não é identidade, ocorrência, lifecycle nem autoridade de materialização do Actor.
 - **Capacidades:** especializam o repertório disponível ao agente, desbloqueando quais soluções/Actions suas mecânicas existentes conseguem executar e podendo modificar seus parâmetros.
-- **Actions:** transformam estados através de precondições e Effects e podem ser encadeadas para satisfazer qualquer Desejo compatível.
+- **Actions:** declaram precondições de sucesso e Effects previstos independentemente de Goals específicos; o planejador pode encadeá-las para satisfazer qualquer Goal compatível.
 - **Targets:** são resolvidos em runtime entre candidatos conhecidos e compatíveis; não são escolhidos por uma heurística separada do plano.
 - **Modificadores:** alteram valores por estágios globais de resolução, a partir de arquétipo, Action, alvo, estado, Contexto ou efeitos especiais. A composição é determinística; modificadores da mesma categoria são independentes da ordem quando a operação permitir. A fórmula definitiva permanece configurável e não é fixada nesta versão.
+- **Personalidade, competência decisória e capacidades:** personalidade influencia aquilo que o larápio valoriza, incluindo sua tendência investigativa; competência decisória influencia a qualidade e estabilidade da comparação; capacidades delimitam o que ele consegue executar no mundo. Essas dimensões não se substituem.
+
+Um Goal pode expressar alcançar, manter ou restaurar uma condição, conforme a necessidade de gameplay. Satisfazer a condição básica não obriga o larápio a continuar produzindo atividade; a qualidade relativa de estados alcançados pode ser avaliada separadamente quando fizer sentido.
 
 Métodos diferentes para obter o mesmo resultado são **Actions diferentes**. 'Usar Chave', 'Lockpick', 'Hackear' e 'Arrombar', por exemplo, podem produzir o mesmo estado 'Porta Aberta' com capacidades, precondições, duração, reserva e interrupções próprias. Adicionar uma nova Action pode criar novas soluções para Desejos existentes sem alterar esses Desejos.
 
-Precondições representam estados que o plano pode tentar produzir; capacidades ausentes tornam a Action indisponível para aquele agente. Capacidades podem possuir níveis. A composição entre **dificuldade/requisito do alvo + nível/capacidade do agente + modificadores aplicáveis** resolve se a Action está disponível e qual sua duração. Níveis superiores podem tanto desbloquear interações mais difíceis quanto executá-las mais rapidamente quando configurado.
+Precondições de sucesso representam estados que o plano pode tentar produzir; capacidades ausentes tornam a Action indisponível para aquele agente. Condições que autorizam uma tentativa são distintas das necessárias para seu sucesso. Uma precondição de sucesso Desconhecida não é presumida verdadeira, embora uma mecânica possa autorizar uma tentativa legítima para obter informação. Capacidades podem possuir níveis. A composição entre **dificuldade/requisito do alvo + nível/capacidade do agente + modificadores aplicáveis** resolve se a Action está disponível e qual sua duração. Níveis superiores podem tanto desbloquear interações mais difíceis quanto executá-las mais rapidamente quando configurado.
 
-Desejos e condições podem usar **predicados componíveis** (por exemplo AND, OR e NOT) sobre a fonte de dados apropriada. Todo predicado precisa deixar claro se consulta conhecimento, World State real, capacidade ou outro domínio. O planner normalmente trabalha sobre o **Knowledge State**; a execução física valida o **World State real**.
+Goals, Preconditions e demais condições podem usar **predicados componíveis** (`AND`, `OR`, `NOT`) e retornar **Verdadeiro, Falso ou Desconhecido**. Desconhecido não equivale a falso nem é presumido verdadeiro; `NOT Desconhecido` continua desconhecido. Cada predicado explicita a fonte consultada.
 
-O planner pode construir cadeias com quantas Actions forem necessárias ao design. Não existe limite fixo de tamanho de plano no GDD. A implementação pode usar um orçamento de busca configurável por performance e deve distinguir em debug **sem solução conhecida** de **busca esgotada antes de encontrar solução**.
+O GOAP distingue o **World State real**, o **Knowledge State** legitimamente disponível e o **estado hipotético** criado localmente pela projeção dos Effects declarados pelas Actions. Projeções não alteram o mundo ou o conhecimento. O planner usa Targets conhecidos e não consulta fatos ocultos para completar uma solução. Previsões de acontecimentos externos podem ser acrescentadas futuramente como estimativas incertas, mas são opcionais e não se confundem com conhecimento factual ou Effects projetados.
+
+O planner pode construir cadeias com quantas Actions forem necessárias ao design. Não existe limite fixo de tamanho de plano no GDD. A busca pode ser limitada por orçamento configurável de desempenho e deve distinguir **sem solução conhecida** de **busca esgotada sem conclusão**. Avaliações especializadas — como navegação e confronto — podem estimar viabilidade, custo ou qualidade sobre estados hipotéticos; quando não puderem fazê-lo com legitimidade, não devem tratar o estado real atual como se já incluísse os Effects projetados.
 :::
 
 ### Resolução de modificadores
@@ -261,13 +270,17 @@ No MVP, a unidade-base de custo é **tempo estimado em segundos**:
 
 A 'Duration' é custo intrínseco/resolvido da Action; deslocamento é contextual e calculado pelo planejamento/navegação. A mesma Action sobre o mesmo Target pode portanto ter custo diferente conforme posição, rota, capacidade e modificadores do agente.
 
+A seleção compara conjuntamente os Goals aplicáveis e suas alternativas de plano; não fixa a intenção apenas pelo peso do Desejo antes de conhecer as soluções. Além de prioridade e custo do plano completo, podem participar oportunidade, qualidade estimada e valor informacional. Uma oportunidade de investigação compete com as demais conforme seu valor potencial e a tendência investigativa do larápio; não recebe prioridade automática nem presume qual informação será encontrada. O mesmo valor não deve ser contado duas vezes como bônus sobre um único resultado.
+
 O GDD **não fixa uma fórmula matemática** entre peso e custo. A relação deve permanecer configurável para balanceamento de implementação. A arquitetura-alvo também aceita risco, perigo e probabilidade como dimensões futuras, sem incorporá-las ao primeiro corte do MVP. RNG não é desempate padrão; só participa quando uma mecânica probabilística estiver explicitamente configurada. Empates do MVP são determinísticos.
 
 O tempo restante do Assalto/Fuga **não invalida automaticamente** um plano apenas porque seu custo estimado ultrapassa a janela disponível. A pressão temporal emerge do custo, dos Contextos e dos pesos configurados. Quando uma mudança relevante de conhecimento ou estado altera uma rota, requisito ou oportunidade, os planos afetados são reconstruídos/reavaliados e seus custos recalculados.
 
 Cada combinação válida de **Action + Target conhecido** pode originar alternativas de plano. O Target escolhido é consequência da avaliação do plano completo, não de uma regra isolada como “sempre escolher o mais próximo”.
 
-Necessidades intermediárias normalmente são Actions/estados dentro da cadeia, não novos Desejos de alto nível. O sistema preserva **resultados de Actions no estado**, não planos anteriores: ao replanejar, Effects já concluídos podem ser naturalmente aproveitados por qualquer novo plano.
+Necessidades intermediárias normalmente são Actions/estados dentro da cadeia, não novos Desejos de alto nível. O sistema preserva conhecimento e resultados comprovados, mas não mantém uma fila de planos abandonados. O plano ativo pode continuar enquanto válido; ao reconstruir uma solução, Effects já concluídos podem ser naturalmente aproveitados por qualquer novo plano.
+
+Personalidade expressa preferências, aversões e tendência investigativa; **competência decisória** expressa a qualidade com que o larápio busca, estima e compara soluções; capacidades de gameplay definem o que ele consegue executar. A estabilidade é considerada separadamente para a intenção, o plano e a Action em execução. Uma intenção pode continuar com outro plano; um plano ainda válido pode continuar quando a vantagem de uma alternativa não justifica a troca; uma Action conserva progresso enquanto continua válida e selecionada. A decisão de troca considera custos restantes e consequências da mudança, não apenas tempo já gasto. Esses critérios não obrigam a manter uma escolha inválida.
 :::
 
 ### Contrato de Actions
@@ -275,13 +288,15 @@ Necessidades intermediárias normalmente são Actions/estados dentro da cadeia, 
 :::decision
 **Decisão:** uma Action é uma unidade modular de solução. Conforme sua necessidade, declara **precondições, Effects de conclusão, Target compatível, Duration, capacidades requeridas, reserva, condições de interrupção e modificadores**. Planejamento seleciona a Action e seus Targets; execução é um lifecycle separado, com início, manutenção, conclusão ou término explícito.
 
-- Preconditions necessárias devem continuar válidas durante a execução. Se deixarem de ser válidas, a Action torna-se 'Invalid', é cancelada e perde o progresso.
+- Preconditions necessárias para a conclusão bem-sucedida devem permanecer válidas durante a execução. Se deixarem de ser válidas, a Action torna-se 'Invalid', é cancelada e perde o progresso. A condição que permite iniciar uma tentativa é declarada separadamente quando a mecânica admitir tentativa sem garantia de sucesso.
 - Effects declarativos do GOAP são aplicados **somente na conclusão bem-sucedida**. Progresso parcial não produz o Effect final.
 - Comportamentos que realmente produzem efeitos durante execução devem declarar isso explicitamente, sem confundi-los com o Effect de conclusão usado pelo planner.
-- Uma Action determinística não possui falha aleatória genérica. Seus resultados básicos são **Success**, **Invalid**, **Interrupted** ou **Cancelled**. Probabilidade só existe quando configurada explicitamente por uma mecânica.
-- `Success` aplica Effects; `Invalid` indica que realidade, precondições ou Target já não permitem a Action; `Interrupted` indica que um evento configurado interrompeu uma Action válida; `Cancelled` indica que o plano ou proprietário encerrou explicitamente a execução.
+- Uma Action determinística não possui falha aleatória genérica. Seus resultados básicos são **Success**, **Invalid**, **Interrupted** ou **Cancelled**. Uma interação também pode terminar sem sucesso e fornecer informação legítima sobre requisitos encontrados, conforme a regra da mecânica. Probabilidade só existe quando configurada explicitamente por uma mecânica.
+- `Success` aplica Effects; `Invalid` indica que realidade, precondições ou Target já não permitem a conclusão bem-sucedida; `Interrupted` indica que um evento configurado interrompeu uma Action válida; `Cancelled` indica que o plano ou proprietário encerrou explicitamente a execução. Uma recusa informativa não comprova Effects físicos nem acumula satisfação; conhecimento só muda conforme a informação realmente observada e autorizada.
 - Invalidar, interromper ou cancelar encerra a execução e descarta seu progresso. Qualquer reserva adquirida pela Action é liberada em todo caminho de término. Efeitos durante execução só ocorrem quando declarados como tais; Effects de conclusão continuam exclusivos de `Success`.
 - Planejamento usa conhecimento; execução valida realidade. Um plano pode estar correto para o conhecimento do larápio e errado diante do mundo real. Ao descobrir a divergência, o conhecimento é atualizado e os sistemas afetados reavaliam.
+
+Uma tentativa de interação legitimamente autorizada pode revelar requisitos reais encontrados, inclusive informação que sensores comuns não fornecem, quando a regra daquela mecânica permitir. A descoberta não implica revelar a localização dos recursos necessários. Resultado da tentativa, Effect físico confirmado e informação descoberta são distintos; texto de log não é fonte de conhecimento. Se os impedimentos conhecidos não mudaram, a mesma tentativa não deve ser repetida indefinidamente sem justificativa nova.
 
 Effects devem ser modulares quando houver benefício de reutilização/composição, mas lógica específica é válida quando generalizá-la não traz vantagem. **Modularidade é ferramenta, não obrigação de transformar todo comportamento em um sistema genérico.**
 :::
@@ -299,7 +314,7 @@ O Contexto é global, mas os desejos são configurados por **arquétipo**. O mes
 
 Larápios criados posteriormente recebem imediatamente o Contexto global vigente e o conhecimento atual compartilhado de sua gangue; não reproduzem transições anteriores.
 
-Cada Desejo declara, no mínimo, **identificador, Contexto, peso base, condições de aplicabilidade e condição de satisfação**. O Desejo não contém uma sequência fixa de Actions.
+Cada Desejo declara, no mínimo, **identificador, Contexto, peso base, condições de aplicabilidade e a condição/Goal que o satisfaz**. O Goal descreve o estado desejado; o Desejo descreve por que e quando ele importa. Nenhum deles contém uma sequência fixa de Actions.
 
 Desejos podem ter predicados de conclusão compostos; qualquer cadeia de Actions que produza o estado exigido pode satisfazê-los. O Desejo não precisa conhecer qual caminho foi usado para chegar à conclusão.
 
@@ -364,7 +379,9 @@ As principais formas de adquirir informação são:
 
 - **Aquisição visual passiva:** durante deslocamentos e outras Actions, a Área de Visão registra automaticamente informação visível e relevante, sem custo adicional de tempo.
 - **Investigação ativa de Área:** quando o plano necessita de informação ainda desconhecida, o larápio pode navegar até uma Área e executar uma investigação temporizada. A animação pode representar procura física, mas mecanicamente basta permanecer na Área durante o tempo configurado. Ao concluir, a informação compatível é adquirida e compartilhada com a gangue.
-- **Investigação de presença radial:** uma presença ainda não identificada pode habilitar o Desejo normal **Investigar presença percebida**. A tentativa busca pontos de observação derivados da posição conhecida do próprio larápio dentro da Área Percebida registrada; não usa a posição oculta nem revela a identidade do alvo. Cada ponto é uma tentativa finita, concluída somente quando a chegada física é observada. Concluir sem contato visual não comprova ausência, e a mesma evidência não oferece novamente os pontos já tentados. Se a visão identificar o alvo durante a busca, os novos fatos de identidade e posição permitem ao GOAP reconsiderar seus Desejos normais.
+- **Investigação de presença radial:** uma presença ainda não identificada pode habilitar o Desejo normal **Investigar presença percebida**. A tentativa busca pontos de observação derivados da posição conhecida do próprio larápio dentro da Área Percebida registrada; não usa a posição oculta nem revela a identidade do alvo. Arquétipos podem atribuir pesos diferentes a esse Desejo: o perfil de confronto favorece a investigação, enquanto o perfil de autopreservação a considera menos atraente. Se investigar for o único plano viável, o GOAP ainda pode selecioná-lo. Cada ponto é uma tentativa finita, concluída somente quando a chegada física é observada. Concluir sem contato visual não comprova ausência, e a mesma evidência não oferece novamente os pontos já tentados. Se a visão identificar o alvo durante a busca, os novos fatos de identidade e posição permitem ao GOAP reconsiderar seus Desejos normais.
+
+Sem identificação visual, o planner não conhece a identidade nem a direção do alvo e não constrói uma evasão dirigida contra Rick. A resposta legítima nessa fase é escolher entre os planos compatíveis com a evidência radial disponível.
 
 Essa busca local é diferente tanto da investigação temporizada de uma Área explorável quanto da continuação de perseguição até a última posição conhecida de um alvo já identificado.
 
@@ -760,7 +777,7 @@ Antes da Fuga Final, a posse conhecida do objetivo principal pode alterar Desejo
 
 Quando um larápio possui um Desejo de escapar, as saídas conhecidas e compatíveis entram como Targets candidatos. O GOAP avalia os planos completos e seus custos temporais; por isso, uma saída próxima tende a ser atraente, mas não existe uma heurística separada de **sempre escolher a mais próxima**.
 
-Escapar é um objetivo de deixar o cenário por uma saída válida. **Autopreservação / Manter Distância** é um Desejo distinto: com base na posição conhecida de uma ameaça, o larápio busca uma posição que reduza a aproximação e permanece no cenário. Essa evasão usa um Target espacial derivado do conhecimento, não uma saída; alcançá-lo não satisfaz Escapar nem resolve o larápio como **Escapou**. Como Desejo normal, pode competir com perseguir a mesma ameaça conforme a prioridade configurada. A Action de escapar continua disponível quando a configuração de Desejos ou o Contexto exigir a saída definitiva.
+Escapar é um objetivo de deixar o cenário por uma saída válida. **Autopreservação / Manter Distância** é um Desejo distinto: com base na identidade e na posição legitimamente conhecidas de uma ameaça, o larápio busca uma posição mais distante e permanece no cenário. Essa evasão usa um Target espacial derivado do conhecimento, não uma saída; alcançá-lo não satisfaz Escapar nem resolve o larápio como **Escapou**. A distância mínima configurada é um requisito do Target, não uma faixa que habilita o Desejo: quando Rick está identificado e há rota válida, a Action pode propor uma etapa adicional de afastamento mesmo que o larápio já esteja além da distância mínima. Assim, evasão e perseguição podem competir por pesos e custos em qualquer distância conhecida, sem um bloqueio entre Desejos; o GOAP ainda pode selecionar outra opção quando seu plano tiver score melhor. Na demonstração, o perfil de autopreservação dá mais peso a evitar Rick e menos a investigar ou persegui-lo; o perfil de confronto favorece investigar a presença radial e perseguir Rick após identificá-lo. A Action de escapar continua disponível quando a configuração de Desejos ou o Contexto exigir a saída definitiva.
 
 Se uma rota ou saída conhecida estiver bloqueada, a nova informação atualiza o Knowledge State e os planos afetados são recalculados. Se nenhum plano de escape puder ser construído, esse Desejo deixa de participar da escolha naquele ciclo. **Investigar não é acionado automaticamente**: só ocorrerá se o próprio Desejo `Investigar` estiver elegível e produzir o melhor plano entre os Desejos normais; se nenhum Desejo normal tiver plano, aplicam-se os Desejos de Contingência.
 :::
@@ -1172,11 +1189,16 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | Actor | Entidade/ocorrência sobre a qual o gameplay opera. Sua composição concreta determina quais mecânicas existem; identidade, ocorrência, composição física e lifecycle não são definidos pelo arquétipo. |
 | Mecânica do Actor | Sistema presente na composição concreta do Actor que executa uma família de comportamento, como movimento, percepção, interação, confronto ou decisão. Nem todo Actor precisa possuir todas as mecânicas. |
 | Arquétipo | Composição/configuração de gameplay que especializa as mecânicas existentes de um Actor por meio de capacidades, Actions, Desejos, modificadores e parâmetros; não materializa nem remove mecânicas/componentes da ocorrência. |
-| Desejo / Goal | Intenção declarativa da IA: define aplicabilidade, predicados de conclusão, peso e satisfação, sem prescrever uma sequência fixa de Actions. |
+| Goal | Condição de estado desejado, independente das Actions que podem produzi-la. |
+| Desejo | Motivação configurada que determina quando e por que um Goal importa para o larápio, incluindo sua prioridade e satisfação. |
+| Intenção ativa | Compromisso atual do Actor com um Desejo/Goal selecionado; pode continuar enquanto um plano é reconstruído. |
+| Plano ativo | Sequência selecionada de Actions e Targets para atender à intenção; pode mudar sem necessariamente trocar a intenção. |
 | Desejo de Contingência | Desejo normal habilitado apenas quando nenhum Desejo normal do Contexto vigente possui plano válido; usa o mesmo sistema de peso, custo, satisfação e Actions. |
 | Action | Unidade modular de solução do GOAP, com precondições, Effects, Target, Duration, capacidades, reservas/interrupções e modificadores conforme necessário. |
-| Knowledge State | Melhor representação atualmente conhecida pelo agente/gangue; é a realidade usada pelo planner e pode divergir temporariamente do World State real. |
-| Predicado | Condição componível avaliada sobre uma fonte de dados explícita, usada em aplicabilidade, precondições, Targets, conclusão de Desejos e outras validações. |
+| Knowledge State | Melhor representação atualmente conhecida pelo agente/gangue e usada como base factual pelo planner; pode divergir temporariamente do World State real. |
+| Estado hipotético | Projeção local dos Effects previstos das Actions durante a busca; não altera World State nem Knowledge State. |
+| Predicado | Condição componível avaliada sobre uma fonte explícita, com resultado Verdadeiro, Falso ou Desconhecido. |
+| Competência decisória | Perfil que influencia busca, avaliação, aceitação e estabilidade das escolhas, distinto da personalidade e das capacidades de gameplay. |
 | Custo do plano | Estimativa temporal do MVP: deslocamento estimado + durações resolvidas das Actions necessárias. |
 | Satisfação | Histórico individual acumulado de realizações de um Desejo; persiste entre Contextos e pode modificar seu peso conforme configuração. |
 | Fuga final | Contexto iniciado ao fim do Tempo de Assalto e mantido durante o Tempo de Fuga; altera desejos/prioridades, mas não substitui o GOAP. Receitas de spawn ainda pendentes são canceladas como fallback. |
@@ -1206,7 +1228,9 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | Documento | Uso |
 |---|---|
 | [MVP](MVP.md) | Recorta as regras deste GDD no primeiro vertical slice e na Demo completa. |
-| [ADR de pré-produção](ADR-PREPRODUCAO.md) | Decisões de produção e marcos de integração; não substitui regras e contratos de gameplay. |
+| [ADR de pré-produção](ADR-PREPRODUCAO.md) | Diretriz arquitetural transversal do PEGA (§13), decisões de produção e marcos de integração; não substitui regras e contratos de gameplay. |
+| ADRs de arquitetura GOAP | Decisões subordinadas às regras de gameplay deste GDD: [domínio e composição](ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [modelo causal e planejamento](ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [seleção e estabilidade](ADRs/ADR-GOAP-03-selecao-e-estabilidade.md) e [interações informativas](ADRs/ADR-GOAP-04-interacoes-informativas.md). |
+| [Registro conceitual do GOAP](../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) | Origem histórica dos acordos formalizados nos ADRs; não substitui este GDD como autoridade de gameplay. |
 | [TASKS](TASKS.md) | Tarefas executáveis derivadas do escopo do MVP. |
 | [Art Book](ArtBook.md) | Direção visual e referências de personagens, gangues e cenários. |
 | [Tabela de Atributos e Habilidades.xlsx](Tabela%20de%20Atributos%20e%20Habilidades.xlsx) | Referência auxiliar histórica para ideias de distribuição de habilidades por gangue e valores preliminares de classificação/créditos. Agilidade, HP/dano, Defesa, Vigor, fórmulas e valores da planilha não são contratos atuais nem dados validados. |
@@ -1215,6 +1239,8 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.14.0 | 2026-10-25 | Referenciada a diretriz arquitetural transversal do PEGA e sua aplicação ao GOAP. |
+| 0.13.0 | 2026-10-25 | Separados Goal, Desejo, intenção e plano; consolidados planejamento por estados hipotéticos, competência decisória, estabilidade, valor informacional e tentativas legítimas conforme decisões aprovadas e ADRs GOAP. |
 | 0.12.0 | 2026-10-15 | Definida no HUB, depois da seleção da missão e Briefing, a entrada por Join dos dispositivos locais, escolha e confirmação individual dos personagens (com duplicação permitida) e início apenas por botão explícito Iniciar Missão; alinhado o fluxo com a Demo. |
 | 0.11.0 | 2026-10-15 | Consolidada Preparação com exploração livre, menu contextual sem Pause, POIs fixos/slots abstratos, manipulação física de itens em todas as fases, kit e acervo coletivo, loja do HUB e pendências explicitamente condicionadas a protótipos. |
 | 0.10.0 | 2026-10-15 | Clarificado fluxo do contrato no HUB e Briefing antes da missão; estabelecida introdução cinematográfica na Mission Activity com panorâmica, splashes recorrentes e animação inédita por carreira, skip prolongado e registro de grupos apresentados mesmo ao saltar; Preparação começa apenas após introdução e controle disponível. |

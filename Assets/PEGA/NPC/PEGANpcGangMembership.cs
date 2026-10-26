@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Immersive.Foundation.Events;
+using PEGA.GOAP;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -7,13 +9,60 @@ namespace PEGA.NPC
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
     [AddComponentMenu("PEGA/NPC/Gang Membership")]
-    public sealed class PEGANpcGangMembership : MonoBehaviour
+    public sealed class PEGANpcGangMembership : MonoBehaviour,
+        IPEGANpcPlanningInputChangeSource,
+        IPEGAGoapKnowledgeCapability
     {
         [SerializeField]
         [Tooltip("Estado compartilhado da Gangue deste NPC.")]
         private PEGANpcGangKnowledgeState gangKnowledgeState;
 
+        [System.NonSerialized]
+        private EventBus<PEGANpcPlanningInputsChangedEvent> _planningInputEvents;
+
+        [System.NonSerialized]
+        private IEventBinding _gangKnowledgeBinding;
+
         public PEGANpcGangKnowledgeState GangKnowledgeState => gangKnowledgeState;
+
+        private void OnEnable()
+        {
+            SubscribeToGangKnowledge();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromGangKnowledge();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromGangKnowledge();
+            _planningInputEvents?.Clear();
+            _planningInputEvents = null;
+        }
+
+        public IEventBinding SubscribeToPlanningInputChanges(
+            System.Action<PEGANpcPlanningInputsChangedEvent> handler)
+        {
+            if (handler == null)
+            {
+                throw new System.ArgumentNullException(nameof(handler));
+            }
+
+            _planningInputEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
+            return _planningInputEvents.Subscribe(handler);
+        }
+
+        public bool UnsubscribeFromPlanningInputChanges(IEventBinding binding)
+        {
+            if (binding == null)
+            {
+                throw new System.ArgumentNullException(nameof(binding));
+            }
+
+            return _planningInputEvents != null && _planningInputEvents.Unsubscribe(binding);
+        }
 
         public bool TryGetKnownEscapeTargets(
             out IReadOnlyList<PEGANpcPlanningTarget> targets,
@@ -46,8 +95,42 @@ namespace PEGA.NPC
             }
 
             gangKnowledgeState = state;
+            if (isActiveAndEnabled)
+            {
+                SubscribeToGangKnowledge();
+            }
+
             diagnostic = string.Empty;
             return true;
+        }
+
+        private void SubscribeToGangKnowledge()
+        {
+            if (gangKnowledgeState != null && _gangKnowledgeBinding == null)
+            {
+                _gangKnowledgeBinding = gangKnowledgeState.SubscribeToChanges(OnGangKnowledgeChanged);
+            }
+        }
+
+        private void UnsubscribeFromGangKnowledge()
+        {
+            if (gangKnowledgeState != null && _gangKnowledgeBinding != null)
+            {
+                gangKnowledgeState.UnsubscribeFromChanges(_gangKnowledgeBinding);
+                _gangKnowledgeBinding = null;
+            }
+        }
+
+        private void OnGangKnowledgeChanged(PEGANpcGangKnowledgeFactChangedEvent change)
+        {
+            if (change == null ||
+                change.EvidenceOrigin != PEGANpcGangKnowledgeEvidenceOrigin.SpawnPointPhysicalIngress)
+            {
+                return;
+            }
+
+            _planningInputEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
+            _planningInputEvents.Publish(new PEGANpcPlanningInputsChangedEvent());
         }
     }
 }

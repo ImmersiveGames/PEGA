@@ -19,28 +19,24 @@ namespace PEGA.NPC
         private PEGANpcKnowledgeState knowledgeState;
 
         [SerializeField]
-        [Tooltip("Referência explícita ao Actor conhecido que esta Action deve evitar.")]
+        [Tooltip("Referência ao Actor cuja posição conhecida pode orientar esta Action.")]
         private ActorOccurrenceReferenceBinding characterReference;
-
-        [SerializeField]
-        [Tooltip("Actor Profile exigido para aceitar a identidade conhecida do alvo.")]
-        private ActorProfile characterActorProfile;
 
         [Header("Gameplay")]
         [SerializeField, Min(MinimumSeparationMeters)]
-        [Tooltip("Distância planar mínima desejada entre o NPC e a última posição conhecida do alvo (m).")]
+        [Tooltip("Distância planar mínima desejada entre o NPC e a última posição conhecida do alvo (m); superá-la não desativa a Action.")]
         private float safeSeparationDistanceMeters = 5f;
+
+        [SerializeField, Min(MinimumSeparationMeters)]
+        [Tooltip("Acréscimo de separação que o NPC tenta obter em cada execução, além da distância atual (m).")]
+        private float retreatStepDistanceMeters = 1f;
 
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachSafeSeparationPosition;
 
-        protected override PEGANpcDesireGoalKind ActionGoalKind =>
-            PEGANpcDesireGoalKind.MaintainSafeSeparationFromKnownCharacter;
-
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
             PEGANpcPlanningActionId.MaintainSafeSeparationFromKnownCharacter,
             ActionEffectKind,
-            ActionGoalKind,
             PEGANpcPlanningTargetKind.SafeSeparationPosition,
             true,
             "NPC began moving to maintain safe separation from a known character.");
@@ -52,7 +48,7 @@ namespace PEGA.NPC
             if (change == null || !change.HasValueOrStatusChanged ||
                 !change.SubjectActorId.HasValue ||
                 (change.FactKind != PEGANpcKnowledgeFactKind.ObservedCharacterIdentity &&
-                 change.FactKind != PEGANpcKnowledgeFactKind.LastObservedRickPosition) ||
+                 change.FactKind != PEGANpcKnowledgeFactKind.LastObservedCharacterPosition) ||
                 !TryResolveCharacterSubject(out ActorId subjectActorId, out _))
             {
                 return false;
@@ -77,22 +73,14 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (context.PursuitContinuation.HasValue ||
-                !context.PlayerActorId.IsValid ||
+            if (context.PlanContinuation.HasValue ||
+                !context.TargetActorId.IsValid ||
                 !TryGetKnownCharacterEvidence(
                     out ActorId subjectActorId,
                     out Vector3 knownPosition,
                     out double evidenceTimeSeconds,
                     out _) ||
-                subjectActorId != context.PlayerActorId)
-            {
-                diagnostic = string.Empty;
-                return true;
-            }
-
-            float currentSeparation = PlanarDistance(transform.position, knownPosition);
-            bool preservingRunningExecution = Outcome == PEGANpcActionOutcome.Running;
-            if (currentSeparation >= safeSeparationDistanceMeters && !preservingRunningExecution)
+                subjectActorId != context.TargetActorId)
             {
                 diagnostic = string.Empty;
                 return true;
@@ -128,7 +116,6 @@ namespace PEGA.NPC
                 Contract,
                 this,
                 target.TargetId,
-                true,
                 PEGAActorMovementSpeedRegime.Pursuit,
                 routeEstimate,
                 IntrinsicDurationSeconds);
@@ -141,7 +128,7 @@ namespace PEGA.NPC
 
         public override bool CanOfferCandidate(
             PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPursuitContinuation? continuation)
+            PEGANpcPlanContinuation? continuation)
         {
             return !continuation.HasValue &&
                    CandidateMatchesContract(candidate) &&
@@ -152,7 +139,7 @@ namespace PEGA.NPC
 
         public override bool IsCurrentPlanValid(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -168,7 +155,6 @@ namespace PEGA.NPC
                     out diagnostic) ||
                 plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
-                plan.PredictedGoal != Contract.GoalKind ||
                 plan.PredictedEffect != Contract.EffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
@@ -189,7 +175,7 @@ namespace PEGA.NPC
 
         public override bool TryStart(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out string diagnostic)
         {
             diagnostic = string.Empty;
@@ -201,12 +187,10 @@ namespace PEGA.NPC
                     out diagnostic) ||
                 plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
-                plan.PredictedGoal != Contract.GoalKind ||
                 plan.PredictedEffect != Contract.EffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 plan.TargetId != PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
-                PlanarDistance(transform.position, knownCharacterPosition) >= safeSeparationDistanceMeters ||
                 !TryCreateSafeSeparationPosition(
                     transform.position,
                     knownCharacterPosition,
@@ -215,13 +199,17 @@ namespace PEGA.NPC
                 !IsTargetPositionWithinTolerance(expectedDestination, plan.TargetPosition))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The selected separation plan is stale or its target is no longer too close."
+                    ? "The selected separation plan is stale or no longer moves away from the known target."
                     : diagnostic;
                 RejectStart(diagnostic);
                 return false;
             }
 
-            return TryStartNavigation(plan.TargetPosition, PEGAActorMovementSpeedRegime.Pursuit, out diagnostic);
+            return TryStartNavigation(
+                plan.TargetId,
+                plan.TargetPosition,
+                PEGAActorMovementSpeedRegime.Pursuit,
+                out diagnostic);
         }
 
         public override bool IsEffectAlreadySatisfiedAtPosition(PEGANpcPlanSnapshot plan, Vector3 actorPosition)
@@ -277,19 +265,10 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (characterActorProfile == null ||
-                !characterActorProfile.TryGetActorProfileId(out ActorProfileId profileId, out diagnostic) ||
-                !profileId.IsValid)
+            if (!IsPositiveFinite(safeSeparationDistanceMeters) ||
+                !IsPositiveFinite(retreatStepDistanceMeters))
             {
-                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Action requires a valid target Actor Profile."
-                    : diagnostic;
-                return false;
-            }
-
-            if (!IsPositiveFinite(safeSeparationDistanceMeters))
-            {
-                diagnostic = "Safe separation distance must be finite and greater than zero.";
+                diagnostic = "Safe separation and retreat step distances must be finite and greater than zero.";
                 return false;
             }
 
@@ -338,19 +317,17 @@ namespace PEGA.NPC
 
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            if (!identity.TryGetValue(out ActorProfileId observedProfileId) ||
-                !characterActorProfile.TryGetActorProfileId(out ActorProfileId configuredProfileId, out diagnostic) ||
-                observedProfileId != configuredProfileId ||
+            if (!identity.TryGetValue(out _) ||
                 (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The target is not legitimately known with the configured Actor Profile."
+                    ? "The target identity is not legitimately known from Perception evidence."
                     : diagnostic;
                 return false;
             }
 
             PEGANpcKnowledgeFact<Vector3> lastObservedPosition =
-                knowledgeState.GetLastObservedRickPosition(subjectActorId);
+                knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
             if (!lastObservedPosition.TryGetValue(out knownPosition) ||
                 !lastObservedPosition.HasObservationTime ||
                 (lastObservedPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
@@ -394,8 +371,18 @@ namespace PEGA.NPC
             }
 
             awayDirection.Normalize();
-            destination = knownCharacterPosition + awayDirection *
-                (safeSeparationDistanceMeters + ArrivalRadiusMeters);
+            float currentSeparation = PlanarDistance(actorPosition, knownCharacterPosition);
+            if (!IsNonNegativeFinite(currentSeparation))
+            {
+                diagnostic = "The current separation from the known character must be finite.";
+                return false;
+            }
+
+            float minimumTargetSeparation = safeSeparationDistanceMeters + ArrivalRadiusMeters;
+            float retreatTargetSeparation = currentSeparation +
+                retreatStepDistanceMeters + ArrivalRadiusMeters;
+            float targetSeparation = Mathf.Max(minimumTargetSeparation, retreatTargetSeparation);
+            destination = knownCharacterPosition + awayDirection * targetSeparation;
             destination.y = actorPosition.y;
             return IsFinite(destination);
         }

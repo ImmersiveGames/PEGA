@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   definition: {fileID: 11400000, guid: f07ecc08083d4d3cba15b7471a266253, type: 2}
   enabledForContext: 1
-  baseWeight: 2
+  baseWeight: 4
   satisfactionGain: 1
   maximumSatisfaction: 1
   satisfactionWeightModifier: 0

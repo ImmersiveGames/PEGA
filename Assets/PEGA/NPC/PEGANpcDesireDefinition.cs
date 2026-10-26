@@ -1,4 +1,5 @@
 using System;
+using PEGA.GOAP;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -17,17 +18,18 @@ namespace PEGA.NPC
         private string displayName;
 
         [SerializeField]
-        [Tooltip("Predicado de estado desejado, avaliado separadamente dos Effects das Actions disponíveis.")]
-        private PEGANpcDesireGoalKind desiredGoal;
+        [Tooltip("Condição GOAP componível que descreve o estado desejado, independente das Actions disponíveis.")]
+        private PEGANpcGoapConditionAsset desiredGoalCondition;
 
         public string DesireId => desireId;
 
         public string DisplayName => displayName;
 
-        public PEGANpcDesireGoalKind DesiredGoal => desiredGoal;
+        public PEGANpcGoapConditionAsset DesiredGoalCondition => desiredGoalCondition;
 
-        internal bool Matches(PEGANpcObservedActionEffect observedEffect) =>
-            observedEffect.IsValid && observedEffect.GoalKind == desiredGoal;
+        public PEGAGoapGoal CreateGoal() => desiredGoalCondition != null
+            ? new PEGAGoapGoal(desiredGoalCondition)
+            : throw new InvalidOperationException($"Desire '{desireId}' has no Goal condition.");
 
         internal bool TryValidate(out string diagnostic)
         {
@@ -44,9 +46,15 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!Enum.IsDefined(typeof(PEGANpcDesireGoalKind), desiredGoal))
+            if (desiredGoalCondition == null)
             {
-                diagnostic = $"Desire '{desireId}' uses an unsupported goal predicate.";
+                diagnostic = $"Desire '{desireId}' requires a composable GOAP Goal condition asset.";
+                return false;
+            }
+
+            if (!desiredGoalCondition.TryValidate(out diagnostic))
+            {
+                diagnostic = $"Desire '{desireId}' Goal condition: {diagnostic}";
                 return false;
             }
 

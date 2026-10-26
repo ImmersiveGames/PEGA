@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using PEGA.GOAP;
 using PEGA.Actors;
 using UnityEngine;
 
@@ -33,7 +34,7 @@ namespace PEGA.NPC
     public enum PEGANpcPlanPurpose
     {
         DesireGoal = 0,
-        PursuitContinuationStep = 10
+        PlanContinuationStep = 10
     }
 
     public enum PEGANpcPlanningRouteStatus
@@ -105,6 +106,8 @@ namespace PEGA.NPC
         };
 
         internal ActorId InvestigationSubjectActorId => _actorId;
+
+        internal ActorId KnownActorId => _actorId;
 
         internal ActorId CharacterSeparationSubjectActorId => _actorId;
 
@@ -417,14 +420,12 @@ namespace PEGA.NPC
             PEGANpcActionContract contract,
             IPEGANpcActionProvider action,
             PEGANpcPlanningTargetId targetId,
-            bool preconditionsSatisfied,
             PEGAActorMovementSpeedRegime speedRegime,
             float intrinsicDurationSeconds)
             : this(
                 contract,
                 action,
                 targetId,
-                preconditionsSatisfied,
                 speedRegime,
                 PEGANpcNavigationRouteEstimate.NotRequired,
                 intrinsicDurationSeconds)
@@ -435,7 +436,6 @@ namespace PEGA.NPC
             PEGANpcActionContract contract,
             IPEGANpcActionProvider action,
             PEGANpcPlanningTargetId targetId,
-            bool preconditionsSatisfied,
             PEGAActorMovementSpeedRegime speedRegime,
             PEGANpcNavigationRouteEstimate routeEstimate,
             float intrinsicDurationSeconds)
@@ -443,7 +443,6 @@ namespace PEGA.NPC
             Contract = contract;
             Action = action;
             TargetId = targetId;
-            PreconditionsSatisfied = preconditionsSatisfied;
             SpeedRegime = speedRegime;
             RouteEstimate = routeEstimate;
             IntrinsicDurationSeconds = intrinsicDurationSeconds;
@@ -457,13 +456,9 @@ namespace PEGA.NPC
 
         public PEGANpcActionEffectKind PredictedEffect => Contract.EffectKind;
 
-        public PEGANpcDesireGoalKind PredictedGoal => Contract.GoalKind;
-
         public PEGANpcPlanningTargetId TargetId { get; }
 
         public PEGANpcPlanningTargetKind RequiredTargetKind => Contract.TargetKind;
-
-        public bool PreconditionsSatisfied { get; }
 
         public PEGAActorMovementSpeedRegime SpeedRegime { get; }
 
@@ -475,16 +470,13 @@ namespace PEGA.NPC
             (Action.Contract.IsValid &&
              Action.Contract.ActionId == Contract.ActionId &&
              Action.Contract.EffectKind == Contract.EffectKind &&
-             Action.Contract.GoalKind == Contract.GoalKind &&
              Action.Contract.TargetKind == Contract.TargetKind &&
              Action.Contract.RequiresNavigation == Contract.RequiresNavigation);
 
         internal static PEGANpcPlanningActionCandidate DetachedFixture(
             PEGANpcPlanningActionId actionId,
             PEGANpcActionEffectKind predictedEffect,
-            PEGANpcDesireGoalKind predictedGoal,
             PEGANpcPlanningTarget target,
-            bool preconditionsSatisfied,
             PEGAActorMovementSpeedRegime speedRegime,
             PEGANpcPlanningRouteStatus routeStatus,
             float routeLengthMeters,
@@ -502,13 +494,11 @@ namespace PEGA.NPC
                 new PEGANpcActionContract(
                     actionId,
                     predictedEffect,
-                    predictedGoal,
                     target.Kind,
                     routeStatus != PEGANpcPlanningRouteStatus.NotRequired,
                     "Detached fixture Action."),
                 null,
                 target.TargetId,
-                preconditionsSatisfied,
                 speedRegime,
                 estimate,
                 intrinsicDurationSeconds);
@@ -519,9 +509,9 @@ namespace PEGA.NPC
     /// A bounded continuation of an already selected pursuit, derived from this NPC's preserved perception evidence.
     /// The existing Perception source remains the authority for the evasion timeout.
     /// </summary>
-    public readonly struct PEGANpcPursuitContinuation
+    public readonly struct PEGANpcPlanContinuation
     {
-        internal PEGANpcPursuitContinuation(
+        internal PEGANpcPlanContinuation(
             string desireId,
             ActorId subjectActorId,
             double contactLossObservationTimeSeconds,
@@ -537,6 +527,11 @@ namespace PEGA.NPC
             PositionEvidenceTimeSeconds = positionEvidenceTimeSeconds;
             LastKnownApproachAttempted = lastKnownApproachAttempted || lastKnownPositionReached;
             LastKnownPositionReached = lastKnownPositionReached;
+            ProgressCondition = new PEGANpcLastKnownTargetProgressCondition(
+                subjectActorId,
+                contactLossObservationTimeSeconds,
+                positionEvidenceTimeSeconds,
+                lastKnownPositionReached);
         }
 
         public string DesireId { get; }
@@ -553,18 +548,21 @@ namespace PEGA.NPC
 
         public bool LastKnownPositionReached { get; }
 
+        internal IPEGAGoapCondition ProgressCondition { get; }
+
         public bool IsValid =>
             !string.IsNullOrWhiteSpace(DesireId) &&
             SubjectActorId.IsValid &&
             IsNonNegativeFinite(ContactLossObservationTimeSeconds) &&
             IsFinite(LastKnownPosition) &&
+            ProgressCondition != null &&
             IsNonNegativeFinite(PositionEvidenceTimeSeconds) &&
             PositionEvidenceTimeSeconds <= ContactLossObservationTimeSeconds;
 
-        public PEGANpcPursuitContinuation WithLastKnownApproachAttempted() =>
+        public PEGANpcPlanContinuation WithLastKnownApproachAttempted() =>
             LastKnownApproachAttempted
                 ? this
-                : new PEGANpcPursuitContinuation(
+                : new PEGANpcPlanContinuation(
                     DesireId,
                     SubjectActorId,
                     ContactLossObservationTimeSeconds,
@@ -573,10 +571,10 @@ namespace PEGA.NPC
                     true,
                     LastKnownPositionReached);
 
-        public PEGANpcPursuitContinuation WithLastKnownPositionReached() =>
+        public PEGANpcPlanContinuation WithLastKnownPositionReached() =>
             LastKnownPositionReached
                 ? this
-                : new PEGANpcPursuitContinuation(
+                : new PEGANpcPlanContinuation(
                     DesireId,
                     SubjectActorId,
                     ContactLossObservationTimeSeconds,
@@ -585,8 +583,8 @@ namespace PEGA.NPC
                     true,
                     true);
 
-        internal PEGANpcLastKnownRickPursuitIntent ToIntent() =>
-            new PEGANpcLastKnownRickPursuitIntent(
+        internal PEGANpcLastKnownTargetContinuationIntent ToIntent() =>
+            new PEGANpcLastKnownTargetContinuationIntent(
                 SubjectActorId,
                 LastKnownPosition,
                 PositionEvidenceTimeSeconds,
@@ -617,20 +615,40 @@ namespace PEGA.NPC
             PEGANpcDesireContext context,
             IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
             IReadOnlyList<PEGANpcPlanningActionCandidate> actionCandidates,
-            PEGANpcPursuitContinuation? pursuitContinuation = null)
+            PEGANpcPlanContinuation? planContinuation = null,
+            IPEGAGoapKnowledgeStateView knowledgeState = null,
+            int causalSearchCandidateEvaluationBudget = 128)
         {
             ValidationMode = validationMode;
             Context = context;
             _knownTargets = Copy(knownTargets);
             _actionCandidates = Copy(actionCandidates);
-            PursuitContinuation = pursuitContinuation;
+            PlanContinuation = planContinuation;
+            CausalSearchCandidateEvaluationBudget = causalSearchCandidateEvaluationBudget;
+            if (validationMode == PEGANpcPlanningValidationMode.LiveKnowledge &&
+                knowledgeState != null &&
+                knowledgeState.Source == PEGAGoapStateSource.KnowledgeState &&
+                TryValidate(out _))
+            {
+                CausalKnowledge = new PEGANpcCausalPlanningKnowledge(
+                    knowledgeState,
+                    KnownTargets);
+            }
         }
 
         public PEGANpcPlanningValidationMode ValidationMode { get; }
 
-        public PEGANpcPursuitContinuation? PursuitContinuation { get; }
+        public PEGANpcPlanContinuation? PlanContinuation { get; }
 
         public PEGANpcDesireContext Context { get; }
+
+        /// <summary>
+        /// Read-only causal-planning view for valid live inputs. Isolated validation fixtures intentionally
+        /// have no runtime Knowledge State and therefore expose no causal live input.
+        /// </summary>
+        public PEGANpcCausalPlanningKnowledge CausalKnowledge { get; }
+
+        public int CausalSearchCandidateEvaluationBudget { get; }
 
         public IReadOnlyList<PEGANpcPlanningTarget> KnownTargets => _knownTargets ?? EmptyTargets;
 
@@ -647,9 +665,9 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (PursuitContinuation.HasValue &&
+            if (PlanContinuation.HasValue &&
                 (ValidationMode != PEGANpcPlanningValidationMode.LiveKnowledge ||
-                 !PursuitContinuation.Value.IsValid))
+                 !PlanContinuation.Value.IsValid))
             {
                 diagnostic = "A pursuit continuation requires a valid live Perception-backed planning input.";
                 return false;
@@ -664,7 +682,7 @@ namespace PEGA.NPC
             {
                 PEGANpcPlanningTarget target = KnownTargets[index];
                 bool provenanceCompatible = ValidationMode == PEGANpcPlanningValidationMode.LiveKnowledge
-                    ? HasCompatibleLiveTarget(target, PursuitContinuation)
+                    ? HasLegitimateLiveTargetProvenance(target)
                     : target.Provenance == requiredProvenance;
                 if (!target.IsValid || !provenanceCompatible)
                 {
@@ -683,7 +701,6 @@ namespace PEGA.NPC
             {
                 PEGANpcPlanningActionCandidate candidate = ActionCandidates[index];
                 if (!candidate.Contract.IsValid ||
-                    !Enum.IsDefined(typeof(PEGANpcDesireGoalKind), candidate.PredictedGoal) ||
                     !candidate.RequiredTargetKind.IsValid ||
                     (candidate.Contract.RequiresNavigation &&
                      !Enum.IsDefined(typeof(PEGAActorMovementSpeedRegime), candidate.SpeedRegime)) ||
@@ -742,49 +759,11 @@ namespace PEGA.NPC
             return Array.AsReadOnly(copy);
         }
 
-        private static bool HasCompatibleLiveTarget(
-            PEGANpcPlanningTarget target,
-            PEGANpcPursuitContinuation? pursuitContinuation)
+        private static bool HasLegitimateLiveTargetProvenance(PEGANpcPlanningTarget target)
         {
-            if (!target.HasEvidenceTime)
-            {
-                return false;
-            }
-
-            if (target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState)
-            {
-                return target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.Actor ||
-                       target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.StableDataId;
-            }
-
-            if (target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge &&
-                target.Kind == PEGANpcPlanningTargetKind.SafeSeparationPosition &&
-                target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination)
-            {
-                return target.TargetId.CharacterSeparationSubjectActorId.IsValid;
-            }
-
-            if (target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge &&
-                target.Kind == PEGANpcPlanningTargetKind.LocalObservationPosition &&
-                target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
-            {
-                return Math.Abs(target.EvidenceTimeSeconds -
-                                target.TargetId.PerceivedAreaEvidenceTimeSeconds) <= 0.000001d;
-            }
-
-            if (target.Provenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
-                !pursuitContinuation.HasValue ||
-                target.Kind != PEGANpcPlanningTargetKind.LocalObservationPosition ||
-                target.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.InvestigationSample)
-            {
-                return false;
-            }
-
-            PEGANpcPursuitContinuation continuation = pursuitContinuation.Value;
-            return target.TargetId.InvestigationSubjectActorId == continuation.SubjectActorId &&
-                   Math.Abs(target.TargetId.InvestigationLossTimeSeconds -
-                            continuation.ContactLossObservationTimeSeconds) <= 0.000001d &&
-                   Math.Abs(target.EvidenceTimeSeconds - continuation.PositionEvidenceTimeSeconds) <= 0.000001d;
+            return target.HasEvidenceTime &&
+                   (target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState ||
+                    target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge);
         }
     }
 
@@ -795,6 +774,7 @@ namespace PEGA.NPC
             string desireName,
             PEGANpcPlanningActionCandidate action,
             PEGANpcPlanningTarget target,
+            IReadOnlyList<IPEGAGoapEffect> causalEffects,
             float estimatedSeconds,
             float effectiveDesireWeight,
             float costPreference,
@@ -805,7 +785,7 @@ namespace PEGA.NPC
             DesireName = desireName ?? string.Empty;
             ActionId = action.ActionId;
             PredictedEffect = action.PredictedEffect;
-            PredictedGoal = action.PredictedGoal;
+            CausalEffects = CopyCausalEffects(causalEffects);
             TargetId = target.TargetId;
             TargetKind = target.Kind;
             TargetProvenance = target.Provenance;
@@ -831,7 +811,8 @@ namespace PEGA.NPC
 
         public PEGANpcActionEffectKind PredictedEffect { get; }
 
-        public PEGANpcDesireGoalKind PredictedGoal { get; }
+        /// <summary>Declared GOAP Effects for this Action step; execution may confirm a subset only.</summary>
+        public IReadOnlyList<IPEGAGoapEffect> CausalEffects { get; }
 
         public PEGANpcPlanningTargetId TargetId { get; }
 
@@ -862,6 +843,25 @@ namespace PEGA.NPC
         public PEGANpcPlanPurpose Purpose { get; }
 
         public float MaximumRouteDistanceFromAnchorMeters { get; }
+
+        private static IReadOnlyList<IPEGAGoapEffect> CopyCausalEffects(
+            IReadOnlyList<IPEGAGoapEffect> causalEffects)
+        {
+            if (causalEffects == null)
+            {
+                throw new ArgumentNullException(nameof(causalEffects));
+            }
+
+            IPEGAGoapEffect[] copy = new IPEGAGoapEffect[causalEffects.Count];
+            for (int index = 0; index < causalEffects.Count; index++)
+            {
+                copy[index] = causalEffects[index] ?? throw new ArgumentException(
+                    "A plan snapshot cannot contain a null causal Effect.",
+                    nameof(causalEffects));
+            }
+
+            return Array.AsReadOnly(copy);
+        }
     }
 
     public sealed class PEGANpcDesirePlanEvaluation
@@ -871,7 +871,6 @@ namespace PEGA.NPC
         internal PEGANpcDesirePlanEvaluation(
             string desireId,
             string desireName,
-            PEGANpcDesireGoalKind desiredGoal,
             bool applicable,
             float effectiveWeight,
             IReadOnlyList<PEGANpcPlanSnapshot> plans,
@@ -879,7 +878,6 @@ namespace PEGA.NPC
         {
             DesireId = desireId ?? string.Empty;
             DesireName = desireName ?? string.Empty;
-            DesiredGoal = desiredGoal;
             IsApplicable = applicable;
             EffectiveWeight = effectiveWeight;
             PEGANpcPlanSnapshot[] copy = new PEGANpcPlanSnapshot[plans.Count];
@@ -895,8 +893,6 @@ namespace PEGA.NPC
         public string DesireId { get; }
 
         public string DesireName { get; }
-
-        public PEGANpcDesireGoalKind DesiredGoal { get; }
 
         public bool IsApplicable { get; }
 
@@ -922,7 +918,8 @@ namespace PEGA.NPC
             IReadOnlyList<PEGANpcPlanSnapshot> candidatePlans,
             bool hasSelectedPlan,
             PEGANpcPlanSnapshot selectedPlan,
-            string diagnostic)
+            string diagnostic,
+            PEGANpcCausalPlanEvaluation causalEvaluation = null)
         {
             IsValid = isValid;
             ValidationMode = validationMode;
@@ -932,6 +929,7 @@ namespace PEGA.NPC
             HasSelectedPlan = hasSelectedPlan;
             SelectedPlan = selectedPlan;
             Diagnostic = diagnostic ?? string.Empty;
+            CausalEvaluation = causalEvaluation;
         }
 
         public bool IsValid { get; }
@@ -950,6 +948,12 @@ namespace PEGA.NPC
 
         public string Diagnostic { get; }
 
+        /// <summary>
+        /// Causal alternatives considered by PEGA policy. Live plan formation is owned by the causal planner;
+        /// this result retains the alternatives and search statuses used by the selection decision.
+        /// </summary>
+        public PEGANpcCausalPlanEvaluation CausalEvaluation { get; }
+
         private static IReadOnlyList<T> Copy<T>(IReadOnlyList<T> values)
         {
             T[] copy = new T[values.Count];
@@ -963,12 +967,12 @@ namespace PEGA.NPC
     }
 
     /// <summary>
-    /// A request to continue the Rick pursuit at the last position confirmed by Perception.
+    /// A request to continue the Target pursuit at the last position confirmed by Perception.
     /// It is data for a planner/consumer; it does not select, start, cancel, or execute an Action.
     /// </summary>
-    public readonly struct PEGANpcLastKnownRickPursuitIntent
+    public readonly struct PEGANpcLastKnownTargetContinuationIntent
     {
-        internal PEGANpcLastKnownRickPursuitIntent(
+        internal PEGANpcLastKnownTargetContinuationIntent(
             ActorId subjectActorId,
             Vector3 lastKnownPosition,
             double lastKnownObservationTimeSeconds,
@@ -989,7 +993,7 @@ namespace PEGA.NPC
 
         public ActorId SubjectActorId { get; }
 
-        public PEGANpcPlanningActionId ActionId => PEGANpcPlanningActionId.ApproachKnownRick;
+        public PEGANpcPlanningActionId ActionId => PEGANpcPlanningActionId.ApproachKnownCharacter;
 
         public PEGANpcPlanningTargetKind TargetKind => PEGANpcPlanningTargetKind.CharacterPosition;
 
@@ -1009,22 +1013,22 @@ namespace PEGA.NPC
             value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
     }
 
-    /// <summary>Published when real Perception confirms loss of Rick and a legitimate last position exists.</summary>
-    public sealed class PEGANpcLastKnownRickPursuitIntentRequestedEvent : IEvent
+    /// <summary>Published when real Perception confirms loss of Target and a legitimate last position exists.</summary>
+    public sealed class PEGANpcLastKnownTargetContinuationIntentRequestedEvent : IEvent
     {
-        internal PEGANpcLastKnownRickPursuitIntentRequestedEvent(
-            PEGANpcLastKnownRickPursuitIntent intent)
+        internal PEGANpcLastKnownTargetContinuationIntentRequestedEvent(
+            PEGANpcLastKnownTargetContinuationIntent intent)
         {
             Intent = intent;
         }
 
-        public PEGANpcLastKnownRickPursuitIntent Intent { get; }
+        public PEGANpcLastKnownTargetContinuationIntent Intent { get; }
     }
 
     public enum PEGANpcPlanReevaluationTrigger
     {
-        RickReacquired = 10,
-        RickConsideredEvaded = 20
+        TargetReacquired = 10,
+        TargetContactLostBeyondWindow = 20
     }
 
     /// <summary>
@@ -1032,7 +1036,7 @@ namespace PEGA.NPC
     /// Não seleciona, cancela, substitui nem executa planos.
     /// </summary>
     /// <remarks>
-    /// RickReacquired identifica planos dependentes do alvo; RickConsideredEvaded solicita avaliação do conjunto
+    /// TargetReacquired identifica planos dependentes do alvo; TargetContactLostBeyondWindow solicita avaliação do conjunto
     /// normal de Desejos. O consumidor autônomo é responsável por interpretar o gatilho.
     /// </remarks>
     public sealed class PEGANpcPlanReevaluationRequestedEvent : IEvent

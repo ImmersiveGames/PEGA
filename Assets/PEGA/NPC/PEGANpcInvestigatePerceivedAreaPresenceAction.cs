@@ -47,8 +47,8 @@ namespace PEGA.NPC
 
         private PEGANpcKnowledgeState _knowledgeState;
         private NavMeshAgent _agent;
-        private ActorId _candidatePlayerActorId;
-        private ActorId _executionPlayerActorId;
+        private ActorId _candidateTargetActorId;
+        private ActorId _executionTargetActorId;
         private PEGANpcPlanSnapshot _executionPlan;
         private Vector3 _executionStartPosition;
         private bool _hasExecutionPlan;
@@ -56,13 +56,9 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachLocalObservationPosition;
 
-        protected override PEGANpcDesireGoalKind ActionGoalKind =>
-            PEGANpcDesireGoalKind.InvestigatePerceivedAreaPresence;
-
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
             PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence,
             ActionEffectKind,
-            ActionGoalKind,
             PEGANpcPlanningTargetKind.LocalObservationPosition,
             true,
             "NPC began investigating an unidentified radial presence.");
@@ -80,14 +76,15 @@ namespace PEGA.NPC
             candidates = Array.AsReadOnly(candidateList.ToArray());
             diagnostic = string.Empty;
 
-            if (context.PursuitContinuation.HasValue ||
-                context.HasPerceptionBackedVisualContact ||
-                !context.PlayerActorId.IsValid)
+            if (context.PlanContinuation.HasValue ||
+                context.HasPerceptionBackedTargetContact ||
+                !context.TargetActorId.IsValid)
             {
                 return true;
             }
 
-            _candidatePlayerActorId = context.PlayerActorId;
+            ActorId targetActorId = context.TargetActorId;
+            _candidateTargetActorId = targetActorId;
             if (!TryGetCurrentPresence(
                     out PEGANpcPerceivedAreaPresence presence,
                     out double evidenceTimeSeconds,
@@ -96,7 +93,7 @@ namespace PEGA.NPC
                 return string.IsNullOrWhiteSpace(diagnostic);
             }
 
-            if (IsCharacterIdentityKnownByPerception(_candidatePlayerActorId))
+            if (IsCharacterIdentityKnownByPerception(_candidateTargetActorId))
             {
                 return true;
             }
@@ -136,7 +133,6 @@ namespace PEGA.NPC
                     Contract,
                     this,
                     _executionPlan.TargetId,
-                    true,
                     PEGAActorMovementSpeedRegime.Movement,
                     activeRoute,
                     IntrinsicDurationSeconds));
@@ -220,7 +216,6 @@ namespace PEGA.NPC
                     Contract,
                     this,
                     targetId,
-                    true,
                     PEGAActorMovementSpeedRegime.Movement,
                     route,
                     IntrinsicDurationSeconds);
@@ -243,7 +238,7 @@ namespace PEGA.NPC
 
         public override bool CanOfferCandidate(
             PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPursuitContinuation? continuation) =>
+            PEGANpcPlanContinuation? continuation) =>
             !continuation.HasValue &&
             CandidateMatchesContract(candidate) &&
             candidate.TargetId.IdentityKind ==
@@ -266,16 +261,16 @@ namespace PEGA.NPC
                 return true;
             }
 
-            return _executionPlayerActorId.IsValid &&
+            return _executionTargetActorId.IsValid &&
                    change.SubjectActorId.HasValue &&
-                   change.SubjectActorId.Value == _executionPlayerActorId &&
+                   change.SubjectActorId.Value == _executionTargetActorId &&
                    (change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
-                    change.FactKind == PEGANpcKnowledgeFactKind.RickVisualContact);
+                    change.FactKind == PEGANpcKnowledgeFactKind.CharacterVisualContact);
         }
 
         public override bool IsCurrentPlanValid(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -283,9 +278,9 @@ namespace PEGA.NPC
             currentKnownPosition = default;
             evidenceTimeSeconds = 0d;
             diagnostic = string.Empty;
-            ActorId subjectActorId = _executionPlayerActorId.IsValid
-                ? _executionPlayerActorId
-                : _candidatePlayerActorId;
+            ActorId subjectActorId = _executionTargetActorId.IsValid
+                ? _executionTargetActorId
+                : _candidateTargetActorId;
             if (continuation.HasValue ||
                 !TryValidatePlan(plan, subjectActorId, false, out currentKnownPosition,
                     out evidenceTimeSeconds, out diagnostic))
@@ -303,12 +298,12 @@ namespace PEGA.NPC
 
         public override bool TryStart(
             PEGANpcPlanSnapshot plan,
-            PEGANpcPursuitContinuation? continuation,
+            PEGANpcPlanContinuation? continuation,
             out string diagnostic)
         {
             diagnostic = string.Empty;
             if (continuation.HasValue ||
-                !TryValidatePlan(plan, _candidatePlayerActorId, true, out _, out _, out diagnostic))
+                !TryValidatePlan(plan, _candidateTargetActorId, true, out _, out _, out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
                     ? "Radial presence investigation cannot start during a pursuit continuation or without current evidence."
@@ -318,10 +313,11 @@ namespace PEGA.NPC
             }
 
             _executionPlan = plan;
-            _executionPlayerActorId = _candidatePlayerActorId;
+            _executionTargetActorId = _candidateTargetActorId;
             _executionStartPosition = transform.position;
             _hasExecutionPlan = true;
             bool started = TryStartNavigation(
+                plan.TargetId,
                 plan.TargetPosition,
                 PEGAActorMovementSpeedRegime.Movement,
                 out diagnostic);
@@ -343,7 +339,7 @@ namespace PEGA.NPC
         protected override void OnDisable()
         {
             ClearExecutionEvidence();
-            _candidatePlayerActorId = default;
+            _candidateTargetActorId = default;
             base.OnDisable();
         }
 
@@ -351,14 +347,14 @@ namespace PEGA.NPC
         {
             diagnostic = string.Empty;
             return _hasExecutionPlan &&
-                   IsCurrentPresenceUsable(_executionPlan, _executionPlayerActorId, out diagnostic);
+                   IsCurrentPresenceUsable(_executionPlan, _executionTargetActorId, out diagnostic);
         }
 
         protected override bool IsActionSpecificEffectObserved(out string diagnostic)
         {
             diagnostic = string.Empty;
             if (!_hasExecutionPlan ||
-                !IsCurrentPresenceUsable(_executionPlan, _executionPlayerActorId, out diagnostic))
+                !IsCurrentPresenceUsable(_executionPlan, _executionTargetActorId, out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
                     ? "The radial evidence stopped being current before the investigation point was reached."
@@ -399,10 +395,8 @@ namespace PEGA.NPC
                 !plan.ActionId.IsValid ||
                 !IsFinite(plan.TargetPosition) ||
                 !IsNonNegativeFinite(plan.EvidenceTimeSeconds) ||
-                !Enum.IsDefined(typeof(PEGANpcDesireGoalKind), plan.PredictedGoal) ||
                 plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
-                plan.PredictedGoal != ActionGoalKind ||
                 plan.PredictedEffect != ActionEffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
@@ -598,7 +592,7 @@ namespace PEGA.NPC
 
         private void ClearExecutionEvidence()
         {
-            _executionPlayerActorId = default;
+            _executionTargetActorId = default;
             _executionPlan = default;
             _executionStartPosition = default;
             _hasExecutionPlan = false;

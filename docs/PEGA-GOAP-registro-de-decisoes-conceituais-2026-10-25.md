@@ -1,11 +1,11 @@
 # PEGA — Registro consolidado das decisões conceituais do GOAP
 
 **Data:** 25 de outubro de 2026  
-**Situação:** decisões de produto e diretrizes arquiteturais acordadas em discussão; documento-base para reconciliação com o GDD e posterior formalização em ADRs.  
+**Situação:** decisões específicas de GOAP formalizadas nos ADRs GOAP em 2026-10-25; diretriz arquitetural transversal formalizada no ADR de pré-produção, §13; este registro preserva origem e rastreabilidade.
 **Âmbito:** inteligência dos larápios e diretriz transversal de arquitetura do PEGA.  
-**Natureza:** descreve **o que o sistema deve possibilitar e por quê**, sem prescrever classes, algoritmos, arquivos ou estruturas de Unity.
+**Natureza:** registro histórico da intenção aprovada; descreve **o que o sistema deve possibilitar e por quê**, sem prescrever classes, algoritmos, arquivos ou estruturas de Unity.
 
-> **Regra de autoridade:** este documento registra as decisões amadurecidas na discussão. O GDD continua sendo a autoridade das regras de gameplay vigentes, até sua revisão explícita; ADRs futuros registrarão as decisões de arquitetura. Divergências devem ser reconciliadas sem apagar o histórico nem substituir decisões silenciosamente. A demonstração atual do MVP não define os limites do sistema final.
+> **Regra de autoridade:** o GDD é a autoridade das regras vigentes de gameplay; os ADRs técnicos registram arquitetura e consequências sem substituí-las; este documento preserva a origem conceitual dos acordos. Divergências devem ser reconciliadas sem apagar o histórico nem substituir decisões silenciosamente. A demonstração atual do MVP não define os limites do sistema final.
 
 ## 1. Diretriz transversal: modularidade, intercambialidade e escalabilidade
 
@@ -171,13 +171,17 @@ A projeção de Effects do próprio plano é parte essencial do GOAP; **previsõ
 
 **Não decidido nesta etapa:** classes/interfaces/arquivos; algoritmo de busca; fórmula de pontuação; valores numéricos de perfis, margens e orçamentos; mecanismo exato de navegação hipotética; catálogo de Actions/Goals do jogo completo; serialização e authoring Unity; representação técnica final de recusas/diagnósticos; ordem de implementação. Essas decisões pertencem à investigação técnica ou ao balanceamento, sempre subordinadas às diretrizes já acordadas.
 
-## 19. Orientação para reconciliação documental
+## 19. Formalização e rastreabilidade
 
-1. **Registrar estas decisões como fonte de intenção:** não delegar ao Codex a tarefa de reinventar ou interpretar livremente o que foi decidido nesta conversa.
-2. **Confrontar com o GDD e os ADRs vigentes:** preservar regras de gameplay e distinguir incompatibilidade real de diferença de estágio entre GDD e runtime.
-3. **Resolver contradições explicitamente:** documentar o que foi preservado, refinado ou substituído, sem criar duas normas concorrentes.
-4. **Formalizar em ADRs técnicos posteriormente:** o Codex determina organização, contratos e implicações técnicas segundo o workspace e as autoridades Immersive; não introduz novos requisitos de produto por conta própria.
-5. **Não elevar a demonstração do MVP a norma:** suas soluções provisórias são evidência e aprendizado, não fronteiras do GOAP definitivo.
+As decisões deste registro foram formalizadas nas seguintes fontes de arquitetura:
+
+1. [ADR de pré-produção — Diretriz arquitetural transversal do PEGA, §13](../PEGA%20GDD/ADR-PREPRODUCAO.md#13-diretriz-arquitetural-transversal-do-pega): autoridade geral para modularidade, intercambialidade e escalabilidade em todo o PEGA.
+2. [ADR-GOAP-01 — Domínio e evolução por composição](../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md): aplicação da diretriz transversal ao GOAP, ownership do PEGA e fronteiras com Immersive.
+3. [ADR-GOAP-02 — Condições, Effects e planejamento causal](../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md): Goals independentes de Actions, condições triestado, projeções, avaliadores e previsões opcionais.
+4. [ADR-GOAP-03 — Seleção de intenção, personalidade e estabilidade](../PEGA%20GDD/ADRs/ADR-GOAP-03-selecao-e-estabilidade.md): personalidade, competência, alternativas informativas e continuidade em níveis separados.
+5. [ADR-GOAP-04 — Tentativas informativas e evidências de interação](../PEGA%20GDD/ADRs/ADR-GOAP-04-interacoes-informativas.md): condições de tentativa, requisitos de sucesso, Effects observados e conhecimento autorizado.
+
+O [GDD](../PEGA%20GDD/GDD.md) foi reconciliado para manter as regras de gameplay vigentes em uma única autoridade. Este registro continua disponível como histórico e justificativa conceitual, não como um catálogo normativo paralelo. Os ADRs registram a arquitetura-alvo e não declaram a implementação concluída.
 
 ### Síntese executiva
 

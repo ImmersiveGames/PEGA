@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   desireId: n91-normal-known-gang-escape-n05
   displayName: Escapar por saída conhecida (N05 provisório)
-  desiredGoal: 10
+  desiredGoalCondition: {fileID: 11400000, guid: 84056348a0444ab6a8bdf74a0afce2fe, type: 2}

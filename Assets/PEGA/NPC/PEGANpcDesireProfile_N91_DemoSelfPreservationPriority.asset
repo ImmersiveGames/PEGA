@@ -18,5 +18,5 @@ MonoBehaviour:
       costReferenceSeconds: 10
     desires:
     - {fileID: 11400000, guid: 3045fcda1d7947c4b2d0bda64ca28fdf, type: 2}
-    - {fileID: 11400000, guid: 177736f2fcd348e09dc9a05bb24b81d4, type: 2}
-    - {fileID: 11400000, guid: c810f4e4d4aa464cbf9dfb1e1f4d7968, type: 2}
+    - {fileID: 11400000, guid: 3ce6430616034459891293c85992ec1a, type: 2}
+    - {fileID: 11400000, guid: 22c43eb1de3b47c09dfec53cd0208abb, type: 2}

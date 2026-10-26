@@ -4,7 +4,7 @@ using UnityEngine;
 namespace PEGA.NPC.Editor
 {
     /// <summary>Development-only visualization for the bounded local investigation area.</summary>
-    internal static class PEGANpcInvestigateLastKnownRickPositionGizmos
+    internal static class PEGANpcInvestigateLastKnownCharacterPositionGizmos
     {
         private static readonly Color BoundColor = new Color(0.35f, 0.85f, 1f, 0.85f);
         private static readonly Color ActiveTargetColor = new Color(0.3f, 1f, 0.45f, 1f);
@@ -12,7 +12,7 @@ namespace PEGA.NPC.Editor
 
         [DrawGizmo(GizmoType.Selected)]
         private static void Draw(
-            PEGANpcInvestigateLastKnownRickPositionAction action,
+            PEGANpcInvestigateLastKnownCharacterPositionAction action,
             GizmoType gizmoType)
         {
             if (action == null)
@@ -74,7 +74,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryGetLastKnownAnchor(
-            PEGANpcInvestigateLastKnownRickPositionAction action,
+            PEGANpcInvestigateLastKnownCharacterPositionAction action,
             out Vector3 anchor)
         {
             anchor = default;
@@ -84,11 +84,11 @@ namespace PEGA.NPC.Editor
             }
 
             PEGANpcPerceptionSource perception = action.GetComponent<PEGANpcPerceptionSource>();
-            PEGANpcApproachKnownRickAction approach = action.GetComponent<PEGANpcApproachKnownRickAction>();
+            PEGANpcApproachKnownCharacterAction approach = action.GetComponent<PEGANpcApproachKnownCharacterAction>();
             PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState sample =
                 perception != null ? perception.LatestGizmoState : default;
-            if (!sample.HasSample || !sample.HasRickTarget || sample.HasVisualContact || approach == null ||
-                !approach.TryGetKnownRickPosition(out anchor, out _))
+            if (!sample.HasSample || !sample.HasTarget || sample.HasVisualContact || approach == null ||
+                !approach.TryGetKnownTargetPosition(out anchor, out _))
             {
                 return false;
             }
@@ -112,7 +112,7 @@ namespace PEGA.NPC.Editor
             Handles.DrawLine(lower - Vector3.right * radius, upper - Vector3.right * radius);
         }
 
-        private static void DrawActiveTarget(PEGANpcInvestigateLastKnownRickPositionAction action)
+        private static void DrawActiveTarget(PEGANpcInvestigateLastKnownCharacterPositionAction action)
         {
             PEGANpcActionExecutionSnapshot execution = action.CurrentExecution;
             if (execution.Outcome != PEGANpcActionOutcome.Running || !execution.DeclaredEffect.IsTargetResolved)

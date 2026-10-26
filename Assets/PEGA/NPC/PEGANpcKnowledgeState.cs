@@ -4,6 +4,7 @@ using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using PEGA.GOAP;
 using PEGA.Diagnostics;
 using UnityEngine;
 
@@ -48,8 +49,8 @@ namespace PEGA.NPC
     {
         PerceivedAreaPresence,
         ObservedCharacterIdentity,
-        RickVisualContact,
-        LastObservedRickPosition
+        CharacterVisualContact,
+        LastObservedCharacterPosition
     }
 
     /// <summary>Evidência radial ancorada à posição conhecida do observador, nunca à posição oculta do alvo.</summary>
@@ -179,7 +180,7 @@ namespace PEGA.NPC
     }
 
     [DisallowMultipleComponent]
-    public sealed class PEGANpcKnowledgeState : MonoBehaviour
+    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IPEGAGoapKnowledgeCapability
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
@@ -262,21 +263,21 @@ namespace PEGA.NPC
                 : PEGANpcKnowledgeFact<ActorProfileId>.Unknown;
         }
 
-        public PEGANpcKnowledgeFact<bool> GetRickVisualContact(ActorId rickSubjectActorId)
+        public PEGANpcKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId)
         {
-            ValidateSubjectForQuery(rickSubjectActorId);
+            ValidateSubjectForQuery(subjectActorId);
             EnsureStateInitialized();
-            return _knowledgeBySubject.TryGetValue(rickSubjectActorId, out SubjectKnowledge subject)
-                ? subject.RickVisualContact.Snapshot
+            return _knowledgeBySubject.TryGetValue(subjectActorId, out SubjectKnowledge subject)
+                ? subject.CharacterVisualContact.Snapshot
                 : PEGANpcKnowledgeFact<bool>.Unknown;
         }
 
-        public PEGANpcKnowledgeFact<Vector3> GetLastObservedRickPosition(ActorId rickSubjectActorId)
+        public PEGANpcKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId)
         {
-            ValidateSubjectForQuery(rickSubjectActorId);
+            ValidateSubjectForQuery(subjectActorId);
             EnsureStateInitialized();
-            return _knowledgeBySubject.TryGetValue(rickSubjectActorId, out SubjectKnowledge subject)
-                ? subject.LastObservedRickPosition.Snapshot
+            return _knowledgeBySubject.TryGetValue(subjectActorId, out SubjectKnowledge subject)
+                ? subject.LastObservedCharacterPosition.Snapshot
                 : PEGANpcKnowledgeFact<Vector3>.Unknown;
         }
 
@@ -352,16 +353,16 @@ namespace PEGA.NPC
                 observationTimeSeconds);
         }
 
-        public PEGANpcKnowledgeWriteResult ObserveRickVisualContact(
-            ActorId rickSubjectActorId,
+        public PEGANpcKnowledgeWriteResult ObserveCharacterVisualContact(
+            ActorId subjectActorId,
             bool hasVisualContact,
             PEGANpcEvidenceOrigin origin,
             double observationTimeSeconds)
         {
-            if (!rickSubjectActorId.IsValid)
+            if (!subjectActorId.IsValid)
             {
                 return RejectEvidence(
-                    "rickVisualContact",
+                    "targetVisualContact",
                     "invalid",
                     origin,
                     observationTimeSeconds,
@@ -370,28 +371,28 @@ namespace PEGA.NPC
             }
 
             EnsureStateInitialized();
-            SubjectKnowledge subject = GetOrCreateSubject(rickSubjectActorId);
+            SubjectKnowledge subject = GetOrCreateSubject(subjectActorId);
             return Observe(
-                PEGANpcKnowledgeFactKind.RickVisualContact,
-                "rickVisualContact",
-                rickSubjectActorId,
-                subject.RickVisualContact,
+                PEGANpcKnowledgeFactKind.CharacterVisualContact,
+                "targetVisualContact",
+                subjectActorId,
+                subject.CharacterVisualContact,
                 hasVisualContact,
                 AreEqual,
                 origin,
                 observationTimeSeconds);
         }
 
-        public PEGANpcKnowledgeWriteResult ObserveRickPosition(
-            ActorId rickSubjectActorId,
+        public PEGANpcKnowledgeWriteResult ObserveCharacterPosition(
+            ActorId subjectActorId,
             Vector3 observedPosition,
             PEGANpcEvidenceOrigin origin,
             double observationTimeSeconds)
         {
-            if (!rickSubjectActorId.IsValid)
+            if (!subjectActorId.IsValid)
             {
                 return RejectEvidence(
-                    "lastObservedRickPosition",
+                    "lastObservedTargetPosition",
                     "invalid",
                     origin,
                     observationTimeSeconds,
@@ -401,25 +402,25 @@ namespace PEGA.NPC
 
             if (!IsFinite(observedPosition))
             {
-                SubjectKnowledge existingSubject = FindSubject(rickSubjectActorId);
+                SubjectKnowledge existingSubject = FindSubject(subjectActorId);
                 return RejectEvidence(
-                    "lastObservedRickPosition",
-                    rickSubjectActorId.StableText,
+                    "lastObservedTargetPosition",
+                    subjectActorId.StableText,
                     origin,
                     observationTimeSeconds,
                     "position contains a non-finite coordinate",
                     existingSubject != null
-                        ? existingSubject.LastObservedRickPosition.Snapshot
+                        ? existingSubject.LastObservedCharacterPosition.Snapshot
                         : PEGANpcKnowledgeFact<Vector3>.Unknown);
             }
 
             EnsureStateInitialized();
-            SubjectKnowledge subject = GetOrCreateSubject(rickSubjectActorId);
+            SubjectKnowledge subject = GetOrCreateSubject(subjectActorId);
             return Observe(
-                PEGANpcKnowledgeFactKind.LastObservedRickPosition,
-                "lastObservedRickPosition",
-                rickSubjectActorId,
-                subject.LastObservedRickPosition,
+                PEGANpcKnowledgeFactKind.LastObservedCharacterPosition,
+                "lastObservedTargetPosition",
+                subjectActorId,
+                subject.LastObservedCharacterPosition,
                 observedPosition,
                 AreExactlyEqual,
                 origin,
@@ -467,15 +468,15 @@ namespace PEGA.NPC
                 observationTimeSeconds);
         }
 
-        public PEGANpcKnowledgeWriteResult InvalidateRickVisualContact(
-            ActorId rickSubjectActorId,
+        public PEGANpcKnowledgeWriteResult InvalidateCharacterVisualContact(
+            ActorId subjectActorId,
             PEGANpcEvidenceOrigin origin,
             double observationTimeSeconds)
         {
-            if (!rickSubjectActorId.IsValid)
+            if (!subjectActorId.IsValid)
             {
                 return RejectEvidence(
-                    "rickVisualContact",
+                    "targetVisualContact",
                     "invalid",
                     origin,
                     observationTimeSeconds,
@@ -484,25 +485,25 @@ namespace PEGA.NPC
             }
 
             EnsureStateInitialized();
-            SubjectKnowledge subject = GetOrCreateSubject(rickSubjectActorId);
+            SubjectKnowledge subject = GetOrCreateSubject(subjectActorId);
             return Invalidate(
-                PEGANpcKnowledgeFactKind.RickVisualContact,
-                "rickVisualContact",
-                rickSubjectActorId,
-                subject.RickVisualContact,
+                PEGANpcKnowledgeFactKind.CharacterVisualContact,
+                "targetVisualContact",
+                subjectActorId,
+                subject.CharacterVisualContact,
                 origin,
                 observationTimeSeconds);
         }
 
-        public PEGANpcKnowledgeWriteResult InvalidateLastObservedRickPosition(
-            ActorId rickSubjectActorId,
+        public PEGANpcKnowledgeWriteResult InvalidateLastObservedCharacterPosition(
+            ActorId subjectActorId,
             PEGANpcEvidenceOrigin origin,
             double observationTimeSeconds)
         {
-            if (!rickSubjectActorId.IsValid)
+            if (!subjectActorId.IsValid)
             {
                 return RejectEvidence(
-                    "lastObservedRickPosition",
+                    "lastObservedTargetPosition",
                     "invalid",
                     origin,
                     observationTimeSeconds,
@@ -511,12 +512,12 @@ namespace PEGA.NPC
             }
 
             EnsureStateInitialized();
-            SubjectKnowledge subject = GetOrCreateSubject(rickSubjectActorId);
+            SubjectKnowledge subject = GetOrCreateSubject(subjectActorId);
             return Invalidate(
-                PEGANpcKnowledgeFactKind.LastObservedRickPosition,
-                "lastObservedRickPosition",
-                rickSubjectActorId,
-                subject.LastObservedRickPosition,
+                PEGANpcKnowledgeFactKind.LastObservedCharacterPosition,
+                "lastObservedTargetPosition",
+                subjectActorId,
+                subject.LastObservedCharacterPosition,
                 origin,
                 observationTimeSeconds);
         }
@@ -790,7 +791,7 @@ namespace PEGA.NPC
 
             const string message = "NPC knowledge fact was updated.";
             bool isRepeatedPositionEvidence =
-                factKind == PEGANpcKnowledgeFactKind.LastObservedRickPosition &&
+                factKind == PEGANpcKnowledgeFactKind.LastObservedCharacterPosition &&
                 result == PEGANpcKnowledgeWriteResult.Replaced &&
                 previous.Status == PEGANpcKnowledgeStatus.Known &&
                 current.Status == PEGANpcKnowledgeStatus.Known;
@@ -903,10 +904,10 @@ namespace PEGA.NPC
             public readonly KnowledgeFactCell<ActorProfileId> CharacterIdentity =
                 new KnowledgeFactCell<ActorProfileId>();
 
-            public readonly KnowledgeFactCell<bool> RickVisualContact =
+            public readonly KnowledgeFactCell<bool> CharacterVisualContact =
                 new KnowledgeFactCell<bool>();
 
-            public readonly KnowledgeFactCell<Vector3> LastObservedRickPosition =
+            public readonly KnowledgeFactCell<Vector3> LastObservedCharacterPosition =
                 new KnowledgeFactCell<Vector3>();
         }
 

@@ -26,6 +26,7 @@ GameObject:
   - component: {fileID: 114000003}
   - component: {fileID: 114000005}
   - component: {fileID: 2765785676748957259}
+  - component: {fileID: 114000013}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -158,7 +159,6 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
   playerSessionObserver: {fileID: 0}
-  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
   perceivedAreaRadiusMeters: 6
   visionRangeMeters: 10
   visionFieldOfViewDegrees: 100
@@ -206,12 +206,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownRickAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownCharacterAction
   navigationSource: {fileID: 114000002}
   arrivalRadiusMeters: 1.25
   knowledgeState: {fileID: 2765785676748957259}
-  rickReference: {fileID: 114000001}
-  rickActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+  targetReference: {fileID: 114000001}
 --- !u!114 &114000011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,8 +227,8 @@ MonoBehaviour:
   arrivalRadiusMeters: 1.25
   knowledgeState: {fileID: 2765785676748957259}
   characterReference: {fileID: 114000001}
-  characterActorProfile: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
   safeSeparationDistanceMeters: 5
+  retreatStepDistanceMeters: 1
 --- !u!114 &3705604825870797814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -241,7 +240,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d2b3bc9774641769b38efd77da079ed, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownRickPositionAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownCharacterPositionAction
   navigationSource: {fileID: 114000002}
   arrivalRadiusMeters: 1.25
   localRadiusMeters: 3
@@ -355,6 +354,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
+--- !u!114 &114000013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
+  gangKnowledgeState: {fileID: 0}
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0

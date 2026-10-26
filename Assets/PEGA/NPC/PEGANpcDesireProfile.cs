@@ -9,14 +9,6 @@ namespace PEGA.NPC
         Normal = 0
     }
 
-    public enum PEGANpcDesireGoalKind
-    {
-        ReachKnownCharacterPosition = 0,
-        ReachKnownEscapeDestination = 10,
-        MaintainSafeSeparationFromKnownCharacter = 20,
-        InvestigatePerceivedAreaPresence = 30
-    }
-
     [CreateAssetMenu(
         fileName = "PEGANpcDesireProfile",
         menuName = "PEGA/NPC/Desire Profile")]

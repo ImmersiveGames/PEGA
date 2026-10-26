@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   desireId: n91-normal-known-character-separation-n06
   displayName: Manter distância segura de personagem conhecido (N06 provisório)
-  desiredGoal: 20
+  desiredGoalCondition: {fileID: 11400000, guid: 8c43901f0d3c488abc1163a45842cfaa, type: 2}

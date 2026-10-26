@@ -162,10 +162,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Larapio NPC Demonstrator (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: desireProfile
-      value:
-      objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
       value: actor.6090887a2b9844529442aeba98a8df21
@@ -176,12 +172,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: playerSessionObserver
-      value: 
+      value:
       objectReference: {fileID: 2500000207}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value:
+      objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: gangKnowledgeState
+      value:
+      objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.96
@@ -225,10 +229,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1731424865}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
 --- !u!1 &1085674374
 GameObject:
@@ -357,29 +358,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2095411633}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1731424848 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
-  m_PrefabInstance: {fileID: 889876565}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1731424865
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1731424848}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
-  gangKnowledgeState: {fileID: 2095411630}
---- !u!1 &1908976656 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
-  m_PrefabInstance: {fileID: 2500000300}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2095411628
 GameObject:
   m_ObjectHideFlags: 0
@@ -397,7 +375,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2095411629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -584,18 +562,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: Larapio NPC Demonstrator
       objectReference: {fileID: 0}
-    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: desireProfile
-      value:
-      objectReference: {fileID: 11400000, guid: 7adfc5722b064a5e9042be531f114c8f, type: 2}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: playerSessionObserver
-      value: 
+      value:
       objectReference: {fileID: 2500000207}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value:
+      objectReference: {fileID: 11400000, guid: 7adfc5722b064a5e9042be531f114c8f, type: 2}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: gangKnowledgeState
+      value:
+      objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
       value: -9.53
@@ -639,24 +625,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2500000317}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
---- !u!114 &2500000317
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1908976656}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
-  gangKnowledgeState: {fileID: 2095411630}
 --- !u!1 &2500000400
 GameObject:
   m_ObjectHideFlags: 0

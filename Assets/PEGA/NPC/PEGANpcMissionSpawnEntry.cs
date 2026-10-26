@@ -156,7 +156,10 @@ namespace PEGA.NPC
         private PEGANpcNavMeshMovementIntentSource _navigationSource;
 
         [NonSerialized]
-        private PEGANpcPerceptionSource _perceptionSource;
+        private IPEGANpcTargetObservationSource _targetObservationSource;
+
+        [System.NonSerialized]
+        private MonoBehaviour _targetObservationBehaviour;
 
         [NonSerialized]
         private PEGANpcAutonomy _autonomy;
@@ -322,32 +325,29 @@ namespace PEGA.NPC
             _actorDeclaration = _spawnedActor.GetComponent<ActorDeclaration>();
             _actorPublication = _spawnedActor.GetComponent<ActorOccurrencePublication>();
             _navigationSource = _spawnedActor.GetComponent<PEGANpcNavMeshMovementIntentSource>();
-            _perceptionSource = _spawnedActor.GetComponent<PEGANpcPerceptionSource>();
+            if (!TryFindTargetObservationSource(
+                    _spawnedActor,
+                    out _targetObservationSource,
+                    out _targetObservationBehaviour,
+                    out string targetObservationDiagnostic))
+            {
+                Finish(PEGANpcMissionSpawnEntryOutcome.Failed, targetObservationDiagnostic);
+                yield break;
+            }
             _autonomy = _spawnedActor.GetComponent<PEGANpcAutonomy>();
 
             _actorIdText = _actorDeclaration != null && _actorDeclaration.ActorId.IsValid
                 ? _actorDeclaration.ActorId.StableText
                 : string.Empty;
 
-            if (_perceptionSource != null)
-            {
-                _perceptionSource.enabled = false;
-            }
+            _targetObservationBehaviour.enabled = false;
 
             if (_autonomy != null)
             {
                 _autonomy.enabled = false;
             }
 
-            if (_perceptionSource == null)
-            {
-                Finish(
-                    PEGANpcMissionSpawnEntryOutcome.Failed,
-                    "The ingress Actor has no Perception Source to bind to the current Activity observer.");
-                yield break;
-            }
-
-            if (!_perceptionSource.TryBindActivityObserverBeforeActivation(
+            if (!_targetObservationSource.TryBindActivityObserverBeforeActivation(
                     playerSessionObserver,
                     out string observerDiagnostic))
             {
@@ -357,7 +357,7 @@ namespace PEGA.NPC
 
             if (!gangKnowledgeState.TryJoinMember(
                     _spawnedActor,
-                    out _,
+                    out PEGANpcGangMembership membership,
                     out string membershipDiagnostic))
             {
                 Finish(PEGANpcMissionSpawnEntryOutcome.Failed, membershipDiagnostic);
@@ -365,7 +365,7 @@ namespace PEGA.NPC
             }
 
             _gangMembershipBoundBeforeNavigation =
-                _spawnedActor.GetComponent<PEGANpcGangMembership>()?.GangKnowledgeState == gangKnowledgeState;
+                membership != null && membership.GangKnowledgeState == gangKnowledgeState;
             _physicalStartPosition = _spawnedActor.transform.position;
             _stagingRoot.SetActive(true);
             _spawnedActor.transform.SetParent(transform, true);
@@ -518,16 +518,16 @@ namespace PEGA.NPC
             }
 
             _occurrencePublished = true;
-            if (_perceptionSource == null || _autonomy == null)
+            if (_targetObservationSource == null || _targetObservationBehaviour == null || _autonomy == null)
             {
                 Finish(
                     PEGANpcMissionSpawnEntryOutcome.Failed,
-                    "The entered Actor lost its Perception or Autonomy component before activation.");
+                    "The entered Actor lost its target observation source or Autonomy component before activation.");
                 yield break;
             }
 
-            _perceptionSource.enabled = true;
-            _perceptionEnabledAfterIngress = _perceptionSource.isActiveAndEnabled;
+            _targetObservationBehaviour.enabled = true;
+            _perceptionEnabledAfterIngress = _targetObservationBehaviour.isActiveAndEnabled;
             _autonomy.enabled = true;
             _autonomyEnabledAfterIngress = _autonomy.isActiveAndEnabled;
 
@@ -535,7 +535,7 @@ namespace PEGA.NPC
             {
                 Finish(
                     PEGANpcMissionSpawnEntryOutcome.Failed,
-                    "The entered Actor occurrence was published, but Perception or Autonomy did not become active.");
+                    "The entered Actor occurrence was published, but target observation or Autonomy did not become active.");
                 yield break;
             }
 
@@ -608,20 +608,71 @@ namespace PEGA.NPC
             return true;
         }
 
+        private static bool TryFindTargetObservationSource(
+            GameObject actorRoot,
+            out IPEGANpcTargetObservationSource source,
+            out MonoBehaviour behaviour,
+            out string diagnostic)
+        {
+            source = null;
+            behaviour = null;
+            if (actorRoot == null)
+            {
+                diagnostic = "The target observation source owner is missing.";
+                return false;
+            }
+
+            MonoBehaviour[] components = actorRoot.GetComponents<MonoBehaviour>();
+            for (int index = 0; index < components.Length; index++)
+            {
+                if (!(components[index] is IPEGANpcTargetObservationSource candidate))
+                {
+                    continue;
+                }
+
+                if (source != null)
+                {
+                    diagnostic = "The Mission ingress Actor must compose exactly one target observation source.";
+                    return false;
+                }
+
+                source = candidate;
+            }
+
+            if (source == null)
+            {
+                diagnostic = "The Mission ingress Actor has no target observation source to bind to the current Activity observer.";
+                return false;
+            }
+
+            behaviour = source as MonoBehaviour;
+            diagnostic = behaviour != null
+                ? string.Empty
+                : "The Mission ingress Actor target observation source must be a composed MonoBehaviour.";
+            return behaviour != null;
+        }
+
         private static bool TryValidateActorPrefab(GameObject prefab, out string diagnostic)
         {
             ActorDeclaration declaration = prefab.GetComponent<ActorDeclaration>();
             ActorOccurrencePublication publication = prefab.GetComponent<ActorOccurrencePublication>();
             PEGANpcKnowledgeState individualKnowledge = prefab.GetComponent<PEGANpcKnowledgeState>();
+            PEGANpcGangMembership gangMembership = prefab.GetComponent<PEGANpcGangMembership>();
             PEGANpcNavMeshMovementIntentSource navigation =
                 prefab.GetComponent<PEGANpcNavMeshMovementIntentSource>();
-            PEGANpcPerceptionSource perception = prefab.GetComponent<PEGANpcPerceptionSource>();
+            bool hasTargetObservationSource = TryFindTargetObservationSource(
+                prefab,
+                out _,
+                out _,
+                out string targetObservationDiagnostic);
             PEGANpcAutonomy autonomy = prefab.GetComponent<PEGANpcAutonomy>();
 
             if (declaration == null || publication == null || individualKnowledge == null ||
-                navigation == null || perception == null || autonomy == null)
+                gangMembership == null || navigation == null || !hasTargetObservationSource || autonomy == null)
             {
-                diagnostic = "The ingress Actor prefab must provide its root ActorDeclaration, publication, individual Knowledge State, navigation, Perception and Autonomy components.";
+                diagnostic = string.IsNullOrWhiteSpace(targetObservationDiagnostic)
+                    ? "The ingress Actor prefab must provide its root ActorDeclaration, publication, individual Knowledge State, Gang Membership, navigation, a target observation source and Autonomy components."
+                    : targetObservationDiagnostic;
                 return false;
             }
 
@@ -856,7 +907,8 @@ namespace PEGA.NPC
             _actorDeclaration = null;
             _actorPublication = null;
             _navigationSource = null;
-            _perceptionSource = null;
+            _targetObservationSource = null;
+            _targetObservationBehaviour = null;
             _autonomy = null;
         }
 

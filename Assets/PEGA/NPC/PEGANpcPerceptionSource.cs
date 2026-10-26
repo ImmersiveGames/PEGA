@@ -10,26 +10,22 @@ using UnityEngine;
 namespace PEGA.NPC
 {
     /// <summary>
-    /// Production runtime perception for the first Rick pursuit slice.
+    /// Production runtime perception for the Player Actor occurrence selected by this component's authored binding.
     /// It writes only observations authorized by radial presence or visual confirmation.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorOccurrenceReferenceBinding))]
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
     [AddComponentMenu("PEGA/NPC/Perception Source")]
-    public sealed class PEGANpcPerceptionSource : MonoBehaviour
+    public sealed class PEGANpcPerceptionSource : MonoBehaviour, IPEGANpcTargetObservationSource
     {
         private const string LogCategory = "PEGA.Gameplay.Perception";
         private const float MinimumPlanarMagnitude = 0.0001f;
 
-        [Header("Rick target")]
+        [Header("Observed Player")]
         [SerializeField]
         [Tooltip("Observador da Player Session no escopo da Activity que contém este NPC.")]
         private PlayerSessionObserver playerSessionObserver;
-
-        [SerializeField]
-        [Tooltip("Perfil canônico usado para limitar esta etapa da percepção à perseguição de Rick.")]
-        private ActorProfile rickActorProfile;
 
         [Header("Perceived Area")]
         [SerializeField, Min(0.1f)]
@@ -60,7 +56,7 @@ namespace PEGA.NPC
 
         [Header("Lost Target")]
         [SerializeField, Min(0.1f)]
-        [Tooltip("Tempo de jogo sem readquirir Rick após perder contato visual antes de pedir a seleção normal de Desejos (s). O valor inicial de 5 s é provisório e deve ser calibrado por missão.")]
+        [Tooltip("Tempo de jogo sem readquirir Target após perder contato visual antes de pedir a seleção normal de Desejos (s). O valor inicial de 5 s é provisório e deve ser calibrado por missão.")]
         private float lostContactEvadedIntervalSeconds = 5f;
 
         [Header("Scene View")]
@@ -80,9 +76,6 @@ namespace PEGA.NPC
 
         [System.NonSerialized]
         private Immersive.Logging.Loggers.ScopedLogger _log;
-
-        [System.NonSerialized]
-        private ActorProfileId _rickActorProfileId;
 
         [System.NonSerialized]
         private bool _isConfigured;
@@ -122,7 +115,7 @@ namespace PEGA.NPC
         {
             internal PEGANpcPerceptionGizmoState(
                 bool hasSample,
-                bool hasRickTarget,
+                bool hasTarget,
                 Vector3 origin,
                 Vector3 targetAimPoint,
                 bool isOccluded,
@@ -132,7 +125,7 @@ namespace PEGA.NPC
                 bool hasVisualContact)
             {
                 HasSample = hasSample;
-                HasRickTarget = hasRickTarget;
+                HasTarget = hasTarget;
                 Origin = origin;
                 TargetAimPoint = targetAimPoint;
                 IsOccluded = isOccluded;
@@ -143,7 +136,7 @@ namespace PEGA.NPC
             }
 
             public bool HasSample { get; }
-            public bool HasRickTarget { get; }
+            public bool HasTarget { get; }
             public Vector3 Origin { get; }
             public Vector3 TargetAimPoint { get; }
             public bool IsOccluded { get; }
@@ -171,11 +164,10 @@ namespace PEGA.NPC
             _actorReference = GetComponent<ActorOccurrenceReferenceBinding>();
             _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
 
-            if (!TryValidateConfiguration(out string issue) ||
-                !rickActorProfile.TryGetActorProfileId(out _rickActorProfileId, out issue))
+            if (!TryValidateConfiguration(out string issue))
             {
                 _log.Error(
-                    $"{nameof(PEGANpcPerceptionSource)} requires valid Rick profile, Player Session observer, actor binding, Knowledge State and perception settings.",
+                    $"{nameof(PEGANpcPerceptionSource)} requires a Player Session observer, target Actor binding, Knowledge State and valid perception settings.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("diagnostic", issue));
                 enabled = false;
@@ -265,19 +257,23 @@ namespace PEGA.NPC
             _planReevaluationEvents = null;
         }
 
-        internal bool TryGetRickProfileId(out ActorProfileId profileId, out string diagnostic)
+        public bool TryGetCurrentTargetActorId(out ActorId actorId, out string diagnostic)
         {
-            profileId = default;
-            if (rickActorProfile == null)
+            actorId = default;
+            if (_actorReference == null ||
+                !_actorReference.TryGetCurrent(out ActorOccurrenceResolution resolution) ||
+                !resolution.Succeeded || !resolution.Occurrence.HasPlayerSlot)
             {
-                diagnostic = "Rick Actor Profile reference is not assigned.";
+                diagnostic = "The authored Player Slot does not currently resolve to a Player Actor occurrence.";
                 return false;
             }
 
-            return rickActorProfile.TryGetActorProfileId(out profileId, out diagnostic);
+            actorId = resolution.Occurrence.ActorId;
+            diagnostic = actorId.IsValid ? string.Empty : "The current Player Actor occurrence has no valid ActorId.";
+            return actorId.IsValid;
         }
 
-        internal bool TryBindActivityObserverBeforeActivation(
+        public bool TryBindActivityObserverBeforeActivation(
             PlayerSessionObserver observer,
             out string diagnostic)
         {
@@ -316,16 +312,6 @@ namespace PEGA.NPC
             if (playerSessionObserver == null)
             {
                 diagnostic = $"{nameof(PlayerSessionObserver)} must reference the current Activity observer.";
-                return false;
-            }
-
-            if (rickActorProfile == null ||
-                !rickActorProfile.TryGetActorProfileId(out ActorProfileId profileId, out diagnostic) ||
-                !profileId.IsValid)
-            {
-                diagnostic = string.IsNullOrEmpty(diagnostic)
-                    ? "Rick Actor Profile must provide a valid ActorProfileId."
-                    : diagnostic;
                 return false;
             }
 
@@ -380,17 +366,10 @@ namespace PEGA.NPC
                 return;
             }
 
-            if (!currentProfileId.Equals(_rickActorProfileId))
-            {
-                SetTargetDiagnostic(string.Empty);
-                SetGizmoUnavailable();
-                return;
-            }
-
             CharacterController targetController = occurrence.ActorRoot.GetComponent<CharacterController>();
             if (targetController == null || !targetController.enabled || !occurrence.ActorRoot.activeInHierarchy)
             {
-                SetTargetDiagnostic("Resolved Rick Actor root requires an active CharacterController.");
+                SetTargetDiagnostic("Resolved Player Actor root requires an active CharacterController.");
                 SetGizmoUnavailable();
                 return;
             }
@@ -399,6 +378,7 @@ namespace PEGA.NPC
             EvaluateObservation(
                 occurrence,
                 targetController.bounds.center,
+                currentProfileId,
                 observationTimeSeconds);
         }
 
@@ -454,6 +434,7 @@ namespace PEGA.NPC
         private void EvaluateObservation(
             ActorOccurrence occurrence,
             Vector3 targetAimPoint,
+            ActorProfileId observedProfileId,
             double observationTimeSeconds)
         {
             Vector3 origin = transform.position + Vector3.up * observerOriginHeightMeters;
@@ -506,12 +487,12 @@ namespace PEGA.NPC
             PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea =
                 _knowledgeState.GetPerceivedAreaPresence();
             PEGANpcKnowledgeFact<bool> previousContact =
-                _knowledgeState.GetRickVisualContact(occurrence.ActorId);
+                _knowledgeState.GetCharacterVisualContact(occurrence.ActorId);
             bool hadPreviousContact = previousContact.TryGetValue(out bool previousVisualContact);
-            bool isRickReacquisition = hasVisualContact &&
+            bool isTargetReacquisition = hasVisualContact &&
                                        hadPreviousContact &&
                                        !previousVisualContact;
-            bool isRickContactLoss = !hasVisualContact &&
+            bool isTargetContactLoss = !hasVisualContact &&
                                      hadPreviousContact &&
                                      previousVisualContact;
             PublishAreaPresenceIfChanged(isAreaPresencePerceived, observationTimeSeconds);
@@ -520,28 +501,29 @@ namespace PEGA.NPC
             {
                 PublishIdentityIfChanged(
                     occurrence.ActorId,
+                    observedProfileId,
                     observationTimeSeconds,
-                    isRickReacquisition);
+                    isTargetReacquisition);
 
                 PEGANpcKnowledgeFact<Vector3> lastPosition =
-                    _knowledgeState.GetLastObservedRickPosition(occurrence.ActorId);
+                    _knowledgeState.GetLastObservedCharacterPosition(occurrence.ActorId);
                 Vector3 observedRootPosition = occurrence.ActorRoot.transform.position;
-                if (isRickReacquisition ||
+                if (isTargetReacquisition ||
                     !lastPosition.TryGetValue(out Vector3 previousPosition) ||
                     !previousPosition.Equals(observedRootPosition))
                 {
-                    _knowledgeState.ObserveRickPosition(
+                    _knowledgeState.ObserveCharacterPosition(
                         occurrence.ActorId,
                         observedRootPosition,
                         PEGANpcEvidenceOrigin.Perception,
                         observationTimeSeconds);
                 }
 
-                PublishRickContactIfChanged(occurrence.ActorId, true, observationTimeSeconds);
+                PublishTargetContactIfChanged(occurrence.ActorId, true, observationTimeSeconds);
             }
             else
             {
-                PublishRickContactIfChanged(occurrence.ActorId, false, observationTimeSeconds);
+                PublishTargetContactIfChanged(occurrence.ActorId, false, observationTimeSeconds);
             }
 
             LogPerceptionTransition(
@@ -560,14 +542,14 @@ namespace PEGA.NPC
                     occurrence.ActorId,
                     observationTimeSeconds);
             }
-            else if (isRickContactLoss)
+            else if (isTargetContactLoss)
             {
                 BeginLostContactReevaluation(
                     occurrence.ActorId,
                     observationTimeSeconds);
             }
 
-            if (isRickReacquisition)
+            if (isTargetReacquisition)
             {
                 PublishPlanReevaluationRequestAfterReacquisition(
                     occurrence.ActorId,
@@ -601,29 +583,30 @@ namespace PEGA.NPC
 
         private void PublishIdentityIfChanged(
             ActorId subjectActorId,
+            ActorProfileId observedProfileId,
             double observationTimeSeconds,
             bool refreshEvidence)
         {
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
             if (refreshEvidence ||
-                !identity.TryGetValue(out ActorProfileId observedProfileId) ||
-                !observedProfileId.Equals(_rickActorProfileId))
+                !identity.TryGetValue(out ActorProfileId previousProfileId) ||
+                !previousProfileId.Equals(observedProfileId))
             {
                 _knowledgeState.ObserveCharacterIdentity(
                     subjectActorId,
-                    _rickActorProfileId,
+                    observedProfileId,
                     PEGANpcEvidenceOrigin.Perception,
                     observationTimeSeconds);
             }
         }
 
-        private void PublishRickContactIfChanged(
+        private void PublishTargetContactIfChanged(
             ActorId subjectActorId,
             bool hasVisualContact,
             double observationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetRickVisualContact(subjectActorId);
+            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             if (contact.TryGetValue(out bool previousContact) && previousContact == hasVisualContact)
             {
                 return;
@@ -634,7 +617,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            _knowledgeState.ObserveRickVisualContact(
+            _knowledgeState.ObserveCharacterVisualContact(
                 subjectActorId,
                 hasVisualContact,
                 PEGANpcEvidenceOrigin.Perception,
@@ -648,13 +631,12 @@ namespace PEGA.NPC
             PEGANpcKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
             PEGANpcKnowledgeFact<bool> contact =
-                _knowledgeState.GetRickVisualContact(subjectActorId);
+                _knowledgeState.GetCharacterVisualContact(subjectActorId);
             PEGANpcKnowledgeFact<Vector3> position =
-                _knowledgeState.GetLastObservedRickPosition(subjectActorId);
+                _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
 
             bool hasConsolidatedEvidence =
-                identity.TryGetValue(out ActorProfileId observedProfileId) &&
-                observedProfileId.Equals(_rickActorProfileId) &&
+                identity.TryGetValue(out _) &&
                 HasCurrentPerceptionEvidence(identity.Origins, identity.HasObservationTime,
                     identity.ObservationTimeSeconds, observationTimeSeconds) &&
                 contact.TryGetValue(out bool hasVisualContact) &&
@@ -668,7 +650,7 @@ namespace PEGA.NPC
             if (!hasConsolidatedEvidence)
             {
                 _log.Warning(
-                    "NPC plan re-evaluation request was withheld because Rick reacquisition evidence was not fully committed.",
+                    "NPC plan re-evaluation request was withheld because Target reacquisition evidence was not fully committed.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds),
@@ -680,7 +662,7 @@ namespace PEGA.NPC
 
             EnsurePlanReevaluationEventsInitialized();
             var request = new PEGANpcPlanReevaluationRequestedEvent(
-                PEGANpcPlanReevaluationTrigger.RickReacquired,
+                PEGANpcPlanReevaluationTrigger.TargetReacquired,
                 subjectActorId,
                 observationTimeSeconds,
                 observationTimeSeconds);
@@ -689,7 +671,7 @@ namespace PEGA.NPC
             {
                 int deliveredCount = _planReevaluationEvents.Publish(request);
                 _log.Debug(
-                    "NPC plan re-evaluation requested after consolidated real Rick reacquisition.",
+                    "NPC plan re-evaluation requested after consolidated real Target reacquisition.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("trigger", request.Trigger),
@@ -742,7 +724,7 @@ namespace PEGA.NPC
             StartLostContactReevaluationRoutine(lostContactEvadedIntervalSeconds);
 
             _log.Debug(
-                "Configured Rick reacquisition window started after real visual contact loss.",
+                "Configured Target reacquisition window started after real visual contact loss.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("targetActorId", subjectActorId.StableText),
                 LogFields.Field("contactLossObservationTimeSeconds", lossObservationTimeSeconds),
@@ -769,7 +751,7 @@ namespace PEGA.NPC
             if (cancelledPendingRequest)
             {
                 _log.Debug(
-                    "Pending Rick evasion reevaluation was cancelled by real visual reacquisition.",
+                    "Pending Target evasion reevaluation was cancelled by real visual reacquisition.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("reacquisitionObservationTimeSeconds", observationTimeSeconds));
@@ -792,7 +774,7 @@ namespace PEGA.NPC
                     _lostContactObservationTimeSeconds))
             {
                 _log.Warning(
-                    "Pending Rick evasion reevaluation was discarded because its real lost-contact evidence is no longer current.",
+                    "Pending Target evasion reevaluation was discarded because its real lost-contact evidence is no longer current.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", _lostContactSubjectActorId.StableText),
                     LogFields.Field("contactLossObservationTimeSeconds", _lostContactObservationTimeSeconds));
@@ -847,7 +829,7 @@ namespace PEGA.NPC
             if (!HasCurrentPerceptionContact(subjectActorId, false, lossObservationTimeSeconds))
             {
                 _log.Warning(
-                    "Rick evasion reevaluation was withheld because the original real loss-of-contact evidence is no longer current.",
+                    "Target evasion reevaluation was withheld because the original real loss-of-contact evidence is no longer current.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("contactLossObservationTimeSeconds", lossObservationTimeSeconds),
@@ -868,7 +850,7 @@ namespace PEGA.NPC
             bool expectedContact,
             double expectedObservationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetRickVisualContact(subjectActorId);
+            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             return contact.TryGetValue(out bool actualContact) &&
                    actualContact == expectedContact &&
                    (contact.Origins & PEGANpcEvidenceOrigin.Perception) != 0 &&
@@ -884,7 +866,7 @@ namespace PEGA.NPC
             if (!HasCurrentPerceptionContact(subjectActorId, false, lossObservationTimeSeconds))
             {
                 _log.Warning(
-                    "Rick evasion reevaluation request was withheld because the real loss-of-contact evidence was not available at publication.",
+                    "Target evasion reevaluation request was withheld because the real loss-of-contact evidence was not available at publication.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("contactLossObservationTimeSeconds", lossObservationTimeSeconds),
@@ -894,7 +876,7 @@ namespace PEGA.NPC
 
             EnsurePlanReevaluationEventsInitialized();
             var request = new PEGANpcPlanReevaluationRequestedEvent(
-                PEGANpcPlanReevaluationTrigger.RickConsideredEvaded,
+                PEGANpcPlanReevaluationTrigger.TargetContactLostBeyondWindow,
                 subjectActorId,
                 lossObservationTimeSeconds,
                 requestedAtTimeSeconds);
@@ -903,7 +885,7 @@ namespace PEGA.NPC
             {
                 int deliveredCount = _planReevaluationEvents.Publish(request);
                 _log.Debug(
-                    "NPC normal Desire set reevaluation requested after Rick remained outside real visual contact for the configured interval.",
+                    "NPC normal Desire set reevaluation requested after Target remained outside real visual contact for the configured interval.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("trigger", request.Trigger),
@@ -918,7 +900,7 @@ namespace PEGA.NPC
             catch (Exception exception)
             {
                 _log.Error(
-                    "NPC normal Desire set reevaluation event publication failed after Rick loss was confirmed.",
+                    "NPC normal Desire set reevaluation event publication failed after Target loss was confirmed.",
                     exception,
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
@@ -1017,8 +999,8 @@ namespace PEGA.NPC
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds));
                 _log.Info(
                     hasVisualContact
-                        ? "NPC acquired visual contact with Rick."
-                        : "NPC lost visual contact with Rick.",
+                        ? "NPC acquired visual contact with Target."
+                        : "NPC lost visual contact with Target.",
                     LogFields.Field("actorRoot", gameObject.name));
             }
         }

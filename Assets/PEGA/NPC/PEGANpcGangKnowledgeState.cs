@@ -91,20 +91,15 @@ namespace PEGA.NPC
             }
 
             membership = actorRoot.GetComponent<PEGANpcGangMembership>();
-            bool createdMembership = membership == null;
-            if (createdMembership)
+            if (membership == null)
             {
-                membership = actorRoot.AddComponent<PEGANpcGangMembership>();
+                diagnostic = "A gang member Actor must compose PEGANpcGangMembership before joining a Gang knowledge state.";
+                return false;
             }
 
             if (!membership.TryBind(this, out diagnostic))
             {
-                if (createdMembership)
-                {
-                    Destroy(membership);
-                    membership = null;
-                }
-
+                membership = null;
                 return false;
             }
 
@@ -113,7 +108,7 @@ namespace PEGA.NPC
                 "NPC joined a Gang knowledge state.",
                 LogFields.Field("gangKnowledgeState", gameObject.name),
                 LogFields.Field("actorRoot", actorRoot.name),
-                LogFields.Field("membershipCreated", createdMembership),
+                LogFields.Field("membershipComposed", true),
                 LogFields.Field("knownEscapePointCount", GetKnownEscapePointCount()));
             return true;
         }

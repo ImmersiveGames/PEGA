@@ -70,7 +70,7 @@ namespace PEGA.NPC.Editor
 
         private static void DrawLatestObservation(PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
         {
-            if (!state.HasSample || !state.HasRickTarget)
+            if (!state.HasSample || !state.HasTarget)
             {
                 return;
             }
@@ -88,12 +88,12 @@ namespace PEGA.NPC.Editor
             Handles.Label(
                 state.TargetAimPoint,
                 state.IsOccluded
-                    ? "Rick: ocluso"
+                    ? "Target: ocluso"
                     : state.HasVisualContact
-                        ? "Rick: contato visual"
+                        ? "Target: contato visual"
                         : state.IsAreaPresencePerceived
-                            ? "Rick: presença radial"
-                            : "Rick: fora da percepção");
+                            ? "Target: presença radial"
+                            : "Target: fora da percepção");
         }
     }
 }
