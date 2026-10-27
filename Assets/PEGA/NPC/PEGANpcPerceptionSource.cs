@@ -1,17 +1,19 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Framework.PlayerParticipation;
 using Immersive.Logging.Records;
+using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
 using UnityEngine;
 
 namespace PEGA.NPC
 {
     /// <summary>
-    /// Production runtime perception for the Player Actor occurrence selected by this component's authored binding.
-    /// It writes only observations authorized by radial presence or visual confirmation.
+    /// PEGA adapter that resolves the observed Player Actor occurrence and translates composed sensor observations
+    /// into Knowledge State facts and Autonomy re-evaluation requests.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorOccurrenceReferenceBinding))]
@@ -20,36 +22,22 @@ namespace PEGA.NPC
     public sealed class PEGANpcPerceptionSource : MonoBehaviour, IPEGANpcTargetObservationSource
     {
         private const string LogCategory = "PEGA.Gameplay.Perception";
-        private const float MinimumPlanarMagnitude = 0.0001f;
 
         [Header("Observed Player")]
         [SerializeField]
         [Tooltip("Observador da Player Session no escopo da Activity que contém este NPC.")]
         private PlayerSessionObserver playerSessionObserver;
 
-        [Header("Perceived Area")]
-        [SerializeField, Min(0.1f)]
-        [Tooltip("Raio horizontal da Área Percebida (m). Ela informa presença, sem identidade ou posição.")]
-        private float perceivedAreaRadiusMeters = 6f;
-
-        [Header("Vision Cone")]
-        [SerializeField, Min(0.1f)]
-        [Tooltip("Alcance horizontal máximo do Cone de Visão (m).")]
-        private float visionRangeMeters = 10f;
-
-        [SerializeField, Range(1f, 180f)]
-        [Tooltip("Ângulo total do Cone de Visão à frente do NPC (°).")]
-        private float visionFieldOfViewDegrees = 100f;
-
-        [SerializeField, Min(0f)]
-        [Tooltip("Altura da origem de observação acima da raiz do NPC (m).")]
-        private float observerOriginHeightMeters = 1.55f;
-
-        [Header("Occlusion and sampling")]
+        [Header("Sensor Assets")]
         [SerializeField]
-        [Tooltip("Somente colliders nesta máscara bloqueiam percepção. Inclua a layer PEGA_Obstacle.")]
-        private LayerMask occlusionLayers = 1 << 6;
+        [Tooltip("Asset do sensor radial que informa presença sem identidade.")]
+        private RadialPresenceSensor perceivedAreaSensor;
 
+        [SerializeField]
+        [Tooltip("Asset do sensor de visão que confirma identidade e contato visual.")]
+        private VisionConeSensor visionConeSensor;
+
+        [Header("Sampling")]
         [SerializeField, Min(0.05f)]
         [Tooltip("Intervalo entre amostras físicas da percepção (s).")]
         private float observationIntervalSeconds = 0.25f;
@@ -73,6 +61,15 @@ namespace PEGA.NPC
 
         [System.NonSerialized]
         private PEGANpcKnowledgeState _knowledgeState;
+
+        [System.NonSerialized]
+        private PerceptionSensorSet _perceptionSensorSet;
+
+        [System.NonSerialized]
+        private RadialPresenceSensor _areaPresenceSensor;
+
+        [System.NonSerialized]
+        private VisionConeSensor _visionConeSensor;
 
         [System.NonSerialized]
         private Immersive.Logging.Loggers.ScopedLogger _log;
@@ -118,7 +115,8 @@ namespace PEGA.NPC
                 bool hasTarget,
                 Vector3 origin,
                 Vector3 targetAimPoint,
-                bool isOccluded,
+                bool isAreaOccluded,
+                bool isVisionOccluded,
                 bool isWithinPerceivedArea,
                 bool isInsideVisionCone,
                 bool isAreaPresencePerceived,
@@ -128,7 +126,8 @@ namespace PEGA.NPC
                 HasTarget = hasTarget;
                 Origin = origin;
                 TargetAimPoint = targetAimPoint;
-                IsOccluded = isOccluded;
+                IsAreaOccluded = isAreaOccluded;
+                IsVisionOccluded = isVisionOccluded;
                 IsWithinPerceivedArea = isWithinPerceivedArea;
                 IsInsideVisionCone = isInsideVisionCone;
                 IsAreaPresencePerceived = isAreaPresencePerceived;
@@ -139,17 +138,74 @@ namespace PEGA.NPC
             public bool HasTarget { get; }
             public Vector3 Origin { get; }
             public Vector3 TargetAimPoint { get; }
-            public bool IsOccluded { get; }
+            public bool IsAreaOccluded { get; }
+            public bool IsVisionOccluded { get; }
             public bool IsWithinPerceivedArea { get; }
             public bool IsInsideVisionCone { get; }
             public bool IsAreaPresencePerceived { get; }
             public bool HasVisualContact { get; }
         }
 
-        public float PerceivedAreaRadiusMeters => perceivedAreaRadiusMeters;
-        public float VisionRangeMeters => visionRangeMeters;
-        public float VisionFieldOfViewDegrees => visionFieldOfViewDegrees;
-        public float ObserverOriginHeightMeters => observerOriginHeightMeters;
+        public float PerceivedAreaRadiusMeters
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _areaPresenceSensor != null ? _areaPresenceSensor.RadiusMeters : 0f;
+            }
+        }
+
+        public float VisionRangeMeters
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _visionConeSensor != null ? _visionConeSensor.RangeMeters : 0f;
+            }
+        }
+
+        public float VisionFieldOfViewDegrees
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _visionConeSensor != null ? _visionConeSensor.FieldOfViewDegrees : 0f;
+            }
+        }
+
+        public Vector3 VisionForward
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _visionConeSensor != null
+                    ? _visionConeSensor.GetForward(transform)
+                    : transform.forward;
+            }
+        }
+
+        public Vector3 PerceivedAreaOrigin
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _areaPresenceSensor != null
+                    ? _areaPresenceSensor.GetObserverOrigin(transform)
+                    : transform.position;
+            }
+        }
+
+        public Vector3 VisionOrigin
+        {
+            get
+            {
+                ResolveSensorsForGizmos();
+                return _visionConeSensor != null
+                    ? _visionConeSensor.GetObserverOrigin(transform)
+                    : transform.position;
+            }
+        }
+
         public bool DrawPerceptionGizmos => drawPerceptionGizmos;
         public bool DrawGizmosWhenUnselected => drawGizmosWhenUnselected;
         public PEGANpcPerceptionGizmoState LatestGizmoState => _gizmoState;
@@ -167,7 +223,7 @@ namespace PEGA.NPC
             if (!TryValidateConfiguration(out string issue))
             {
                 _log.Error(
-                    $"{nameof(PEGANpcPerceptionSource)} requires a Player Session observer, target Actor binding, Knowledge State and valid perception settings.",
+                    $"{nameof(PEGANpcPerceptionSource)} requires the Activity observer, target Actor binding, Knowledge State and radial and vision sensor assets.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("diagnostic", issue));
                 enabled = false;
@@ -315,16 +371,32 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!IsPositiveFinite(perceivedAreaRadiusMeters) ||
-                !IsPositiveFinite(visionRangeMeters) ||
-                !IsFinite(visionFieldOfViewDegrees) ||
-                visionFieldOfViewDegrees <= 0f || visionFieldOfViewDegrees > 180f ||
-                !IsNonNegativeFinite(observerOriginHeightMeters) ||
-                !IsPositiveFinite(observationIntervalSeconds) ||
-                !IsPositiveFinite(lostContactEvadedIntervalSeconds) ||
-                occlusionLayers.value == 0)
+            if (!TryResolveSensors(out diagnostic))
             {
-                diagnostic = "Area radius, vision range, field of view, origin height, sample interval, lost-contact interval and occlusion mask must be valid and finite.";
+                return false;
+            }
+
+            if (!_perceptionSensorSet.TryValidateComposition(out diagnostic))
+            {
+                return false;
+            }
+
+            if (!_areaPresenceSensor.TryValidateConfiguration(out diagnostic))
+            {
+                diagnostic = $"Radial presence sensor configuration is invalid: {diagnostic}";
+                return false;
+            }
+
+            if (!_visionConeSensor.TryValidateConfiguration(out diagnostic))
+            {
+                diagnostic = $"Vision cone sensor configuration is invalid: {diagnostic}";
+                return false;
+            }
+
+            if (!IsPositiveFinite(observationIntervalSeconds) ||
+                !IsPositiveFinite(lostContactEvadedIntervalSeconds))
+            {
+                diagnostic = "Sampling interval and lost-contact interval must be finite and positive.";
                 return false;
             }
 
@@ -339,6 +411,50 @@ namespace PEGA.NPC
 
             diagnostic = string.Empty;
             return true;
+        }
+
+        private bool TryResolveSensors(out string diagnostic)
+        {
+            _areaPresenceSensor = perceivedAreaSensor;
+            _visionConeSensor = visionConeSensor;
+
+            if (_areaPresenceSensor == null)
+            {
+                diagnostic = "Radial presence sensor asset is not assigned.";
+                return false;
+            }
+
+            if (_visionConeSensor == null)
+            {
+                diagnostic = "Vision cone sensor asset is not assigned.";
+                return false;
+            }
+
+            if (_perceptionSensorSet == null)
+            {
+                _perceptionSensorSet = new PerceptionSensorSet(
+                    transform,
+                    new PerceptionSensorDefinition[]
+                    {
+                        _areaPresenceSensor,
+                        _visionConeSensor
+                    });
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private void ResolveSensorsForGizmos()
+        {
+            if (_perceptionSensorSet != null &&
+                _areaPresenceSensor != null &&
+                _visionConeSensor != null)
+            {
+                return;
+            }
+
+            TryResolveSensors(out _);
         }
 
         private void ObserveCurrentPlayer(double observationTimeSeconds)
@@ -437,39 +553,54 @@ namespace PEGA.NPC
             ActorProfileId observedProfileId,
             double observationTimeSeconds)
         {
-            Vector3 origin = transform.position + Vector3.up * observerOriginHeightMeters;
-            Vector3 planarToTarget = targetAimPoint - origin;
-            planarToTarget.y = 0f;
-            float planarDistance = planarToTarget.magnitude;
-            bool withinPerceivedArea = planarDistance <= perceivedAreaRadiusMeters;
-
-            Vector3 planarForward = transform.forward;
-            planarForward.y = 0f;
-            bool hasForward = planarForward.sqrMagnitude > MinimumPlanarMagnitude * MinimumPlanarMagnitude;
-            planarForward = hasForward ? planarForward.normalized : Vector3.forward;
-            bool insideVisionCone = hasForward &&
-                planarDistance <= visionRangeMeters &&
-                planarDistance > MinimumPlanarMagnitude &&
-                Vector3.Angle(planarForward, planarToTarget) <= visionFieldOfViewDegrees * 0.5f;
-
-            bool occluded = false;
-            if (withinPerceivedArea || insideVisionCone)
+            if (_perceptionSensorSet == null)
             {
-                Vector3 toTarget = targetAimPoint - origin;
-                float distance = toTarget.magnitude;
-                if (distance > MinimumPlanarMagnitude)
-                {
-                    occluded = Physics.Raycast(
-                        origin,
-                        toTarget / distance,
-                        distance,
-                        occlusionLayers,
-                        QueryTriggerInteraction.Collide);
-                }
+                SetTargetDiagnostic("Perception Sensor Set is unavailable.");
+                SetGizmoUnavailable();
+                return;
             }
 
-            bool isAreaPresencePerceived = withinPerceivedArea && !occluded;
-            bool hasVisualContact = insideVisionCone && !occluded;
+            if (!_perceptionSensorSet.TryObserveAll(
+                    targetAimPoint,
+                    observationTimeSeconds,
+                    out IReadOnlyList<PerceptionSensorResult> sensorResults,
+                    out string diagnostic))
+            {
+                SetTargetDiagnostic(string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Perception Sensor Set could not evaluate the configured sensors."
+                    : diagnostic);
+                SetGizmoUnavailable();
+                return;
+            }
+
+            if (!TryGetSensorObservation(
+                    sensorResults,
+                    _areaPresenceSensor,
+                    out PerceptionSensorObservation areaObservation,
+                    out diagnostic))
+            {
+                SetTargetDiagnostic(diagnostic);
+                SetGizmoUnavailable();
+                return;
+            }
+
+            if (!TryGetSensorObservation(
+                    sensorResults,
+                    _visionConeSensor,
+                    out PerceptionSensorObservation visionObservation,
+                    out diagnostic))
+            {
+                SetTargetDiagnostic(diagnostic);
+                SetGizmoUnavailable();
+                return;
+            }
+
+            Vector3 origin = visionObservation.ObserverOrigin;
+            float planarDistance = areaObservation.PlanarDistanceMeters;
+            bool withinPerceivedArea = areaObservation.IsWithinSensorBounds;
+            bool insideVisionCone = visionObservation.IsWithinSensorBounds;
+            bool isAreaPresencePerceived = areaObservation.IsDetected;
+            bool hasVisualContact = visionObservation.IsDetected;
 
 #if UNITY_EDITOR
             _gizmoState = new PEGANpcPerceptionGizmoState(
@@ -477,7 +608,8 @@ namespace PEGA.NPC
                 true,
                 origin,
                 targetAimPoint,
-                occluded,
+                areaObservation.IsOccluded,
+                visionObservation.IsOccluded,
                 withinPerceivedArea,
                 insideVisionCone,
                 isAreaPresencePerceived,
@@ -532,7 +664,8 @@ namespace PEGA.NPC
                 previousContact,
                 isAreaPresencePerceived,
                 hasVisualContact,
-                occluded,
+                areaObservation.IsOccluded,
+                visionObservation.IsOccluded,
                 planarDistance,
                 observationTimeSeconds);
 
@@ -557,6 +690,42 @@ namespace PEGA.NPC
             }
         }
 
+        private static bool TryGetSensorObservation(
+            IReadOnlyList<PerceptionSensorResult> results,
+            PerceptionSensorDefinition sensorDefinition,
+            out PerceptionSensorObservation observation,
+            out string diagnostic)
+        {
+            observation = default;
+            if (sensorDefinition == null)
+            {
+                diagnostic = "A required sensor asset is no longer available.";
+                return false;
+            }
+
+            for (int index = 0; index < results.Count; index++)
+            {
+                PerceptionSensorResult result = results[index];
+                if (!ReferenceEquals(result.SensorDefinition, sensorDefinition))
+                {
+                    continue;
+                }
+
+                if (!result.HasObservation)
+                {
+                    diagnostic = $"Sensor '{sensorDefinition.SensorId}' did not produce an observation: {result.Diagnostic}";
+                    return false;
+                }
+
+                observation = result.Observation;
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            diagnostic = $"Perception Sensor Set returned no result for sensor '{sensorDefinition.SensorId}'.";
+            return false;
+        }
+
         private void PublishAreaPresenceIfChanged(bool isPresent, double observationTimeSeconds)
         {
             PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> presence =
@@ -576,7 +745,7 @@ namespace PEGA.NPC
                 new PEGANpcPerceivedAreaPresence(
                     isPresent,
                     isPresent ? transform.position : Vector3.zero,
-                    perceivedAreaRadiusMeters),
+                    _areaPresenceSensor.RadiusMeters),
                 PEGANpcEvidenceOrigin.Perception,
                 observationTimeSeconds);
         }
@@ -961,7 +1130,8 @@ namespace PEGA.NPC
             PEGANpcKnowledgeFact<bool> previousContact,
             bool isAreaPresencePerceived,
             bool hasVisualContact,
-            bool occluded,
+            bool isAreaOccluded,
+            bool isVisionOccluded,
             float planarDistance,
             double observationTimeSeconds)
         {
@@ -980,7 +1150,7 @@ namespace PEGA.NPC
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", occurrence.ActorId.StableText),
                     LogFields.Field("perceivedAreaPresence", isAreaPresencePerceived),
-                    LogFields.Field("occluded", occluded),
+                    LogFields.Field("occluded", isAreaOccluded),
                     LogFields.Field("planarDistanceMeters", planarDistance),
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds));
             }
@@ -994,7 +1164,7 @@ namespace PEGA.NPC
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", occurrence.ActorId.StableText),
                     LogFields.Field("visualContact", hasVisualContact),
-                    LogFields.Field("occluded", occluded),
+                    LogFields.Field("occluded", isVisionOccluded),
                     LogFields.Field("planarDistanceMeters", planarDistance),
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds));
                 _log.Info(
@@ -1037,18 +1207,18 @@ namespace PEGA.NPC
                 false,
                 false,
                 false,
+                false,
                 false);
 #endif
         }
 
         private Vector3 GetObserverOrigin() =>
-            transform.position + Vector3.up * observerOriginHeightMeters;
+            _areaPresenceSensor != null
+                ? _areaPresenceSensor.GetObserverOrigin(transform)
+                : transform.position;
 
         private static bool IsPositiveFinite(float value) =>
             value > 0f && IsFinite(value);
-
-        private static bool IsNonNegativeFinite(float value) =>
-            value >= 0f && IsFinite(value);
 
         private static bool IsFinite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);

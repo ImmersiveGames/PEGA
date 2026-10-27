@@ -1,0 +1,14 @@
+{
+  "name": "ImmersiveGames.Perception.Runtime",
+  "rootNamespace": "ImmersiveGames.Perception",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

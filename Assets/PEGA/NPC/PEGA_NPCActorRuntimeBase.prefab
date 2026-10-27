@@ -159,13 +159,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
   playerSessionObserver: {fileID: 0}
-  perceivedAreaRadiusMeters: 6
-  visionRangeMeters: 10
-  visionFieldOfViewDegrees: 100
-  observerOriginHeightMeters: 1.55
-  occlusionLayers:
-    serializedVersion: 2
-    m_Bits: 64
+  perceivedAreaSensor: {fileID: 11400000, guid: c2c0e59356744dfb84cddc2b159f933f, type: 2}
+  visionConeSensor: {fileID: 11400000, guid: 46cfc68821984915b809c3553fafd3f6, type: 2}
   observationIntervalSeconds: 0.25
   lostContactEvadedIntervalSeconds: 5
   drawPerceptionGizmos: 1
