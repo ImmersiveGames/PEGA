@@ -2,7 +2,7 @@
 
 **Projeto:** PEGA (Unity 6)  
 **Tipo:** registro de decisões arquiteturais transversais e de planejamento de produção<br>
-**Status:** PP-01 a PP-36 e adendos anteriores preservados como histórico; PP-37 registra a estratégia de produção vigente desde 2026-10-16; a diretriz arquitetural transversal consta na §13 desde 2026-10-25.
+**Status:** PP-01 a PP-36 e adendos anteriores preservados como histórico; PP-37 registra a estratégia de produção vigente desde 2026-10-16; a diretriz arquitetural transversal consta na §13 desde 2026-10-25; a decisão de ownership genérico e integração de GOAP/Perception consta na §7 desde 2026-10-26.
 **Data-base:** 2026-10-10  
 **Destino proposto no repositório:** `PEGA GDD/ADR-PREPRODUCAO.md`  
 **Escopo:** diretrizes arquiteturais transversais do PEGA, microciclo, vertical slice técnico, Demo e estratégia de evolução do ecossistema Immersive Games.
@@ -62,7 +62,7 @@ As decisões abaixo são resumidas deliberadamente: detalhamento normativo de ga
 - **Capacidade atual:** horas semanais de ambos **a definir**; disponibilidade limitada, irregular e não garantida. Não estabelecer sprints, jornadas, datas ou duração fictícias.
 - **Comparação estimado × real:** registrar estimativa original, revisão quando necessária, horas humanas realizadas por frente, esforço restante e desvio ao concluir; não contabilizar horas fictícias de agentes de IA.
 - **Delegação de escolhas:** quando GDD, MVP, framework e decisões já determinarem a solução, escolher o mínimo realmente executável; consultar a direção do projeto apenas por impacto relevante de escopo, experiência ou arquitetura.
-- **Extração pós-Demo:** implementar e validar primeiro no PEGA; somente **depois da Demo** considerar promoção de capacidades maduras ao Immersive Framework ou a package independente. Candidatura não é decisão de extração. Não generalizar prematuramente nem incluir publicação de packages no esforço do MVP/Demo.
+- **Evolução pós-Demo das demais capacidades:** implementar e validar primeiro no PEGA; somente **depois da Demo** considerar promoção de capacidades maduras ao Immersive Framework ou a package independente. Candidatura não é decisão de extração. GOAP e Perception seguem a decisão vigente da §7, que autoriza consolidar seus mecanismos genéricos nesta etapa sem criar packages. Não generalizar prematuramente as demais capacidades nem incluir publicação de packages no esforço do MVP/Demo.
 
 ## 3. Catálogo inicial de entregáveis
 
@@ -126,7 +126,7 @@ Os IDs são recortes de produção, **não substituem** os contratos detalhados 
 
 **Framework:** inicialização de aplicação, Route/Activity, Session e participação Player, composição e ciclo de vida do Actor/Host, input e disponibilidade de gameplay, câmera, superfícies públicas compatíveis de Pause e armazenamento, conforme maturidade e escopo reais.
 
-**PEGA:** locomotion e gameplay físico, interação/posse/inventário, confronto, conhecimento/percepção de larápios, GOAP, arquétipos, assalto, regras financeiras, apresentação específica e integração das capacidades.
+**PEGA:** regras e integração de gameplay — locomotion e gameplay físico, interação/posse/inventário, confronto, fatos e políticas do conhecimento dos larápios, Goals/Desejos, Actions, Targets, arquétipos, assalto, regras financeiras e apresentação específica. Os mecanismos genéricos de GOAP e Perception e suas fronteiras de integração seguem a decisão da §7; não se confundem com essas regras.
 
 **Não inferir:** `ActorProfile` não implementa inventário, GOAP ou habilidades; o caminho de Player/Actor não comprova automaticamente suporte de ciclo de vida para NPCs. O Framework não disponibiliza uma UI genérica completa. Não tratar API experimental como estável, nem assets como evidência de execução no Editor.
 
@@ -219,15 +219,21 @@ O escalonamento respeita a capacidade simulada de uma frente de Programação a 
 
 As datas de início do Trello/GanttFlow não são gravadas por esta integração; o campo nativo disponível para gravação é o vencimento. A tabela é a previsão v2 registrada neste adendo e no cartão de plano. Isso, por si só, não significa que o GanttFlow esteja atualizado.
 
-## 7. Política de evolução pós-Demo
+## 7. Evolução arquitetural de GOAP e Perception
 
-**Decisão:** desenvolvimento das capacidades de gameplay permanece inicialmente no PEGA. Somente após concluir a Demo avaliaremos, sem compromisso de extração, se alguma capacidade está suficientemente madura para:
+**Decisão vigente para GOAP e Perception (2026-10-26):** ambos serão mecanismos genéricos, independentes entre si, reutilizáveis em diferentes jogos e integráveis ao ecossistema Immersive. A implementação de cada mecanismo não incorpora regras particulares de um jogo nem depende do outro mecanismo. Cada jogo fornece sua própria superfície de integração e mantém nela suas regras, dados, conhecimento e políticas específicas.
 
-1. **Permanecer no PEGA:** depende da fantasia, conteúdo ou regras particulares do jogo.
-2. **Ser incorporada ao Immersive Framework:** responsabilidade genérica alinhada a uma autoridade transversal já existente no framework.
-3. **Tornar-se package independente:** sistema reutilizável com fronteira própria e sem dependência indevida do domínio PEGA.
+Nesta etapa não serão criados novos pacotes. Os mecanismos podem permanecer no repositório PEGA enquanto suas fronteiras são consolidadas; essa localização não torna seus contratos dependentes das regras do PEGA nem transfere ao Framework as regras de gameplay de cada jogo. Uma integração ao Framework deve respeitar as autoridades existentes de identidade, ocorrência, lifecycle e composição do Actor, sem presumir que já exista uma API genérica de GOAP ou Perception no Framework.
 
-GOAP, percepção/conhecimento e inventário/posse são **exemplos de candidatos à avaliação**, não decisões de produto, pacotes aprovados nem exigências de generalização antecipada. Arquétipos e conteúdo da gangue permanecem no domínio PEGA. A decisão futura requer evidência de reutilização, independência de domínio, contrato suficientemente estável, custo de manutenção e testes. Não aumentar escopo ou estimativas atuais para preparar publicação de pacotes.
+A composição do Actor deve favorecer um Root físico mínimo. GOAP e Perception podem ser organizados separadamente, inclusive em objetos filhos quando as dependências, a identidade e o lifecycle da ocorrência forem compatíveis com os contratos do Framework. O Root continua sendo a autoridade física de pose e posicionamento; para Actors do Framework, as declarações de identidade e publicação de ocorrência permanecem no Root exigido pelos contratos oficiais. Use composição keyed e mounts existentes somente quando o ownership e o ciclo de vida da parte justificarem isso; não crie um Composer paralelo, componentes de coordenação ou abstrações apenas para organizar código.
+
+Priorize classes e dados comuns para responsabilidades internas. Use `MonoBehaviour` quando a responsabilidade depender de lifecycle Unity, authoring serializado ou interação direta com a cena. A presença de uma mecânica na composição concreta do Actor continua distinta da configuração de arquétipo: arquétipos especializam capacidades, Actions, Desejos, parâmetros e perfis, mas não materializam nem removem mecânicas da ocorrência.
+
+Esta decisão não altera as regras de gameplay do GDD nem as semânticas dos ADRs GOAP-02, GOAP-03 e GOAP-04. A avaliação pós-Demo continua aplicável às demais capacidades — por exemplo, inventário/posse — para decidir se permanecem no PEGA, se são integradas ao Framework ou se futuramente justificam um package próprio. Essa avaliação não cria compromisso de pacote, estimativa ou validação antecipada.
+
+### Histórico — decisão anterior sobre GOAP e Perception (supersedida)
+
+Até 2026-10-25, a política desta seção mantinha inicialmente no PEGA as capacidades de gameplay e previa avaliar após a Demo se sistemas maduros permaneceriam no PEGA, seriam incorporados ao Framework ou se tornariam packages independentes. GOAP e percepção/conhecimento eram candidatos a essa avaliação, sem decisão de generalização antecipada. Essa decisão foi substituída, apenas para os mecanismos GOAP e Perception, pela decisão vigente acima; o histórico permanece para rastreabilidade, sem efeito normativo atual sobre essas duas capacidades. Para outros sistemas, como inventário/posse, a política anterior continua aplicável.
 
 ## 8. Encaminhamento e integridade
 
@@ -275,7 +281,7 @@ Este adendo consolida a auditoria estática de Route, Activity e preservação d
 - `Seamless` seleciona a apresentação sem Transition Surface/Loading Surface; não garante retenção de cena, GameObject, componentes ou estado.
 - `KeepOnActivityChange` pode manter carregada uma cena declarada como Activity Content durante a troca interna. Isso preserva os objetos enquanto a cena ficar carregada, mas não transfere por si só ownership semântico nem estado lógico. O conteúdo de Route persiste nas trocas de Activities daquela Route.
 - Player Session e a ocorrência física admitida do Player podem continuar entre Activities enquanto a Session/ocorrência permanecer ativa, sem Leave ou substituição. Participação, admission, bindings, readiness e relocation continuam contextuais e podem ser reavaliados na Activity de destino.
-- A continuidade física do Player não comprova continuidade de NPCs, Actor lifecycle dos larápios ou GOAP. Esses contratos permanecem sob responsabilidade PEGA e não são inferidos da API de Player.
+- A continuidade física do Player não comprova continuidade de NPCs nem a integração de gameplay de GOAP/Perception. A identidade, ocorrência e lifecycle do Actor seguem os contratos do Framework; conhecimento, regras e integração dos larápios permanecem sob responsabilidade do PEGA. Nenhum desses contratos é inferido da API de Player.
 
 Esses pontos descrevem o contrato e a implementação inspecionados no `.6`; não são evidência de validação Unity de três Activities no PEGA. A auditoria encontrou teste de sequência Exit/Enter e fontes de testes Player, mas nenhum teste executado que prove continuidade integrada de mundo, NPC ou GOAP entre Preparação, Assalto Ativo e Fuga Final.
 
@@ -352,4 +358,4 @@ A ordem é de prioridade e as dependências explicitadas nos itens 3 e 4 são ga
 - **Intercambialidade:** alternativas compatíveis podem cumprir o mesmo contrato e ser combinadas por configuração.
 - **Escalabilidade:** ampliar repertório e complexidade com estrutura sustentável e custos operacionais controláveis.
 
-Esta diretriz vale para os sistemas do PEGA, inclusive quando não pertencem ao GOAP. Ela orienta decisões de arquitetura sem exigir que tudo seja abstrato, intercambiável ou configurável. Soluções específicas são legítimas quando generalizar não acrescenta reutilização ou clareza; o núcleo muda quando surgir uma necessidade semântica geral comprovada, e não apenas pela adição de uma mecânica. A diretriz não cria uma regra de gameplay, um pacote, serviço ou infraestrutura genérica obrigatórios, nem altera as fronteiras de ownership existentes.
+Esta diretriz vale para os sistemas do PEGA, inclusive quando não pertencem ao GOAP. Ela orienta decisões de arquitetura sem exigir que tudo seja abstrato, intercambiável ou configurável. Soluções específicas são legítimas quando generalizar não acrescenta reutilização ou clareza; o núcleo muda quando surgir uma necessidade semântica geral comprovada, e não apenas pela adição de uma mecânica. A diretriz não cria uma regra de gameplay, um pacote, serviço ou infraestrutura genérica obrigatórios, nem altera fronteiras de ownership por implicação. A decisão explícita da §7 atualiza essa fronteira para os mecanismos GOAP e Perception, preservando as regras específicas em cada jogo.

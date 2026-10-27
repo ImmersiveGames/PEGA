@@ -1,5 +1,5 @@
 using System;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -27,8 +27,8 @@ namespace PEGA.NPC
 
         public PEGANpcGoapConditionAsset DesiredGoalCondition => desiredGoalCondition;
 
-        public PEGAGoapGoal CreateGoal() => desiredGoalCondition != null
-            ? new PEGAGoapGoal(desiredGoalCondition)
+        public GoapGoal CreateGoal() => desiredGoalCondition != null
+            ? new GoapGoal(desiredGoalCondition)
             : throw new InvalidOperationException($"Desire '{desireId}' has no Goal condition.");
 
         internal bool TryValidate(out string diagnostic)

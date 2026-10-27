@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Immersive.Foundation.Events;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -11,7 +11,7 @@ namespace PEGA.NPC
     [AddComponentMenu("PEGA/NPC/Gang Membership")]
     public sealed class PEGANpcGangMembership : MonoBehaviour,
         IPEGANpcPlanningInputChangeSource,
-        IPEGAGoapKnowledgeCapability
+        IGoapKnowledgeCapability
     {
         [SerializeField]
         [Tooltip("Estado compartilhado da Gangue deste NPC.")]

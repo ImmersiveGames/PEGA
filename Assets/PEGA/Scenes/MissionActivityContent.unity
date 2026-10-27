@@ -172,7 +172,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: playerSessionObserver
-      value:
+      value: 
       objectReference: {fileID: 2500000207}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -180,11 +180,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: gangKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -564,11 +564,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: playerSessionObserver
-      value:
+      value: 
       objectReference: {fileID: 2500000207}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -576,11 +576,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 7adfc5722b064a5e9042be531f114c8f, type: 2}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: gangKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x

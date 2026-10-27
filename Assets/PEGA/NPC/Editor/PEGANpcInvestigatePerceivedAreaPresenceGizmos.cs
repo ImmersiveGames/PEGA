@@ -12,37 +12,30 @@ namespace PEGA.NPC.Editor
 
         [DrawGizmo(GizmoType.Selected)]
         private static void Draw(
-            PEGANpcInvestigatePerceivedAreaPresenceAction action,
+            PEGANpcAutonomy autonomy,
             GizmoType gizmoType)
         {
-            if (action == null)
+            PEGANpcInvestigatePerceivedAreaPresenceAction action = FindDefinition(autonomy);
+            if (autonomy == null || action == null)
             {
                 return;
             }
 
-            SerializedObject serializedAction = new SerializedObject(action);
-            serializedAction.Update();
-            SerializedProperty radiusProperty = serializedAction.FindProperty("searchRadiusMeters");
-            SerializedProperty verticalProperty = serializedAction.FindProperty("maximumVerticalDifferenceMeters");
-            SerializedProperty repositionProperty =
-                serializedAction.FindProperty("minimumPhysicalRepositionMeters");
-            SerializedProperty arrivalProperty = serializedAction.FindProperty("arrivalRadiusMeters");
-            if (radiusProperty == null || verticalProperty == null ||
-                !IsPositiveFinite(radiusProperty.floatValue) ||
-                !IsNonNegativeFinite(verticalProperty.floatValue))
+            if (!IsPositiveFinite(action.SearchRadiusMeters) ||
+                !IsNonNegativeFinite(action.MaximumVerticalDifferenceMeters))
             {
                 return;
             }
 
-            Vector3 anchor = action.transform.position;
-            bool hasPresenceAnchor = TryGetPresenceAnchor(action, out anchor);
+            Vector3 anchor = autonomy.transform.position;
+            bool hasPresenceAnchor = TryGetPresenceAnchor(autonomy, out anchor);
             Color previousColor = Handles.color;
             try
             {
                 Handles.color = SearchBoundColor;
-                DrawVerticalBounds(anchor, radiusProperty.floatValue, verticalProperty.floatValue);
+                DrawVerticalBounds(anchor, action.SearchRadiusMeters, action.MaximumVerticalDifferenceMeters);
                 Handles.Label(
-                    anchor + Vector3.up * (verticalProperty.floatValue + 0.1f),
+                    anchor + Vector3.up * (action.MaximumVerticalDifferenceMeters + 0.1f),
                     hasPresenceAnchor
                         ? "Busca da presença radial conhecida"
                         : "Prévia da busca radial (âncora em runtime)");
@@ -51,25 +44,24 @@ namespace PEGA.NPC.Editor
                 Vector3[] directions = { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
                 for (int index = 0; index < directions.Length; index++)
                 {
-                    Vector3 samplePosition = anchor + directions[index] * radiusProperty.floatValue;
+                    Vector3 samplePosition = anchor + directions[index] * action.SearchRadiusMeters;
                     Handles.DrawWireDisc(samplePosition, Vector3.up, 0.16f);
                 }
 
-                if (arrivalProperty != null && repositionProperty != null &&
-                    IsNonNegativeFinite(arrivalProperty.floatValue) &&
-                    IsNonNegativeFinite(repositionProperty.floatValue))
+                if (IsNonNegativeFinite(action.ConfiguredArrivalRadiusMeters) &&
+                    IsNonNegativeFinite(action.MinimumPhysicalRepositionMeters))
                 {
                     Handles.color = ActiveTargetColor;
                     Handles.DrawWireDisc(
-                        action.transform.position,
+                        autonomy.transform.position,
                         Vector3.up,
-                        arrivalProperty.floatValue + repositionProperty.floatValue);
+                        action.ConfiguredArrivalRadiusMeters + action.MinimumPhysicalRepositionMeters);
                     Handles.Label(
-                        action.transform.position + Vector3.up * 0.15f,
+                        autonomy.transform.position + Vector3.up * 0.15f,
                         "Deslocamento físico mínimo");
                 }
 
-                DrawActiveTarget(action);
+                DrawActiveTarget(autonomy);
             }
             finally
             {
@@ -78,16 +70,16 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryGetPresenceAnchor(
-            PEGANpcInvestigatePerceivedAreaPresenceAction action,
+            PEGANpcAutonomy autonomy,
             out Vector3 anchor)
         {
-            anchor = action.transform.position;
+            anchor = autonomy.transform.position;
             if (!Application.isPlaying)
             {
                 return false;
             }
 
-            PEGANpcKnowledgeState knowledgeState = action.GetComponent<PEGANpcKnowledgeState>();
+            PEGANpcKnowledgeState knowledgeState = autonomy.GetComponent<PEGANpcKnowledgeState>();
             if (knowledgeState == null ||
                 !knowledgeState.GetPerceivedAreaPresence().TryGetValue(
                     out PEGANpcPerceivedAreaPresence presence) ||
@@ -116,9 +108,15 @@ namespace PEGA.NPC.Editor
             Handles.DrawLine(lower - Vector3.right * radius, upper - Vector3.right * radius);
         }
 
-        private static void DrawActiveTarget(PEGANpcInvestigatePerceivedAreaPresenceAction action)
+        private static void DrawActiveTarget(PEGANpcAutonomy autonomy)
         {
-            PEGANpcActionExecutionSnapshot execution = action.CurrentExecution;
+            if (!autonomy.TryGetActionExecution(
+                    PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence,
+                    out PEGANpcActionExecutionSnapshot execution))
+            {
+                return;
+            }
+
             if (execution.Outcome != PEGANpcActionOutcome.Running ||
                 !execution.DeclaredEffect.IsTargetResolved)
             {
@@ -128,6 +126,25 @@ namespace PEGA.NPC.Editor
             Handles.color = ActiveTargetColor;
             Handles.DrawWireDisc(execution.TargetPosition, Vector3.up, 0.18f);
             Handles.Label(execution.TargetPosition, "Ponto de busca selecionado pelo GOAP");
+        }
+
+        private static PEGANpcInvestigatePerceivedAreaPresenceAction FindDefinition(
+            PEGANpcAutonomy autonomy)
+        {
+            if (autonomy == null)
+            {
+                return null;
+            }
+
+            for (int index = 0; index < autonomy.ActionDefinitionCount; index++)
+            {
+                if (autonomy.GetActionDefinitionAt(index) is PEGANpcInvestigatePerceivedAreaPresenceAction action)
+                {
+                    return action;
+                }
+            }
+
+            return null;
         }
 
         private static bool IsPositiveFinite(float value) =>

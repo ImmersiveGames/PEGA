@@ -1,4 +1,5 @@
 using UnityEditor;
+using Immersive.Framework.Actors;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
@@ -12,34 +13,24 @@ namespace PEGA.NPC.Editor
 
         [DrawGizmo(GizmoType.Selected)]
         private static void Draw(
-            PEGANpcInvestigateLastKnownCharacterPositionAction action,
+            PEGANpcAutonomy autonomy,
             GizmoType gizmoType)
         {
-            if (action == null)
+            PEGANpcInvestigateLastKnownCharacterPositionAction action = FindDefinition(autonomy);
+            if (autonomy == null || action == null)
             {
                 return;
             }
 
-            SerializedObject serializedAction = new SerializedObject(action);
-            serializedAction.Update();
-            SerializedProperty radiusProperty = serializedAction.FindProperty("localRadiusMeters");
-            SerializedProperty verticalProperty = serializedAction.FindProperty("maximumVerticalDifferenceMeters");
-            SerializedProperty arrivalProperty = serializedAction.FindProperty("arrivalRadiusMeters");
-            SerializedProperty repositionProperty = serializedAction.FindProperty("minimumPhysicalRepositionMeters");
-            if (radiusProperty == null || verticalProperty == null)
-            {
-                return;
-            }
-
-            float radius = radiusProperty.floatValue;
-            float verticalBand = verticalProperty.floatValue;
+            float radius = action.LocalRadiusMeters;
+            float verticalBand = action.MaximumVerticalDifferenceMeters;
             if (!IsPositiveFinite(radius) || !IsNonNegativeFinite(verticalBand))
             {
                 return;
             }
 
-            Vector3 anchor = action.transform.position;
-            bool hasLastKnownAnchor = TryGetLastKnownAnchor(action, out anchor);
+            Vector3 anchor = autonomy.transform.position;
+            bool hasLastKnownAnchor = TryGetLastKnownAnchor(autonomy, out anchor);
             Color previousColor = Handles.color;
             try
             {
@@ -51,21 +42,20 @@ namespace PEGA.NPC.Editor
                         ? "Área local em torno da última posição conhecida"
                         : "Prévia da área local (âncora em runtime)");
 
-                if (arrivalProperty != null && repositionProperty != null &&
-                    IsNonNegativeFinite(arrivalProperty.floatValue) &&
-                    IsPositiveFinite(repositionProperty.floatValue))
+                if (IsNonNegativeFinite(action.ConfiguredArrivalRadiusMeters) &&
+                    IsPositiveFinite(action.MinimumPhysicalRepositionMeters))
                 {
                     Handles.color = RepositionThresholdColor;
                     Handles.DrawWireDisc(
-                        action.transform.position,
+                        autonomy.transform.position,
                         Vector3.up,
-                        arrivalProperty.floatValue + repositionProperty.floatValue);
+                        action.ConfiguredArrivalRadiusMeters + action.MinimumPhysicalRepositionMeters);
                     Handles.Label(
-                        action.transform.position + Vector3.up * 0.15f,
+                        autonomy.transform.position + Vector3.up * 0.15f,
                         "Distância mínima do destino local");
                 }
 
-                DrawActiveTarget(action);
+                DrawActiveTarget(autonomy);
             }
             finally
             {
@@ -74,7 +64,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryGetLastKnownAnchor(
-            PEGANpcInvestigateLastKnownCharacterPositionAction action,
+            PEGANpcAutonomy autonomy,
             out Vector3 anchor)
         {
             anchor = default;
@@ -83,13 +73,28 @@ namespace PEGA.NPC.Editor
                 return false;
             }
 
-            PEGANpcPerceptionSource perception = action.GetComponent<PEGANpcPerceptionSource>();
-            PEGANpcApproachKnownCharacterAction approach = action.GetComponent<PEGANpcApproachKnownCharacterAction>();
+            PEGANpcPerceptionSource perception = autonomy.GetComponent<PEGANpcPerceptionSource>();
+            PEGANpcKnowledgeState knowledge = autonomy.GetComponent<PEGANpcKnowledgeState>();
+            ActorOccurrenceReferenceBinding reference = autonomy.GetComponent<ActorOccurrenceReferenceBinding>();
             PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState sample =
                 perception != null ? perception.LatestGizmoState : default;
-            if (!sample.HasSample || !sample.HasTarget || sample.HasVisualContact || approach == null ||
-                !approach.TryGetKnownTargetPosition(out anchor, out _))
+            if (!sample.HasSample || !sample.HasTarget || sample.HasVisualContact ||
+                knowledge == null || reference == null ||
+                !reference.TryGetCurrent(out ActorOccurrenceResolution resolution) ||
+                !resolution.Occurrence.ActorId.IsValid)
             {
+                return false;
+            }
+
+            ActorId targetActorId = resolution.Occurrence.ActorId;
+            PEGANpcKnowledgeFact<Immersive.Framework.Actors.ActorProfileId> identity =
+                knowledge.GetObservedCharacterIdentity(targetActorId);
+            PEGANpcKnowledgeFact<Vector3> position = knowledge.GetLastObservedCharacterPosition(targetActorId);
+            if (!identity.TryGetValue(out _) ||
+                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
+                !position.TryGetValue(out anchor) || !position.HasObservationTime)
+            {
+                anchor = default;
                 return false;
             }
 
@@ -112,9 +117,15 @@ namespace PEGA.NPC.Editor
             Handles.DrawLine(lower - Vector3.right * radius, upper - Vector3.right * radius);
         }
 
-        private static void DrawActiveTarget(PEGANpcInvestigateLastKnownCharacterPositionAction action)
+        private static void DrawActiveTarget(PEGANpcAutonomy autonomy)
         {
-            PEGANpcActionExecutionSnapshot execution = action.CurrentExecution;
+            if (!autonomy.TryGetActionExecution(
+                    PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition,
+                    out PEGANpcActionExecutionSnapshot execution))
+            {
+                return;
+            }
+
             if (execution.Outcome != PEGANpcActionOutcome.Running || !execution.DeclaredEffect.IsTargetResolved)
             {
                 return;
@@ -123,6 +134,25 @@ namespace PEGA.NPC.Editor
             Handles.color = ActiveTargetColor;
             Handles.DrawWireDisc(execution.TargetPosition, Vector3.up, 0.18f);
             Handles.Label(execution.TargetPosition, "Destino local selecionado pelo GOAP");
+        }
+
+        private static PEGANpcInvestigateLastKnownCharacterPositionAction FindDefinition(
+            PEGANpcAutonomy autonomy)
+        {
+            if (autonomy == null)
+            {
+                return null;
+            }
+
+            for (int index = 0; index < autonomy.ActionDefinitionCount; index++)
+            {
+                if (autonomy.GetActionDefinitionAt(index) is PEGANpcInvestigateLastKnownCharacterPositionAction action)
+                {
+                    return action;
+                }
+            }
+
+            return null;
         }
 
         private static bool IsPositiveFinite(float value) =>

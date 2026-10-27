@@ -15,13 +15,7 @@ GameObject:
   - component: {fileID: 114000001}
   - component: {fileID: 114000004}
   - component: {fileID: 114000006}
-  - component: {fileID: 1407004870509830926}
   - component: {fileID: 114000010}
-  - component: {fileID: 114000008}
-  - component: {fileID: 114000011}
-  - component: {fileID: 3705604825870797814}
-  - component: {fileID: 114000012}
-  - component: {fileID: 114000009}
   - component: {fileID: 114000002}
   - component: {fileID: 114000003}
   - component: {fileID: 114000005}
@@ -165,18 +159,6 @@ MonoBehaviour:
   lostContactEvadedIntervalSeconds: 5
   drawPerceptionGizmos: 1
   drawGizmosWhenUnselected: 0
---- !u!114 &1407004870509830926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9d650ea3d357e14caf6c67f56f03608, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcDesireState
 --- !u!114 &114000010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190,94 +172,13 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
   desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
---- !u!114 &114000008
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownCharacterAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  knowledgeState: {fileID: 2765785676748957259}
-  targetReference: {fileID: 114000001}
---- !u!114 &114000011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b980c3c72dc54f60978f3e5507562a05, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAvoidKnownCharacterAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  knowledgeState: {fileID: 2765785676748957259}
-  characterReference: {fileID: 114000001}
-  safeSeparationDistanceMeters: 5
-  retreatStepDistanceMeters: 1
---- !u!114 &3705604825870797814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d2b3bc9774641769b38efd77da079ed, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateLastKnownCharacterPositionAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  localRadiusMeters: 3
-  maximumRouteLengthMeters: 6
-  minimumPhysicalRepositionMeters: 0.75
-  sampleSpacingMeters: 1
-  sampleDirectionsPerRing: 8
-  sampleProjectionDistanceMeters: 0.5
-  maximumVerticalDifferenceMeters: 0.35
---- !u!114 &114000012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 46bb1ee513b2467f896bb671c1899c96, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigatePerceivedAreaPresenceAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
-  searchRadiusMeters: 3
-  maximumRouteLengthMeters: 6
-  minimumPhysicalRepositionMeters: 0.75
-  sampleProjectionDistanceMeters: 0.5
-  maximumVerticalDifferenceMeters: 0.35
---- !u!114 &114000009
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d243b51d1194c8988a2d61a543a64ed, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcTravelToEscapeAction
-  navigationSource: {fileID: 114000002}
-  arrivalRadiusMeters: 1.25
+  actionDefinitions:
+  - {fileID: 11400000, guid: 830767df9f6c454bb8f9f66ab3640f7c, type: 2}
+  - {fileID: 11400000, guid: ad5268d800724814951dbaf601e30980, type: 2}
+  - {fileID: 11400000, guid: 9a115c7654944511b9699b485ce79ae8, type: 2}
+  - {fileID: 11400000, guid: 9642c5dd661c40b4a22a376a41bcecdd, type: 2}
+  - {fileID: 11400000, guid: dcc8fb200ca8427194b97eecf0014995, type: 2}
+  causalSearchCandidateEvaluationBudget: 128
 --- !u!114 &114000002
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -4,13 +4,11 @@ using Immersive.Framework.Actors;
 using PEGA.Actors;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 namespace PEGA.NPC
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Investigate Perceived Area Presence")]
-    [RequireComponent(typeof(PEGANpcKnowledgeState))]
-    [RequireComponent(typeof(NavMeshAgent))]
+    [CreateAssetMenu(fileName = "InvestigateDetectedPresence", menuName = "PEGA/NPC/Investigation/Investigate Detected Presence")]
     public sealed class PEGANpcInvestigatePerceivedAreaPresenceAction : PEGANpcNavigationAction,
         IPEGANpcKnowledgeChangeRelevanceProvider,
         IPEGANpcAttemptedTargetProvider
@@ -24,26 +22,30 @@ namespace PEGA.NPC
             Vector3.left
         };
 
-        [Header("Radial presence investigation")]
+        [Header("Search Area")]
         [SerializeField, Min(0.25f)]
-        [Tooltip("Distância planar dos pontos de busca em torno da posição conhecida do próprio observador (m). Deve caber na Área Percebida registrada.")]
-        private float searchRadiusMeters = 3f;
+        [FormerlySerializedAs("searchRadiusMeters")]
+        [Tooltip("Radius around the observer's known position to search for detected presence (m).")]
+        private float presenceSearchRadiusMeters = 3f;
 
         [SerializeField, Min(0.1f)]
-        [Tooltip("Comprimento máximo da rota completa até cada ponto de busca (m).")]
-        private float maximumRouteLengthMeters = 6f;
+        [FormerlySerializedAs("maximumRouteLengthMeters")]
+        [Tooltip("Maximum travel distance to each search point (m).")]
+        private float maximumTravelDistanceMeters = 6f;
 
         [SerializeField, Min(0.05f)]
-        [Tooltip("Deslocamento físico mínimo para que a chegada conte como trabalho de investigação observado (m).")]
-        private float minimumPhysicalRepositionMeters = 0.75f;
+        [FormerlySerializedAs("minimumPhysicalRepositionMeters")]
+        [Tooltip("Minimum physical movement for arrival to count as an investigation (m).")]
+        private float minimumSearchMovementMeters = 0.75f;
 
-        [SerializeField, Min(0.05f)]
+        [SerializeField, Min(0.05f), HideInInspector]
         [Tooltip("Distância máxima para projetar os pontos de busca na NavMesh compatível (m).")]
         private float sampleProjectionDistanceMeters = 0.5f;
 
         [SerializeField, Min(0f)]
-        [Tooltip("Diferença vertical máxima entre a posição conhecida do observador e cada ponto de busca (m).")]
-        private float maximumVerticalDifferenceMeters = 0.35f;
+        [FormerlySerializedAs("maximumVerticalDifferenceMeters")]
+        [Tooltip("Maximum height difference between the observer's known position and a search point (m).")]
+        private float maximumHeightDifferenceMeters = 0.35f;
 
         private PEGANpcKnowledgeState _knowledgeState;
         private NavMeshAgent _agent;
@@ -56,12 +58,38 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachLocalObservationPosition;
 
+        public float SearchRadiusMeters => presenceSearchRadiusMeters;
+        public float MaximumVerticalDifferenceMeters => maximumHeightDifferenceMeters;
+        public float MinimumPhysicalRepositionMeters => minimumSearchMovementMeters;
+
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
             PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence,
             ActionEffectKind,
             PEGANpcPlanningTargetKind.LocalObservationPosition,
             true,
             "NPC began investigating an unidentified radial presence.");
+
+        protected override PEGANpcCausalStepEvaluationStatus EvaluateCausalNavigationConstraints(
+            PEGANpcGoapKnownTarget target,
+            Vector3 sourcePosition,
+            PEGANpcNavigationRouteEstimate routeEstimate,
+            out string diagnostic)
+        {
+            if (!RequiresPhysicalReposition(target.Target.KnownPosition, sourcePosition))
+            {
+                diagnostic = "The projected position is already within the investigation arrival and reposition thresholds.";
+                return PEGANpcCausalStepEvaluationStatus.Unavailable;
+            }
+
+            if (routeEstimate.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
+            {
+                diagnostic = "The route from the projected position exceeds the configured investigation route bound.";
+                return PEGANpcCausalStepEvaluationStatus.Unavailable;
+            }
+
+            diagnostic = string.Empty;
+            return PEGANpcCausalStepEvaluationStatus.Available;
+        }
 
         public override bool TryCreatePlanningCandidates(
             PEGANpcActionPlanningContext context,
@@ -109,6 +137,14 @@ namespace PEGA.NPC
                 return false;
             }
 
+            if (!TryDeferNavigationRoute(
+                    PEGAActorMovementSpeedRegime.Movement,
+                    out PEGANpcNavigationRouteEstimate deferredRoute,
+                    out diagnostic))
+            {
+                return false;
+            }
+
             if (_hasExecutionPlan &&
                 Outcome == PEGANpcActionOutcome.Running &&
                 _executionPlan.TargetId.IdentityKind ==
@@ -121,13 +157,13 @@ namespace PEGA.NPC
                     out PEGANpcNavigationRouteEstimate activeRoute,
                     out _) &&
                 activeRoute.Status == PEGANpcPlanningRouteStatus.Complete &&
-                activeRoute.RouteLengthMeters <= maximumRouteLengthMeters + PositionComparisonEpsilonMeters)
+                activeRoute.RouteLengthMeters <= maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
                 PEGANpcPlanningTarget activeTarget = PEGANpcPlanningTarget.FromLocalObservationPosition(
                     _executionPlan.TargetId,
                     _executionPlan.TargetPosition,
                     evidenceTimeSeconds,
-                    searchRadiusMeters);
+                    presenceSearchRadiusMeters);
                 targetList.Add(activeTarget);
                 candidateList.Add(new PEGANpcPlanningActionCandidate(
                     Contract,
@@ -147,10 +183,8 @@ namespace PEGA.NPC
             NavMeshQueryFilter filter = CreateQueryFilter();
             int projectionRejected = 0;
             int boundsRejected = 0;
-            int insufficientReposition = 0;
             int duplicatePosition = 0;
             int previouslyAttempted = 0;
-            int routeRejected = 0;
 
             for (int sampleOrdinal = 0; sampleOrdinal < SearchDirections.Length; sampleOrdinal++)
             {
@@ -165,7 +199,7 @@ namespace PEGA.NPC
                 }
 
                 Vector3 requestedPosition = presence.ObserverPosition +
-                    SearchDirections[sampleOrdinal] * searchRadiusMeters;
+                    SearchDirections[sampleOrdinal] * presenceSearchRadiusMeters;
                 if (!NavMesh.SamplePosition(
                         requestedPosition,
                         out NavMeshHit hit,
@@ -182,12 +216,6 @@ namespace PEGA.NPC
                     continue;
                 }
 
-                if (!RequiresPhysicalReposition(hit.position, transform.position))
-                {
-                    insufficientReposition++;
-                    continue;
-                }
-
                 if (ContainsDuplicatePosition(projectedPositions, hit.position))
                 {
                     duplicatePosition++;
@@ -195,29 +223,17 @@ namespace PEGA.NPC
                 }
 
                 projectedPositions.Add(hit.position);
-                if (!TryEstimateNavigationRoute(
-                        hit.position,
-                        PEGAActorMovementSpeedRegime.Movement,
-                        out PEGANpcNavigationRouteEstimate route,
-                        out _) ||
-                    route.Status != PEGANpcPlanningRouteStatus.Complete ||
-                    route.RouteLengthMeters > maximumRouteLengthMeters + PositionComparisonEpsilonMeters)
-                {
-                    routeRejected++;
-                    continue;
-                }
-
                 PEGANpcPlanningTarget target = PEGANpcPlanningTarget.FromLocalObservationPosition(
                     targetId,
                     hit.position,
                     evidenceTimeSeconds,
-                    searchRadiusMeters);
+                    presenceSearchRadiusMeters);
                 PEGANpcPlanningActionCandidate candidate = new PEGANpcPlanningActionCandidate(
                     Contract,
                     this,
                     targetId,
                     PEGAActorMovementSpeedRegime.Movement,
-                    route,
+                    deferredRoute,
                     IntrinsicDurationSeconds);
                 targetList.Add(target);
                 candidateList.Add(candidate);
@@ -227,10 +243,9 @@ namespace PEGA.NPC
             candidates = Array.AsReadOnly(candidateList.ToArray());
             if (candidateList.Count == 0)
             {
-                diagnostic = "No unattempted radial-area search position has a bounded complete NavMesh route. " +
+                diagnostic = "No unattempted radial-area search position satisfies the configured sample bounds. " +
                     $"projectionRejected={projectionRejected}, boundsRejected={boundsRejected}, " +
-                    $"insufficientReposition={insufficientReposition}, duplicatePosition={duplicatePosition}, " +
-                    $"previouslyAttempted={previouslyAttempted}, routeRejected={routeRejected}";
+                    $"duplicatePosition={duplicatePosition}, previouslyAttempted={previouslyAttempted}";
             }
 
             return candidateList.Count > 0 || string.IsNullOrWhiteSpace(diagnostic);
@@ -314,7 +329,7 @@ namespace PEGA.NPC
 
             _executionPlan = plan;
             _executionTargetActorId = _candidateTargetActorId;
-            _executionStartPosition = transform.position;
+            _executionStartPosition = ActorTransform.position;
             _hasExecutionPlan = true;
             bool started = TryStartNavigation(
                 plan.TargetId,
@@ -329,18 +344,30 @@ namespace PEGA.NPC
             return started;
         }
 
-        protected override void Awake()
+        protected override bool OnRuntimeInitialize(out string diagnostic)
         {
-            base.Awake();
-            _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
-            _agent = GetComponent<NavMeshAgent>();
+            if (!base.OnRuntimeInitialize(out diagnostic))
+            {
+                return false;
+            }
+
+            _knowledgeState = RuntimeContext.KnowledgeState;
+            _agent = RuntimeContext.NavigationAgent;
+            if (_knowledgeState == null || _knowledgeState.gameObject != ActorRoot || _agent == null)
+            {
+                diagnostic = "Radial investigation requires the Actor's Knowledge State and NavMesh Agent.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
         }
 
-        protected override void OnDisable()
+        protected override void OnRuntimeDisabled()
         {
             ClearExecutionEvidence();
             _candidateTargetActorId = default;
-            base.OnDisable();
+            base.OnRuntimeDisabled();
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic)
@@ -362,8 +389,8 @@ namespace PEGA.NPC
                 return false;
             }
 
-            float physicalRepositionMeters = PlanarDistance(transform.position, _executionStartPosition);
-            if (physicalRepositionMeters + PositionComparisonEpsilonMeters < minimumPhysicalRepositionMeters)
+            float physicalRepositionMeters = PlanarDistance(ActorTransform.position, _executionStartPosition);
+            if (physicalRepositionMeters + PositionComparisonEpsilonMeters < minimumSearchMovementMeters)
             {
                 diagnostic = "The NPC did not physically reposition far enough for this investigation attempt to count as work.";
                 return false;
@@ -406,7 +433,7 @@ namespace PEGA.NPC
                 Math.Abs(plan.EvidenceTimeSeconds - currentEvidenceTimeSeconds) > 0.000001d ||
                 plan.TargetId.PerceivedAreaSampleOrdinal < 0 ||
                 plan.TargetId.PerceivedAreaSampleOrdinal >= SearchDirections.Length ||
-                Mathf.Abs(plan.MaximumRouteDistanceFromAnchorMeters - searchRadiusMeters) >
+                Mathf.Abs(plan.MaximumRouteDistanceFromAnchorMeters - presenceSearchRadiusMeters) >
                     PositionComparisonEpsilonMeters ||
                 !IsCandidatePositionWithinBounds(presence, plan.TargetPosition))
             {
@@ -425,7 +452,7 @@ namespace PEGA.NPC
             }
 
             if (requirePhysicalReposition &&
-                !RequiresPhysicalReposition(plan.TargetPosition, transform.position))
+                !RequiresPhysicalReposition(plan.TargetPosition, ActorTransform.position))
             {
                 diagnostic = "The selected search position must require meaningful physical movement beyond the arrival radius.";
                 return false;
@@ -437,7 +464,7 @@ namespace PEGA.NPC
                     out PEGANpcNavigationRouteEstimate route,
                     out diagnostic) ||
                 route.Status != PEGANpcPlanningRouteStatus.Complete ||
-                route.RouteLengthMeters > maximumRouteLengthMeters + PositionComparisonEpsilonMeters)
+                route.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
                 if (string.IsNullOrWhiteSpace(diagnostic))
                 {
@@ -489,7 +516,7 @@ namespace PEGA.NPC
         {
             presence = default;
             evidenceTimeSeconds = 0d;
-            if (_knowledgeState == null || _knowledgeState.gameObject != gameObject)
+            if (_knowledgeState == null || _knowledgeState.gameObject != ActorRoot)
             {
                 diagnostic = "Knowledge State must be present on this NPC root.";
                 return false;
@@ -528,14 +555,14 @@ namespace PEGA.NPC
             PEGANpcPerceivedAreaPresence presence,
             out string diagnostic)
         {
-            if (!IsPositiveFinite(searchRadiusMeters) ||
+            if (!IsPositiveFinite(presenceSearchRadiusMeters) ||
                 !IsNonNegativeFinite(ArrivalRadiusMeters) ||
-                !IsPositiveFinite(maximumRouteLengthMeters) ||
-                !IsPositiveFinite(minimumPhysicalRepositionMeters) ||
+                !IsPositiveFinite(maximumTravelDistanceMeters) ||
+                !IsPositiveFinite(minimumSearchMovementMeters) ||
                 !IsPositiveFinite(sampleProjectionDistanceMeters) ||
-                !IsNonNegativeFinite(maximumVerticalDifferenceMeters) ||
-                searchRadiusMeters > presence.PerceivedAreaRadiusMeters + PositionComparisonEpsilonMeters ||
-                searchRadiusMeters <= ArrivalRadiusMeters + minimumPhysicalRepositionMeters)
+                !IsNonNegativeFinite(maximumHeightDifferenceMeters) ||
+                presenceSearchRadiusMeters > presence.PerceivedAreaRadiusMeters + PositionComparisonEpsilonMeters ||
+                presenceSearchRadiusMeters <= ArrivalRadiusMeters + minimumSearchMovementMeters)
             {
                 diagnostic = "Search radius must fit inside the recorded perceived area and exceed arrival radius plus minimum physical reposition; all distances must be finite and positive.";
                 return false;
@@ -557,19 +584,19 @@ namespace PEGA.NPC
         {
             if (!IsFinite(targetPosition) ||
                 Mathf.Abs(targetPosition.y - presence.ObserverPosition.y) >
-                    maximumVerticalDifferenceMeters + PositionComparisonEpsilonMeters)
+                    maximumHeightDifferenceMeters + PositionComparisonEpsilonMeters)
             {
                 return false;
             }
 
             float planarDistance = PlanarDistance(targetPosition, presence.ObserverPosition);
-            return planarDistance <= searchRadiusMeters + PositionComparisonEpsilonMeters &&
+            return planarDistance <= presenceSearchRadiusMeters + PositionComparisonEpsilonMeters &&
                    planarDistance <= presence.PerceivedAreaRadiusMeters + PositionComparisonEpsilonMeters;
         }
 
         private bool RequiresPhysicalReposition(Vector3 targetPosition, Vector3 actorPosition) =>
             PlanarDistance(targetPosition, actorPosition) >
-            ArrivalRadiusMeters + minimumPhysicalRepositionMeters + PositionComparisonEpsilonMeters;
+            ArrivalRadiusMeters + minimumSearchMovementMeters + PositionComparisonEpsilonMeters;
 
         private bool ContainsDuplicatePosition(IReadOnlyList<Vector3> positions, Vector3 candidate)
         {

@@ -152,12 +152,26 @@ namespace PEGA.NPC
             if (!IsReady)
             {
                 diagnostic = "NPC navigation source, NavMeshAgent and shared movement mechanic must be active.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Unknown,
+                    0f,
+                    0f,
+                    -1,
+                    0,
+                    diagnostic);
                 return false;
             }
 
             if (!IsFinite(targetPosition) || !IsNonNegativeFinite(arrivalRadiusMeters))
             {
                 diagnostic = "Route estimate target and arrival radius must be finite; arrival radius cannot be negative.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
                 return false;
             }
 
@@ -218,7 +232,179 @@ namespace PEGA.NPC
             {
                 diagnostic = $"NavMesh route estimate is not complete ({path.status}).";
                 estimate = new PEGANpcNavigationRouteEstimate(
-                    status,
+                    status == PEGANpcPlanningRouteStatus.Complete
+                        ? PEGANpcPlanningRouteStatus.Invalid
+                        : status,
+                    routeLengthMeters,
+                    effectiveSpeed,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            estimate = new PEGANpcNavigationRouteEstimate(
+                PEGANpcPlanningRouteStatus.Complete,
+                routeLengthMeters,
+                effectiveSpeed,
+                _agent.agentTypeID,
+                _agent.areaMask,
+                string.Empty);
+            return true;
+        }
+
+        public bool TryCreateDeferredRouteEstimate(
+            PEGAActorMovementSpeedRegime speedRegime,
+            out PEGANpcNavigationRouteEstimate estimate,
+            out string diagnostic)
+        {
+            estimate = default;
+            diagnostic = string.Empty;
+
+            if (!IsReady)
+            {
+                diagnostic = "NPC navigation source, NavMeshAgent and shared movement mechanic must be active.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Unknown,
+                    0f,
+                    0f,
+                    -1,
+                    0,
+                    diagnostic);
+                return false;
+            }
+
+            if (!_agent.isOnNavMesh)
+            {
+                diagnostic = "NavMeshAgent is not placed on a baked NavMesh at the Actor's physical position.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            if (!_movementMechanic.TryGetMaximumSpeed(
+                    speedRegime,
+                    out float effectiveSpeed,
+                    out diagnostic) ||
+                !IsPositiveFinite(effectiveSpeed))
+            {
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "The movement speed for the selected regime must be finite and positive.";
+                }
+
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            estimate = new PEGANpcNavigationRouteEstimate(
+                PEGANpcPlanningRouteStatus.Deferred,
+                0f,
+                effectiveSpeed,
+                _agent.agentTypeID,
+                _agent.areaMask,
+                "Route viability and cost are evaluated at each causal plan step.");
+            return true;
+        }
+
+        public bool TryEstimateRouteFrom(
+            Vector3 sourcePosition,
+            Vector3 targetPosition,
+            PEGAActorMovementSpeedRegime speedRegime,
+            float arrivalRadiusMeters,
+            out PEGANpcNavigationRouteEstimate estimate,
+            out string diagnostic)
+        {
+            estimate = default;
+            diagnostic = string.Empty;
+
+            if (!IsReady)
+            {
+                diagnostic = "NPC navigation source, NavMeshAgent and shared movement mechanic must be active.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Unknown,
+                    0f,
+                    0f,
+                    -1,
+                    0,
+                    diagnostic);
+                return false;
+            }
+
+            if (!IsFinite(sourcePosition) || !IsFinite(targetPosition) ||
+                !IsNonNegativeFinite(arrivalRadiusMeters))
+            {
+                diagnostic = "Hypothetical route positions and arrival radius must be finite; arrival radius cannot be negative.";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            if (!_movementMechanic.TryGetMaximumSpeed(
+                    speedRegime,
+                    out float effectiveSpeed,
+                    out diagnostic))
+            {
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Invalid,
+                    0f,
+                    0f,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    diagnostic);
+                return false;
+            }
+
+            if (PlanarDistance(sourcePosition, targetPosition) <= arrivalRadiusMeters)
+            {
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    PEGANpcPlanningRouteStatus.Complete,
+                    0f,
+                    effectiveSpeed,
+                    _agent.agentTypeID,
+                    _agent.areaMask,
+                    string.Empty);
+                return true;
+            }
+
+            NavMeshQueryFilter filter = new NavMeshQueryFilter
+            {
+                agentTypeID = _agent.agentTypeID,
+                areaMask = _agent.areaMask
+            };
+            for (int areaIndex = 0; areaIndex < 32; areaIndex++)
+            {
+                filter.SetAreaCost(areaIndex, _agent.GetAreaCost(areaIndex));
+            }
+
+            NavMeshPath path = new NavMeshPath();
+            bool pathFound = NavMesh.CalculatePath(sourcePosition, targetPosition, filter, path);
+            float routeLengthMeters = CalculatePathLength(path.corners);
+            if (!pathFound || path.status != NavMeshPathStatus.PathComplete ||
+                path.corners == null || path.corners.Length < 2 ||
+                !IsNonNegativeFinite(routeLengthMeters))
+            {
+                diagnostic = $"NavMesh route from the projected position is not complete ({path.status}).";
+                estimate = new PEGANpcNavigationRouteEstimate(
+                    path.status == NavMeshPathStatus.PathPartial
+                        ? PEGANpcPlanningRouteStatus.Unreachable
+                        : PEGANpcPlanningRouteStatus.Unknown,
                     routeLengthMeters,
                     effectiveSpeed,
                     _agent.agentTypeID,

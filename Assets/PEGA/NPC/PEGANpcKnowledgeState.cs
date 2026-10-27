@@ -4,7 +4,7 @@ using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using PEGA.Diagnostics;
 using UnityEngine;
 
@@ -180,7 +180,7 @@ namespace PEGA.NPC
     }
 
     [DisallowMultipleComponent]
-    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IPEGAGoapKnowledgeCapability
+    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IGoapKnowledgeCapability
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 

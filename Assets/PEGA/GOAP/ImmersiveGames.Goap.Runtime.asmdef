@@ -1,0 +1,14 @@
+{
+  "name": "ImmersiveGames.Goap.Runtime",
+  "rootNamespace": "ImmersiveGames.Goap",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

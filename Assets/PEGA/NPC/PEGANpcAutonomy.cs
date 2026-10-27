@@ -4,10 +4,12 @@ using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using PEGA.Actors;
 using PEGA.Diagnostics;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 namespace PEGA.NPC
 {
@@ -18,23 +20,27 @@ namespace PEGA.NPC
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/NPC/Autonomy")]
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
-    [RequireComponent(typeof(PEGANpcDesireState))]
     public sealed class PEGANpcAutonomy : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
         [SerializeField]
-        [Tooltip("Profile de Desejos atribuído a este NPC. O profile atual de N01 é provisório para a demonstração na Mission.")]
+        [Tooltip("Desires and priorities this NPC can pursue.")]
         private PEGANpcDesireProfile desireProfile;
 
-        [SerializeField, Min(1)]
-        [Tooltip("Máximo de avaliações de Action por busca de Goal/Target na coleta causal de alternativas.")]
+        [SerializeField]
+        [FormerlySerializedAs("actionDefinitions")]
+        [Tooltip("Behaviors this NPC can use to pursue its desires.")]
+        private PEGANpcActionDefinitionAsset[] availableBehaviors = Array.Empty<PEGANpcActionDefinitionAsset>();
+
+        [SerializeField, Min(1), HideInInspector]
+        [Tooltip("Technical limit on candidate evaluations during causal planning.")]
         private int causalSearchCandidateEvaluationBudget = 128;
 
         [System.NonSerialized]
         private PEGANpcKnowledgeState _knowledgeState;
 
         [System.NonSerialized]
-        private IPEGAGoapKnowledgeStateView _goapKnowledgeStateView;
+        private IGoapKnowledgeStateView _goapKnowledgeStateView;
 
         [System.NonSerialized]
         private IPEGANpcTargetObservationSource _targetObservationSource;
@@ -46,8 +52,12 @@ namespace PEGA.NPC
         private readonly List<IPEGANpcActionProvider> _actionProviders = new List<IPEGANpcActionProvider>();
 
         [System.NonSerialized]
-        private readonly List<IPEGAGoapKnowledgeCapability> _goapKnowledgeCapabilities =
-            new List<IPEGAGoapKnowledgeCapability>();
+        private readonly List<PEGANpcActionDefinitionAsset> _actionRuntimeInstances =
+            new List<PEGANpcActionDefinitionAsset>();
+
+        [System.NonSerialized]
+        private readonly List<IGoapKnowledgeCapability> _goapKnowledgeCapabilities =
+            new List<IGoapKnowledgeCapability>();
 
         [System.NonSerialized]
         private readonly Dictionary<PEGANpcPlanningActionId, IPEGANpcActionProvider> _actionProvidersById =
@@ -70,6 +80,35 @@ namespace PEGA.NPC
 
         [System.NonSerialized]
         private IPEGANpcLastKnownTargetContinuationProvider _continuationProvider;
+
+        [System.NonSerialized]
+        private bool _actionRuntimesInitialized;
+
+        public int ActionDefinitionCount => availableBehaviors != null ? availableBehaviors.Length : 0;
+
+        public PEGANpcActionDefinitionAsset GetActionDefinitionAt(int index)
+        {
+            if (availableBehaviors == null || index < 0 || index >= availableBehaviors.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return availableBehaviors[index];
+        }
+
+        public bool TryGetActionExecution(
+            PEGANpcPlanningActionId actionId,
+            out PEGANpcActionExecutionSnapshot execution)
+        {
+            if (actionId.IsValid && _actionProvidersById.TryGetValue(actionId, out IPEGANpcActionProvider provider))
+            {
+                execution = provider.CurrentExecution;
+                return true;
+            }
+
+            execution = default;
+            return false;
+        }
 
         [System.NonSerialized]
         private PEGANpcDesireContextDefinition _normalContext;
@@ -271,6 +310,12 @@ namespace PEGA.NPC
                         terminalEvent => HandleActionTerminalOutcome(provider, terminalEvent)));
                 }
             }
+
+            for (int index = 0; index < _actionRuntimeInstances.Count; index++)
+            {
+                _actionRuntimeInstances[index].EnableRuntime();
+            }
+
             if (_hasBeenEnabled)
             {
                 QueueEvaluation(EvaluationCause.AutonomyLifecycle);
@@ -287,6 +332,10 @@ namespace PEGA.NPC
             _bootstrapPending = false;
             // Event buses do PEGA não fazem replay; a fila preserva reavaliações pendentes durante a pausa.
             CancelActivePlanForLifecycle();
+            for (int index = 0; index < _actionRuntimeInstances.Count; index++)
+            {
+                _actionRuntimeInstances[index].DisableRuntime();
+            }
         }
 
         private void OnDestroy()
@@ -321,10 +370,17 @@ namespace PEGA.NPC
             }
             _planningInputChangeBindings.Clear();
 
+            DestroyActionRuntimeInstances();
+
         }
 
         private void LateUpdate()
         {
+            for (int index = 0; index < _actionRuntimeInstances.Count; index++)
+            {
+                _actionRuntimeInstances[index].TickRuntime();
+            }
+
             if (!_bootstrapPending && !_planEvaluationQueued)
             {
                 return;
@@ -380,7 +436,13 @@ namespace PEGA.NPC
         {
             diagnostic = string.Empty;
             _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
-            _desireState = GetComponent<PEGANpcDesireState>();
+            _desireState ??= new PEGANpcDesireState(gameObject.name);
+            if (_knowledgeState == null)
+            {
+                diagnostic = "Knowledge State must exist on the NPC root.";
+                return false;
+            }
+
             if (!TryDiscoverGoapKnowledgeCapabilities(out diagnostic))
             {
                 return false;
@@ -393,19 +455,6 @@ namespace PEGA.NPC
             {
                 return false;
             }
-            if (!TryDiscoverActionProviders(out diagnostic))
-            {
-                return false;
-            }
-            if (_knowledgeState == null || _desireState == null || _actionProviders.Count == 0)
-            {
-                diagnostic = "Knowledge State, Desire State and at least one local Action provider must exist on this NPC root.";
-                return false;
-            }
-
-            _goapKnowledgeStateView = new PEGANpcGoapKnowledgeStateView(
-                _knowledgeState,
-                _goapKnowledgeCapabilities);
 
             if (desireProfile == null || !desireProfile.TryGetContext(
                     PEGANpcDesireContext.Normal,
@@ -421,6 +470,15 @@ namespace PEGA.NPC
             if (causalSearchCandidateEvaluationBudget <= 0)
             {
                 diagnostic = "The causal search candidate-evaluation budget must be greater than zero.";
+                return false;
+            }
+
+            _goapKnowledgeStateView = new PEGANpcGoapKnowledgeStateView(
+                _knowledgeState,
+                _goapKnowledgeCapabilities);
+
+            if (!TryCreateActionRuntimeInstances(out diagnostic))
+            {
                 return false;
             }
 
@@ -484,7 +542,7 @@ namespace PEGA.NPC
             for (int index = 0; index < components.Length; index++)
             {
                 MonoBehaviour component = components[index];
-                if (!(component is IPEGAGoapKnowledgeCapability capability))
+                if (!(component is IGoapKnowledgeCapability capability))
                 {
                     continue;
                 }
@@ -502,41 +560,70 @@ namespace PEGA.NPC
             return true;
         }
 
-        private bool TryDiscoverActionProviders(out string diagnostic)
+        private bool TryCreateActionRuntimeInstances(out string diagnostic)
         {
+            if (_actionRuntimesInitialized)
+            {
+                diagnostic = string.Empty;
+                return true;
+            }
+
             _actionProviders.Clear();
             _actionProvidersById.Clear();
+            _actionRuntimeInstances.Clear();
             _continuationAction = null;
             _continuationProvider = null;
-            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
-            for (int index = 0; index < components.Length; index++)
+
+            if (availableBehaviors == null || availableBehaviors.Length == 0)
             {
-                MonoBehaviour component = components[index];
-                if (!(component is IPEGANpcActionProvider provider))
+                diagnostic = "At least one Action definition asset must be composed by this NPC.";
+                return false;
+            }
+
+            for (int index = 0; index < availableBehaviors.Length; index++)
+            {
+                PEGANpcActionDefinitionAsset definition = availableBehaviors[index];
+                if (definition == null)
                 {
-                    continue;
+                    diagnostic = $"Action definition at Inspector index {index} is missing.";
+                    DestroyActionRuntimeInstances();
+                    return false;
+                }
+
+                PEGANpcActionDefinitionAsset runtime = Instantiate(definition);
+                runtime.name = $"{definition.name} ({gameObject.name} Runtime)";
+                runtime.hideFlags = HideFlags.HideAndDontSave;
+                _actionRuntimeInstances.Add(runtime);
+                if (!(runtime is IPEGANpcActionProvider provider))
+                {
+                    diagnostic = $"Action definition '{definition.name}' does not implement {nameof(IPEGANpcActionProvider)}.";
+                    DestroyActionRuntimeInstances();
+                    return false;
                 }
 
                 PEGANpcActionContract contract = provider.Contract;
-                if (component.gameObject != gameObject || !contract.IsValid)
+                if (!contract.IsValid)
                 {
-                    diagnostic = $"Local Action provider at component index {index} has an invalid root or Action contract.";
+                    diagnostic = $"Action definition '{definition.name}' has an invalid Action contract.";
+                    DestroyActionRuntimeInstances();
                     return false;
                 }
 
                 if (_actionProvidersById.ContainsKey(contract.ActionId))
                 {
-                    diagnostic = $"More than one local Action provider uses stable Action ID '{contract.ActionId}'.";
+                    diagnostic = $"More than one composed Action definition uses stable Action ID '{contract.ActionId}'.";
+                    DestroyActionRuntimeInstances();
                     return false;
                 }
 
                 _actionProviders.Add(provider);
                 _actionProvidersById.Add(contract.ActionId, provider);
-                if (component is IPEGANpcLastKnownTargetContinuationProvider continuationProvider)
+                if (runtime is IPEGANpcLastKnownTargetContinuationProvider continuationProvider)
                 {
                     if (_continuationProvider != null)
                     {
-                        diagnostic = "Only one local Action provider may own the current plan-continuation capability.";
+                        diagnostic = "Only one composed Action definition may own the current plan-continuation capability.";
+                        DestroyActionRuntimeInstances();
                         return false;
                     }
 
@@ -545,8 +632,57 @@ namespace PEGA.NPC
                 }
             }
 
+            PEGANpcActionRuntimeContext context = new PEGANpcActionRuntimeContext(
+                this,
+                _knowledgeState,
+                GetComponent<PEGANpcNavMeshMovementIntentSource>(),
+                GetComponent<ActorOccurrenceReferenceBinding>(),
+                GetComponent<NavMeshAgent>(),
+                GetComponent<PEGANpcGangMembership>(),
+                _continuationProvider);
+            for (int index = 0; index < _actionRuntimeInstances.Count; index++)
+            {
+                PEGANpcActionDefinitionAsset runtime = _actionRuntimeInstances[index];
+                if (!runtime.InitializeRuntime(context, out diagnostic))
+                {
+                    diagnostic = $"Action definition '{availableBehaviors[index].name}' could not initialize for Actor '{gameObject.name}': {diagnostic}";
+                    DestroyActionRuntimeInstances();
+                    return false;
+                }
+            }
+
+            _actionRuntimesInitialized = true;
             diagnostic = string.Empty;
             return true;
+        }
+
+        private void DestroyActionRuntimeInstances()
+        {
+            for (int index = _actionRuntimeInstances.Count - 1; index >= 0; index--)
+            {
+                PEGANpcActionDefinitionAsset runtime = _actionRuntimeInstances[index];
+                if (runtime == null)
+                {
+                    continue;
+                }
+
+                runtime.DisposeRuntime();
+                if (Application.isPlaying)
+                {
+                    Destroy(runtime);
+                }
+                else
+                {
+                    DestroyImmediate(runtime);
+                }
+            }
+
+            _actionRuntimeInstances.Clear();
+            _actionProviders.Clear();
+            _actionProvidersById.Clear();
+            _continuationAction = null;
+            _continuationProvider = null;
+            _actionRuntimesInitialized = false;
         }
 
         private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
@@ -1078,7 +1214,7 @@ namespace PEGA.NPC
                 }
             }
             else if (_hasRecentTerminalPlan &&
-                     AreEquivalentPlans(_recentTerminalPlan, selectedPlan) &&
+                     AreEquivalentTerminalPlans(_recentTerminalPlan, selectedPlan) &&
                      ((_recentTerminalOutcome == PEGANpcActionOutcome.Success &&
                        IsEffectAlreadySatisfiedAtCurrentPosition(selectedPlan)) ||
                       (_hasRecentTerminalOpportunity &&
@@ -1611,7 +1747,7 @@ namespace PEGA.NPC
             bool started = action != null && action.TryStart(plan, continuation, out startDiagnostic);
             if (action == null)
             {
-                startDiagnostic = "The selected Action provider is no longer attached to this Actor.";
+                startDiagnostic = "The selected Action provider is no longer composed in this Actor's runtime.";
             }
 
             if (!started)
@@ -1833,7 +1969,7 @@ namespace PEGA.NPC
                 }
 
                 observedEffectMatched = true;
-                IReadOnlyList<IPEGAGoapEffect> observedCausalEffects = Array.Empty<IPEGAGoapEffect>();
+                IReadOnlyList<IGoapEffect> observedCausalEffects = Array.Empty<IGoapEffect>();
                 string causalEffectDiagnostic = "The selected Action has no causal observed-effect provider.";
                 bool hasObservedCausalEffects = sourceAction != null &&
                     sourceAction.TryGetObservedCausalEffects(
@@ -1856,7 +1992,7 @@ namespace PEGA.NPC
                 }
                 else
                 {
-                    PEGAGoapObservedStateView observedState = new PEGAGoapObservedStateView(
+                    GoapObservedStateView observedState = new GoapObservedStateView(
                         _goapKnowledgeStateView,
                         observedCausalEffects);
                     PEGANpcDesireSatisfactionUpdate satisfaction =
@@ -1980,7 +2116,7 @@ namespace PEGA.NPC
 
         private static bool AreDeclaredCausalEffects(
             PEGANpcPlanSnapshot plan,
-            IReadOnlyList<IPEGAGoapEffect> observedEffects)
+            IReadOnlyList<IGoapEffect> observedEffects)
         {
             if (observedEffects.Count == 0)
             {
@@ -1989,7 +2125,7 @@ namespace PEGA.NPC
 
             for (int observedIndex = 0; observedIndex < observedEffects.Count; observedIndex++)
             {
-                IPEGAGoapEffect observedEffect = observedEffects[observedIndex];
+                IGoapEffect observedEffect = observedEffects[observedIndex];
                 if (observedEffect == null)
                 {
                     return false;
@@ -2094,6 +2230,12 @@ namespace PEGA.NPC
         private bool AreEquivalentPlans(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right) =>
             AreSamePlanDecision(left, right) &&
             IsTargetPositionWithinActionTolerance(left.TargetPosition, right.TargetPosition, left.ActionId);
+
+        private static bool AreEquivalentTerminalPlans(
+            PEGANpcPlanSnapshot left,
+            PEGANpcPlanSnapshot right) =>
+            AreSamePlanDecision(left, right) &&
+            (left.TargetPosition - right.TargetPosition).sqrMagnitude <= 0.000001f;
 
         private static bool AreSamePlanDecision(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right) =>
             left.ActionId == right.ActionId &&

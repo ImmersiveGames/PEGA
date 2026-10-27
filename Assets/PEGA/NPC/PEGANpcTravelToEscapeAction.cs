@@ -5,8 +5,7 @@ using UnityEngine;
 
 namespace PEGA.NPC
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Travel to Escape Target")]
+    [CreateAssetMenu(fileName = "GoToKnownExit", menuName = "PEGA/NPC/Escape/Go to Known Exit")]
     public sealed class PEGANpcTravelToEscapeAction : PEGANpcNavigationAction
     {
         protected override PEGANpcActionEffectKind ActionEffectKind =>
@@ -34,8 +33,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!TryEstimateNavigationRoute(
-                    knownEscapeTarget.KnownPosition,
+            if (!TryDeferNavigationRoute(
                     speedRegime,
                     out PEGANpcNavigationRouteEstimate routeEstimate,
                     out diagnostic))
@@ -65,7 +63,7 @@ namespace PEGA.NPC
             diagnostic = string.Empty;
             List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
             List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
-            PEGANpcGangMembership membership = GetComponent<PEGANpcGangMembership>();
+            PEGANpcGangMembership membership = RuntimeContext.GangMembership;
             if (membership == null)
             {
                 diagnostic = "The composed escape Action requires Gang Membership to supply known escape Targets.";
@@ -138,7 +136,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcGangMembership membership = GetComponent<PEGANpcGangMembership>();
+            PEGANpcGangMembership membership = RuntimeContext.GangMembership;
             if (membership == null || !membership.TryGetKnownEscapeTargets(
                     out IReadOnlyList<PEGANpcPlanningTarget> targets, out diagnostic))
             {

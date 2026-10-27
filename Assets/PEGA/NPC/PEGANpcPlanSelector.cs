@@ -154,10 +154,10 @@ namespace PEGA.NPC
             evaluations.Sort((left, right) => string.CompareOrdinal(left.DesireId, right.DesireId));
             string diagnostic = hasSelectedPlan
                 ? causalEvaluation.HasIncompleteSearch
-                    ? "Selected the highest-ranked known causal alternative; at least one applicable Goal search exhausted its budget."
+                    ? "Selected the highest-ranked known causal alternative; at least one applicable Goal search exhausted its budget or an Action-step evaluation remained unknown."
                     : string.Empty
                 : causalEvaluation.HasIncompleteSearch
-                    ? "Causal search budget exhausted before a selectable plan could be established."
+                    ? "Causal search budget or a hypothetical Action-step evaluation remained inconclusive before a selectable plan could be established."
                     : "No known causal solution exists for the applicable Desires and known Action/Target candidates.";
             return new PEGANpcPlanSelectionResult(
                 true,
@@ -217,9 +217,16 @@ namespace PEGA.NPC
                 }
 
                 hasSearch = true;
-                if (search.Search.Status == PEGA.GOAP.PEGAGoapSearchStatus.BudgetExhausted)
+                if (search.Search.Status == ImmersiveGames.Goap.GoapSearchStatus.BudgetExhausted)
                 {
                     return "The applicable Goal search exhausted its configured evaluation budget.";
+                }
+
+                if (search.HasIncompleteStepEvaluation)
+                {
+                    return string.IsNullOrWhiteSpace(search.Diagnostic)
+                        ? "A hypothetical Action-step evaluation remained unknown."
+                        : search.Diagnostic;
                 }
             }
 
@@ -244,10 +251,15 @@ namespace PEGA.NPC
         internal static bool IsUsableCandidate(PEGANpcPlanningActionCandidate candidate)
         {
             PEGANpcNavigationRouteEstimate route = candidate.RouteEstimate;
+            bool deferredRoute = route.Status == PEGANpcPlanningRouteStatus.Deferred &&
+                candidate.Action is IPEGANpcCausalActionStepEvaluator &&
+                IsNonNegativeFinite(route.RouteLengthMeters) &&
+                IsPositiveFinite(route.EffectiveSpeedMetersPerSecond);
             bool usableRoute = candidate.Contract.RequiresNavigation
-                ? route.Status == PEGANpcPlanningRouteStatus.Complete &&
-                  IsNonNegativeFinite(route.RouteLengthMeters) &&
-                  IsPositiveFinite(route.EffectiveSpeedMetersPerSecond)
+                ? deferredRoute ||
+                  (route.Status == PEGANpcPlanningRouteStatus.Complete &&
+                   IsNonNegativeFinite(route.RouteLengthMeters) &&
+                   IsPositiveFinite(route.EffectiveSpeedMetersPerSecond))
                 : route.Status == PEGANpcPlanningRouteStatus.NotRequired &&
                   route.RouteLengthMeters == 0f && route.EffectiveSpeedMetersPerSecond == 0f;
             return usableRoute &&

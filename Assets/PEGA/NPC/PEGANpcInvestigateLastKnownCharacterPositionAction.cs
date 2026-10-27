@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
+using ImmersiveGames.Goap;
 using PEGA.Actors;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 namespace PEGA.NPC
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Investigate Last Known Target Position")]
-    [RequireComponent(typeof(PEGANpcKnowledgeState))]
-    [RequireComponent(typeof(NavMeshAgent))]
+    [CreateAssetMenu(fileName = "SearchLastKnownPosition", menuName = "PEGA/NPC/Investigation/Search Last Known Position")]
     public sealed class PEGANpcInvestigateLastKnownCharacterPositionAction : PEGANpcNavigationAction,
         IPEGANpcKnowledgeChangeRelevanceProvider,
         IPEGANpcAttemptedTargetProvider
@@ -17,34 +16,39 @@ namespace PEGA.NPC
         private const float PositionDeduplicationToleranceMeters = 0.1f;
         private const float PositionComparisonEpsilonMeters = 0.001f;
 
-        [Header("Local Investigation")]
+        [Header("Search Area")]
         [SerializeField, Min(0.25f)]
-        [Tooltip("Raio planar máximo em torno da última posição conhecida (m). Limita esta Mission; não identifica fronteiras semânticas de sala.")]
-        private float localRadiusMeters = 3f;
+        [FormerlySerializedAs("localRadiusMeters")]
+        [Tooltip("Radius around the last known position to search (m).")]
+        private float searchAreaRadiusMeters = 3f;
 
         [SerializeField, Min(0.1f)]
-        [Tooltip("Maior comprimento permitido para cada rota de investigação (m).")]
-        private float maximumRouteLengthMeters = 6f;
+        [FormerlySerializedAs("maximumRouteLengthMeters")]
+        [Tooltip("Maximum travel distance to a search point (m).")]
+        private float maximumTravelDistanceMeters = 6f;
 
         [SerializeField, Min(0.05f)]
-        [Tooltip("Deslocamento físico mínimo pretendido além do raio de chegada (m). Evita concluir a investigação com apenas alguns centímetros de movimento.")]
-        private float minimumPhysicalRepositionMeters = 0.75f;
+        [FormerlySerializedAs("minimumPhysicalRepositionMeters")]
+        [Tooltip("Minimum physical movement for arrival to count as an investigation (m).")]
+        private float minimumSearchMovementMeters = 0.75f;
 
         [SerializeField, Min(0.05f)]
-        [Tooltip("Espaçamento radial entre amostras locais (m).")]
-        private float sampleSpacingMeters = 1f;
+        [FormerlySerializedAs("sampleSpacingMeters")]
+        [Tooltip("Distance between candidate search points (m).")]
+        private float searchPointSpacingMeters = 1f;
 
-        [SerializeField, Range(4, 16)]
+        [SerializeField, Range(4, 16), HideInInspector]
         [Tooltip("Quantidade determinística de direções amostradas por anel.")]
         private int sampleDirectionsPerRing = 8;
 
-        [SerializeField, Min(0.05f)]
+        [SerializeField, Min(0.05f), HideInInspector]
         [Tooltip("Distância máxima para projetar cada amostra na NavMesh compatível (m).")]
         private float sampleProjectionDistanceMeters = 0.5f;
 
         [SerializeField, Min(0f)]
-        [Tooltip("Diferença vertical máxima entre a evidência e cada ponto/canto da rota (m).")]
-        private float maximumVerticalDifferenceMeters = 0.35f;
+        [FormerlySerializedAs("maximumVerticalDifferenceMeters")]
+        [Tooltip("Maximum height difference between the known position and a search point (m).")]
+        private float maximumHeightDifferenceMeters = 0.35f;
 
         private PEGANpcKnowledgeState _knowledgeState;
         private IPEGANpcLastKnownTargetContinuationProvider _approachAction;
@@ -56,12 +60,41 @@ namespace PEGA.NPC
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachLocalObservationPosition;
 
+        public float LocalRadiusMeters => searchAreaRadiusMeters;
+        public float MaximumVerticalDifferenceMeters => maximumHeightDifferenceMeters;
+        public float MinimumPhysicalRepositionMeters => minimumSearchMovementMeters;
+
         public override PEGANpcActionContract Contract => new PEGANpcActionContract(
             PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition,
             ActionEffectKind,
             PEGANpcPlanningTargetKind.LocalObservationPosition,
             true,
             "NPC began searching Target's last known position.");
+
+        public override PEGANpcCausalStepEvaluationStatus EvaluateCausalStep(
+            PEGANpcPlanningActionCandidate candidate,
+            IGoapHypotheticalStateView stateBeforeStep,
+            PEGANpcCausalPlanningKnowledge knowledge,
+            out PEGANpcNavigationRouteEstimate routeEstimate,
+            out float estimatedSeconds,
+            out string diagnostic)
+        {
+            if (stateBeforeStep != null && stateBeforeStep.ProjectedEffects.Count > 0)
+            {
+                routeEstimate = candidate.RouteEstimate;
+                estimatedSeconds = 0f;
+                diagnostic = "This bounded local investigation Action cannot revalidate its anchor-relative route from the projected position.";
+                return PEGANpcCausalStepEvaluationStatus.Unknown;
+            }
+
+            return base.EvaluateCausalStep(
+                candidate,
+                stateBeforeStep,
+                knowledge,
+                out routeEstimate,
+                out estimatedSeconds,
+                out diagnostic);
+        }
 
         internal bool IsLocalTargetUsable(
             PEGANpcPlanSnapshot plan,
@@ -104,9 +137,9 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (route.RouteLengthMeters > maximumRouteLengthMeters + PositionComparisonEpsilonMeters ||
-                maximumCornerDistanceMeters > localRadiusMeters + PositionComparisonEpsilonMeters ||
-                Math.Abs(plan.TargetPosition.y - continuation.LastKnownPosition.y) > maximumVerticalDifferenceMeters + PositionComparisonEpsilonMeters)
+            if (route.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters ||
+                maximumCornerDistanceMeters > searchAreaRadiusMeters + PositionComparisonEpsilonMeters ||
+                Math.Abs(plan.TargetPosition.y - continuation.LastKnownPosition.y) > maximumHeightDifferenceMeters + PositionComparisonEpsilonMeters)
             {
                 diagnostic = "The selected local Target or its complete route exceeds the configured investigation bounds.";
                 return false;
@@ -152,7 +185,7 @@ namespace PEGA.NPC
 
             NavMeshQueryFilter filter = CreateQueryFilter();
             List<Vector3> projectedPositions = new List<Vector3>();
-            int ringCount = Mathf.CeilToInt(localRadiusMeters / sampleSpacingMeters);
+            int ringCount = Mathf.CeilToInt(searchAreaRadiusMeters / searchPointSpacingMeters);
             int sampleOrdinal = 0;
             int projectionRejected = 0;
             int boundsRejected = 0;
@@ -163,7 +196,7 @@ namespace PEGA.NPC
             string firstRouteDiagnostic = string.Empty;
             for (int ring = 1; ring <= ringCount; ring++)
             {
-                float requestedRadius = Mathf.Min(ring * sampleSpacingMeters, localRadiusMeters);
+                float requestedRadius = Mathf.Min(ring * searchPointSpacingMeters, searchAreaRadiusMeters);
                 for (int direction = 0; direction < sampleDirectionsPerRing; direction++)
                 {
                     int ordinal = sampleOrdinal++;
@@ -227,8 +260,8 @@ namespace PEGA.NPC
                         continue;
                     }
 
-                    if (route.RouteLengthMeters > maximumRouteLengthMeters + PositionComparisonEpsilonMeters ||
-                        maximumCornerDistanceMeters > localRadiusMeters + PositionComparisonEpsilonMeters)
+                    if (route.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters ||
+                        maximumCornerDistanceMeters > searchAreaRadiusMeters + PositionComparisonEpsilonMeters)
                     {
                         routeRejected++;
                         if (string.IsNullOrEmpty(firstRouteDiagnostic))
@@ -395,34 +428,33 @@ namespace PEGA.NPC
             return started;
         }
 
-        protected override void Awake()
+        protected override bool OnRuntimeInitialize(out string diagnostic)
         {
-            base.Awake();
-            _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
-            _approachAction = FindLostContactPursuitProvider();
-            _agent = GetComponent<NavMeshAgent>();
-        }
-
-        private IPEGANpcLastKnownTargetContinuationProvider FindLostContactPursuitProvider()
-        {
-            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
-            for (int index = 0; index < components.Length; index++)
+            if (!base.OnRuntimeInitialize(out diagnostic))
             {
-                if (components[index] is IPEGANpcLastKnownTargetContinuationProvider provider)
-                {
-                    return provider;
-                }
+                return false;
             }
 
-            return null;
+            _knowledgeState = RuntimeContext.KnowledgeState;
+            _approachAction = RuntimeContext.LastKnownTargetContinuationProvider;
+            _agent = RuntimeContext.NavigationAgent;
+            if (_knowledgeState == null || _knowledgeState.gameObject != ActorRoot ||
+                _agent == null || _approachAction == null)
+            {
+                diagnostic = "Last-known investigation requires the Actor's Knowledge State, NavMesh Agent and Approach continuation capability.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
         }
 
-        protected override void OnDisable()
+        protected override void OnRuntimeDisabled()
         {
             _hasExecutionContinuation = false;
             _executionContinuation = default;
             _executionTargetId = default;
-            base.OnDisable();
+            base.OnRuntimeDisabled();
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic)
@@ -452,7 +484,7 @@ namespace PEGA.NPC
             _hasExecutionContinuation &&
             _executionContinuation.IsValid &&
             _executionContinuation.LastKnownPositionReached &&
-            _knowledgeState != null && _knowledgeState.gameObject == gameObject &&
+            _knowledgeState != null && _knowledgeState.gameObject == ActorRoot &&
             _approachAction != null &&
             IsCurrentExecutionTargetWithinOpportunity(_executionTargetId, _executionContinuation) &&
             _approachAction.IsContinuationSupersededByNewRecognition(
@@ -465,7 +497,7 @@ namespace PEGA.NPC
             diagnostic = string.Empty;
             if (!continuation.IsValid ||
                 !continuation.LastKnownPositionReached ||
-                _knowledgeState == null || _knowledgeState.gameObject != gameObject ||
+                _knowledgeState == null || _knowledgeState.gameObject != ActorRoot ||
                 _approachAction == null)
             {
                 diagnostic = "A valid continuation that physically reached the last-known position and this NPC's Knowledge State/Approach Action are required.";
@@ -489,14 +521,14 @@ namespace PEGA.NPC
 
         private bool ValidateConfiguration(out string diagnostic)
         {
-            if (!IsPositiveFinite(localRadiusMeters) ||
-                !IsPositiveFinite(maximumRouteLengthMeters) ||
-                !IsPositiveFinite(minimumPhysicalRepositionMeters) ||
-                !IsPositiveFinite(sampleSpacingMeters) ||
+            if (!IsPositiveFinite(searchAreaRadiusMeters) ||
+                !IsPositiveFinite(maximumTravelDistanceMeters) ||
+                !IsPositiveFinite(minimumSearchMovementMeters) ||
+                !IsPositiveFinite(searchPointSpacingMeters) ||
                 !IsPositiveFinite(sampleProjectionDistanceMeters) ||
-                !IsNonNegativeFinite(maximumVerticalDifferenceMeters) ||
+                !IsNonNegativeFinite(maximumHeightDifferenceMeters) ||
                 sampleDirectionsPerRing < 4 || sampleDirectionsPerRing > 16 ||
-                Mathf.CeilToInt(localRadiusMeters / sampleSpacingMeters) > 32)
+                Mathf.CeilToInt(searchAreaRadiusMeters / searchPointSpacingMeters) > 32)
             {
                 diagnostic = "Investigation bounds and minimum physical reposition must be finite and positive, with 4-16 directions and at most 32 radial rings.";
                 return false;
@@ -548,15 +580,15 @@ namespace PEGA.NPC
                 Vector3 corner = path.corners[index];
                 float cornerDistanceMeters = PlanarDistance(anchor, corner);
                 maximumCornerDistanceMeters = Mathf.Max(maximumCornerDistanceMeters, cornerDistanceMeters);
-                if (cornerDistanceMeters > localRadiusMeters + PositionComparisonEpsilonMeters ||
-                    Mathf.Abs(corner.y - anchor.y) > maximumVerticalDifferenceMeters + PositionComparisonEpsilonMeters)
+                if (cornerDistanceMeters > searchAreaRadiusMeters + PositionComparisonEpsilonMeters ||
+                    Mathf.Abs(corner.y - anchor.y) > maximumHeightDifferenceMeters + PositionComparisonEpsilonMeters)
                 {
                     diagnostic = $"Route corner {index} leaves the configured local radius or vertical band.";
                     return false;
                 }
             }
 
-            if (maximumCornerDistanceMeters > localRadiusMeters + PositionComparisonEpsilonMeters)
+            if (maximumCornerDistanceMeters > searchAreaRadiusMeters + PositionComparisonEpsilonMeters)
             {
                 diagnostic = "The complete route exceeds the local radius around the last-known position.";
                 return false;
@@ -574,7 +606,7 @@ namespace PEGA.NPC
             if (estimate.Status != PEGANpcPlanningRouteStatus.Complete ||
                 estimate.AgentTypeId != _agent.agentTypeID ||
                 estimate.AreaMask != _agent.areaMask ||
-                estimate.RouteLengthMeters > maximumRouteLengthMeters + PositionComparisonEpsilonMeters)
+                estimate.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
                 diagnostic = "The route estimate is incomplete or exceeds the configured route length.";
                 return false;
@@ -585,12 +617,12 @@ namespace PEGA.NPC
 
         private bool IsCandidatePositionWithinBounds(Vector3 anchor, Vector3 position) =>
             IsFinite(position) &&
-            Mathf.Abs(position.y - anchor.y) <= maximumVerticalDifferenceMeters + PositionComparisonEpsilonMeters &&
-            PlanarDistance(anchor, position) <= localRadiusMeters + PositionComparisonEpsilonMeters;
+            Mathf.Abs(position.y - anchor.y) <= maximumHeightDifferenceMeters + PositionComparisonEpsilonMeters &&
+            PlanarDistance(anchor, position) <= searchAreaRadiusMeters + PositionComparisonEpsilonMeters;
 
         private bool RequiresPhysicalReposition(Vector3 targetPosition) =>
-            PlanarDistance(transform.position, targetPosition) >
-            ArrivalRadiusMeters + minimumPhysicalRepositionMeters;
+            PlanarDistance(ActorTransform.position, targetPosition) >
+            ArrivalRadiusMeters + minimumSearchMovementMeters;
 
         private static bool ContainsTarget(
             IReadOnlyCollection<PEGANpcPlanningTargetId> targets,

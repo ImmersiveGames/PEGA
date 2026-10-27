@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using PEGA.Actors;
 using UnityEngine;
 
@@ -42,7 +42,10 @@ namespace PEGA.NPC
         Complete = 0,
         Partial = 10,
         Invalid = 20,
-        NotRequired = 30
+        NotRequired = 30,
+        Unknown = 40,
+        Deferred = 50,
+        Unreachable = 60
     }
 
     public readonly struct PEGANpcPlanningTargetId : IEquatable<PEGANpcPlanningTargetId>,
@@ -503,6 +506,16 @@ namespace PEGA.NPC
                 estimate,
                 intrinsicDurationSeconds);
         }
+
+        internal PEGANpcPlanningActionCandidate WithRouteEstimate(
+            PEGANpcNavigationRouteEstimate routeEstimate) =>
+            new PEGANpcPlanningActionCandidate(
+                Contract,
+                Action,
+                TargetId,
+                SpeedRegime,
+                routeEstimate,
+                IntrinsicDurationSeconds);
     }
 
     /// <summary>
@@ -548,7 +561,7 @@ namespace PEGA.NPC
 
         public bool LastKnownPositionReached { get; }
 
-        internal IPEGAGoapCondition ProgressCondition { get; }
+        internal IGoapCondition ProgressCondition { get; }
 
         public bool IsValid =>
             !string.IsNullOrWhiteSpace(DesireId) &&
@@ -616,7 +629,7 @@ namespace PEGA.NPC
             IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
             IReadOnlyList<PEGANpcPlanningActionCandidate> actionCandidates,
             PEGANpcPlanContinuation? planContinuation = null,
-            IPEGAGoapKnowledgeStateView knowledgeState = null,
+            IGoapKnowledgeStateView knowledgeState = null,
             int causalSearchCandidateEvaluationBudget = 128)
         {
             ValidationMode = validationMode;
@@ -627,7 +640,7 @@ namespace PEGA.NPC
             CausalSearchCandidateEvaluationBudget = causalSearchCandidateEvaluationBudget;
             if (validationMode == PEGANpcPlanningValidationMode.LiveKnowledge &&
                 knowledgeState != null &&
-                knowledgeState.Source == PEGAGoapStateSource.KnowledgeState &&
+                knowledgeState.Source == GoapStateSource.KnowledgeState &&
                 TryValidate(out _))
             {
                 CausalKnowledge = new PEGANpcCausalPlanningKnowledge(
@@ -774,7 +787,7 @@ namespace PEGA.NPC
             string desireName,
             PEGANpcPlanningActionCandidate action,
             PEGANpcPlanningTarget target,
-            IReadOnlyList<IPEGAGoapEffect> causalEffects,
+            IReadOnlyList<IGoapEffect> causalEffects,
             float estimatedSeconds,
             float effectiveDesireWeight,
             float costPreference,
@@ -812,7 +825,7 @@ namespace PEGA.NPC
         public PEGANpcActionEffectKind PredictedEffect { get; }
 
         /// <summary>Declared GOAP Effects for this Action step; execution may confirm a subset only.</summary>
-        public IReadOnlyList<IPEGAGoapEffect> CausalEffects { get; }
+        public IReadOnlyList<IGoapEffect> CausalEffects { get; }
 
         public PEGANpcPlanningTargetId TargetId { get; }
 
@@ -844,15 +857,15 @@ namespace PEGA.NPC
 
         public float MaximumRouteDistanceFromAnchorMeters { get; }
 
-        private static IReadOnlyList<IPEGAGoapEffect> CopyCausalEffects(
-            IReadOnlyList<IPEGAGoapEffect> causalEffects)
+        private static IReadOnlyList<IGoapEffect> CopyCausalEffects(
+            IReadOnlyList<IGoapEffect> causalEffects)
         {
             if (causalEffects == null)
             {
                 throw new ArgumentNullException(nameof(causalEffects));
             }
 
-            IPEGAGoapEffect[] copy = new IPEGAGoapEffect[causalEffects.Count];
+            IGoapEffect[] copy = new IGoapEffect[causalEffects.Count];
             for (int index = 0; index < causalEffects.Count; index++)
             {
                 copy[index] = causalEffects[index] ?? throw new ArgumentException(

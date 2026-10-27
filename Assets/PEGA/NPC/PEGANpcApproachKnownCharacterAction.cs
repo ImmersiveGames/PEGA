@@ -9,8 +9,7 @@ using UnityEngine;
 
 namespace PEGA.NPC
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Approach Known Character")]
+    [CreateAssetMenu(fileName = "ApproachKnownCharacter", menuName = "PEGA/NPC/Movement/Approach Known Character")]
     public sealed class PEGANpcApproachKnownCharacterAction : PEGANpcNavigationAction,
         IPEGANpcLastKnownTargetContinuationProvider,
         IPEGANpcKnowledgeChangeRelevanceProvider
@@ -27,13 +26,10 @@ namespace PEGA.NPC
             true,
             "NPC began approaching a known character.");
 
-        [Header("Known Target")]
-        [SerializeField]
-        [Tooltip("Conhecimento mantido por este NPC.")]
+        [System.NonSerialized]
         private PEGANpcKnowledgeState knowledgeState;
 
-        [SerializeField]
-        [Tooltip("Referência ao Actor cujo conhecimento pode orientar esta Action.")]
+        [System.NonSerialized]
         private ActorOccurrenceReferenceBinding targetReference;
 
         [System.NonSerialized]
@@ -77,27 +73,34 @@ namespace PEGA.NPC
             return _continuationIntentEvents != null && _continuationIntentEvents.Unsubscribe(binding);
         }
 
-        protected override void Awake()
+        protected override bool OnRuntimeInitialize(out string diagnostic)
         {
-            base.Awake();
-            EnsureIntentLoggerInitialized();
-        }
-
-        private void OnEnable()
-        {
-            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            if (!base.OnRuntimeInitialize(out diagnostic))
             {
-                EnsureIntentLoggerInitialized();
-                _intentLog.Warning(
-                    "Last-known target continuation requires this NPC's Knowledge State on the same root.",
-                    LogFields.Field("actorRoot", gameObject.name));
-                return;
+                return false;
             }
 
-            _knowledgeChangeBinding ??= knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
+            knowledgeState = RuntimeContext.KnowledgeState;
+            targetReference = RuntimeContext.ActorReference;
+            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot ||
+                targetReference == null || targetReference.gameObject != ActorRoot)
+            {
+                diagnostic = "Approach Known Character requires the Actor's Knowledge State and occurrence reference.";
+                return false;
+            }
+
+            EnsureIntentLoggerInitialized();
+            diagnostic = string.Empty;
+            return true;
         }
 
-        protected override void OnDisable()
+        protected override void OnRuntimeEnabled()
+        {
+            _knowledgeChangeBinding ??= knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
+            base.OnRuntimeEnabled();
+        }
+
+        protected override void OnRuntimeDisabled()
         {
             if (knowledgeState != null && _knowledgeChangeBinding != null)
             {
@@ -105,10 +108,10 @@ namespace PEGA.NPC
                 _knowledgeChangeBinding = null;
             }
 
-            base.OnDisable();
+            base.OnRuntimeDisabled();
         }
 
-        protected override void OnDestroy()
+        protected override void OnRuntimeDestroyed()
         {
             if (knowledgeState != null && _knowledgeChangeBinding != null)
             {
@@ -118,7 +121,7 @@ namespace PEGA.NPC
 
             _continuationIntentEvents?.Clear();
             _continuationIntentEvents = null;
-            base.OnDestroy();
+            base.OnRuntimeDestroyed();
         }
 
         public bool TryGetKnownTargetPosition(out Vector3 position, out string diagnostic)
@@ -243,7 +246,7 @@ namespace PEGA.NPC
                 EnsureIntentLoggerInitialized();
                 _intentLog.Warning(
                     "Lost-contact pursuit intent was not published.",
-                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("actorRoot", ActorRoot.name),
                     LogFields.Field("subjectActorId", change.SubjectActorId.Value),
                     LogFields.Field("observationTimeSeconds", change.ObservationTimeSeconds),
                     LogFields.Field("diagnostic", diagnostic));
@@ -257,7 +260,7 @@ namespace PEGA.NPC
             EnsureIntentLoggerInitialized();
             _intentLog.Debug(
                 "NPC requested continuation of target pursuit at the last Perception-backed position.",
-                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("actorRoot", ActorRoot.name),
                 LogFields.Field("subjectActorId", intent.SubjectActorId),
                 LogFields.Field("actionId", intent.ActionId),
                 LogFields.Field("targetPosition", intent.LastKnownPosition),
@@ -289,7 +292,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires this NPC's PEGANpcKnowledgeState on the same root.";
                 return false;
@@ -358,8 +361,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!TryEstimateNavigationRoute(
-                    knownPosition,
+            if (!TryDeferNavigationRoute(
                     PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
                     out PEGANpcNavigationRouteEstimate routeEstimate,
                     out diagnostic))
@@ -399,7 +401,7 @@ namespace PEGA.NPC
                 if (!currentTargetActorId.IsValid ||
                     continuation.LastKnownApproachAttempted || continuation.LastKnownPositionReached ||
                     currentTargetActorId != continuation.SubjectActorId ||
-                    PlanarDistance(transform.position, continuation.LastKnownPosition) <= ArrivalRadiusMeters)
+                    PlanarDistance(ActorTransform.position, continuation.LastKnownPosition) <= ArrivalRadiusMeters)
                 {
                     diagnostic = string.Empty;
                     return true;
@@ -606,13 +608,13 @@ namespace PEGA.NPC
         {
             subjectActorId = default;
             diagnostic = string.Empty;
-            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires this NPC's PEGANpcKnowledgeState on the same root.";
                 return false;
             }
 
-            if (targetReference == null || targetReference.gameObject != gameObject)
+            if (targetReference == null || targetReference.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires an explicit target Actor occurrence reference on the same root.";
                 return false;
@@ -645,7 +647,7 @@ namespace PEGA.NPC
         {
             _intentLog ??= PEGALogging.CreateScopedLogger<PEGANpcApproachKnownCharacterAction>(
                 IntentLogCategory,
-                gameObject.name);
+                ActorRoot.name);
         }
 
         private void LogIntentSubscriberFailure(
@@ -657,7 +659,7 @@ namespace PEGA.NPC
             _intentLog.Error(
                 "Lost-contact pursuit intent subscriber failed; other subscribers remain isolated.",
                 exception,
-                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("actorRoot", ActorRoot.name),
                 LogFields.Field("subscriber", handler.Method.DeclaringType?.FullName),
                 LogFields.Field("subjectActorId", intentEvent.Intent.SubjectActorId),
                 LogFields.Field("targetPosition", intentEvent.Intent.LastKnownPosition));

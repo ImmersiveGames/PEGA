@@ -1,5 +1,5 @@
 using System;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -25,22 +25,22 @@ namespace PEGA.NPC
         [Tooltip("Em resultados observados, exige contato visual atual do Actor associado ao Target; projeções causais continuam avaliando somente a chegada prevista.")]
         private bool requireCurrentCharacterContactWhenObserved;
 
-        public override PEGAGoapTruthValue Evaluate(IPEGAGoapStateView state)
+        public override GoapTruthValue Evaluate(IGoapStateView state)
         {
             if (state == null)
             {
                 throw new ArgumentNullException(nameof(state));
             }
 
-            if (!(state is IPEGAGoapEffectStateView effectState))
+            if (!(state is IGoapEffectStateView effectState))
             {
-                return PEGAGoapTruthValue.Unknown;
+                return GoapTruthValue.Unknown;
             }
 
             string requiredKind = PEGANpcPlanningTargetKind.FromStableText(targetKind).StableText;
             if (string.IsNullOrWhiteSpace(requiredKind) || !Enum.IsDefined(typeof(PEGANpcPlanningTargetIdentityKind), targetIdentityKind))
             {
-                return PEGAGoapTruthValue.Unknown;
+                return GoapTruthValue.Unknown;
             }
 
             for (int index = 0; index < effectState.Effects.Count; index++)
@@ -50,26 +50,26 @@ namespace PEGA.NPC
                     reachedEffect.TargetId.IdentityKind == targetIdentityKind)
                 {
                     if (requireCurrentCharacterContactWhenObserved &&
-                        state.Source == PEGAGoapStateSource.WorldState)
+                        state.Source == GoapStateSource.WorldState)
                     {
                         return EvaluateObservedCharacterContact(state, reachedEffect.TargetId.KnownActorId);
                     }
 
-                    return PEGAGoapTruthValue.True;
+                    return GoapTruthValue.True;
                 }
             }
 
             // Effect views may describe only one Action or one hypothetical branch, so absence is not False.
-            return PEGAGoapTruthValue.Unknown;
+            return GoapTruthValue.Unknown;
         }
 
-        private static PEGAGoapTruthValue EvaluateObservedCharacterContact(
-            IPEGAGoapStateView state,
+        private static GoapTruthValue EvaluateObservedCharacterContact(
+            IGoapStateView state,
             Immersive.Framework.Actors.ActorId subjectActorId)
         {
-            if (!(state is IPEGAGoapObservedStateView observedState) || !subjectActorId.IsValid)
+            if (!(state is IGoapObservedStateView observedState) || !subjectActorId.IsValid)
             {
-                return PEGAGoapTruthValue.Unknown;
+                return GoapTruthValue.Unknown;
             }
 
             for (int index = 0; index < observedState.KnowledgeState.Capabilities.Count; index++)
@@ -83,14 +83,14 @@ namespace PEGA.NPC
                 if (visualContact.TryGetValue(out bool hasVisualContact))
                 {
                     return hasVisualContact
-                        ? PEGAGoapTruthValue.True
-                        : PEGAGoapTruthValue.False;
+                        ? GoapTruthValue.True
+                        : GoapTruthValue.False;
                 }
 
-                return PEGAGoapTruthValue.Unknown;
+                return GoapTruthValue.Unknown;
             }
 
-            return PEGAGoapTruthValue.Unknown;
+            return GoapTruthValue.Unknown;
         }
 
         public override bool TryValidate(out string diagnostic)

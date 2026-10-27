@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Framework.PlayerParticipation;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -248,8 +248,8 @@ namespace PEGA.NPC
     }
 
     /// <summary>
-    /// A capability attached to one Actor root. Providers offer candidates and own Action-specific validation and execution;
-    /// the autonomy component only ranks plans, dispatches them, and applies observed Effects to Desire State.
+    /// An Actor-local runtime capability created from a shared Action definition. Providers offer candidates and own
+    /// Action-specific validation and execution; Autonomy ranks plans, dispatches them, and applies observed Effects.
     /// </summary>
     public interface IPEGANpcActionProvider : IPEGANpcCausalActionDefinitionProvider
     {
@@ -289,13 +289,35 @@ namespace PEGA.NPC
         bool TryCreateCausalActionDefinition(
             PEGANpcPlanningActionCandidate candidate,
             PEGANpcGoapKnownTarget target,
-            out PEGAGoapActionDefinition actionDefinition,
+            out GoapActionDefinition actionDefinition,
             out string diagnostic);
 
         bool TryGetObservedCausalEffects(
             PEGANpcPlanSnapshot plan,
             PEGANpcObservedActionEffect observedEffect,
-            out IReadOnlyList<IPEGAGoapEffect> observedEffects,
+            out IReadOnlyList<IGoapEffect> observedEffects,
+            out string diagnostic);
+    }
+
+    public enum PEGANpcCausalStepEvaluationStatus
+    {
+        Available = 0,
+        Unavailable = 10,
+        Unknown = 20
+    }
+
+    /// <summary>
+    /// Evaluates one Action/Target application against the hypothetical state immediately before that step.
+    /// Unknown is explicit and cannot be used as an available Action or as a cost estimate.
+    /// </summary>
+    public interface IPEGANpcCausalActionStepEvaluator
+    {
+        PEGANpcCausalStepEvaluationStatus EvaluateCausalStep(
+            PEGANpcPlanningActionCandidate candidate,
+            IGoapHypotheticalStateView stateBeforeStep,
+            PEGANpcCausalPlanningKnowledge knowledge,
+            out PEGANpcNavigationRouteEstimate routeEstimate,
+            out float estimatedSeconds,
             out string diagnostic);
     }
 

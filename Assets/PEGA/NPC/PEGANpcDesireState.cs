@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
-using PEGA.GOAP;
+using ImmersiveGames.Goap;
 using PEGA.Diagnostics;
 using UnityEngine;
 
@@ -92,11 +92,10 @@ namespace PEGA.NPC
         public int UpdatedCount => UpdatedValues.Count;
     }
 
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Desire State")]
-    public sealed class PEGANpcDesireState : MonoBehaviour
+    public sealed class PEGANpcDesireState
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Desires";
+        private readonly string _actorRootName;
 
         [NonSerialized]
         private Dictionary<string, Entry> _entries;
@@ -110,8 +109,9 @@ namespace PEGA.NPC
         [NonSerialized]
         private long _highestRecordedRequestId;
 
-        private void Awake()
+        internal PEGANpcDesireState(string actorRootName)
         {
+            _actorRootName = string.IsNullOrWhiteSpace(actorRootName) ? "NPC" : actorRootName;
             EnsureEntriesInitialized();
             EnsureLoggerInitialized();
         }
@@ -156,7 +156,7 @@ namespace PEGA.NPC
 
         public PEGANpcDesireSatisfactionUpdate RecordCompletedAction(
             PEGANpcObservedActionEffect observedEffect,
-            IPEGAGoapObservedStateView observedState,
+            IGoapObservedStateView observedState,
             PEGANpcDesireContextDefinition activeContext)
         {
             if (observedState == null)
@@ -169,9 +169,9 @@ namespace PEGA.NPC
                 throw new ArgumentNullException(nameof(activeContext));
             }
 
-            if (observedState.Source != PEGAGoapStateSource.WorldState ||
+            if (observedState.Source != GoapStateSource.WorldState ||
                 observedState.KnowledgeState == null ||
-                observedState.KnowledgeState.Source != PEGAGoapStateSource.KnowledgeState)
+                observedState.KnowledgeState.Source != GoapStateSource.KnowledgeState)
             {
                 throw new ArgumentException(
                     "Desire satisfaction requires an observed World State outcome and its separate Knowledge State.",
@@ -206,7 +206,7 @@ namespace PEGA.NPC
                         PEGANpcDesireConfiguration configuration = configurations[index];
                         PEGANpcDesireDefinition definition = configuration.Definition;
                         PEGANpcDesireSatisfactionSnapshot current = GetSatisfaction(definition.DesireId);
-                        if (definition.CreateGoal().Evaluate(observedState) != PEGAGoapTruthValue.True ||
+                        if (definition.CreateGoal().Evaluate(observedState) != GoapTruthValue.True ||
                             !configuration.CanRecordSatisfaction(current))
                         {
                             continue;
@@ -234,7 +234,7 @@ namespace PEGA.NPC
             PEGANpcDesireSatisfactionUpdate result = new PEGANpcDesireSatisfactionUpdate(updated);
             _log.Debug(
                 "Completed NPC Action evaluated against active Goal conditions.",
-                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("actorRoot", _actorRootName),
                 LogFields.Field("context", activeContext.Context),
                 LogFields.Field("effect", observedEffect.Kind),
                 LogFields.Field("effectTargetId", observedEffect.TargetId),
@@ -275,7 +275,7 @@ namespace PEGA.NPC
 
             _log = PEGALogging.CreateScopedLogger<PEGANpcDesireState>(
                 LogCategory,
-                gameObject.name);
+                _actorRootName);
             _loggerInitialized = true;
         }
 

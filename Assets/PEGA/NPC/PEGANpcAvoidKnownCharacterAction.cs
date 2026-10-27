@@ -3,33 +3,33 @@ using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using PEGA.Actors;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PEGA.NPC
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu("PEGA/NPC/Actions/Avoid Known Character")]
+    [CreateAssetMenu(fileName = "MoveAwayFromCharacter", menuName = "PEGA/NPC/Movement/Move Away from Character")]
     public sealed class PEGANpcAvoidKnownCharacterAction : PEGANpcNavigationAction,
         IPEGANpcKnowledgeChangeRelevanceProvider
     {
         private const float MinimumSeparationMeters = 0.1f;
+        private const float SeparationTargetPrecisionMarginMeters = 0.001f;
 
-        [Header("Known Character")]
-        [SerializeField]
-        [Tooltip("Knowledge State mantido por este NPC.")]
+        [System.NonSerialized]
         private PEGANpcKnowledgeState knowledgeState;
 
-        [SerializeField]
-        [Tooltip("Referência ao Actor cuja posição conhecida pode orientar esta Action.")]
+        [System.NonSerialized]
         private ActorOccurrenceReferenceBinding characterReference;
 
-        [Header("Gameplay")]
+        [Header("Movement")]
         [SerializeField, Min(MinimumSeparationMeters)]
-        [Tooltip("Distância planar mínima desejada entre o NPC e a última posição conhecida do alvo (m); superá-la não desativa a Action.")]
-        private float safeSeparationDistanceMeters = 5f;
+        [FormerlySerializedAs("safeSeparationDistanceMeters")]
+        [Tooltip("Minimum desired distance from the character's last known position (m).")]
+        private float minimumSafeDistanceMeters = 5f;
 
         [SerializeField, Min(MinimumSeparationMeters)]
-        [Tooltip("Acréscimo de separação que o NPC tenta obter em cada execução, além da distância atual (m).")]
-        private float retreatStepDistanceMeters = 1f;
+        [FormerlySerializedAs("retreatStepDistanceMeters")]
+        [Tooltip("Additional distance the NPC attempts to gain on each move (m).")]
+        private float additionalDistancePerMoveMeters = 1f;
 
         protected override PEGANpcActionEffectKind ActionEffectKind =>
             PEGANpcActionEffectKind.ReachSafeSeparationPosition;
@@ -41,7 +41,27 @@ namespace PEGA.NPC
             true,
             "NPC began moving to maintain safe separation from a known character.");
 
-        public float SafeSeparationDistanceMeters => safeSeparationDistanceMeters;
+        public float SafeSeparationDistanceMeters => minimumSafeDistanceMeters;
+
+        protected override bool OnRuntimeInitialize(out string diagnostic)
+        {
+            if (!base.OnRuntimeInitialize(out diagnostic))
+            {
+                return false;
+            }
+
+            knowledgeState = RuntimeContext.KnowledgeState;
+            characterReference = RuntimeContext.ActorReference;
+            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot ||
+                characterReference == null || characterReference.gameObject != ActorRoot)
+            {
+                diagnostic = "Avoid Known Character requires the Actor's Knowledge State and occurrence reference.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
 
         public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
         {
@@ -88,12 +108,11 @@ namespace PEGA.NPC
 
             string routeDiagnostic = string.Empty;
             if (!TryCreateSafeSeparationPosition(
-                    transform.position,
+                    ActorTransform.position,
                     knownPosition,
                     out Vector3 destination,
                     out diagnostic) ||
-                !TryEstimateNavigationRoute(
-                    destination,
+                !TryDeferNavigationRoute(
                     PEGAActorMovementSpeedRegime.Pursuit,
                     out PEGANpcNavigationRouteEstimate routeEstimate,
                     out routeDiagnostic))
@@ -160,7 +179,7 @@ namespace PEGA.NPC
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 plan.TargetId != PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
                 PlanarDistance(plan.TargetPosition, knownCharacterPosition) <
-                safeSeparationDistanceMeters + ArrivalRadiusMeters)
+                minimumSafeDistanceMeters + ArrivalRadiusMeters)
             {
                 diagnostic = string.IsNullOrEmpty(diagnostic)
                     ? "The separation plan no longer has a valid known target or safe destination."
@@ -192,7 +211,7 @@ namespace PEGA.NPC
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 plan.TargetId != PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
                 !TryCreateSafeSeparationPosition(
-                    transform.position,
+                    ActorTransform.position,
                     knownCharacterPosition,
                     out Vector3 expectedDestination,
                     out diagnostic) ||
@@ -220,7 +239,7 @@ namespace PEGA.NPC
                        out Vector3 knownCharacterPosition,
                        out _,
                        out _) &&
-                   PlanarDistance(actorPosition, knownCharacterPosition) >= safeSeparationDistanceMeters;
+                   PlanarDistance(actorPosition, knownCharacterPosition) >= minimumSafeDistanceMeters;
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic) =>
@@ -239,10 +258,10 @@ namespace PEGA.NPC
                 return false;
             }
 
-            float observedSeparation = PlanarDistance(transform.position, knownCharacterPosition);
-            if (observedSeparation < safeSeparationDistanceMeters)
+            float observedSeparation = PlanarDistance(ActorTransform.position, knownCharacterPosition);
+            if (observedSeparation < minimumSafeDistanceMeters)
             {
-                diagnostic = $"Observed separation {observedSeparation:0.##} m is below the configured safe distance of {safeSeparationDistanceMeters:0.##} m.";
+                diagnostic = $"Observed separation {observedSeparation:0.##} m is below the configured safe distance of {minimumSafeDistanceMeters:0.##} m.";
                 return false;
             }
 
@@ -253,20 +272,20 @@ namespace PEGA.NPC
         private bool TryValidateConfiguration(out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (knowledgeState == null || knowledgeState.gameObject != gameObject)
+            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires this NPC's Knowledge State on the same root.";
                 return false;
             }
 
-            if (characterReference == null || characterReference.gameObject != gameObject)
+            if (characterReference == null || characterReference.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires an explicit target Actor occurrence reference on the same root.";
                 return false;
             }
 
-            if (!IsPositiveFinite(safeSeparationDistanceMeters) ||
-                !IsPositiveFinite(retreatStepDistanceMeters))
+            if (!IsPositiveFinite(minimumSafeDistanceMeters) ||
+                !IsPositiveFinite(additionalDistancePerMoveMeters))
             {
                 diagnostic = "Safe separation and retreat step distances must be finite and greater than zero.";
                 return false;
@@ -351,7 +370,7 @@ namespace PEGA.NPC
             destination = default;
             diagnostic = string.Empty;
             if (!IsFinite(actorPosition) || !IsFinite(knownCharacterPosition) ||
-                !IsPositiveFinite(safeSeparationDistanceMeters) ||
+                !IsPositiveFinite(minimumSafeDistanceMeters) ||
                 !IsNonNegativeFinite(ArrivalRadiusMeters))
             {
                 diagnostic = "A finite Actor position, known target position and positive safe separation distance are required.";
@@ -362,7 +381,7 @@ namespace PEGA.NPC
             awayDirection.y = 0f;
             if (awayDirection.sqrMagnitude <= 0.000001f)
             {
-                awayDirection = transform.forward;
+                awayDirection = ActorTransform.forward;
                 awayDirection.y = 0f;
                 if (awayDirection.sqrMagnitude <= 0.000001f)
                 {
@@ -378,27 +397,15 @@ namespace PEGA.NPC
                 return false;
             }
 
-            float minimumTargetSeparation = safeSeparationDistanceMeters + ArrivalRadiusMeters;
+            float minimumTargetSeparation = minimumSafeDistanceMeters +
+                ArrivalRadiusMeters + SeparationTargetPrecisionMarginMeters;
             float retreatTargetSeparation = currentSeparation +
-                retreatStepDistanceMeters + ArrivalRadiusMeters;
+                additionalDistancePerMoveMeters + ArrivalRadiusMeters;
             float targetSeparation = Mathf.Max(minimumTargetSeparation, retreatTargetSeparation);
             destination = knownCharacterPosition + awayDirection * targetSeparation;
             destination.y = actorPosition.y;
             return IsFinite(destination);
         }
-
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            if (!TryGetKnownCharacterEvidence(out _, out Vector3 knownPosition, out _, out _))
-            {
-                return;
-            }
-
-            UnityEditor.Handles.color = new Color(1f, 0.65f, 0.1f, 0.9f);
-            UnityEditor.Handles.DrawWireDisc(knownPosition, Vector3.up, safeSeparationDistanceMeters);
-        }
-#endif
 
         private static float PlanarDistance(Vector3 left, Vector3 right)
         {
