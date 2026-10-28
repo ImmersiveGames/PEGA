@@ -5,20 +5,20 @@ using UnityEngine;
 namespace PEGA.NPC
 {
     [CreateAssetMenu(
-        fileName = "PEGANpcDesireDefinition",
+        fileName = "New Desire Definition",
         menuName = "PEGA/NPC/Desire Definition")]
     public sealed class PEGANpcDesireDefinition : ScriptableObject
     {
         [SerializeField]
-        [Tooltip("Identificador estável PEGA usado para compor este Desejo e localizar sua satisfação individual.")]
+        [Tooltip("Stable internal ID used to track this Desire. Keep it unchanged when editing an existing definition.")]
         private string desireId;
 
         [SerializeField]
-        [Tooltip("Nome legível deste Desejo para diagnóstico e configuração.")]
+        [Tooltip("Designer-facing name for this motivation.")]
         private string displayName;
 
         [SerializeField]
-        [Tooltip("Condição GOAP componível que descreve o estado desejado, independente das Actions disponíveis.")]
+        [Tooltip("Existing success condition that defines when this Desire is fulfilled, independently of the available behaviors.")]
         private PEGANpcGoapConditionAsset desiredGoalCondition;
 
         public string DesireId => desireId;

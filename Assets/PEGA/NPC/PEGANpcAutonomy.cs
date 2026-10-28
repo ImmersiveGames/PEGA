@@ -24,12 +24,12 @@ namespace PEGA.NPC
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
         [SerializeField]
-        [Tooltip("Desires and priorities this NPC can pursue.")]
+        [Tooltip("Shared Desire Profile used by this NPC. Changes to the Profile affect every NPC that references it.")]
         private PEGANpcDesireProfile desireProfile;
 
         [SerializeField]
         [FormerlySerializedAs("actionDefinitions")]
-        [Tooltip("Behaviors this NPC can use to pursue its desires.")]
+        [Tooltip("Capabilities this NPC can use to pursue its Desires. Adding a behavior does not add a Desire; changes to a shared behavior asset affect every NPC that references it.")]
         private PEGANpcActionDefinitionAsset[] availableBehaviors = Array.Empty<PEGANpcActionDefinitionAsset>();
 
         [SerializeField, Min(1), HideInInspector]

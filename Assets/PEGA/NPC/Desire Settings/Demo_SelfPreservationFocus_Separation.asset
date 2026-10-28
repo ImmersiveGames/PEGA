@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: add1ef004d2b4c10afde7d813f8a3119, type: 3}
-  m_Name: DemoSelfPreservationPriority_RickPursuit
+  m_Name: Demo_SelfPreservationFocus_Separation
   m_EditorClassIdentifier: 
-  definition: {fileID: 11400000, guid: a009b66941a64e23a70377e22c040b03, type: 2}
+  definition: {fileID: 11400000, guid: f07ecc08083d4d3cba15b7471a266253, type: 2}
   enabledForContext: 1
-  baseWeight: 0.5
+  baseWeight: 4
   satisfactionGain: 1
   maximumSatisfaction: 1
   satisfactionWeightModifier: 0

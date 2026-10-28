@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: KnownExitEscape
   m_EditorClassIdentifier: 
   desireId: n91-normal-known-gang-escape-n05
-  displayName: "Escapar por sa\xEDda conhecida (N05 provis\xF3rio)"
+  displayName: Escapar por sa\xEDda conhecida
   desiredGoalCondition: {fileID: 11400000, guid: 84056348a0444ab6a8bdf74a0afce2fe, type: 2}

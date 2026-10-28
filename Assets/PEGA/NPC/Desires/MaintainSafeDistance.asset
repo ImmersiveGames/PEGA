@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: MaintainSafeDistance
   m_EditorClassIdentifier: 
   desireId: n91-normal-known-character-separation-n06
-  displayName: "Manter dist\xE2ncia segura de personagem conhecido (N06 provis\xF3rio)"
+  displayName: Manter dist\xE2ncia segura de personagem conhecido
   desiredGoalCondition: {fileID: 11400000, guid: 8c43901f0d3c488abc1163a45842cfaa, type: 2}

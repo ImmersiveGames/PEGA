@@ -160,7 +160,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
-      value: Larapio NPC Demonstrator (1)
+      value: Larapio NPC - Pursuit Demo
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -560,7 +560,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
-      value: Larapio NPC Demonstrator
+      value: Larapio NPC - Self-Preservation Demo
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive

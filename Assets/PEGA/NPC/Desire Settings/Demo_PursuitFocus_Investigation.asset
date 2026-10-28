@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: add1ef004d2b4c10afde7d813f8a3119, type: 3}
-  m_Name: DemoPursuitPriority_RickPursuit
+  m_Name: Demo_PursuitFocus_Investigation
   m_EditorClassIdentifier: 
-  definition: {fileID: 11400000, guid: a009b66941a64e23a70377e22c040b03, type: 2}
+  definition: {fileID: 11400000, guid: ddb5a007d54e4bfabbff1336f84a2429, type: 2}
   enabledForContext: 1
   baseWeight: 4
   satisfactionGain: 1

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: PursueRick
   m_EditorClassIdentifier: 
   desireId: n91-normal-known-rick-pursuit-n01
-  displayName: "Perseguir Rick reconhecido (N01 provis\xF3rio)"
+  displayName: Perseguir Rick
   desiredGoalCondition: {fileID: 11400000, guid: 67afb15643a547a4ba98a92299cff95a, type: 2}
