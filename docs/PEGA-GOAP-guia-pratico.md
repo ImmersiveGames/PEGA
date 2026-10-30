@@ -128,6 +128,23 @@ O caminho completo da missão usa a inicialização do Immersive Framework. No U
 5. Se o resultado não aparecer, pare o Play Mode e confira primeiro `Desire Profile`, `Available Behaviors`, conhecimento/percepção e se existe um alvo válido. A janela **Window > General > Console** pode mostrar erros ou avisos. A ausência de mensagens na Console não comprova, sozinha, que o NPC executou o comportamento esperado.
 6. Ajuste uma configuração por vez, salve e repita o mesmo cenário para comparar.
 
+### Entender os Gizmos de percepção e investigação
+
+Na janela **Scene**, os desenhos são auxiliares de desenvolvimento, não objetos físicos nem áreas que o GOAP necessariamente esteja usando. As cores e os rótulos ajudam a distinguir **alcance dos sensores**, **regiões configuradas para busca** e **evidências de execução**:
+
+| O que aparece | Significado para o designer | Quando/onde aparece |
+|---|---|---|
+| **Círculo azul grande** centrado no NPC | Alcance da **percepção radial**, que detecta presença sem identificar automaticamente o personagem. | Geometria do sensor; acompanha o NPC. |
+| **Cone amarelo grande** saindo do NPC | **Campo de visão**: alcance, direção e ângulo do sensor visual. | Geometria do sensor; acompanha a orientação do NPC. |
+| **Cilindro azul-claro** com o rótulo de área local | Limite da **investigação da última posição conhecida** de um personagem. Não é um segundo sensor nem um marcador fixo do Player. | Se há evidência válida de uma posição anteriormente observada e o contato visual foi perdido, fica ancorado nessa posição; caso contrário, mostra uma **prévia** ancorada no NPC. |
+| **Cilindro amarelo/alaranjado menor** com o rótulo de busca radial | Limite da **investigação de presença radial não identificada**, dentro do qual podem ser propostos pontos de observação. Não revela a posição real do alvo. | Quando há presença radial conhecida, usa a posição do NPC registrada no momento da observação; sem essa evidência, mostra uma **prévia** ancorada no NPC. |
+
+Os **pequenos círculos amarelos** ao redor da região de busca radial representam amostras possíveis de investigação. Os **círculos perto dos pés do NPC**, rotulados como *Deslocamento físico mínimo* ou *Distância mínima do destino local*, representam limites usados para evitar destinos próximos demais, combinando o raio de chegada com o deslocamento mínimo configurado. Quando uma dessas Actions de investigação está efetivamente em execução, um **pequeno círculo verde no destino** identifica o alvo escolhido pelo GOAP. Um círculo alaranjado adicional pode representar a distância de separação segura em torno da última posição conhecida de um personagem.
+
+**Como interpretar:** os volumes de investigação aparecem ao selecionar um NPC com o comportamento correspondente disponível, inclusive como **prévia** antes de ele investigar qualquer coisa. Sua presença **não comprova** que a Action tenha sido selecionada ou iniciada. Já o destino verde exige uma Action de investigação em execução. A linha que liga o NPC ao alvo, acompanhada de um rótulo como *Target: contato visual* ou *Target: fora da percepção*, representa a observação mais recente do sensor, não um destino do GOAP.
+
+Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conforme **Draw Perception Gizmos** e **Draw Gizmos When Unselected** no componente **Perception Source**. As prévias das duas investigações são desenhadas quando o **Autonomy** do NPC está selecionado. Para reduzir a sobreposição na Scene, selecione outro objeto ou desative **Gizmos** na janela Scene; isso não altera o comportamento do NPC.
+
 ## 8. Limitações atuais
 
 - O contexto disponível é somente `Normal`. Um Profile não adiciona contextos novos apenas por ser editado no Inspector.
