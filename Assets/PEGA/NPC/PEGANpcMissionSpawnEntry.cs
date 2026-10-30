@@ -28,7 +28,7 @@ namespace PEGA.NPC
             PEGANpcMissionSpawnEntryOutcome outcome,
             GameObject actorRoot,
             string actorId,
-            bool gangMembershipBoundBeforeNavigation,
+            bool gangMembershipConfirmedBeforeNavigation,
             bool navigationStarted,
             bool navigationSnapshotAvailable,
             PEGANpcNavigationSnapshot navigation,
@@ -45,7 +45,7 @@ namespace PEGA.NPC
             Outcome = outcome;
             ActorRoot = actorRoot;
             ActorId = actorId ?? string.Empty;
-            GangMembershipBoundBeforeNavigation = gangMembershipBoundBeforeNavigation;
+            GangMembershipConfirmedBeforeNavigation = gangMembershipConfirmedBeforeNavigation;
             NavigationStarted = navigationStarted;
             NavigationSnapshotAvailable = navigationSnapshotAvailable;
             Navigation = navigation;
@@ -63,7 +63,7 @@ namespace PEGA.NPC
         public PEGANpcMissionSpawnEntryOutcome Outcome { get; }
         public GameObject ActorRoot { get; }
         public string ActorId { get; }
-        public bool GangMembershipBoundBeforeNavigation { get; }
+        public bool GangMembershipConfirmedBeforeNavigation { get; }
         public bool NavigationStarted { get; }
         public bool NavigationSnapshotAvailable { get; }
         public PEGANpcNavigationSnapshot Navigation { get; }
@@ -192,7 +192,7 @@ namespace PEGA.NPC
         private bool _navigationSnapshotAvailable;
 
         [NonSerialized]
-        private bool _gangMembershipBoundBeforeNavigation;
+        private bool _gangMembershipConfirmedBeforeNavigation;
 
         [NonSerialized]
         private bool _navigationStarted;
@@ -231,9 +231,54 @@ namespace PEGA.NPC
         protected override void OnActivityContentEntered(ActivityContentLifecycleContext context)
         {
             EnsureLoggerInitialized();
+
+            if (gangKnowledgeState == null)
+            {
+                _log.Error(
+                    "Mission Activity content entered without its PEGA Gang knowledge state.",
+                    LogFields.Field("activity", context.ActivityName));
+                return;
+            }
+
+            if (!gangKnowledgeState.TryEnsureAuthorizedGroupsLive(
+                    out int groupCount,
+                    out int createdGroupCount,
+                    out string groupDiagnostic))
+            {
+                _log.Error(
+                    "Mission Activity could not materialize the Actor Groups authorized for Gang knowledge.",
+                    LogFields.Field("activity", context.ActivityName),
+                    LogFields.Field("diagnostic", groupDiagnostic));
+                return;
+            }
+
+            if (context.ContentRoot == null)
+            {
+                _log.Error(
+                    "Mission Activity could not register its authored Gang members.",
+                    LogFields.Field("activity", context.ActivityName),
+                    LogFields.Field("diagnostic", "The Framework did not provide an Activity content root."));
+                return;
+            }
+
+            if (!gangKnowledgeState.TryRegisterSceneMembers(
+                    context.ContentRoot.scene,
+                    out int registeredMemberCount,
+                    out string membershipDiagnostic))
+            {
+                _log.Error(
+                    "Mission Activity could not register its authored Gang members.",
+                    LogFields.Field("activity", context.ActivityName),
+                    LogFields.Field("diagnostic", membershipDiagnostic));
+                return;
+            }
+
             _log.Debug(
-                "Mission Activity content entered; Spawn Point ingress is waiting for an explicit recipe request.",
+                "Mission Activity content entered; authorized Actor Groups are live and authored Gang members are registered. Spawn Point ingress is still waiting for an explicit recipe request.",
                 LogFields.Field("activity", context.ActivityName),
+                LogFields.Field("groupCount", groupCount),
+                LogFields.Field("createdGroupCount", createdGroupCount),
+                LogFields.Field("registeredSceneMemberCount", registeredMemberCount),
                 LogFields.Field("automaticIngressStarted", false));
         }
 
@@ -364,19 +409,27 @@ namespace PEGA.NPC
                 yield break;
             }
 
-            _gangMembershipBoundBeforeNavigation =
-                membership != null && membership.GangKnowledgeState == gangKnowledgeState;
             _physicalStartPosition = _spawnedActor.transform.position;
             _stagingRoot.SetActive(true);
             _spawnedActor.transform.SetParent(transform, true);
             Destroy(_stagingRoot);
             _stagingRoot = null;
 
-            if (!_gangMembershipBoundBeforeNavigation)
+            bool isFrameworkMember = false;
+            membershipDiagnostic = string.Empty;
+            bool membershipQuerySucceeded = membership != null &&
+                gangKnowledgeState.TryIsMember(
+                    _spawnedActor,
+                    out isFrameworkMember,
+                    out membershipDiagnostic);
+            _gangMembershipConfirmedBeforeNavigation = membershipQuerySucceeded && isFrameworkMember;
+            if (!_gangMembershipConfirmedBeforeNavigation)
             {
                 Finish(
                     PEGANpcMissionSpawnEntryOutcome.Failed,
-                    "The spawned Actor did not retain its Gang membership before navigation began.");
+                    string.IsNullOrWhiteSpace(membershipDiagnostic)
+                        ? "The spawned Actor was not a Framework Actor Group member before navigation began."
+                        : membershipDiagnostic);
                 yield break;
             }
 
@@ -482,8 +535,10 @@ namespace PEGA.NPC
             }
 
             _spawnPointKnowledgeConfirmed = gangKnowledgeState.TryGetKnownEscapeTarget(
+                _spawnedActor,
                 spawnPoint.StableSpawnPointId,
-                out PEGANpcPlanningTarget learnedTarget) &&
+                out PEGANpcPlanningTarget learnedTarget,
+                out string knowledgeDiagnostic) &&
                 learnedTarget.Kind == PEGANpcPlanningTargetKind.EscapeDestination &&
                 learnedTarget.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState;
             _knowledgeConfirmedBeforePublication = _spawnPointKnowledgeConfirmed;
@@ -491,7 +546,9 @@ namespace PEGA.NPC
             {
                 Finish(
                     PEGANpcMissionSpawnEntryOutcome.Failed,
-                    "The Actor completed navigation, but the Gang has no Knowledge State Target for this physical Spawn Point.");
+                    string.IsNullOrWhiteSpace(knowledgeDiagnostic)
+                        ? "The Actor completed navigation, but the Gang has no Knowledge State Target for this physical Spawn Point."
+                        : knowledgeDiagnostic);
                 yield break;
             }
 
@@ -776,7 +833,7 @@ namespace PEGA.NPC
                 _outcome,
                 _spawnedActor,
                 _actorIdText,
-                _gangMembershipBoundBeforeNavigation,
+                _gangMembershipConfirmedBeforeNavigation,
                 _navigationStarted,
                 _navigationSnapshotAvailable,
                 _navigationSnapshot,
@@ -918,7 +975,7 @@ namespace PEGA.NPC
             _navigationRequestId = 0;
             _navigationSnapshot = default;
             _navigationSnapshotAvailable = false;
-            _gangMembershipBoundBeforeNavigation = false;
+            _gangMembershipConfirmedBeforeNavigation = false;
             _navigationStarted = false;
             _navigationRouteConfirmed = false;
             _spawnPointKnowledgeConfirmed = false;

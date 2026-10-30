@@ -166,21 +166,6 @@ namespace PEGA.NPC
             contact.DirectionWasClassified = true;
 
             GameObject actorRoot = characterController.gameObject;
-            PEGANpcGangMembership membership = actorRoot.GetComponent<PEGANpcGangMembership>();
-            if (membership == null)
-            {
-                return;
-            }
-
-            if (membership.GangKnowledgeState != gangKnowledgeState)
-            {
-                gangKnowledgeState.LogRejectedSpawnPointUse(
-                    stableSpawnPointId,
-                    actorRoot,
-                    "the entering NPC belongs to a different Gang knowledge state");
-                return;
-            }
-
             if (inwardSpeed < MinimumInwardSpeedMetersPerSecond)
             {
                 gangKnowledgeState.LogRejectedSpawnPointUse(

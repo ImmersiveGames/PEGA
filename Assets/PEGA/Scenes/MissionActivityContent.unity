@@ -369,6 +369,7 @@ GameObject:
   - component: {fileID: 2095411633}
   - component: {fileID: 2095411632}
   - component: {fileID: 2095411629}
+  - component: {fileID: 2095411634}
   m_Layer: 0
   m_Name: PEGA Mission Spawn Point Ingress
   m_TagString: Untagged
@@ -406,6 +407,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86967d8b37b54fe9bd4b9fcf682c158c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangKnowledgeState
+  authorizedGroupProfiles:
+  - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+  actorGroupAccessBinding: {fileID: 2095411634}
 --- !u!114 &2095411632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -439,6 +443,18 @@ Transform:
   - {fileID: 1466658706}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2095411634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095411628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85d7265d52614a42aa9b6eca99186812, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorGroupAccessBinding
 --- !u!1 &2500000200
 GameObject:
   m_ObjectHideFlags: 0

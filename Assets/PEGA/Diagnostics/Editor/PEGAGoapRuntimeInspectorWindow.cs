@@ -664,7 +664,30 @@ namespace PEGA.Diagnostics.Editor
                 return;
             }
 
-            IReadOnlyList<PEGANpcPlanningTarget> targets = gang.GetKnownEscapeTargets();
+            if (!gang.TryIsMember(view.Autonomy.gameObject, out bool isMember, out string membershipDiagnostic))
+            {
+                EditorGUILayout.HelpBox(
+                    "Não foi possível consultar a membership do Actor Group: " + membershipDiagnostic,
+                    MessageType.Info);
+                return;
+            }
+
+            EditorGUILayout.LabelField("Membership no Actor Group", isMember ? "Confirmada" : "Ausente");
+            if (!isMember)
+            {
+                return;
+            }
+
+            if (!membership.TryGetKnownEscapeTargets(
+                    out IReadOnlyList<PEGANpcPlanningTarget> targets,
+                    out string knowledgeDiagnostic))
+            {
+                EditorGUILayout.HelpBox(
+                    "O integrante não conseguiu consultar o conhecimento coletivo: " + knowledgeDiagnostic,
+                    MessageType.Warning);
+                return;
+            }
+
             EditorGUILayout.LabelField("Targets de fuga conhecidos pela Gangue", targets.Count.ToString());
             _showGangTargetDetails = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos dos Targets", _showGangTargetDetails);
             if (targets.Count == 0)

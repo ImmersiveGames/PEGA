@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using Immersive.Foundation.Events;
+using Immersive.Framework.Actors;
 using ImmersiveGames.Goap;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PEGA.NPC
 {
-    /// <summary>Vínculo explícito entre um NPC e o conhecimento compartilhado de sua Gangue.</summary>
+    /// <summary>Declara os Grupos do Actor e conecta o conhecimento coletivo da Gangue ao GOAP do PEGA.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PEGANpcKnowledgeState))]
     [AddComponentMenu("PEGA/NPC/Gang Membership")]
@@ -13,8 +15,14 @@ namespace PEGA.NPC
         IPEGANpcPlanningInputChangeSource,
         IGoapKnowledgeCapability
     {
+        [Header("Actor Groups")]
         [SerializeField]
-        [Tooltip("Estado compartilhado da Gangue deste NPC.")]
+        [FormerlySerializedAs("groupDefinitions")]
+        [Tooltip("Group Profiles aos quais este Actor pertence. O Framework confirma o vínculo runtime pelo ActorId.")]
+        private GroupProfile[] groupProfiles = System.Array.Empty<GroupProfile>();
+
+        [SerializeField]
+        [Tooltip("Canal de conhecimento coletivo da Gangue usado pelo PEGA.")]
         private PEGANpcGangKnowledgeState gangKnowledgeState;
 
         [System.NonSerialized]
@@ -24,6 +32,9 @@ namespace PEGA.NPC
         private IEventBinding _gangKnowledgeBinding;
 
         public PEGANpcGangKnowledgeState GangKnowledgeState => gangKnowledgeState;
+
+        internal IReadOnlyList<GroupProfile> GroupProfiles =>
+            groupProfiles ?? System.Array.Empty<GroupProfile>();
 
         private void OnEnable()
         {
@@ -71,26 +82,24 @@ namespace PEGA.NPC
             if (gangKnowledgeState == null)
             {
                 targets = null;
-                diagnostic = "This NPC has no valid Gang knowledge membership.";
+                diagnostic = "This NPC has no valid Gang knowledge access.";
                 return false;
             }
 
-            targets = gangKnowledgeState.GetKnownEscapeTargets();
-            diagnostic = string.Empty;
-            return true;
+            return gangKnowledgeState.TryGetKnownEscapeTargets(gameObject, out targets, out diagnostic);
         }
 
-        internal bool TryBind(PEGANpcGangKnowledgeState state, out string diagnostic)
+        internal bool TryBindKnowledgeState(PEGANpcGangKnowledgeState state, out string diagnostic)
         {
             if (state == null)
             {
-                diagnostic = "A Gang knowledge state is required.";
+                diagnostic = "A PEGA Gang knowledge state is required.";
                 return false;
             }
 
             if (gangKnowledgeState != null && gangKnowledgeState != state)
             {
-                diagnostic = "This NPC is already associated with another Gang knowledge state.";
+                diagnostic = "This Actor already uses another PEGA Gang knowledge channel.";
                 return false;
             }
 
@@ -104,11 +113,23 @@ namespace PEGA.NPC
             return true;
         }
 
+        internal void RefreshGangKnowledgeSubscription()
+        {
+            SubscribeToGangKnowledge();
+        }
+
         private void SubscribeToGangKnowledge()
         {
             if (gangKnowledgeState != null && _gangKnowledgeBinding == null)
             {
-                _gangKnowledgeBinding = gangKnowledgeState.SubscribeToChanges(OnGangKnowledgeChanged);
+                if (gangKnowledgeState.TrySubscribeToChanges(
+                        gameObject,
+                        OnGangKnowledgeChanged,
+                        out IEventBinding binding,
+                        out _))
+                {
+                    _gangKnowledgeBinding = binding;
+                }
             }
         }
 
@@ -125,6 +146,13 @@ namespace PEGA.NPC
         {
             if (change == null ||
                 change.EvidenceOrigin != PEGANpcGangKnowledgeEvidenceOrigin.SpawnPointPhysicalIngress)
+            {
+                return;
+            }
+
+            if (gangKnowledgeState == null ||
+                !gangKnowledgeState.TryIsMember(gameObject, out bool isMember, out _) ||
+                !isMember)
             {
                 return;
             }

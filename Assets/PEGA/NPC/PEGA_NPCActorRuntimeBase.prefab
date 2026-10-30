@@ -14,13 +14,13 @@ GameObject:
   - component: {fileID: 114000000}
   - component: {fileID: 114000001}
   - component: {fileID: 114000004}
+  - component: {fileID: 114000013}
   - component: {fileID: 114000006}
   - component: {fileID: 114000010}
   - component: {fileID: 114000002}
   - component: {fileID: 114000003}
   - component: {fileID: 114000005}
   - component: {fileID: 2765785676748957259}
-  - component: {fileID: 114000013}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -140,6 +140,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrencePublication
   actorDeclaration: {fileID: 114000000}
   compositionMount: {fileID: 400000001}
+--- !u!114 &114000013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
+  groupProfiles:
+  - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+  gangKnowledgeState: {fileID: 0}
 --- !u!114 &114000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,7 +187,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
   desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
-  actionDefinitions:
+  availableBehaviors:
   - {fileID: 11400000, guid: 830767df9f6c454bb8f9f66ab3640f7c, type: 2}
   - {fileID: 11400000, guid: ad5268d800724814951dbaf601e30980, type: 2}
   - {fileID: 11400000, guid: 9a115c7654944511b9699b485ce79ae8, type: 2}
@@ -250,19 +265,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
---- !u!114 &114000013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
-  gangKnowledgeState: {fileID: 0}
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
