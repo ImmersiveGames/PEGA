@@ -335,19 +335,18 @@ namespace PEGA.NPC
             CandidateMatchesContract(candidate) &&
             candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample;
 
-        public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
+        public bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged ||
                 !_hasExecutionContinuation ||
-                !change.SubjectActorId.HasValue ||
-                change.SubjectActorId.Value != _executionContinuation.SubjectActorId)
+                !PEGANpcKnowledgeFacts.IsCharacterFactChangeFor(
+                    change,
+                    _executionContinuation.SubjectActorId))
             {
                 return false;
             }
 
-            return change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
-                change.FactKind == PEGANpcKnowledgeFactKind.CharacterVisualContact ||
-                change.FactKind == PEGANpcKnowledgeFactKind.LastObservedCharacterPosition;
+            return true;
         }
 
         public override bool IsCurrentPlanValid(

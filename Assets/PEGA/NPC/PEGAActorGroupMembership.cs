@@ -226,9 +226,10 @@ namespace PEGA.NPC
 
         private void OnGroupKnowledgeChanged(
             GroupId groupId,
-            PEGAActorGroupKnowledgeFactChangedEvent change)
+            PEGAKnowledgeFactChangedEvent change)
         {
-            if (_knowledgeContext != null && _knowledgeContext.TryGetAuthority(groupId,
+            if ((change == null || change.HasValueOrStatusChanged) &&
+                _knowledgeContext != null && _knowledgeContext.TryGetAuthority(groupId,
                     out PEGAActorGroupKnowledgeState state) &&
                 state.TryIsMember(gameObject, out bool isMember, out _) && isMember)
             {

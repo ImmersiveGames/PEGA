@@ -68,18 +68,15 @@ namespace PEGA.NPC
             return true;
         }
 
-        public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
+        public bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged ||
-                !change.SubjectActorId.HasValue ||
-                (change.FactKind != PEGANpcKnowledgeFactKind.ObservedCharacterIdentity &&
-                 change.FactKind != PEGANpcKnowledgeFactKind.LastObservedCharacterPosition) ||
                 !TryResolveCharacterSubject(out ActorId subjectActorId, out _))
             {
                 return false;
             }
 
-            return change.SubjectActorId.Value == subjectActorId;
+            return PEGANpcKnowledgeFacts.IsIdentityOrPositionChangeFor(change, subjectActorId);
         }
 
         public override bool TryCreatePlanningCandidates(
@@ -355,7 +352,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
+            PEGAKnowledgeFact<ActorProfileId> identity =
                 knowledgeView.GetObservedCharacterIdentity(subjectActorId);
             if (!identity.TryGetValue(out _))
             {
@@ -363,7 +360,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcKnowledgeFact<Vector3> lastObservedPosition =
+            PEGAKnowledgeFact<Vector3> lastObservedPosition =
                 knowledgeView.GetKnownCharacterPosition(subjectActorId);
             if (!lastObservedPosition.TryGetValue(out knownPosition) ||
                 !lastObservedPosition.HasObservationTime ||

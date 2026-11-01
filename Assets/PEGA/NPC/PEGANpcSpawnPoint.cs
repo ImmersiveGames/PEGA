@@ -10,7 +10,7 @@ namespace PEGA.NPC
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider), typeof(Rigidbody))]
     [AddComponentMenu("PEGA/NPC/Spawn Point")]
-    public sealed class PEGANpcSpawnPoint : MonoBehaviour
+    public sealed class PEGANpcSpawnPoint : MonoBehaviour, IPEGAActorGroupKnowledgeFactSource
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.SpawnPoint";
         private const float MinimumInwardSpeedMetersPerSecond = 0.1f;
@@ -48,6 +48,16 @@ namespace PEGA.NPC
         public string StableSpawnPointId => stableSpawnPointId != null ? stableSpawnPointId.Trim() : string.Empty;
 
         public PEGAActorGroupKnowledgeState ActorGroupKnowledgeState => actorGroupKnowledgeState;
+
+        PEGAActorGroupKnowledgeState IPEGAActorGroupKnowledgeFactSource.KnowledgeState => actorGroupKnowledgeState;
+
+        bool IPEGAActorGroupKnowledgeFactSource.IsActive => isActiveAndEnabled;
+
+        bool IPEGAActorGroupKnowledgeFactSource.IsActiveForOwner => false;
+
+        bool IPEGAActorGroupKnowledgeFactSource.IsConfiguredFor(
+            PEGAActorGroupKnowledgeState knowledgeState) =>
+            ReferenceEquals(actorGroupKnowledgeState, knowledgeState);
 
         private void Reset()
         {

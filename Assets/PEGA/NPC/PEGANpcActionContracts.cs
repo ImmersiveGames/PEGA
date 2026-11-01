@@ -329,7 +329,7 @@ namespace PEGA.NPC
     /// <remarks>Providers sem esta capability não declaram dependência de eventos do Knowledge State individual.</remarks>
     public interface IPEGANpcKnowledgeChangeRelevanceProvider
     {
-        bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change);
+        bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change);
     }
 
     /// <summary>Marker published when a composed local capability changes its available planning inputs.</summary>

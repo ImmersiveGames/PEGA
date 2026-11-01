@@ -16,20 +16,6 @@ namespace PEGA.NPC
         IdentityAndInitialLocation = 20
     }
 
-    public enum PEGAActorGroupKnowledgeFactKind
-    {
-        SpawnPointEscapeTarget = 10,
-        EntityIdentity = 20,
-        EntityInitialLocation = 30
-    }
-
-    public enum PEGAActorGroupKnowledgeEvidenceOrigin
-    {
-        SpawnPointPhysicalIngress = 0,
-        DesignerAuthoredIdentity = 10,
-        AuthorizedInitialLocationSource = 20
-    }
-
     [Serializable]
     public sealed class PEGAActorGroupPriorKnowledgeDefinition
     {
@@ -44,50 +30,6 @@ namespace PEGA.NPC
         public ScriptableObject EntityIdentity => entityIdentity;
 
         public PEGAActorGroupPriorKnowledgeMode Mode => mode;
-    }
-
-    /// <summary>Publica mudanças aceitas pela autoridade coletiva de um Actor Group.</summary>
-    public sealed class PEGAActorGroupKnowledgeFactChangedEvent : IEvent
-    {
-        internal PEGAActorGroupKnowledgeFactChangedEvent(
-            string spawnPointId,
-            PEGANpcPlanningTarget target,
-            PEGAActorGroupKnowledgeEvidenceOrigin evidenceOrigin,
-            double evidenceTimeSeconds)
-        {
-            FactKind = PEGAActorGroupKnowledgeFactKind.SpawnPointEscapeTarget;
-            SpawnPointId = spawnPointId;
-            Target = target;
-            EvidenceOrigin = evidenceOrigin;
-            EvidenceTimeSeconds = evidenceTimeSeconds;
-            EntityIdentity = null;
-        }
-
-        internal PEGAActorGroupKnowledgeFactChangedEvent(
-            PEGAActorGroupKnowledgeFactKind factKind,
-            ScriptableObject entityIdentity,
-            PEGAActorGroupKnowledgeEvidenceOrigin evidenceOrigin,
-            double evidenceTimeSeconds)
-        {
-            FactKind = factKind;
-            SpawnPointId = string.Empty;
-            Target = default;
-            EvidenceOrigin = evidenceOrigin;
-            EvidenceTimeSeconds = evidenceTimeSeconds;
-            EntityIdentity = entityIdentity;
-        }
-
-        public PEGAActorGroupKnowledgeFactKind FactKind { get; }
-
-        public string SpawnPointId { get; }
-
-        public PEGANpcPlanningTarget Target { get; }
-
-        public PEGAActorGroupKnowledgeEvidenceOrigin EvidenceOrigin { get; }
-
-        public double EvidenceTimeSeconds { get; }
-
-        public ScriptableObject EntityIdentity { get; }
     }
 
     /// <summary>Autoridade PEGA dos fatos de um Group; sua disponibilidade acompanha o owner que criou o Group.</summary>
@@ -117,10 +59,7 @@ namespace PEGA.NPC
         private string _ownerScope;
 
         [NonSerialized]
-        private Dictionary<string, KnownSpawnPointFact> _knownEscapePoints;
-
-        [NonSerialized]
-        private Dictionary<ScriptableObject, PriorEntityKnowledgeFact> _priorEntityFacts;
+        private PEGAKnowledgeFactStore _factStore;
 
         [NonSerialized]
         private HashSet<ActorId> _authorizedAccessLoggedActors;
@@ -262,8 +201,7 @@ namespace PEGA.NPC
             }
 
             _ownerActive = false;
-            _knownEscapePoints?.Clear();
-            _priorEntityFacts?.Clear();
+            _factStore?.Clear();
             _authorizedAccessLoggedActors?.Clear();
             _consumptionLogs?.Clear();
             actorGroupAccessBinding = null;
@@ -310,6 +248,97 @@ namespace PEGA.NPC
             return true;
         }
 
+        /// <summary>Consulta um fato tipado somente para membro confirmado do Group vivo.</summary>
+        public bool TryGetFact<TAddress, TValue>(
+            GameObject actorRoot,
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            out PEGAKnowledgeFact<TValue> fact,
+            out string diagnostic)
+        {
+            fact = PEGAKnowledgeFact<TValue>.Unknown(PEGAKnowledgeScope.Group);
+            if (!TryValidateKnowledgeAccess(actorRoot, out diagnostic))
+            {
+                return false;
+            }
+
+            if (!TryIsMember(actorRoot, out bool isMember, out diagnostic) || !isMember)
+            {
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "The Actor is not a confirmed member of the live Actor Group.";
+                }
+
+                return false;
+            }
+
+            if (!key.IsValid)
+            {
+                diagnostic = "A valid fact definition and address are required for Group knowledge queries.";
+                return false;
+            }
+
+            EnsureStateInitialized();
+            fact = _factStore.Get(key, Time.timeAsDouble);
+            LogAuthorizedGroupAccess(actorRoot);
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        /// <summary>Registra um fato por uma fonte configurada, com membership obrigatória para evidência de Actor.</summary>
+        internal bool TryRecordFact<TAddress, TValue>(
+            IPEGAActorGroupKnowledgeFactSource source,
+            GameObject memberRoot,
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            TValue value,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult result,
+            out string diagnostic)
+        {
+            result = PEGAKnowledgeWriteResult.RejectedInvalid;
+            if (!TryAuthorizeFactWriter(source, memberRoot, out diagnostic))
+            {
+                return false;
+            }
+
+            EnsureStateInitialized();
+            result = _factStore.Observe(key, value, evidence);
+            if (result == PEGAKnowledgeWriteResult.RejectedInvalid)
+            {
+                diagnostic = "The fact key, evidence or value was rejected by its data policy.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        /// <summary>Invalida um fato por uma fonte configurada, com membership obrigatória para evidência de Actor.</summary>
+        internal bool TryInvalidateFact<TAddress, TValue>(
+            IPEGAActorGroupKnowledgeFactSource source,
+            GameObject memberRoot,
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult result,
+            out string diagnostic)
+        {
+            result = PEGAKnowledgeWriteResult.RejectedInvalid;
+            if (!TryAuthorizeFactWriter(source, memberRoot, out diagnostic))
+            {
+                return false;
+            }
+
+            EnsureStateInitialized();
+            result = _factStore.Invalidate(key, evidence);
+            if (result == PEGAKnowledgeWriteResult.RejectedInvalid)
+            {
+                diagnostic = "The fact key or evidence was rejected by its data policy.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         /// <summary>Retorna Targets compartilhados somente ao ActorId que pertence ao Group vivo autorizado.</summary>
         public bool TryGetKnownEscapeTargets(
             GameObject actorRoot,
@@ -341,15 +370,13 @@ namespace PEGA.NPC
         public bool TryGetKnownEntityFacts(
             GameObject actorRoot,
             ScriptableObject entityIdentity,
-            out PEGANpcKnowledgeFact<ScriptableObject> identityFact,
-            out PEGANpcKnowledgeFact<Vector3> initialLocationFact,
+            out PEGAKnowledgeFact<ScriptableObject> identityFact,
+            out PEGAKnowledgeFact<Vector3> initialLocationFact,
             out IPEGAActorGroupLocationSubjectEvidence locationSubjectEvidence,
             out string diagnostic)
         {
-            identityFact = PEGANpcKnowledgeFact<ScriptableObject>.UnknownForScope(
-                PEGANpcKnowledgeScope.Group);
-            initialLocationFact = PEGANpcKnowledgeFact<Vector3>.UnknownForScope(
-                PEGANpcKnowledgeScope.Group);
+            identityFact = PEGAKnowledgeFact<ScriptableObject>.Unknown(PEGAKnowledgeScope.Group);
+            initialLocationFact = PEGAKnowledgeFact<Vector3>.Unknown(PEGAKnowledgeScope.Group);
             locationSubjectEvidence = null;
             diagnostic = string.Empty;
             if (entityIdentity == null)
@@ -374,25 +401,31 @@ namespace PEGA.NPC
             }
 
             EnsureStateInitialized();
-            if (!_priorEntityFacts.TryGetValue(entityIdentity, out PriorEntityKnowledgeFact fact))
+            identityFact = _factStore.Get(
+                PEGAActorGroupKnowledgeFacts.EntityIdentity.For(entityIdentity),
+                Time.timeAsDouble);
+            initialLocationFact = _factStore.Get(
+                PEGAActorGroupKnowledgeFacts.EntityInitialLocation.For(entityIdentity),
+                Time.timeAsDouble);
+            for (int index = 0; index < initialLocationFact.Evidence.Count; index++)
             {
-                diagnostic = string.Empty;
-                return true;
+                if (initialLocationFact.Evidence[index].Payload is IPEGAActorGroupLocationSubjectEvidence evidence)
+                {
+                    locationSubjectEvidence = evidence;
+                    break;
+                }
             }
 
-            identityFact = fact.IdentityFact;
-            initialLocationFact = fact.InitialLocationFact;
-            locationSubjectEvidence = fact.InitialLocationSubjectEvidence;
             LogAuthorizedGroupAccess(actorRoot);
             diagnostic = string.Empty;
             return true;
         }
 
         internal bool HasKnownInitialLocation(ScriptableObject entityIdentity) =>
-            _ownerActive && entityIdentity != null &&
-            _priorEntityFacts != null &&
-            _priorEntityFacts.TryGetValue(entityIdentity, out PriorEntityKnowledgeFact fact) &&
-            fact.InitialLocationFact.HasValue;
+            _ownerActive && entityIdentity != null && _factStore != null &&
+            _factStore.Get(
+                PEGAActorGroupKnowledgeFacts.EntityInitialLocation.For(entityIdentity),
+                Time.timeAsDouble).HasValue;
 
         internal bool TryRecordAuthorizedInitialLocation(
             PEGAActorGroupKnowledgeSource source,
@@ -427,28 +460,39 @@ namespace PEGA.NPC
                                        actorProfile.TryGetActorProfileId(out ActorProfileId resolvedProfileId, out _)
                 ? resolvedProfileId
                 : default;
-            if (!_priorEntityFacts.TryGetValue(entityIdentity, out PriorEntityKnowledgeFact fact) ||
-                fact.Mode != PEGAActorGroupPriorKnowledgeMode.IdentityAndInitialLocation)
+            if (!HasInitialLocationAuthorization(entityIdentity))
             {
                 diagnostic = "This entity is not configured for authorized initial location knowledge.";
                 return false;
             }
 
-            if (fact.InitialLocationFact.HasValue)
+            if (HasKnownInitialLocation(entityIdentity))
             {
                 return true;
             }
 
-            fact.InitialLocationFact = new PEGANpcKnowledgeFact<Vector3>(
-                PEGANpcKnowledgeStatus.Known,
-                true,
+            PEGAKnowledgeFactKey<ScriptableObject, Vector3> key =
+                PEGAActorGroupKnowledgeFacts.EntityInitialLocation.For(entityIdentity);
+            PEGAKnowledgeEvidence evidence = PEGAKnowledgeEvidence.From(
+                PEGAActorGroupKnowledgeEvidenceOrigin.AuthorizedInitialLocationSource,
                 evidenceTimeSeconds,
-                PEGANpcEvidenceOrigin.AuthorizedInitialLocation,
-                PEGANpcKnowledgeInvalidationCause.None,
-                initialLocation,
-                PEGANpcKnowledgeScope.Group);
-            fact.InitialLocationSubjectEvidence = locationSubjectEvidence;
-            _priorEntityFacts[entityIdentity] = fact;
+                source,
+                locationSubjectEvidence);
+            if (!TryRecordFact(
+                    source,
+                    null,
+                    key,
+                    initialLocation,
+                    evidence,
+                    out PEGAKnowledgeWriteResult writeResult,
+                    out diagnostic) ||
+                writeResult == PEGAKnowledgeWriteResult.RejectedInvalid)
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "The initial location fact was rejected by its data policy."
+                    : diagnostic;
+                return false;
+            }
 
             EnsureLoggerInitialized();
             string identityText = profileId.IsValid
@@ -466,11 +510,6 @@ namespace PEGA.NPC
                 LogFields.Field("positionY", initialLocation.y),
                 LogFields.Field("positionZ", initialLocation.z),
                 LogFields.Field("evidenceTimeSeconds", evidenceTimeSeconds));
-            PublishChange(new PEGAActorGroupKnowledgeFactChangedEvent(
-                PEGAActorGroupKnowledgeFactKind.EntityInitialLocation,
-                entityIdentity,
-                PEGAActorGroupKnowledgeEvidenceOrigin.AuthorizedInitialLocationSource,
-                evidenceTimeSeconds));
             return true;
         }
 
@@ -490,38 +529,33 @@ namespace PEGA.NPC
             return true;
         }
 
-        internal void LogEntityFactConsumed(
+        internal void LogFactConsumed(
             GameObject memberRoot,
-            ScriptableObject entityIdentity,
-            PEGAActorGroupKnowledgeFactKind factKind,
+            IPEGAKnowledgeFactKey factKey,
             string consumer)
         {
             EnsureStateInitialized();
-            if (memberRoot == null || entityIdentity == null || string.IsNullOrWhiteSpace(consumer) ||
+            if (memberRoot == null || factKey == null || !factKey.IsValid || string.IsNullOrWhiteSpace(consumer) ||
                 !TryResolveActorId(memberRoot, out ActorId actorId, out _))
             {
                 return;
             }
 
-            var key = new KnowledgeConsumptionKey(actorId, entityIdentity, factKind, consumer);
+            var key = new KnowledgeConsumptionKey(actorId, factKey, consumer);
             if (!_consumptionLogs.Add(key))
             {
                 return;
             }
 
-            string identityText = entityIdentity is ActorProfile profile &&
-                                  profile.TryGetActorProfileId(out ActorProfileId profileId, out _)
-                ? profileId.StableText
-                : string.Concat(entityIdentity.GetType().FullName, ":", entityIdentity.name);
             EnsureLoggerInitialized();
             _log.Info(
                 "Authorized Actor Group member consumed a shared knowledge fact.",
                 LogFields.Field("groupId", GetAuthorizedGroupIdText()),
                 LogFields.Field("actorId", actorId.StableText),
-                LogFields.Field("entityIdentity", identityText),
-                LogFields.Field("factKind", factKind),
+                LogFields.Field("fact", factKey.Name),
+                LogFields.Field("factAddress", factKey.Address),
                 LogFields.Field("consumer", consumer),
-                LogFields.Field("knowledgeScope", PEGANpcKnowledgeScope.Group));
+                LogFields.Field("knowledgeScope", PEGAKnowledgeScope.Group));
         }
 
         /// <summary>Consulta um Target conhecido somente por um integrante verificado do Actor Group.</summary>
@@ -554,13 +588,15 @@ namespace PEGA.NPC
             }
 
             EnsureStateInitialized();
-            if (!_knownEscapePoints.TryGetValue(spawnPointId.Trim(), out KnownSpawnPointFact fact))
+            PEGAKnowledgeFact<PEGANpcPlanningTarget> fact = _factStore.Get(
+                PEGAActorGroupKnowledgeFacts.SpawnPointEscapeTarget.For(spawnPointId.Trim()),
+                Time.timeAsDouble);
+            if (!fact.TryGetValue(out target))
             {
                 diagnostic = string.Empty;
                 return false;
             }
 
-            target = fact.Target;
             diagnostic = string.Empty;
             return true;
         }
@@ -591,19 +627,15 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!TryValidateKnowledgeAccess(memberRoot, out diagnostic))
+            if (!TryValidateKnowledgeAccess(memberRoot, out diagnostic) ||
+                !TryIsMember(memberRoot, out bool isMember, out diagnostic) ||
+                !isMember)
             {
-                return false;
-            }
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "The entering ActorId is not a member of the authorized Actor Group.";
+                }
 
-            if (!TryIsMember(memberRoot, out bool isMember, out diagnostic))
-            {
-                return false;
-            }
-
-            if (!isMember)
-            {
-                diagnostic = "The entering ActorId is not a member of the authorized Actor Group.";
                 return false;
             }
 
@@ -613,9 +645,23 @@ namespace PEGA.NPC
             }
 
             string normalizedId = spawnPointId.Trim();
-            if (_knownEscapePoints.TryGetValue(normalizedId, out KnownSpawnPointFact existing))
+            PEGAKnowledgeFactKey<string, PEGANpcPlanningTarget> targetKey =
+                PEGAActorGroupKnowledgeFacts.SpawnPointEscapeTarget.For(normalizedId);
+            PEGAKnowledgeFact<PEGANpcPlanningTarget> existingFact =
+                _factStore.Get(targetKey, evidenceTimeSeconds);
+            if (existingFact.TryGetValue(out _))
             {
-                if (!ReferenceEquals(existing.Source, spawnPoint))
+                bool sameSource = false;
+                for (int index = 0; index < existingFact.Evidence.Count; index++)
+                {
+                    if (ReferenceEquals(existingFact.Evidence[index].Source, spawnPoint))
+                    {
+                        sameSource = true;
+                        break;
+                    }
+                }
+
+                if (!sameSource)
                 {
                     diagnostic = "Another Spawn Point already uses this stable id in the Actor Group.";
                     return false;
@@ -636,10 +682,28 @@ namespace PEGA.NPC
                 return false;
             }
 
-            _knownEscapePoints.Add(
-                normalizedId,
-                new KnownSpawnPointFact(spawnPoint, target));
-            wasAdded = true;
+            PEGAKnowledgeEvidence evidence = PEGAKnowledgeEvidence.From(
+                PEGAActorGroupKnowledgeEvidenceOrigin.SpawnPointPhysicalIngress,
+                evidenceTimeSeconds,
+                spawnPoint,
+                memberRoot);
+            if (!TryRecordFact(
+                    spawnPoint,
+                    memberRoot,
+                    targetKey,
+                    target,
+                    evidence,
+                    out PEGAKnowledgeWriteResult writeResult,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            wasAdded = writeResult == PEGAKnowledgeWriteResult.Recorded;
+            if (!wasAdded)
+            {
+                return true;
+            }
 
             EnsureLoggerInitialized();
             _log.Debug(
@@ -658,24 +722,34 @@ namespace PEGA.NPC
                 "Actor Group learned a new escape route.",
                 LogFields.Field("actorRoot", memberRoot.name));
 
-            PublishChange(new PEGAActorGroupKnowledgeFactChangedEvent(
-                normalizedId,
-                target,
-                PEGAActorGroupKnowledgeEvidenceOrigin.SpawnPointPhysicalIngress,
-                evidenceTimeSeconds));
             return true;
         }
 
         private IReadOnlyList<PEGANpcPlanningTarget> GetKnownEscapeTargetsCore()
         {
             EnsureStateInitialized();
-            var spawnPointIds = new List<string>(_knownEscapePoints.Keys);
-            spawnPointIds.Sort(StringComparer.Ordinal);
-
-            var targets = new List<PEGANpcPlanningTarget>(spawnPointIds.Count);
-            for (int i = 0; i < spawnPointIds.Count; i++)
+            IReadOnlyList<PEGAKnowledgeFactSnapshot<string, PEGANpcPlanningTarget>> facts =
+                _factStore.GetFacts(PEGAActorGroupKnowledgeFacts.SpawnPointEscapeTarget, Time.timeAsDouble);
+            var knownFacts = new List<PEGAKnowledgeFactSnapshot<string, PEGANpcPlanningTarget>>();
+            for (int index = 0; index < facts.Count; index++)
             {
-                targets.Add(_knownEscapePoints[spawnPointIds[i]].Target);
+                if (facts[index].Fact.HasValue)
+                {
+                    knownFacts.Add(facts[index]);
+                }
+            }
+
+            knownFacts.Sort((left, right) => StringComparer.Ordinal.Compare(
+                left.Key.AddressValue,
+                right.Key.AddressValue));
+
+            var targets = new List<PEGANpcPlanningTarget>(knownFacts.Count);
+            for (int index = 0; index < knownFacts.Count; index++)
+            {
+                if (knownFacts[index].Fact.TryGetValue(out PEGANpcPlanningTarget target))
+                {
+                    targets.Add(target);
+                }
             }
 
             return new ReadOnlyCollection<PEGANpcPlanningTarget>(targets);
@@ -741,6 +815,54 @@ namespace PEGA.NPC
             return true;
         }
 
+        private bool TryAuthorizeFactWriter(
+            IPEGAActorGroupKnowledgeFactSource source,
+            GameObject memberRoot,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!_ownerActive || source == null || source.KnowledgeState != this ||
+                !(source is Component sourceComponent) || sourceComponent == null ||
+                !source.IsActive || !source.IsConfiguredFor(this))
+            {
+                diagnostic = "Fact writes require an active source configured for this Group knowledge authority.";
+                return false;
+            }
+
+            if (!TryGetAuthorizedGroupId(out GroupId groupId, out diagnostic) ||
+                !actorGroupAccessBinding.TryGetGroup(groupId, out ActorGroupSnapshot group, out diagnostic) ||
+                !group.HasProfile || group.Profile != groupProfile)
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Fact writes require the owner-created live Group represented by this authority."
+                    : diagnostic;
+                return false;
+            }
+
+            if (memberRoot == null)
+            {
+                if (!source.IsActiveForOwner)
+                {
+                    diagnostic = "A source without an Actor must be active in this Group owner's lifecycle.";
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (!TryIsMember(memberRoot, out bool isMember, out diagnostic) || !isMember)
+            {
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "Actor evidence requires current official membership in this Group.";
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         internal void LogRejectedSpawnPointUse(
             string spawnPointId,
             GameObject memberRoot,
@@ -755,7 +877,7 @@ namespace PEGA.NPC
                 LogFields.Field("reason", reason ?? string.Empty));
         }
 
-        private void PublishChange(PEGAActorGroupKnowledgeFactChangedEvent change)
+        private void PublishChange(PEGAKnowledgeFactChangedEvent change)
         {
             if (TryGetAuthorizedGroupId(out GroupId groupId, out _))
             {
@@ -765,15 +887,20 @@ namespace PEGA.NPC
 
         private void EnsureStateInitialized()
         {
-            _knownEscapePoints ??= new Dictionary<string, KnownSpawnPointFact>(StringComparer.Ordinal);
-            _priorEntityFacts ??= new Dictionary<ScriptableObject, PriorEntityKnowledgeFact>();
+            if (_factStore == null)
+            {
+                _factStore = new PEGAKnowledgeFactStore(PEGAKnowledgeScope.Group);
+                _factStore.Changed += PublishChange;
+            }
+
             _authorizedAccessLoggedActors ??= new HashSet<ActorId>();
             _consumptionLogs ??= new HashSet<KnowledgeConsumptionKey>();
         }
 
         private void InitializePriorEntityKnowledge()
         {
-            _priorEntityFacts.Clear();
+            _factStore.Clear();
+            var seenIdentities = new HashSet<ScriptableObject>();
             if (!TryGetAuthorizedGroupId(out GroupId groupId, out string groupDiagnostic))
             {
                 EnsureLoggerInitialized();
@@ -799,7 +926,7 @@ namespace PEGA.NPC
                     continue;
                 }
 
-                if (_priorEntityFacts.ContainsKey(definition.EntityIdentity))
+                if (!seenIdentities.Add(definition.EntityIdentity))
                 {
                     _log.Error(
                         "Actor Group prior knowledge repeats the same entity identity asset.",
@@ -821,34 +948,35 @@ namespace PEGA.NPC
                 }
 
                 double authoredAt = Time.timeAsDouble;
-                var fact = new PriorEntityKnowledgeFact(
-                    definition.Mode,
-                    new PEGANpcKnowledgeFact<ScriptableObject>(
-                        PEGANpcKnowledgeStatus.Known,
-                        true,
-                        authoredAt,
-                        PEGANpcEvidenceOrigin.GroupPriorIdentity,
-                        PEGANpcKnowledgeInvalidationCause.None,
-                        definition.EntityIdentity,
-                        PEGANpcKnowledgeScope.Group),
-                    PEGANpcKnowledgeFact<Vector3>.UnknownForScope(PEGANpcKnowledgeScope.Group));
-                _priorEntityFacts.Add(definition.EntityIdentity, fact);
+                PEGAKnowledgeEvidence evidence = PEGAKnowledgeEvidence.From(
+                    PEGAActorGroupKnowledgeEvidenceOrigin.DesignerAuthoredIdentity,
+                    authoredAt,
+                    this,
+                    definition);
+                PEGAKnowledgeFactKey<ScriptableObject, ScriptableObject> identityKey =
+                    PEGAActorGroupKnowledgeFacts.EntityIdentity.For(definition.EntityIdentity);
+                PEGAKnowledgeWriteResult identityResult =
+                    _factStore.Observe(identityKey, definition.EntityIdentity, evidence);
+                if (identityResult == PEGAKnowledgeWriteResult.RejectedInvalid)
+                {
+                    _log.Error(
+                        "Actor Group prior identity was rejected by its fact policy.",
+                        LogFields.Field("groupId", groupId.StableText),
+                        LogFields.Field("entityIdentityAsset", definition.EntityIdentity.name));
+                    continue;
+                }
+
                 _log.Info(
                     "Actor Group prior entity identity was authored for the active owner scope.",
                     LogFields.Field("groupId", groupId.StableText),
                     LogFields.Field("entityIdentity", actorProfileId.IsValid
                         ? actorProfileId.StableText
                         : string.Concat(definition.EntityIdentity.GetType().FullName, ":", definition.EntityIdentity.name)),
-                    LogFields.Field("factKind", PEGAActorGroupKnowledgeFactKind.EntityIdentity),
+                    LogFields.Field("fact", identityKey.Name),
                     LogFields.Field("factOrigin", PEGAActorGroupKnowledgeEvidenceOrigin.DesignerAuthoredIdentity),
                     LogFields.Field("locationAuthorization", definition.Mode),
                     LogFields.Field("validityScope", _ownerScope),
                     LogFields.Field("authoredAtSeconds", authoredAt));
-                PublishChange(new PEGAActorGroupKnowledgeFactChangedEvent(
-                    PEGAActorGroupKnowledgeFactKind.EntityIdentity,
-                    definition.EntityIdentity,
-                    PEGAActorGroupKnowledgeEvidenceOrigin.DesignerAuthoredIdentity,
-                    authoredAt));
             }
 
             if (HasInitialLocationAuthorization() && !HasConfiguredKnowledgeSource())
@@ -879,6 +1007,28 @@ namespace PEGA.NPC
             for (int index = 0; index < definitions.Length; index++)
             {
                 if (definitions[index] != null &&
+                    definitions[index].Mode == PEGAActorGroupPriorKnowledgeMode.IdentityAndInitialLocation)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasInitialLocationAuthorization(ScriptableObject entityIdentity)
+        {
+            if (entityIdentity == null)
+            {
+                return false;
+            }
+
+            PEGAActorGroupPriorKnowledgeDefinition[] definitions = priorEntityKnowledge ??
+                Array.Empty<PEGAActorGroupPriorKnowledgeDefinition>();
+            for (int index = 0; index < definitions.Length; index++)
+            {
+                if (definitions[index] != null &&
+                    ReferenceEquals(definitions[index].EntityIdentity, entityIdentity) &&
                     definitions[index].Mode == PEGAActorGroupPriorKnowledgeMode.IdentityAndInitialLocation)
                 {
                     return true;
@@ -941,7 +1091,7 @@ namespace PEGA.NPC
                 "Framework confirmed this Actor as a member authorized to access Group knowledge.",
                 LogFields.Field("groupId", groupId.StableText),
                 LogFields.Field("actorId", actorId.StableText),
-                LogFields.Field("knowledgeScope", PEGANpcKnowledgeScope.Group));
+                LogFields.Field("knowledgeScope", PEGAKnowledgeScope.Group));
         }
 
         private string GetAuthorizedGroupIdText() =>
@@ -967,66 +1117,25 @@ namespace PEGA.NPC
         private static bool IsNonNegativeFinite(double value) =>
             value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
 
-        private readonly struct KnownSpawnPointFact
-        {
-            public KnownSpawnPointFact(
-                PEGANpcSpawnPoint source,
-                PEGANpcPlanningTarget target)
-            {
-                Source = source;
-                Target = target;
-            }
-
-            public PEGANpcSpawnPoint Source { get; }
-
-            public PEGANpcPlanningTarget Target { get; }
-        }
-
-        private struct PriorEntityKnowledgeFact
-        {
-            public PriorEntityKnowledgeFact(
-                PEGAActorGroupPriorKnowledgeMode mode,
-                PEGANpcKnowledgeFact<ScriptableObject> identityFact,
-                PEGANpcKnowledgeFact<Vector3> initialLocationFact)
-            {
-                Mode = mode;
-                IdentityFact = identityFact;
-                InitialLocationFact = initialLocationFact;
-                InitialLocationSubjectEvidence = null;
-            }
-
-            public PEGAActorGroupPriorKnowledgeMode Mode;
-
-            public PEGANpcKnowledgeFact<ScriptableObject> IdentityFact;
-
-            public PEGANpcKnowledgeFact<Vector3> InitialLocationFact;
-
-            public IPEGAActorGroupLocationSubjectEvidence InitialLocationSubjectEvidence;
-
-        }
-
         private readonly struct KnowledgeConsumptionKey : IEquatable<KnowledgeConsumptionKey>
         {
             private readonly ActorId _actorId;
-            private readonly ScriptableObject _entityIdentity;
-            private readonly PEGAActorGroupKnowledgeFactKind _factKind;
+            private readonly IPEGAKnowledgeFactKey _factKey;
             private readonly string _consumer;
 
             public KnowledgeConsumptionKey(
                 ActorId actorId,
-                ScriptableObject entityIdentity,
-                PEGAActorGroupKnowledgeFactKind factKind,
+                IPEGAKnowledgeFactKey factKey,
                 string consumer)
             {
                 _actorId = actorId;
-                _entityIdentity = entityIdentity;
-                _factKind = factKind;
+                _factKey = factKey;
                 _consumer = consumer;
             }
 
             public bool Equals(KnowledgeConsumptionKey other) =>
-                _actorId.Equals(other._actorId) && ReferenceEquals(_entityIdentity, other._entityIdentity) &&
-                _factKind == other._factKind && string.Equals(_consumer, other._consumer, StringComparison.Ordinal);
+                _actorId.Equals(other._actorId) && object.Equals(_factKey, other._factKey) &&
+                string.Equals(_consumer, other._consumer, StringComparison.Ordinal);
 
             public override bool Equals(object obj) => obj is KnowledgeConsumptionKey other && Equals(other);
 
@@ -1035,8 +1144,7 @@ namespace PEGA.NPC
                 unchecked
                 {
                     int hash = _actorId.GetHashCode();
-                    hash = hash * 397 ^ System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(_entityIdentity);
-                    hash = hash * 397 ^ (int)_factKind;
+                    hash = hash * 397 ^ (_factKey != null ? _factKey.GetHashCode() : 0);
                     return hash * 397 ^ StringComparer.Ordinal.GetHashCode(_consumer ?? string.Empty);
                 }
             }

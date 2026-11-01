@@ -28,17 +28,18 @@ namespace PEGA.NPC
             _groupMembership = groupMembership;
         }
 
-        public PEGANpcKnowledgeFact<ActorProfileId> GetObservedCharacterIdentity(ActorId subjectActorId)
+        public PEGAKnowledgeFact<ActorProfileId> GetObservedCharacterIdentity(ActorId subjectActorId)
         {
-            PEGANpcKnowledgeFact<ActorProfileId> individual =
+            PEGAKnowledgeFact<ActorProfileId> individual =
                 _individualKnowledge.GetObservedCharacterIdentity(subjectActorId);
-            if (individual.Status != PEGANpcKnowledgeStatus.Unknown ||
+            if (individual.Status != PEGAKnowledgeStatus.Unknown ||
                 !TryGetAuthorizedGroupActorFacts(subjectActorId, out IReadOnlyList<GroupActorFacts> candidates))
             {
                 return individual;
             }
 
             GroupActorFacts selected = default;
+            List<PEGAKnowledgeEvidence> selectedEvidence = new List<PEGAKnowledgeEvidence>();
             bool found = false;
             for (int index = 0; index < candidates.Count; index++)
             {
@@ -55,7 +56,12 @@ namespace PEGA.NPC
                 if (!found || candidate.Identity.ObservationTimeSeconds > selected.Identity.ObservationTimeSeconds)
                 {
                     selected = candidate;
+                    selectedEvidence = new List<PEGAKnowledgeEvidence>(candidate.Identity.Evidence);
                     found = true;
+                }
+                else if (candidate.Identity.ObservationTimeSeconds == selected.Identity.ObservationTimeSeconds)
+                {
+                    AddEvidence(selectedEvidence, candidate.Identity.Evidence);
                 }
             }
 
@@ -64,32 +70,34 @@ namespace PEGA.NPC
                 return individual;
             }
 
-            selected.State.LogEntityFactConsumed(
+            selected.State.LogFactConsumed(
                 _actorRoot,
-                selected.Profile,
-                PEGAActorGroupKnowledgeFactKind.EntityIdentity,
+                PEGAActorGroupKnowledgeFacts.EntityIdentity.For(selected.Profile),
                 "PEGANpcKnowledgeReadView.GetObservedCharacterIdentity");
-            return new PEGANpcKnowledgeFact<ActorProfileId>(
-                PEGANpcKnowledgeStatus.Known,
+            return PEGAKnowledgeFact<ActorProfileId>.Create(
+                PEGAKnowledgeStatus.Known,
                 selected.Identity.HasObservationTime,
                 selected.Identity.ObservationTimeSeconds,
-                PEGANpcEvidenceOrigin.GroupPriorIdentity,
-                PEGANpcKnowledgeInvalidationCause.None,
+                selectedEvidence,
+                selected.Identity.InvalidationCauses,
                 profileId,
-                PEGANpcKnowledgeScope.Group);
+                profileId,
+                true,
+                PEGAKnowledgeScope.Group);
         }
 
-        public PEGANpcKnowledgeFact<Vector3> GetKnownCharacterPosition(ActorId subjectActorId)
+        public PEGAKnowledgeFact<Vector3> GetKnownCharacterPosition(ActorId subjectActorId)
         {
-            PEGANpcKnowledgeFact<Vector3> individual =
+            PEGAKnowledgeFact<Vector3> individual =
                 _individualKnowledge.GetLastObservedCharacterPosition(subjectActorId);
-            if (individual.Status == PEGANpcKnowledgeStatus.Invalidated ||
+            if (individual.Status == PEGAKnowledgeStatus.Invalidated ||
                 !TryGetAuthorizedGroupActorFacts(subjectActorId, out IReadOnlyList<GroupActorFacts> candidates))
             {
                 return individual;
             }
 
             GroupActorFacts selected = default;
+            List<PEGAKnowledgeEvidence> selectedEvidence = new List<PEGAKnowledgeEvidence>();
             Vector3 selectedPosition = default;
             bool found = false;
             bool conflicting = false;
@@ -111,13 +119,17 @@ namespace PEGA.NPC
                 {
                     selected = candidate;
                     selectedPosition = position;
+                    selectedEvidence = new List<PEGAKnowledgeEvidence>(candidate.Location.Evidence);
                     found = true;
                     conflicting = false;
                 }
-                else if (candidate.Location.ObservationTimeSeconds == selected.Location.ObservationTimeSeconds &&
-                         !position.Equals(selectedPosition))
+                else if (candidate.Location.ObservationTimeSeconds == selected.Location.ObservationTimeSeconds)
                 {
-                    conflicting = true;
+                    AddEvidence(selectedEvidence, candidate.Location.Evidence);
+                    if (!position.Equals(selectedPosition))
+                    {
+                        conflicting = true;
+                    }
                 }
             }
 
@@ -134,43 +146,46 @@ namespace PEGA.NPC
 
             if (conflicting)
             {
-                return new PEGANpcKnowledgeFact<Vector3>(
-                    PEGANpcKnowledgeStatus.Invalidated,
+                return PEGAKnowledgeFact<Vector3>.Create(
+                    PEGAKnowledgeStatus.Invalidated,
                     true,
                     selected.Location.ObservationTimeSeconds,
-                    PEGANpcEvidenceOrigin.AuthorizedInitialLocation,
-                    PEGANpcKnowledgeInvalidationCause.ConflictingEvidence,
+                    selectedEvidence,
+                    PEGAKnowledgeInvalidationCause.ConflictingEvidence,
                     default,
-                    PEGANpcKnowledgeScope.Group);
+                    default,
+                    false,
+                    PEGAKnowledgeScope.Group);
             }
 
-            selected.State.LogEntityFactConsumed(
+            selected.State.LogFactConsumed(
                 _actorRoot,
-                selected.Profile,
-                PEGAActorGroupKnowledgeFactKind.EntityInitialLocation,
+                PEGAActorGroupKnowledgeFacts.EntityInitialLocation.For(selected.Profile),
                 "PEGANpcKnowledgeReadView.GetKnownCharacterPosition");
-            return new PEGANpcKnowledgeFact<Vector3>(
-                PEGANpcKnowledgeStatus.Known,
+            return PEGAKnowledgeFact<Vector3>.Create(
+                PEGAKnowledgeStatus.Known,
                 selected.Location.HasObservationTime,
                 selected.Location.ObservationTimeSeconds,
-                PEGANpcEvidenceOrigin.AuthorizedInitialLocation,
-                PEGANpcKnowledgeInvalidationCause.None,
+                selectedEvidence,
+                selected.Location.InvalidationCauses,
                 selectedPosition,
-                PEGANpcKnowledgeScope.Group);
+                selectedPosition,
+                true,
+                PEGAKnowledgeScope.Group);
         }
 
         /// <summary>Reads prior Group facts for any designer-authored entity identity asset.</summary>
         public bool TryGetKnownGroupEntityFacts(
             ScriptableObject entityIdentity,
-            out PEGANpcKnowledgeFact<ScriptableObject> identityFact,
-            out PEGANpcKnowledgeFact<Vector3> initialLocationFact,
+            out PEGAKnowledgeFact<ScriptableObject> identityFact,
+            out PEGAKnowledgeFact<Vector3> initialLocationFact,
             out IPEGAActorGroupLocationSubjectEvidence locationSubjectEvidence,
             out string diagnostic)
         {
-            identityFact = PEGANpcKnowledgeFact<ScriptableObject>.UnknownForScope(
-                PEGANpcKnowledgeScope.Group);
-            initialLocationFact = PEGANpcKnowledgeFact<Vector3>.UnknownForScope(
-                PEGANpcKnowledgeScope.Group);
+            identityFact = PEGAKnowledgeFact<ScriptableObject>.Unknown(
+                PEGAKnowledgeScope.Group);
+            initialLocationFact = PEGAKnowledgeFact<Vector3>.Unknown(
+                PEGAKnowledgeScope.Group);
             locationSubjectEvidence = null;
             diagnostic = "This Actor has no active Group membership component.";
             if (_groupMembership == null ||
@@ -181,11 +196,13 @@ namespace PEGA.NPC
             }
 
             bool locationConflict = false;
+            List<PEGAKnowledgeEvidence> selectedIdentityEvidence = new List<PEGAKnowledgeEvidence>();
+            List<PEGAKnowledgeEvidence> selectedLocationEvidence = new List<PEGAKnowledgeEvidence>();
             for (int index = 0; index < states.Count; index++)
             {
                 if (!states[index].TryGetKnownEntityFacts(_actorRoot, entityIdentity,
-                        out PEGANpcKnowledgeFact<ScriptableObject> groupIdentity,
-                        out PEGANpcKnowledgeFact<Vector3> groupLocation,
+                        out PEGAKnowledgeFact<ScriptableObject> groupIdentity,
+                        out PEGAKnowledgeFact<Vector3> groupLocation,
                         out IPEGAActorGroupLocationSubjectEvidence subjectEvidence,
                         out diagnostic))
                 {
@@ -196,6 +213,12 @@ namespace PEGA.NPC
                     (!identityFact.HasValue || groupIdentity.ObservationTimeSeconds > identityFact.ObservationTimeSeconds))
                 {
                     identityFact = groupIdentity;
+                    selectedIdentityEvidence = new List<PEGAKnowledgeEvidence>(groupIdentity.Evidence);
+                }
+                else if (groupIdentity.HasValue && identityFact.HasValue &&
+                         groupIdentity.ObservationTimeSeconds == identityFact.ObservationTimeSeconds)
+                {
+                    AddEvidence(selectedIdentityEvidence, groupIdentity.Evidence);
                 }
 
                 if (groupLocation.HasValue &&
@@ -203,28 +226,62 @@ namespace PEGA.NPC
                      groupLocation.ObservationTimeSeconds > initialLocationFact.ObservationTimeSeconds))
                 {
                     initialLocationFact = groupLocation;
+                    selectedLocationEvidence = new List<PEGAKnowledgeEvidence>(groupLocation.Evidence);
                     locationSubjectEvidence = subjectEvidence;
                     locationConflict = false;
                 }
                 else if (groupLocation.HasValue && initialLocationFact.HasValue &&
-                         groupLocation.ObservationTimeSeconds == initialLocationFact.ObservationTimeSeconds &&
-                         groupLocation.TryGetValue(out Vector3 otherPosition) &&
-                         initialLocationFact.TryGetValue(out Vector3 selectedPosition) &&
-                         !otherPosition.Equals(selectedPosition))
+                         groupLocation.ObservationTimeSeconds == initialLocationFact.ObservationTimeSeconds)
                 {
-                    locationConflict = true;
+                    AddEvidence(selectedLocationEvidence, groupLocation.Evidence);
+                    if (groupLocation.TryGetValue(out Vector3 otherPosition) &&
+                        initialLocationFact.TryGetValue(out Vector3 selectedPosition) &&
+                        !otherPosition.Equals(selectedPosition))
+                    {
+                        locationConflict = true;
+                    }
                 }
+            }
+
+            if (identityFact.HasValue)
+            {
+                identityFact = PEGAKnowledgeFact<ScriptableObject>.Create(
+                    PEGAKnowledgeStatus.Known,
+                    identityFact.HasObservationTime,
+                    identityFact.ObservationTimeSeconds,
+                    selectedIdentityEvidence,
+                    identityFact.InvalidationCauses,
+                    identityFact.TryGetValue(out ScriptableObject identityValue) ? identityValue : default,
+                    identityFact.TryGetValue(out ScriptableObject identityCandidate) ? identityCandidate : default,
+                    identityFact.HasCandidate,
+                    PEGAKnowledgeScope.Group);
+            }
+
+            if (initialLocationFact.HasValue)
+            {
+                initialLocationFact = PEGAKnowledgeFact<Vector3>.Create(
+                    PEGAKnowledgeStatus.Known,
+                    initialLocationFact.HasObservationTime,
+                    initialLocationFact.ObservationTimeSeconds,
+                    selectedLocationEvidence,
+                    initialLocationFact.InvalidationCauses,
+                    initialLocationFact.TryGetValue(out Vector3 locationValue) ? locationValue : default,
+                    initialLocationFact.TryGetValue(out Vector3 locationCandidate) ? locationCandidate : default,
+                    initialLocationFact.HasCandidate,
+                    PEGAKnowledgeScope.Group);
             }
 
             if (locationConflict)
             {
-                initialLocationFact = new PEGANpcKnowledgeFact<Vector3>(
-                    PEGANpcKnowledgeStatus.Invalidated, true,
+                initialLocationFact = PEGAKnowledgeFact<Vector3>.Create(
+                    PEGAKnowledgeStatus.Invalidated, true,
                     initialLocationFact.ObservationTimeSeconds,
-                    PEGANpcEvidenceOrigin.AuthorizedInitialLocation,
-                    PEGANpcKnowledgeInvalidationCause.ConflictingEvidence,
+                    selectedLocationEvidence,
+                    PEGAKnowledgeInvalidationCause.ConflictingEvidence,
                     default,
-                    PEGANpcKnowledgeScope.Group);
+                    default,
+                    false,
+                    PEGAKnowledgeScope.Group);
                 locationSubjectEvidence = null;
             }
 
@@ -232,16 +289,44 @@ namespace PEGA.NPC
             return true;
         }
 
+        private static void AddEvidence(
+            List<PEGAKnowledgeEvidence> target,
+            IReadOnlyList<PEGAKnowledgeEvidence> additions)
+        {
+            for (int index = 0; index < additions.Count; index++)
+            {
+                PEGAKnowledgeEvidence candidate = additions[index];
+                bool alreadyPresent = false;
+                for (int existingIndex = 0; existingIndex < target.Count; existingIndex++)
+                {
+                    PEGAKnowledgeEvidence existing = target[existingIndex];
+                    if (existing.Origin.Equals(candidate.Origin) &&
+                        ReferenceEquals(existing.Source, candidate.Source) &&
+                        Equals(existing.Payload, candidate.Payload) &&
+                        existing.ObservationTimeSeconds == candidate.ObservationTimeSeconds)
+                    {
+                        alreadyPresent = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyPresent)
+                {
+                    target.Add(candidate);
+                }
+            }
+        }
+
         public bool TryGetKnownGroupEntityFacts(
             GroupId groupId,
             ScriptableObject entityIdentity,
-            out PEGANpcKnowledgeFact<ScriptableObject> identityFact,
-            out PEGANpcKnowledgeFact<Vector3> initialLocationFact,
+            out PEGAKnowledgeFact<ScriptableObject> identityFact,
+            out PEGAKnowledgeFact<Vector3> initialLocationFact,
             out IPEGAActorGroupLocationSubjectEvidence locationSubjectEvidence,
             out string diagnostic)
         {
-            identityFact = PEGANpcKnowledgeFact<ScriptableObject>.UnknownForScope(PEGANpcKnowledgeScope.Group);
-            initialLocationFact = PEGANpcKnowledgeFact<Vector3>.UnknownForScope(PEGANpcKnowledgeScope.Group);
+            identityFact = PEGAKnowledgeFact<ScriptableObject>.Unknown(PEGAKnowledgeScope.Group);
+            initialLocationFact = PEGAKnowledgeFact<Vector3>.Unknown(PEGAKnowledgeScope.Group);
             locationSubjectEvidence = null;
             diagnostic = "This Actor has no active Group membership component.";
             if (_groupMembership == null || !_groupMembership.TryGetAuthorizedKnowledgeStates(
@@ -286,8 +371,8 @@ namespace PEGA.NPC
                 if (source == null || !source.TryGetCurrentActorProfile(subjectActorId,
                         out ActorProfile profile, out _, out _) ||
                     !state.TryGetKnownEntityFacts(_actorRoot, profile,
-                        out PEGANpcKnowledgeFact<ScriptableObject> identity,
-                        out PEGANpcKnowledgeFact<Vector3> location,
+                        out PEGAKnowledgeFact<ScriptableObject> identity,
+                        out PEGAKnowledgeFact<Vector3> location,
                         out IPEGAActorGroupLocationSubjectEvidence subjectEvidence, out _))
                 {
                     continue;
@@ -304,8 +389,8 @@ namespace PEGA.NPC
         {
             internal GroupActorFacts(PEGAActorGroupKnowledgeState state,
                 PEGAActorProfileKnowledgeSource source, ActorProfile profile,
-                PEGANpcKnowledgeFact<ScriptableObject> identity,
-                PEGANpcKnowledgeFact<Vector3> location,
+                PEGAKnowledgeFact<ScriptableObject> identity,
+                PEGAKnowledgeFact<Vector3> location,
                 IPEGAActorGroupLocationSubjectEvidence locationSubject)
             {
                 State = state;
@@ -319,8 +404,8 @@ namespace PEGA.NPC
             internal PEGAActorGroupKnowledgeState State { get; }
             internal PEGAActorProfileKnowledgeSource Source { get; }
             internal ActorProfile Profile { get; }
-            internal PEGANpcKnowledgeFact<ScriptableObject> Identity { get; }
-            internal PEGANpcKnowledgeFact<Vector3> Location { get; }
+            internal PEGAKnowledgeFact<ScriptableObject> Identity { get; }
+            internal PEGAKnowledgeFact<Vector3> Location { get; }
             internal IPEGAActorGroupLocationSubjectEvidence LocationSubject { get; }
         }
     }
@@ -370,16 +455,16 @@ namespace PEGA.NPC
 
         public IReadOnlyList<IGoapKnowledgeCapability> Capabilities => _capabilities;
 
-        public PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
+        public PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
             _knowledgeState.GetPerceivedAreaPresence();
 
-        public PEGANpcKnowledgeFact<ActorProfileId> GetObservedCharacterIdentity(ActorId subjectActorId) =>
+        public PEGAKnowledgeFact<ActorProfileId> GetObservedCharacterIdentity(ActorId subjectActorId) =>
             _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
 
-        public PEGANpcKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId) =>
+        public PEGAKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId) =>
             _knowledgeState.GetCharacterVisualContact(subjectActorId);
 
-        public PEGANpcKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId) =>
+        public PEGAKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId) =>
             _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
     }
 

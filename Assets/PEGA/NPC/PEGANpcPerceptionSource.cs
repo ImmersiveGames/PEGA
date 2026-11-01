@@ -616,9 +616,9 @@ namespace PEGA.NPC
                 hasVisualContact);
 #endif
 
-            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea =
+            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea =
                 _knowledgeState.GetPerceivedAreaPresence();
-            PEGANpcKnowledgeFact<bool> previousContact =
+            PEGAKnowledgeFact<bool> previousContact =
                 _knowledgeState.GetCharacterVisualContact(occurrence.ActorId);
             bool hadPreviousContact = previousContact.TryGetValue(out bool previousVisualContact);
             bool isTargetReacquisition = hasVisualContact &&
@@ -637,7 +637,7 @@ namespace PEGA.NPC
                     observationTimeSeconds,
                     isTargetReacquisition);
 
-                PEGANpcKnowledgeFact<Vector3> lastPosition =
+                PEGAKnowledgeFact<Vector3> lastPosition =
                     _knowledgeState.GetLastObservedCharacterPosition(occurrence.ActorId);
                 Vector3 observedRootPosition = occurrence.ActorRoot.transform.position;
                 if (isTargetReacquisition ||
@@ -728,7 +728,7 @@ namespace PEGA.NPC
 
         private void PublishAreaPresenceIfChanged(bool isPresent, double observationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> presence =
+            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> presence =
                 _knowledgeState.GetPerceivedAreaPresence();
             if (presence.TryGetValue(out PEGANpcPerceivedAreaPresence previousPresence) &&
                 previousPresence.IsPresent == isPresent)
@@ -736,7 +736,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            if (presence.Status == PEGANpcKnowledgeStatus.Unknown && !isPresent)
+            if (presence.Status == PEGAKnowledgeStatus.Unknown && !isPresent)
             {
                 return;
             }
@@ -756,7 +756,7 @@ namespace PEGA.NPC
             double observationTimeSeconds,
             bool refreshEvidence)
         {
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
+            PEGAKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
             if (refreshEvidence ||
                 !identity.TryGetValue(out ActorProfileId previousProfileId) ||
@@ -775,13 +775,13 @@ namespace PEGA.NPC
             bool hasVisualContact,
             double observationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
+            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             if (contact.TryGetValue(out bool previousContact) && previousContact == hasVisualContact)
             {
                 return;
             }
 
-            if (contact.Status == PEGANpcKnowledgeStatus.Unknown && !hasVisualContact)
+            if (contact.Status == PEGAKnowledgeStatus.Unknown && !hasVisualContact)
             {
                 return;
             }
@@ -797,23 +797,23 @@ namespace PEGA.NPC
             ActorId subjectActorId,
             double observationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
+            PEGAKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            PEGANpcKnowledgeFact<bool> contact =
+            PEGAKnowledgeFact<bool> contact =
                 _knowledgeState.GetCharacterVisualContact(subjectActorId);
-            PEGANpcKnowledgeFact<Vector3> position =
+            PEGAKnowledgeFact<Vector3> position =
                 _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
 
             bool hasConsolidatedEvidence =
                 identity.TryGetValue(out _) &&
-                HasCurrentPerceptionEvidence(identity.Origins, identity.HasObservationTime,
+                HasCurrentPerceptionEvidence(identity.HasOrigin(PEGANpcEvidenceOrigin.Perception), identity.HasObservationTime,
                     identity.ObservationTimeSeconds, observationTimeSeconds) &&
                 contact.TryGetValue(out bool hasVisualContact) &&
                 hasVisualContact &&
-                HasCurrentPerceptionEvidence(contact.Origins, contact.HasObservationTime,
+                HasCurrentPerceptionEvidence(contact.HasOrigin(PEGANpcEvidenceOrigin.Perception), contact.HasObservationTime,
                     contact.ObservationTimeSeconds, observationTimeSeconds) &&
                 position.TryGetValue(out _) &&
-                HasCurrentPerceptionEvidence(position.Origins, position.HasObservationTime,
+                HasCurrentPerceptionEvidence(position.HasOrigin(PEGANpcEvidenceOrigin.Perception), position.HasObservationTime,
                     position.ObservationTimeSeconds, observationTimeSeconds);
 
             if (!hasConsolidatedEvidence)
@@ -859,11 +859,11 @@ namespace PEGA.NPC
         }
 
         private static bool HasCurrentPerceptionEvidence(
-            PEGANpcEvidenceOrigin origins,
+            bool hasPerceptionOrigin,
             bool hasObservationTime,
             double evidenceTimeSeconds,
             double observationTimeSeconds) =>
-            (origins & PEGANpcEvidenceOrigin.Perception) != 0 &&
+            hasPerceptionOrigin &&
             hasObservationTime &&
             Math.Abs(evidenceTimeSeconds - observationTimeSeconds) <= 0.000001d;
 
@@ -1019,10 +1019,10 @@ namespace PEGA.NPC
             bool expectedContact,
             double expectedObservationTimeSeconds)
         {
-            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
+            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             return contact.TryGetValue(out bool actualContact) &&
                    actualContact == expectedContact &&
-                   (contact.Origins & PEGANpcEvidenceOrigin.Perception) != 0 &&
+                   contact.HasOrigin(PEGANpcEvidenceOrigin.Perception) &&
                    contact.HasObservationTime &&
                    Math.Abs(contact.ObservationTimeSeconds - expectedObservationTimeSeconds) <= 0.000001d;
         }
@@ -1126,8 +1126,8 @@ namespace PEGA.NPC
 
         private void LogPerceptionTransition(
             ActorOccurrence occurrence,
-            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea,
-            PEGANpcKnowledgeFact<bool> previousContact,
+            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea,
+            PEGAKnowledgeFact<bool> previousContact,
             bool isAreaPresencePerceived,
             bool hasVisualContact,
             bool isAreaOccluded,

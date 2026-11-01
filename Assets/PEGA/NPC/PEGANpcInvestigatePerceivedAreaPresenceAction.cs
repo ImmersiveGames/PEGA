@@ -264,23 +264,21 @@ namespace PEGA.NPC
             candidate.TargetId.IdentityKind ==
                 PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
 
-        public bool IsRelevantKnowledgeChange(PEGANpcKnowledgeFactChangedEvent change)
+        public bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged)
             {
                 return false;
             }
 
-            if (change.FactKind == PEGANpcKnowledgeFactKind.PerceivedAreaPresence)
+            if (change.IsFor(PEGANpcKnowledgeFacts.PerceivedAreaPresence.For(0)))
             {
                 return true;
             }
 
-            return _executionTargetActorId.IsValid &&
-                   change.SubjectActorId.HasValue &&
-                   change.SubjectActorId.Value == _executionTargetActorId &&
-                   (change.FactKind == PEGANpcKnowledgeFactKind.ObservedCharacterIdentity ||
-                    change.FactKind == PEGANpcKnowledgeFactKind.CharacterVisualContact);
+            return PEGANpcKnowledgeFacts.IsIdentityOrContactChangeFor(
+                change,
+                _executionTargetActorId);
         }
 
         public override bool IsCurrentPlanValid(
@@ -522,12 +520,12 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcKnowledgeFact<PEGANpcPerceivedAreaPresence> fact =
+            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> fact =
                 _knowledgeState.GetPerceivedAreaPresence();
             if (!fact.TryGetValue(out presence) ||
                 !presence.IsPresent ||
                 !fact.HasObservationTime ||
-                (fact.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+                !fact.HasOrigin(PEGANpcEvidenceOrigin.Perception))
             {
                 diagnostic = string.Empty;
                 return false;
@@ -545,10 +543,10 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
+            PEGAKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
             return identity.TryGetValue(out _) &&
-                   (identity.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
+                   identity.HasOrigin(PEGANpcEvidenceOrigin.Perception);
         }
 
         private bool ValidateConfiguration(

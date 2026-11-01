@@ -156,3 +156,19 @@ Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conf
 - O histórico de satisfação dos NPCs é runtime e não é salvo como uma configuração do Profile. Reiniciar o Play Mode inicia outro teste.
 
 Este guia descreve a superfície atual do Unity. Para regras de jogo, o GDD permanece a referência normativa: [PEGA GDD](../PEGA%20GDD/GDD.md). A existência de uma regra no GDD não comprova que já exista uma opção de autoria ou implementação para ela.
+
+## 9. Knowledge: escopos, acesso e validação
+
+A arquitetura aprovada no [ADR-GROUP-KNOWLEDGE-01](../PEGA%20GDD/ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md) preserva os escopos **Individual**, **Group** e **Global**. Individual e Group usam a mesma representação genérica de fatos, com definições tipadas, evidência, política, atualização, invalidação e consulta. Cada autoridade mantém seu próprio store, ownership e lifecycle. O mecanismo não reconhece fatos por personagem ou exemplo; os fatos atuais de identidade, presença, posição e Spawn Point são definições usadas por Perception, fontes iniciais, Actions, GOAP e diagnóstico.
+
+Conhecimento Individual permanece privado ao NPC e não é copiado automaticamente ao Group. Conhecimento de Group pertence ao Group vivo e é acessível somente conforme a membership oficial vigente; somente esse escopo usa `GroupId` e membership. O modo Global continua sem autoridade implementada. Identidade e localização são fatos separados: `IdentityOnly` deixa a localização `Unknown`; `IdentityAndInitialLocation` permite publicar localização por uma fonte autorizada, não inferi-la da identidade. A implementação comum está em [`PEGAKnowledgeFactStore`](../Assets/PEGA/NPC/PEGAKnowledgeFactStore.cs), e os exemplos atuais em [`PEGAKnowledgeFactDefinitions`](../Assets/PEGA/NPC/PEGAKnowledgeFactDefinitions.cs).
+
+Esta arquitetura fecha a lacuna estática registrada na auditoria do ADR, em que o armazenamento de Group era especializado em Spawn Points. A revisão arquitetural independente retornou `CLEAR` para a generalização do contrato; isso não substitui validação funcional.
+
+### Evidências da demonstração atual
+
+- **Validação manual informada pelo usuário em 1º de novembro de 2026; não executada nem verificada independentemente pelo Codex:** importação e compilação sem erros; logger canônico confirmou `pega.gang.larapios` e membership dos dois NPCs; ambos leram a identidade inicial de Rick pelo Group; `IdentityOnly` preservou localização `Unknown`; Perception atualizou o conhecimento Individual sem compartilhamento automático; a perda de contato preservou a última posição; GOAP usou a última evidência legítima sem acompanhar estado oculto; perseguição, investigação e efeitos das Actions continuaram funcionando.
+- **Revisão estática:** o store e os consumidores migrados foram inspecionados; `git diff --check` e buscas por estruturas especializadas removidas não apontaram problemas. Essas verificações não comprovam comportamento em execução.
+- **Sem validação funcional específica relatada:** isolamento entre múltiplos Groups vivos; modalidade `IdentityAndInitialLocation`; leitura por membership tardia e bloqueio após revogação; ingresso físico em Spawn Point publicando e disponibilizando seu fato pelo mecanismo genérico.
+
+Os itens pendentes são cenários funcionais específicos. A ausência desses relatos não altera o contrato arquitetural nem é tratada como prova de falha.

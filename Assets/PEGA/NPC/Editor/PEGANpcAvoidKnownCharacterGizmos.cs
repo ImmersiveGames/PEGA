@@ -59,10 +59,10 @@ namespace PEGA.NPC.Editor
             }
 
             ActorId targetActorId = resolution.Occurrence.ActorId;
-            PEGANpcKnowledgeFact<ActorProfileId> identity = knowledge.GetObservedCharacterIdentity(targetActorId);
-            PEGANpcKnowledgeFact<Vector3> lastPosition = knowledge.GetLastObservedCharacterPosition(targetActorId);
+            PEGAKnowledgeFact<ActorProfileId> identity = knowledge.GetObservedCharacterIdentity(targetActorId);
+            PEGAKnowledgeFact<Vector3> lastPosition = knowledge.GetLastObservedCharacterPosition(targetActorId);
             return identity.TryGetValue(out _) &&
-                   (identity.Origins & PEGANpcEvidenceOrigin.Perception) != 0 &&
+                   identity.HasOrigin(PEGANpcEvidenceOrigin.Perception) &&
                    lastPosition.TryGetValue(out position) &&
                    lastPosition.HasObservationTime;
         }

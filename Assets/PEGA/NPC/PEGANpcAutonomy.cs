@@ -693,12 +693,19 @@ namespace PEGA.NPC
             _actionRuntimesInitialized = false;
         }
 
-        private void OnKnowledgeChanged(PEGANpcKnowledgeFactChangedEvent change)
+        private void OnKnowledgeChanged(PEGAKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged)
             {
                 return;
             }
+
+            string factAddress = change.FactKey?.Address?.ToString() ?? string.Empty;
+            string changedActorId = PEGANpcKnowledgeFacts.TryGetCharacterSubject(
+                change,
+                out ActorId subjectActorId)
+                ? subjectActorId.StableText
+                : factAddress;
 
             bool isRelevantToAnyProvider = false;
             for (int index = 0; index < _actionProviders.Count; index++)
@@ -716,23 +723,20 @@ namespace PEGA.NPC
                 _log.Debug(
                     "Knowledge State change did not affect any registered Action provider's planning inputs.",
                     LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("subjectActorId", change.SubjectActorId.HasValue
-                        ? change.SubjectActorId.Value.StableText
-                        : string.Empty),
-                    LogFields.Field("factKind", change.FactKind),
-                    LogFields.Field("evidenceOrigin", change.EvidenceOrigin));
+                    LogFields.Field("factAddress", factAddress),
+                    LogFields.Field("fact", change.FactKey?.Name ?? string.Empty),
+                    LogFields.Field("evidenceOrigin", change.Evidence.Origin));
                 return;
             }
 
             _log.Debug(
                 "Knowledge State change queued provider-driven GOAP reevaluation.",
                 LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("subjectActorId", change.SubjectActorId.HasValue
-                    ? change.SubjectActorId.Value.StableText
-                    : string.Empty),
-                LogFields.Field("factKind", change.FactKind),
-                LogFields.Field("observationTimeSeconds", change.ObservationTimeSeconds),
-                LogFields.Field("evidenceOrigin", change.EvidenceOrigin),
+                LogFields.Field("factAddress", factAddress),
+                LogFields.Field("subjectActorId", changedActorId),
+                LogFields.Field("fact", change.FactKey?.Name ?? string.Empty),
+                LogFields.Field("observationTimeSeconds", change.Evidence.ObservationTimeSeconds),
+                LogFields.Field("evidenceOrigin", change.Evidence.Origin),
                 LogFields.Field("activeRequestId", _activeActionRequestId));
             QueueEvaluation(EvaluationCause.RelevantKnowledgeChange);
         }
@@ -980,19 +984,19 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcKnowledgeFact<ActorProfileId> identity =
+            PEGAKnowledgeFact<ActorProfileId> identity =
                 _knowledgeState.GetObservedCharacterIdentity(actorId);
-            PEGANpcKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
-            PEGANpcKnowledgeFact<Vector3> position = _knowledgeState.GetLastObservedCharacterPosition(actorId);
+            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
+            PEGAKnowledgeFact<Vector3> position = _knowledgeState.GetLastObservedCharacterPosition(actorId);
             if (!identity.TryGetValue(out _) ||
                 !identity.HasObservationTime ||
-                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
+                !identity.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
                 !position.TryGetValue(out _) ||
                 !position.HasObservationTime ||
-                (position.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
+                !position.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
                 !contact.TryGetValue(out bool hasVisualContact) ||
                 !contact.HasObservationTime ||
-                (contact.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+                !contact.HasOrigin(PEGANpcEvidenceOrigin.Perception))
             {
                 diagnostic = "The NPC does not have the required Perception-backed identity, contact and last-position facts.";
                 return false;
@@ -1030,7 +1034,7 @@ namespace PEGA.NPC
             }
         }
 
-        private static bool HasObservationAt<T>(PEGANpcKnowledgeFact<T> fact, double observationTimeSeconds) =>
+        private static bool HasObservationAt<T>(PEGAKnowledgeFact<T> fact, double observationTimeSeconds) =>
             fact.HasObservationTime &&
             Math.Abs(fact.ObservationTimeSeconds - observationTimeSeconds) <= 0.000001d;
 
@@ -1336,15 +1340,15 @@ namespace PEGA.NPC
                     return false;
                 }
 
-                PEGANpcKnowledgeFact<ActorProfileId> continuationIdentity =
+                PEGAKnowledgeFact<ActorProfileId> continuationIdentity =
                     _knowledgeState.GetObservedCharacterIdentity(targetActorId);
-                PEGANpcKnowledgeFact<Vector3> continuationPosition =
+                PEGAKnowledgeFact<Vector3> continuationPosition =
                     _knowledgeState.GetLastObservedCharacterPosition(targetActorId);
                 if (!continuationIdentity.TryGetValue(out _) ||
-                    (continuationIdentity.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
+                    !continuationIdentity.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
                     !continuationPosition.TryGetValue(out Vector3 continuationKnownPosition) ||
                     !continuationPosition.HasObservationTime ||
-                    (continuationPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+                    !continuationPosition.HasOrigin(PEGANpcEvidenceOrigin.Perception))
                 {
                     diagnostic = "Plan continuation requires this NPC's Perception-backed target identity and last known position.";
                     return false;
@@ -1380,11 +1384,11 @@ namespace PEGA.NPC
             bool hasPerceptionBackedTargetContact = false;
             if (targetActorId.IsValid)
             {
-                PEGANpcKnowledgeFact<bool> targetContact =
+                PEGAKnowledgeFact<bool> targetContact =
                     _knowledgeState.GetCharacterVisualContact(targetActorId);
                 hasPerceptionBackedTargetContact = targetContact.TryGetValue(out bool hasContact) &&
                     hasContact &&
-                    (targetContact.Origins & PEGANpcEvidenceOrigin.Perception) != 0;
+                    targetContact.HasOrigin(PEGANpcEvidenceOrigin.Perception);
             }
 
             PEGANpcPlanningTargetId[] attemptedInvestigationTargets =

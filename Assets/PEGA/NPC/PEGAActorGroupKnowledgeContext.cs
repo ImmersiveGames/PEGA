@@ -18,7 +18,7 @@ namespace PEGA.NPC
         [NonSerialized]
         private ScopedLogger _log;
 
-        internal event Action<GroupId, PEGAActorGroupKnowledgeFactChangedEvent> Changed;
+        internal event Action<GroupId, PEGAKnowledgeFactChangedEvent> Changed;
 
         internal bool TryRegister(GroupId groupId, PEGAActorGroupKnowledgeState authority, out string diagnostic)
         {
@@ -59,7 +59,7 @@ namespace PEGA.NPC
                 _authorities.TryGetValue(groupId, out authority) && authority != null && authority.IsOwnerActive;
         }
 
-        internal void NotifyFactChanged(GroupId groupId, PEGAActorGroupKnowledgeFactChangedEvent change)
+        internal void NotifyFactChanged(GroupId groupId, PEGAKnowledgeFactChangedEvent change)
         {
             if (TryGetAuthority(groupId, out _))
             {
@@ -67,9 +67,9 @@ namespace PEGA.NPC
             }
         }
 
-        private void PublishChanged(GroupId groupId, PEGAActorGroupKnowledgeFactChangedEvent change)
+        private void PublishChanged(GroupId groupId, PEGAKnowledgeFactChangedEvent change)
         {
-            Action<GroupId, PEGAActorGroupKnowledgeFactChangedEvent> handlers = Changed;
+            Action<GroupId, PEGAKnowledgeFactChangedEvent> handlers = Changed;
             if (handlers == null)
             {
                 return;
@@ -79,7 +79,7 @@ namespace PEGA.NPC
             {
                 try
                 {
-                    ((Action<GroupId, PEGAActorGroupKnowledgeFactChangedEvent>)subscriber)(groupId, change);
+                    ((Action<GroupId, PEGAKnowledgeFactChangedEvent>)subscriber)(groupId, change);
                 }
                 catch (Exception exception)
                 {

@@ -79,7 +79,7 @@ namespace PEGA.NPC
                     continue;
                 }
 
-                PEGANpcKnowledgeFact<bool> visualContact = knowledgeState.GetCharacterVisualContact(subjectActorId);
+                PEGAKnowledgeFact<bool> visualContact = knowledgeState.GetCharacterVisualContact(subjectActorId);
                 if (visualContact.TryGetValue(out bool hasVisualContact))
                 {
                     return hasVisualContact

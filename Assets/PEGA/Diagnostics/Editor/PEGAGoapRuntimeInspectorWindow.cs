@@ -704,8 +704,8 @@ namespace PEGA.Diagnostics.Editor
                     if (groupKnowledge.TryGetKnownEntityFacts(
                             view.Autonomy.gameObject,
                             definition.EntityIdentity,
-                            out PEGANpcKnowledgeFact<ScriptableObject> identityFact,
-                            out PEGANpcKnowledgeFact<Vector3> locationFact,
+                            out PEGAKnowledgeFact<ScriptableObject> identityFact,
+                            out PEGAKnowledgeFact<Vector3> locationFact,
                             out IPEGAActorGroupLocationSubjectEvidence _,
                             out string priorKnowledgeDiagnostic))
                     {
@@ -1007,7 +1007,7 @@ namespace PEGA.Diagnostics.Editor
 
         private static void DrawKnowledgeFact<T>(
             string label,
-            PEGANpcKnowledgeFact<T> fact,
+            PEGAKnowledgeFact<T> fact,
             Func<T, string> formatValue,
             bool showMetadata,
             bool showValue)
@@ -1072,9 +1072,8 @@ namespace PEGA.Diagnostics.Editor
         private static readonly FieldInfo ActivePlanField = typeof(PEGANpcAutonomy).GetField("_activePlan", InstancePrivate);
         private static readonly FieldInfo LatestSelectionField = typeof(PEGANpcAutonomy).GetField("_latestSelection", InstancePrivate);
         private static readonly FieldInfo ActionProvidersField = typeof(PEGANpcAutonomy).GetField("_actionProviders", InstancePrivate);
-        private static readonly FieldInfo KnowledgeSubjectsField = typeof(PEGANpcKnowledgeState).GetField("_knowledgeBySubject", InstancePrivate);
-        private static readonly FieldInfo PerceivedAreaField = typeof(PEGANpcKnowledgeState).GetField("_perceivedAreaPresence", InstancePrivate);
-        private static readonly FieldInfo GroupTargetsField = typeof(PEGAActorGroupKnowledgeState).GetField("_knownEscapePoints", InstancePrivate);
+        private static readonly FieldInfo IndividualFactStoreField = typeof(PEGANpcKnowledgeState).GetField("_factStore", InstancePrivate);
+        private static readonly FieldInfo GroupFactStoreField = typeof(PEGAActorGroupKnowledgeState).GetField("_factStore", InstancePrivate);
 
         public static RuntimeView Read(PEGANpcAutonomy autonomy)
         {
@@ -1094,20 +1093,15 @@ namespace PEGA.Diagnostics.Editor
             view.KnowledgeState = autonomy.GetComponent<PEGANpcKnowledgeState>();
             if (view.KnowledgeState != null)
             {
-                object subjects = ReadRawField(KnowledgeSubjectsField, view.KnowledgeState, "índice de sujeitos do Knowledge State", view.Issues);
-                object perceivedArea = ReadRawField(PerceivedAreaField, view.KnowledgeState, "fato de presença percebida", view.Issues);
-                view.KnowledgeReady = subjects is IDictionary && perceivedArea != null;
-                if (subjects is IDictionary dictionary)
+                object rawFactStore = ReadRawField(
+                    IndividualFactStoreField,
+                    view.KnowledgeState,
+                    "store de fatos do Knowledge State",
+                    view.Issues);
+                if (rawFactStore is PEGAKnowledgeFactStore)
                 {
-                    foreach (object key in dictionary.Keys)
-                    {
-                        if (key is ActorId actorId && actorId.IsValid)
-                        {
-                            view.KnownActors.Add(actorId);
-                        }
-                    }
-
-                    view.KnownActors.Sort((left, right) => string.CompareOrdinal(left.StableText, right.StableText));
+                    view.KnowledgeReady = true;
+                    view.KnownActors.AddRange(view.KnowledgeState.GetKnownCharacterSubjectIds());
                 }
             }
             else
@@ -1120,8 +1114,8 @@ namespace PEGA.Diagnostics.Editor
 
         public static bool IsActorGroupKnowledgeReady(PEGAActorGroupKnowledgeState groupKnowledge)
         {
-            object targets = ReadRawField(GroupTargetsField, groupKnowledge, "índice de Targets compartilhados", null);
-            return targets is IDictionary;
+            object factStore = ReadRawField(GroupFactStoreField, groupKnowledge, "store de fatos do Group", null);
+            return factStore is PEGAKnowledgeFactStore;
         }
 
         private static void ReadActionProviders(PEGANpcAutonomy autonomy, RuntimeView view)
