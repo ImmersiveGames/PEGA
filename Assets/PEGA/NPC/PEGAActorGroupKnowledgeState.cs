@@ -45,9 +45,15 @@ namespace PEGA.NPC
         private GroupProfile groupProfile;
 
         [SerializeField]
-        [Tooltip("Fatos iniciais conhecidos por este Group. A localização só é autorizada no modo correspondente.")]
+        [Header("Identidade e localização de entidades")]
+        [Tooltip("Identidades iniciais conhecidas por este Group. A localização continua independente e só é registrada pelo modo e fonte autorizados.")]
         private PEGAActorGroupPriorKnowledgeDefinition[] priorEntityKnowledge =
             Array.Empty<PEGAActorGroupPriorKnowledgeDefinition>();
+
+        [SerializeReference]
+        [Header("Outros fatos iniciais")]
+        [Tooltip("Fatos iniciais tipados deste Group. Cada entrada usa a definição e política existentes; não cria uma fonte de aquisição.")]
+        private List<PEGAActorGroupInitialKnowledgeFact> initialKnowledgeFacts = new();
 
         [NonSerialized]
         private ActorGroupAccessBinding actorGroupAccessBinding;
@@ -164,7 +170,7 @@ namespace PEGA.NPC
             EnsureLoggerInitialized();
             _authorizedAccessLoggedActors.Clear();
             _consumptionLogs.Clear();
-            InitializePriorEntityKnowledge();
+            InitializePriorKnowledge();
             if (!_context.TryRegister(groupId, this, out diagnostic))
             {
                 Deactivate();
@@ -897,7 +903,7 @@ namespace PEGA.NPC
             _consumptionLogs ??= new HashSet<KnowledgeConsumptionKey>();
         }
 
-        private void InitializePriorEntityKnowledge()
+        private void InitializePriorKnowledge()
         {
             _factStore.Clear();
             var seenIdentities = new HashSet<ScriptableObject>();
@@ -979,6 +985,8 @@ namespace PEGA.NPC
                     LogFields.Field("authoredAtSeconds", authoredAt));
             }
 
+            InitializeInitialKnowledgeFacts(groupId);
+
             if (HasInitialLocationAuthorization() && !HasConfiguredKnowledgeSource())
             {
                 _log.Error(
@@ -997,6 +1005,55 @@ namespace PEGA.NPC
                         LogFields.Field("groupId", groupId.StableText),
                         LogFields.Field("sourceIndex", index));
                 }
+            }
+        }
+
+        private void InitializeInitialKnowledgeFacts(GroupId groupId)
+        {
+            if (initialKnowledgeFacts == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < initialKnowledgeFacts.Count; index++)
+            {
+                PEGAActorGroupInitialKnowledgeFact definition = initialKnowledgeFacts[index];
+                if (definition == null)
+                {
+                    _log.Error(
+                        "Actor Group initial fact authoring contains an empty definition.",
+                        LogFields.Field("groupId", groupId.StableText),
+                        LogFields.Field("definitionIndex", index));
+                    continue;
+                }
+
+                double authoredAt = Time.timeAsDouble;
+                PEGAKnowledgeEvidence evidence = PEGAKnowledgeEvidence.From(
+                    PEGAActorGroupKnowledgeEvidenceOrigin.DesignerAuthoredInitialFact,
+                    authoredAt,
+                    this,
+                    definition);
+                if (!definition.TryObserve(_factStore, evidence, out PEGAKnowledgeWriteResult result,
+                        out string diagnostic) || result == PEGAKnowledgeWriteResult.RejectedInvalid)
+                {
+                    _log.Error(
+                        "Actor Group initial fact was rejected by its fact definition or policy.",
+                        LogFields.Field("groupId", groupId.StableText),
+                        LogFields.Field("definitionIndex", index),
+                        LogFields.Field("fact", definition.FactName),
+                        LogFields.Field("writeResult", result),
+                        LogFields.Field("reason", diagnostic));
+                    continue;
+                }
+
+                _log.Info(
+                    "Actor Group initial fact was authored for the active owner scope.",
+                    LogFields.Field("groupId", groupId.StableText),
+                    LogFields.Field("fact", definition.FactName),
+                    LogFields.Field("factOrigin", PEGAActorGroupKnowledgeEvidenceOrigin.DesignerAuthoredInitialFact),
+                    LogFields.Field("validityScope", _ownerScope),
+                    LogFields.Field("authoredAtSeconds", authoredAt),
+                    LogFields.Field("writeResult", result));
             }
         }
 

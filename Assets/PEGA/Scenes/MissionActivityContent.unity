@@ -212,6 +212,17 @@ MonoBehaviour:
   priorEntityKnowledge:
   - entityIdentity: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
     mode: 10
+  initialKnowledgeFacts:
+  - rid: 611443190002470001
+  references:
+    version: 2
+    RefIds:
+    - rid: 611443190002470001
+      type: {class: PEGAActorGroupInitialAreaPresenceFact, ns: PEGA.NPC, asm: Assembly-CSharp}
+      data:
+        isPresent: 1
+        observerPosition: {x: 0, y: 0, z: 0}
+        perceivedAreaRadiusMeters: 5
 --- !u!1 &2500000200
 GameObject:
   m_ObjectHideFlags: 0
@@ -405,11 +416,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2500000401}
-  - component: {fileID: 2095411630}
   - component: {fileID: 2500000403}
   - component: {fileID: 2500000402}
-  - component: {fileID: 2500000404}
+  - component: {fileID: 2095411630}
   - component: {fileID: 2500000424}
+  - component: {fileID: 2500000404}
   m_Layer: 0
   m_Name: PEGA Mission Actor Groups
   m_TagString: Untagged

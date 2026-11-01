@@ -8,7 +8,8 @@ namespace PEGA.NPC
     {
         SpawnPointPhysicalIngress = 0,
         DesignerAuthoredIdentity = 10,
-        AuthorizedInitialLocationSource = 20
+        AuthorizedInitialLocationSource = 20,
+        DesignerAuthoredInitialFact = 30
     }
 
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>

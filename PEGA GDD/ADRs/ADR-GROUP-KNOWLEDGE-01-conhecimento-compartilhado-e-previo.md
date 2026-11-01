@@ -48,7 +48,7 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 - Qual componente/participante concreto coordena criação e membership, e se o Group Knowledge acompanha o owner Session, Route ou Activity, ou outra composição admitida pelo Framework. Seu lifecycle deve ser compatível com o owner real do Group, sem presumir persistência além dele.
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
 - A representação técnica da autoria inicial, inicialização de fatos, distribuição de mudanças, conflitos entre fontes, retenção e eventual reentrada de Groups. Aplicam-se enquanto isso as políticas semânticas gerais do GDD, não uma política técnica presumida.
-- A implementação do Knowledge State Global, fontes concretas de percepção/investigação e navegação até POIs, inclusive localizabilidade prévia. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) continua responsável por identidade e localização de POIs.
+- A implementação do Knowledge State Global, fontes concretas de percepção/investigação e navegação até POIs, inclusive localizabilidade prévia. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) define a integração futura da identidade e manifestação dos POIs com os contratos Object Entry do Framework, mantendo os fatos de Knowledge independentes da ocorrência física.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
