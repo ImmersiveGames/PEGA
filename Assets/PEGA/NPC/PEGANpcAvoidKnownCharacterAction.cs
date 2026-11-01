@@ -18,6 +18,9 @@ namespace PEGA.NPC
         private PEGANpcKnowledgeState knowledgeState;
 
         [System.NonSerialized]
+        private PEGANpcKnowledgeReadView knowledgeReadView;
+
+        [System.NonSerialized]
         private ActorOccurrenceReferenceBinding characterReference;
 
         [Header("Movement")]
@@ -51,8 +54,10 @@ namespace PEGA.NPC
             }
 
             knowledgeState = RuntimeContext.KnowledgeState;
+            knowledgeReadView = RuntimeContext.KnowledgeReadView;
             characterReference = RuntimeContext.ActorReference;
             if (knowledgeState == null || knowledgeState.gameObject != ActorRoot ||
+                knowledgeReadView == null ||
                 characterReference == null || characterReference.gameObject != ActorRoot)
             {
                 diagnostic = "Avoid Known Character requires the Actor's Knowledge State and occurrence reference.";
@@ -96,6 +101,7 @@ namespace PEGA.NPC
             if (context.PlanContinuation.HasValue ||
                 !context.TargetActorId.IsValid ||
                 !TryGetKnownCharacterEvidence(
+                    context.KnowledgeReadView,
                     out ActorId subjectActorId,
                     out Vector3 knownPosition,
                     out double evidenceTimeSeconds,
@@ -326,6 +332,21 @@ namespace PEGA.NPC
             out double evidenceTimeSeconds,
             out string diagnostic)
         {
+            return TryGetKnownCharacterEvidence(
+                knowledgeReadView,
+                out subjectActorId,
+                out knownPosition,
+                out evidenceTimeSeconds,
+                out diagnostic);
+        }
+
+        private bool TryGetKnownCharacterEvidence(
+            PEGANpcKnowledgeReadView knowledgeView,
+            out ActorId subjectActorId,
+            out Vector3 knownPosition,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
             subjectActorId = default;
             knownPosition = default;
             evidenceTimeSeconds = 0d;
@@ -335,24 +356,20 @@ namespace PEGA.NPC
             }
 
             PEGANpcKnowledgeFact<ActorProfileId> identity =
-                knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            if (!identity.TryGetValue(out _) ||
-                (identity.Origins & PEGANpcEvidenceOrigin.Perception) == 0)
+                knowledgeView.GetObservedCharacterIdentity(subjectActorId);
+            if (!identity.TryGetValue(out _))
             {
-                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The target identity is not legitimately known from Perception evidence."
-                    : diagnostic;
+                diagnostic = "The target identity is not available from this NPC's Individual or authorized Group knowledge.";
                 return false;
             }
 
             PEGANpcKnowledgeFact<Vector3> lastObservedPosition =
-                knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
+                knowledgeView.GetKnownCharacterPosition(subjectActorId);
             if (!lastObservedPosition.TryGetValue(out knownPosition) ||
                 !lastObservedPosition.HasObservationTime ||
-                (lastObservedPosition.Origins & PEGANpcEvidenceOrigin.Perception) == 0 ||
                 !IsFinite(knownPosition))
             {
-                diagnostic = "The NPC has no valid Perception-backed target position with evidence time.";
+                diagnostic = "The target location is unknown or invalid in this NPC's Individual and authorized Group knowledge.";
                 return false;
             }
 

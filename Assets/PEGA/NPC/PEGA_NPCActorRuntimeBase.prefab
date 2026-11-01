@@ -151,10 +151,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangMembership
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupMembership
   groupProfiles:
   - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
-  gangKnowledgeState: {fileID: 0}
 --- !u!114 &114000006
 MonoBehaviour:
   m_ObjectHideFlags: 0

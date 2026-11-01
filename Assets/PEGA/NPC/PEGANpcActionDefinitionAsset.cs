@@ -118,20 +118,23 @@ namespace PEGA.NPC
         internal PEGANpcActionRuntimeContext(
             PEGANpcAutonomy autonomy,
             PEGANpcKnowledgeState knowledgeState,
+            PEGANpcKnowledgeReadView knowledgeReadView,
             PEGANpcNavMeshMovementIntentSource navigationSource,
             ActorOccurrenceReferenceBinding actorReference,
             NavMeshAgent navigationAgent,
-            PEGANpcGangMembership gangMembership,
+            PEGAActorGroupMembership actorGroupMembership,
             IPEGANpcLastKnownTargetContinuationProvider lastKnownTargetContinuationProvider)
         {
             Autonomy = autonomy;
             ActorRoot = autonomy != null ? autonomy.gameObject : null;
             ActorTransform = autonomy != null ? autonomy.transform : null;
             KnowledgeState = knowledgeState;
+            KnowledgeReadView = knowledgeReadView ??
+                throw new System.ArgumentNullException(nameof(knowledgeReadView));
             NavigationSource = navigationSource;
             ActorReference = actorReference;
             NavigationAgent = navigationAgent;
-            GangMembership = gangMembership;
+            ActorGroupMembership = actorGroupMembership;
             LastKnownTargetContinuationProvider = lastKnownTargetContinuationProvider;
         }
 
@@ -139,10 +142,11 @@ namespace PEGA.NPC
         public GameObject ActorRoot { get; }
         public Transform ActorTransform { get; }
         public PEGANpcKnowledgeState KnowledgeState { get; }
+        public PEGANpcKnowledgeReadView KnowledgeReadView { get; }
         public PEGANpcNavMeshMovementIntentSource NavigationSource { get; }
         public ActorOccurrenceReferenceBinding ActorReference { get; }
         public NavMeshAgent NavigationAgent { get; }
-        public PEGANpcGangMembership GangMembership { get; }
+        public PEGAActorGroupMembership ActorGroupMembership { get; }
         public IPEGANpcLastKnownTargetContinuationProvider LastKnownTargetContinuationProvider { get; }
     }
 }

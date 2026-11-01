@@ -227,12 +227,15 @@ namespace PEGA.NPC
     {
         public PEGANpcActionPlanningContext(
             PEGANpcKnowledgeState knowledgeState,
+            PEGANpcKnowledgeReadView knowledgeReadView,
             ActorId targetActorId,
             bool hasPerceptionBackedTargetContact,
             PEGANpcPlanContinuation? planContinuation,
             IReadOnlyCollection<PEGANpcPlanningTargetId> attemptedInvestigationTargets)
         {
             KnowledgeState = knowledgeState;
+            KnowledgeReadView = knowledgeReadView ??
+                throw new ArgumentNullException(nameof(knowledgeReadView));
             TargetActorId = targetActorId;
             HasPerceptionBackedTargetContact = hasPerceptionBackedTargetContact;
             PlanContinuation = planContinuation;
@@ -241,6 +244,7 @@ namespace PEGA.NPC
         }
 
         public PEGANpcKnowledgeState KnowledgeState { get; }
+        public PEGANpcKnowledgeReadView KnowledgeReadView { get; }
         public ActorId TargetActorId { get; }
         public bool HasPerceptionBackedTargetContact { get; }
         public PEGANpcPlanContinuation? PlanContinuation { get; }

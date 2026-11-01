@@ -43,6 +43,9 @@ namespace PEGA.NPC
         private IGoapKnowledgeStateView _goapKnowledgeStateView;
 
         [System.NonSerialized]
+        private PEGANpcKnowledgeReadView _knowledgeReadView;
+
+        [System.NonSerialized]
         private IPEGANpcTargetObservationSource _targetObservationSource;
 
         [System.NonSerialized]
@@ -476,6 +479,10 @@ namespace PEGA.NPC
             _goapKnowledgeStateView = new PEGANpcGoapKnowledgeStateView(
                 _knowledgeState,
                 _goapKnowledgeCapabilities);
+            _knowledgeReadView = new PEGANpcKnowledgeReadView(
+                gameObject,
+                _knowledgeState,
+                GetComponent<PEGAActorGroupMembership>());
 
             if (!TryCreateActionRuntimeInstances(out diagnostic))
             {
@@ -635,10 +642,11 @@ namespace PEGA.NPC
             PEGANpcActionRuntimeContext context = new PEGANpcActionRuntimeContext(
                 this,
                 _knowledgeState,
+                _knowledgeReadView,
                 GetComponent<PEGANpcNavMeshMovementIntentSource>(),
                 GetComponent<ActorOccurrenceReferenceBinding>(),
                 GetComponent<NavMeshAgent>(),
-                GetComponent<PEGANpcGangMembership>(),
+                GetComponent<PEGAActorGroupMembership>(),
                 _continuationProvider);
             for (int index = 0; index < _actionRuntimeInstances.Count; index++)
             {
@@ -1053,7 +1061,7 @@ namespace PEGA.NPC
 
             _latestSelection = selection;
             _log.Debug(
-                "NPC consolidated event-driven GOAP reevaluation against its current individual and Gang knowledge.",
+                "NPC consolidated event-driven GOAP reevaluation against its Individual and authorized Group knowledge.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("causes", causes),
                 LogFields.Field("targetActorId", targetActorId.IsValid ? targetActorId.StableText : string.Empty),
@@ -1385,6 +1393,7 @@ namespace PEGA.NPC
             Array.Sort(attemptedInvestigationTargets);
             var actionContext = new PEGANpcActionPlanningContext(
                 _knowledgeState,
+                _knowledgeReadView,
                 targetActorId,
                 hasPerceptionBackedTargetContact,
                 planContinuation,

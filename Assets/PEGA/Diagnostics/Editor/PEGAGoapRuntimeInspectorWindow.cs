@@ -35,7 +35,7 @@ namespace PEGA.Diagnostics.Editor
         private bool _showCausalDetails;
         private bool _showActionDetails;
         private bool _showKnowledgeMetadata;
-        private bool _showGangTargetDetails;
+        private bool _showActorGroupDetails;
 
         [MenuItem("PEGA/Diagnostics/GOAP Runtime Inspector")]
         private static void OpenWindow()
@@ -155,7 +155,7 @@ namespace PEGA.Diagnostics.Editor
                     break;
                 case 3:
                     DrawKnowledge(view);
-                    DrawGangKnowledge(view);
+                    DrawActorGroupKnowledge(view);
                     break;
                 case 4:
                     DrawHistory();
@@ -646,36 +646,83 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private void DrawGangKnowledge(RuntimeView view)
+        private void DrawActorGroupKnowledge(RuntimeView view)
         {
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Knowledge State compartilhado da Gangue", EditorStyles.boldLabel);
-            PEGANpcGangMembership membership = view.Autonomy.GetComponent<PEGANpcGangMembership>();
-            PEGANpcGangKnowledgeState gang = membership != null ? membership.GangKnowledgeState : null;
-            if (gang == null)
+            EditorGUILayout.LabelField("Knowledge State compartilhado do Actor Group", EditorStyles.boldLabel);
+            PEGAActorGroupMembership membership = view.Autonomy.GetComponent<PEGAActorGroupMembership>();
+            if (membership == null)
             {
-                EditorGUILayout.LabelField("<NPC sem GangKnowledgeState associado>");
+                EditorGUILayout.LabelField("<NPC sem configuração de Actor Groups>");
                 return;
             }
 
-            if (!PEGAGoapRuntimeInspectorReader.IsGangKnowledgeReady(gang))
+            if (!membership.TryGetAuthorizedKnowledgeStates(
+                    out IReadOnlyList<PEGAActorGroupKnowledgeState> groupStates,
+                    out string accessDiagnostic))
             {
-                EditorGUILayout.HelpBox("O estado compartilhado ainda não foi inicializado; nenhuma consulta foi feita.", MessageType.Info);
+                EditorGUILayout.HelpBox("Conhecimento de Group indisponível: " + accessDiagnostic, MessageType.Info);
                 return;
             }
 
-            if (!gang.TryIsMember(view.Autonomy.gameObject, out bool isMember, out string membershipDiagnostic))
+            EditorGUILayout.LabelField("Groups autorizados com conhecimento", groupStates.Count.ToString());
+            if (groupStates.Count == 0)
             {
-                EditorGUILayout.HelpBox(
-                    "Não foi possível consultar a membership do Actor Group: " + membershipDiagnostic,
-                    MessageType.Info);
+                EditorGUILayout.LabelField("<nenhum Group com fatos compartilhados>");
                 return;
             }
 
-            EditorGUILayout.LabelField("Membership no Actor Group", isMember ? "Confirmada" : "Ausente");
-            if (!isMember)
+            _showActorGroupDetails = EditorGUILayout.ToggleLeft(
+                "Exibir proveniência e tempos do conhecimento do Group",
+                _showActorGroupDetails);
+            for (int groupIndex = 0; groupIndex < groupStates.Count; groupIndex++)
             {
-                return;
+                PEGAActorGroupKnowledgeState groupKnowledge = groupStates[groupIndex];
+                EditorGUILayout.LabelField(groupKnowledge.GroupProfile.GroupIdText, EditorStyles.boldLabel);
+                if (!PEGAGoapRuntimeInspectorReader.IsActorGroupKnowledgeReady(groupKnowledge))
+                {
+                    EditorGUILayout.HelpBox("O estado compartilhado ainda não foi inicializado.", MessageType.Info);
+                    continue;
+                }
+
+                IReadOnlyList<PEGAActorGroupPriorKnowledgeDefinition> priorKnowledge =
+                    groupKnowledge.PriorEntityKnowledge;
+                EditorGUILayout.LabelField("Fatos prévios do Group", priorKnowledge.Count.ToString());
+                for (int index = 0; index < priorKnowledge.Count; index++)
+                {
+                    PEGAActorGroupPriorKnowledgeDefinition definition = priorKnowledge[index];
+                    if (definition == null || definition.EntityIdentity == null)
+                    {
+                        continue;
+                    }
+
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.LabelField(
+                        FormatEntityIdentity(definition.EntityIdentity),
+                        $"Autorização: {definition.Mode}",
+                        EditorStyles.boldLabel);
+                    if (groupKnowledge.TryGetKnownEntityFacts(
+                            view.Autonomy.gameObject,
+                            definition.EntityIdentity,
+                            out PEGANpcKnowledgeFact<ScriptableObject> identityFact,
+                            out PEGANpcKnowledgeFact<Vector3> locationFact,
+                            out IPEGAActorGroupLocationSubjectEvidence _,
+                            out string priorKnowledgeDiagnostic))
+                    {
+                        DrawKnowledgeFact("Identidade compartilhada", identityFact,
+                            FormatEntityIdentity, _showActorGroupDetails, true);
+                        DrawKnowledgeFact("Localização inicial compartilhada", locationFact,
+                            position => position.ToString("F2"), _showActorGroupDetails, true);
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox(
+                            "O membro não conseguiu consultar os fatos prévios: " + priorKnowledgeDiagnostic,
+                            MessageType.Warning);
+                    }
+
+                    EditorGUILayout.EndVertical();
+                }
             }
 
             if (!membership.TryGetKnownEscapeTargets(
@@ -688,8 +735,8 @@ namespace PEGA.Diagnostics.Editor
                 return;
             }
 
-            EditorGUILayout.LabelField("Targets de fuga conhecidos pela Gangue", targets.Count.ToString());
-            _showGangTargetDetails = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos dos Targets", _showGangTargetDetails);
+            EditorGUILayout.LabelField("Targets de fuga conhecidos pelo Group", targets.Count.ToString());
+            _showActorGroupDetails = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos dos Targets", _showActorGroupDetails);
             if (targets.Count == 0)
             {
                 EditorGUILayout.LabelField("<nenhum Target registrado>");
@@ -699,7 +746,7 @@ namespace PEGA.Diagnostics.Editor
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField($"Destino de fuga {i + 1} · {targets[i].KnownPosition:F2}", EditorStyles.boldLabel);
-                if (_showGangTargetDetails)
+                if (_showActorGroupDetails)
                 {
                     DrawTarget(targets[i]);
                 }
@@ -971,10 +1018,10 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField(label, $"{fact.Status}: {value}");
             if (showMetadata)
             {
-                string metadata = $"origem={fact.Origins}; invalidação={fact.InvalidationCauses}";
+                string metadata = $"escopo={fact.Scope}; origem={fact.Origins}; invalidação={fact.InvalidationCauses}";
                 if (fact.HasObservationTime)
                 {
-                    metadata += $"; observação t={fact.ObservationTimeSeconds:0.###}s";
+                    metadata += $"; evidência/registro t={fact.ObservationTimeSeconds:0.###}s";
                 }
 
                 EditorGUILayout.LabelField("  Proveniência / tempo", metadata, EditorStyles.miniLabel);
@@ -982,6 +1029,19 @@ namespace PEGA.Diagnostics.Editor
         }
 
         private static string FormatProfileId(ActorProfileId id) => id.IsValid ? id.StableText : "<identidade inválida>";
+
+        private static string FormatEntityIdentity(ScriptableObject identity)
+        {
+            if (identity == null)
+            {
+                return "<identidade indisponível>";
+            }
+
+            return identity is ActorProfile actorProfile &&
+                   actorProfile.TryGetActorProfileId(out ActorProfileId profileId, out _)
+                ? profileId.StableText
+                : $"{identity.GetType().Name} ({identity.name})";
+        }
 
         private static string FormatAreaPresence(PEGANpcPerceivedAreaPresence presence) =>
             $"presença={presence.IsPresent}; posição do observador={presence.ObserverPosition:F2}; raio={presence.PerceivedAreaRadiusMeters:0.##} m";
@@ -1014,7 +1074,7 @@ namespace PEGA.Diagnostics.Editor
         private static readonly FieldInfo ActionProvidersField = typeof(PEGANpcAutonomy).GetField("_actionProviders", InstancePrivate);
         private static readonly FieldInfo KnowledgeSubjectsField = typeof(PEGANpcKnowledgeState).GetField("_knowledgeBySubject", InstancePrivate);
         private static readonly FieldInfo PerceivedAreaField = typeof(PEGANpcKnowledgeState).GetField("_perceivedAreaPresence", InstancePrivate);
-        private static readonly FieldInfo GangTargetsField = typeof(PEGANpcGangKnowledgeState).GetField("_knownEscapePoints", InstancePrivate);
+        private static readonly FieldInfo GroupTargetsField = typeof(PEGAActorGroupKnowledgeState).GetField("_knownEscapePoints", InstancePrivate);
 
         public static RuntimeView Read(PEGANpcAutonomy autonomy)
         {
@@ -1058,9 +1118,9 @@ namespace PEGA.Diagnostics.Editor
             return view;
         }
 
-        public static bool IsGangKnowledgeReady(PEGANpcGangKnowledgeState gang)
+        public static bool IsActorGroupKnowledgeReady(PEGAActorGroupKnowledgeState groupKnowledge)
         {
-            object targets = ReadRawField(GangTargetsField, gang, "índice de Targets compartilhados", null);
+            object targets = ReadRawField(GroupTargetsField, groupKnowledge, "índice de Targets compartilhados", null);
             return targets is IDictionary;
         }
 

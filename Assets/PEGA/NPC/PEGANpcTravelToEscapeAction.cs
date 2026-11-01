@@ -63,10 +63,10 @@ namespace PEGA.NPC
             diagnostic = string.Empty;
             List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
             List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
-            PEGANpcGangMembership membership = RuntimeContext.GangMembership;
+            PEGAActorGroupMembership membership = RuntimeContext.ActorGroupMembership;
             if (membership == null)
             {
-                diagnostic = "The composed escape Action requires Gang Membership to supply known escape Targets.";
+                diagnostic = "The composed escape Action requires Actor Group membership to supply known escape Targets.";
                 return false;
             }
 
@@ -132,11 +132,11 @@ namespace PEGA.NPC
                 plan.TargetKind != Contract.TargetKind ||
                 plan.TargetProvenance != PEGANpcPlanningTargetProvenance.KnowledgeState)
             {
-                diagnostic = "Escape plans are only valid as Normal Desire goals backed by Gang Knowledge State.";
+                diagnostic = "Escape plans are only valid as Normal Desire goals backed by Actor Group knowledge.";
                 return false;
             }
 
-            PEGANpcGangMembership membership = RuntimeContext.GangMembership;
+            PEGAActorGroupMembership membership = RuntimeContext.ActorGroupMembership;
             if (membership == null || !membership.TryGetKnownEscapeTargets(
                     out IReadOnlyList<PEGANpcPlanningTarget> targets, out diagnostic))
             {
@@ -161,7 +161,7 @@ namespace PEGA.NPC
                 }
             }
 
-            diagnostic = "The selected escape destination is no longer present in current Gang Knowledge State.";
+            diagnostic = "The selected escape destination is no longer present in current Actor Group knowledge.";
             return false;
         }
 

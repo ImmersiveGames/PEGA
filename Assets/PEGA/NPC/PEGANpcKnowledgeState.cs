@@ -22,7 +22,15 @@ namespace PEGA.NPC
     {
         None = 0,
         Perception = 1 << 0,
-        ActionResult = 1 << 1
+        ActionResult = 1 << 1,
+        GroupPriorIdentity = 1 << 2,
+        AuthorizedInitialLocation = 1 << 3
+    }
+
+    public enum PEGANpcKnowledgeScope
+    {
+        Individual = 0,
+        Group = 10
     }
 
     [Flags]
@@ -136,7 +144,8 @@ namespace PEGA.NPC
             double observationTimeSeconds,
             PEGANpcEvidenceOrigin origins,
             PEGANpcKnowledgeInvalidationCause invalidationCauses,
-            T value)
+            T value,
+            PEGANpcKnowledgeScope scope)
         {
             Status = status;
             HasObservationTime = hasObservationTime;
@@ -144,6 +153,7 @@ namespace PEGA.NPC
             Origins = origins;
             InvalidationCauses = invalidationCauses;
             _value = value;
+            Scope = scope;
         }
 
         public PEGANpcKnowledgeStatus Status { get; }
@@ -157,6 +167,8 @@ namespace PEGA.NPC
         public PEGANpcEvidenceOrigin Origins { get; }
 
         public PEGANpcKnowledgeInvalidationCause InvalidationCauses { get; }
+
+        public PEGANpcKnowledgeScope Scope { get; }
 
         public bool TryGetValue(out T value)
         {
@@ -176,7 +188,18 @@ namespace PEGA.NPC
             0d,
             PEGANpcEvidenceOrigin.None,
             PEGANpcKnowledgeInvalidationCause.None,
-            default);
+            default,
+            PEGANpcKnowledgeScope.Individual);
+
+        internal static PEGANpcKnowledgeFact<T> UnknownForScope(PEGANpcKnowledgeScope scope) =>
+            new PEGANpcKnowledgeFact<T>(
+                PEGANpcKnowledgeStatus.Unknown,
+                false,
+                0d,
+                PEGANpcEvidenceOrigin.None,
+                PEGANpcKnowledgeInvalidationCause.None,
+                default,
+                scope);
     }
 
     [DisallowMultipleComponent]
@@ -928,7 +951,8 @@ namespace PEGA.NPC
                 _observationTimeSeconds,
                 _origins,
                 _invalidationCauses,
-                _knownValue);
+                _knownValue,
+                PEGANpcKnowledgeScope.Individual);
 
             public PEGANpcKnowledgeWriteResult Observe(
                 T value,

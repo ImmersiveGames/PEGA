@@ -125,7 +125,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2500000421}
+    m_TransformParent: {fileID: 2500000401}
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
@@ -151,10 +151,6 @@ PrefabInstance:
       propertyPath: desireProfile
       value: 
       objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
-    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: gangKnowledgeState
-      value: 
-      objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.96
@@ -211,10 +207,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86967d8b37b54fe9bd4b9fcf682c158c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcGangKnowledgeState
-  authorizedGroupProfiles:
-  - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
-  actorGroupAccessBinding: {fileID: 2500000402}
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeState
+  groupProfile: {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+  priorEntityKnowledge:
+  - entityIdentity: {fileID: 11400000, guid: b8a795bb1fb543399bc85e61a93881f1, type: 2}
+    mode: 10
 --- !u!1 &2500000200
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,7 +329,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2500000421}
+    m_TransformParent: {fileID: 2500000401}
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
@@ -354,13 +351,9 @@ PrefabInstance:
       propertyPath: desireProfile
       value: 
       objectReference: {fileID: 11400000, guid: 7adfc5722b064a5e9042be531f114c8f, type: 2}
-    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: gangKnowledgeState
-      value: 
-      objectReference: {fileID: 2095411630}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -9.53
+      value: -13.6
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -368,7 +361,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -415,8 +408,10 @@ GameObject:
   - component: {fileID: 2095411630}
   - component: {fileID: 2500000403}
   - component: {fileID: 2500000402}
+  - component: {fileID: 2500000404}
+  - component: {fileID: 2500000424}
   m_Layer: 0
-  m_Name: PEGA Mission Gang Knowledge
+  m_Name: PEGA Mission Actor Groups
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -434,7 +429,11 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2500000431}
+  - {fileID: 2500000434}
+  - {fileID: 2500000422}
+  - {fileID: 2500000423}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2500000402
@@ -462,8 +461,61 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ActivityFlow.ActivityContentContribution
   activity: {fileID: 11400000, guid: a0000000000000000000000000000001, type: 2}
-  localContentId: pega.mission.gang-knowledge
+  localContentId: pega.mission.actor-group-knowledge
   requiredness: 10
+--- !u!114 &2500000404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 738536dd2323416883c924b5e92ba634, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorProfileKnowledgeSource
+  actorGroupKnowledgeState: {fileID: 2095411630}
+  playerSessionObserver: {fileID: 2500000207}
+  actorOccurrenceBindings:
+  - {fileID: 2500000405}
+  - {fileID: 2500000406}
+--- !u!114 &2500000405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
+  selectionMode: 10
+  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  actorDeclaration: {fileID: 0}
+  useSessionOwner: 0
+  routeOwner: {fileID: 0}
+  activityOwner: {fileID: 0}
+--- !u!114 &2500000406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
+  selectionMode: 10
+  playerSlot: {fileID: 11400000, guid: a9303c8d32e34c8e9b71008a1dcf26f0, type: 2}
+  actorDeclaration: {fileID: 0}
+  useSessionOwner: 0
+  routeOwner: {fileID: 0}
+  activityOwner: {fileID: 0}
 --- !u!1 &2500000410
 GameObject:
   m_ObjectHideFlags: 0
@@ -496,39 +548,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2500000420
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2500000421}
-  m_Layer: 0
-  m_Name: PEGA Mission Thief Actors
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2500000421
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000420}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2500000422}
-  - {fileID: 2500000423}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &2500000422 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
@@ -539,6 +558,85 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 2500000300}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2500000424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f577d439e2014fc8b58b8649f8829790, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupComposition
+  groupsToCreate:
+  - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+  knowledgeContext: {fileID: 11400000, guid: 4e8e36a8d0d64c9a9c125d1449bba8f6, type: 2}
+--- !u!1 &2500000430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2500000431}
+  - component: {fileID: 2500000405}
+  m_Layer: 0
+  m_Name: PEGA Actor Profile P1 Occurrence Binding
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2500000431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000430}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2500000401}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2500000433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2500000434}
+  - component: {fileID: 2500000406}
+  m_Layer: 0
+  m_Name: PEGA Actor Profile P2 Occurrence Binding
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2500000434
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2500000401}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -546,4 +644,3 @@ SceneRoots:
   - {fileID: 2500000201}
   - {fileID: 2500000411}
   - {fileID: 2500000401}
-  - {fileID: 2500000421}

@@ -21,7 +21,7 @@ namespace PEGA.NPC
 
         [SerializeField]
         [Tooltip("Estado compartilhado da Gangue que conhece este Spawn Point após o uso.")]
-        private PEGANpcGangKnowledgeState gangKnowledgeState;
+        private PEGAActorGroupKnowledgeState actorGroupKnowledgeState;
 
         [System.NonSerialized]
         private ScopedLogger _log;
@@ -47,7 +47,7 @@ namespace PEGA.NPC
 
         public string StableSpawnPointId => stableSpawnPointId != null ? stableSpawnPointId.Trim() : string.Empty;
 
-        public PEGANpcGangKnowledgeState GangKnowledgeState => gangKnowledgeState;
+        public PEGAActorGroupKnowledgeState ActorGroupKnowledgeState => actorGroupKnowledgeState;
 
         private void Reset()
         {
@@ -67,7 +67,7 @@ namespace PEGA.NPC
 
         public bool TryInitialize(
             string spawnPointId,
-            PEGANpcGangKnowledgeState knowledgeState,
+            PEGAActorGroupKnowledgeState knowledgeState,
             out string diagnostic)
         {
             if (_acceptedEvidence)
@@ -78,12 +78,12 @@ namespace PEGA.NPC
 
             if (string.IsNullOrWhiteSpace(spawnPointId) || knowledgeState == null)
             {
-                diagnostic = "A stable Spawn Point id and Gang knowledge state are required.";
+                diagnostic = "A stable Spawn Point id and Actor Group knowledge state are required.";
                 return false;
             }
 
             stableSpawnPointId = spawnPointId.Trim();
-            gangKnowledgeState = knowledgeState;
+            actorGroupKnowledgeState = knowledgeState;
             _configurationValid = ValidateConfiguration(out diagnostic);
             _trigger ??= GetComponent<BoxCollider>();
             _triggerBody ??= GetComponent<Rigidbody>();
@@ -168,14 +168,14 @@ namespace PEGA.NPC
             GameObject actorRoot = characterController.gameObject;
             if (inwardSpeed < MinimumInwardSpeedMetersPerSecond)
             {
-                gangKnowledgeState.LogRejectedSpawnPointUse(
+                actorGroupKnowledgeState.LogRejectedSpawnPointUse(
                     stableSpawnPointId,
                     actorRoot,
                     "the CharacterController entered without sufficient velocity toward the Spawn Point interior");
                 return;
             }
 
-            bool accepted = gangKnowledgeState.TryRecordSpawnPointUse(
+            bool accepted = actorGroupKnowledgeState.TryRecordSpawnPointUse(
                 this,
                 stableSpawnPointId,
                 transform.position,
@@ -185,7 +185,7 @@ namespace PEGA.NPC
                 out string diagnostic);
             if (!accepted)
             {
-                gangKnowledgeState.LogRejectedSpawnPointUse(stableSpawnPointId, actorRoot, diagnostic);
+                actorGroupKnowledgeState.LogRejectedSpawnPointUse(stableSpawnPointId, actorRoot, diagnostic);
                 return;
             }
 
@@ -197,7 +197,7 @@ namespace PEGA.NPC
                     "NPC physically entered a Gang Spawn Point; the entry became a known potential escape.",
                     LogFields.Field("spawnPointId", stableSpawnPointId),
                     LogFields.Field("actorRoot", actorRoot.name),
-                    LogFields.Field("gangKnowledgeState", gangKnowledgeState.name),
+                    LogFields.Field("actorGroupKnowledgeState", actorGroupKnowledgeState.name),
                     LogFields.Field("entryPositionX", transform.position.x),
                     LogFields.Field("entryPositionY", transform.position.y),
                     LogFields.Field("entryPositionZ", transform.position.z),
@@ -210,7 +210,7 @@ namespace PEGA.NPC
                     "NPC reused a known Gang Spawn Point; no duplicate escape Target was added.",
                     LogFields.Field("spawnPointId", stableSpawnPointId),
                     LogFields.Field("actorRoot", actorRoot.name),
-                    LogFields.Field("gangKnowledgeState", gangKnowledgeState.name));
+                    LogFields.Field("actorGroupKnowledgeState", actorGroupKnowledgeState.name));
             }
         }
 
@@ -259,9 +259,9 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (gangKnowledgeState == null)
+            if (actorGroupKnowledgeState == null)
             {
-                diagnostic = "A Gang knowledge state is required.";
+                diagnostic = "An Actor Group knowledge state is required.";
                 return false;
             }
 

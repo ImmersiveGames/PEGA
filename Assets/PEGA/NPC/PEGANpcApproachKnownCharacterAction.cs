@@ -30,6 +30,12 @@ namespace PEGA.NPC
         private PEGANpcKnowledgeState knowledgeState;
 
         [System.NonSerialized]
+        private PEGANpcKnowledgeReadView knowledgeReadView;
+
+        [System.NonSerialized]
+        private bool _runningPerceptionContinuation;
+
+        [System.NonSerialized]
         private ActorOccurrenceReferenceBinding targetReference;
 
         [System.NonSerialized]
@@ -81,8 +87,10 @@ namespace PEGA.NPC
             }
 
             knowledgeState = RuntimeContext.KnowledgeState;
+            knowledgeReadView = RuntimeContext.KnowledgeReadView;
             targetReference = RuntimeContext.ActorReference;
             if (knowledgeState == null || knowledgeState.gameObject != ActorRoot ||
+                knowledgeReadView == null ||
                 targetReference == null || targetReference.gameObject != ActorRoot)
             {
                 diagnostic = "Approach Known Character requires the Actor's Knowledge State and occurrence reference.";
@@ -428,14 +436,24 @@ namespace PEGA.NPC
                 return true;
             }
 
-            if (!currentTargetActorId.IsValid || !context.HasPerceptionBackedTargetContact)
+            if (!currentTargetActorId.IsValid)
             {
                 diagnostic = string.Empty;
                 return true;
             }
 
-            if (!TryCreatePlanningCandidate(out PEGANpcPlanningTarget target,
-                    out PEGANpcPlanningActionCandidate normalCandidate, out diagnostic))
+            if (!context.HasPerceptionBackedTargetContact &&
+                !HasGroupKnownTargetPosition(context.KnowledgeReadView, currentTargetActorId))
+            {
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            if (!TryCreatePlanningCandidateFromKnowledgeView(
+                    context.KnowledgeReadView,
+                    out PEGANpcPlanningTarget target,
+                    out PEGANpcPlanningActionCandidate normalCandidate,
+                    out diagnostic))
             {
                 return false;
             }
@@ -492,7 +510,9 @@ namespace PEGA.NPC
 
             if (plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
                 plan.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.Actor ||
-                !TryGetKnownTargetPosition(out currentKnownPosition, out diagnostic) ||
+                !TryGetPlanningTargetEvidence(out ActorId currentSubject, out currentKnownPosition,
+                    out evidenceTimeSeconds, out diagnostic) ||
+                plan.TargetId != PEGANpcPlanningTargetId.ForActor(currentSubject) ||
                 plan.TargetId != PEGANpcPlanningTargetId.ForActor(GetCurrentTargetActorId()) ||
                 !IsTargetPositionWithinTolerance(currentKnownPosition, plan.TargetPosition))
             {
@@ -502,7 +522,6 @@ namespace PEGA.NPC
                 return false;
             }
 
-            evidenceTimeSeconds = plan.EvidenceTimeSeconds;
             diagnostic = string.Empty;
             return true;
         }
@@ -518,8 +537,12 @@ namespace PEGA.NPC
                   plan.TargetId == PEGANpcPlanningTargetId.ForActor(continuation.Value.SubjectActorId) &&
                   IsCurrentContinuationIntent(continuation.Value.ToIntent(), out diagnostic)
                 : plan.Purpose == PEGANpcPlanPurpose.DesireGoal;
+            Vector3 position;
+            bool hasPosition = continuation.HasValue
+                ? TryGetKnownTargetPosition(out position, out diagnostic)
+                : TryGetPlanningTargetEvidence(out _, out position, out _, out diagnostic);
             if (plan.ActionId != Contract.ActionId || !continuationMatches ||
-                !TryGetKnownTargetPosition(out Vector3 position, out diagnostic) ||
+                !hasPosition ||
                 !IsTargetPositionWithinTolerance(position, plan.TargetPosition))
             {
                 diagnostic = string.IsNullOrEmpty(diagnostic)
@@ -529,6 +552,7 @@ namespace PEGA.NPC
                 return false;
             }
 
+            _runningPerceptionContinuation = continuation.HasValue;
             return TryStartNavigation(
                 plan.TargetId,
                 position,
@@ -586,9 +610,125 @@ namespace PEGA.NPC
             return true;
         }
 
+        private bool TryGetPlanningTargetEvidence(
+            out ActorId subjectActorId,
+            out Vector3 position,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
+            return TryGetPlanningTargetEvidence(
+                knowledgeReadView,
+                out subjectActorId,
+                out position,
+                out evidenceTimeSeconds,
+                out diagnostic);
+        }
+
+        private bool TryGetPlanningTargetEvidence(
+            PEGANpcKnowledgeReadView knowledgeView,
+            out ActorId subjectActorId,
+            out Vector3 position,
+            out double evidenceTimeSeconds,
+            out string diagnostic)
+        {
+            subjectActorId = default;
+            position = default;
+            evidenceTimeSeconds = 0d;
+            diagnostic = string.Empty;
+            if (knowledgeView == null || !TryResolveTargetSubject(out subjectActorId, out diagnostic))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "A composed PEGA knowledge read view is required."
+                    : diagnostic;
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<ActorProfileId> identity =
+                knowledgeView.GetObservedCharacterIdentity(subjectActorId);
+            if (!identity.TryGetValue(out _))
+            {
+                diagnostic = "The target identity is not available from this NPC's Individual or authorized Group knowledge.";
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<Vector3> knownPosition =
+                knowledgeView.GetKnownCharacterPosition(subjectActorId);
+            if (!knownPosition.TryGetValue(out position) || !knownPosition.HasObservationTime ||
+                !IsFinitePosition(position))
+            {
+                diagnostic = "The target location is unknown or invalid in this NPC's Individual and authorized Group knowledge.";
+                return false;
+            }
+
+            evidenceTimeSeconds = knownPosition.ObservationTimeSeconds;
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private static bool IsFinitePosition(Vector3 value) =>
+            IsFiniteComponent(value.x) && IsFiniteComponent(value.y) &&
+            IsFiniteComponent(value.z);
+
+        private static bool IsFiniteComponent(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private bool TryCreatePlanningCandidateFromKnowledgeView(
+            PEGANpcKnowledgeReadView knowledgeView,
+            out PEGANpcPlanningTarget target,
+            out PEGANpcPlanningActionCandidate candidate,
+            out string diagnostic)
+        {
+            target = default;
+            candidate = default;
+            if (!TryGetPlanningTargetEvidence(
+                    knowledgeView,
+                    out ActorId subjectActorId,
+                    out Vector3 knownPosition,
+                    out double evidenceTimeSeconds,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            if (!TryDeferNavigationRoute(
+                    PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
+                    out PEGANpcNavigationRouteEstimate routeEstimate,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            target = PEGANpcPlanningTarget.FromKnownActorPosition(
+                subjectActorId,
+                knownPosition,
+                evidenceTimeSeconds);
+            candidate = new PEGANpcPlanningActionCandidate(
+                Contract,
+                this,
+                target.TargetId,
+                PEGA.Actors.PEGAActorMovementSpeedRegime.Pursuit,
+                routeEstimate,
+                IntrinsicDurationSeconds);
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private static bool HasGroupKnownTargetPosition(
+            PEGANpcKnowledgeReadView knowledgeView,
+            ActorId subjectActorId)
+        {
+            if (knowledgeView == null || !subjectActorId.IsValid)
+            {
+                return false;
+            }
+
+            PEGANpcKnowledgeFact<Vector3> position = knowledgeView.GetKnownCharacterPosition(subjectActorId);
+            return position.Scope == PEGANpcKnowledgeScope.Group && position.TryGetValue(out _);
+        }
+
         public bool TryStart(out string diagnostic)
         {
-            if (!TryGetKnownTargetPosition(out Vector3 lastKnownPosition, out diagnostic))
+            if (!TryGetPlanningTargetEvidence(out _, out Vector3 lastKnownPosition, out _, out diagnostic))
             {
                 RejectStart(diagnostic);
                 return false;
@@ -602,7 +742,9 @@ namespace PEGA.NPC
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic) =>
-            TryGetKnownTargetPosition(out _, out diagnostic);
+            _runningPerceptionContinuation
+                ? TryGetKnownTargetPosition(out _, out diagnostic)
+                : TryGetPlanningTargetEvidence(out _, out _, out _, out diagnostic);
 
         private bool TryResolveTargetSubject(out ActorId subjectActorId, out string diagnostic)
         {
