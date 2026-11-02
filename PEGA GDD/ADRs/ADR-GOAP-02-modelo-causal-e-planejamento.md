@@ -2,6 +2,7 @@
 
 - **Status:** Aceito
 - **Data:** 2026-10-25
+- **Revisado:** 2026-11-02 — autoria declarativa tipada e reutilizável
 - **Owner:** PEGA — planejamento GOAP
 
 ## Contexto
@@ -22,6 +23,8 @@ O GDD já prevê Preconditions, Effects e cadeias de Actions, mas a demonstraç�
 6. Avaliações especializadas, como navegação e confronto, podem fornecer viabilidade, custo e qualidade para alternativas, inclusive sobre estados hipotéticos. Perfis determinísticos, configuráveis e intercambiáveis podem compor esses critérios por Actor/arquétipo. Se uma avaliação não puder considerar a projeção com legitimidade, ela comunica a limitação/desconhecimento; não substitui silenciosamente o estado projetado pelo estado real atual.
 7. Previsões externas continuam opcionais. Quando existirem, carregam origem, horizonte e incerteza; não se tornam fatos conhecidos nem satisfazem por si sós Preconditions determinísticas.
 
+8. **Autoria declarativa reutiliza definições canônicas do Knowledge.** Um fato é composto no Inspector como **Identificador/endereço tipado → Propriedade → Valor**; uma condição, como **Identificador/endereço tipado → Propriedade → Operador → Valor**. O identificador é o endereço exigido pela definição, não necessariamente uma entidade: conforme o fato, pode endereçar entidade, relação ou estado. Nos exemplos, POIs e Actors são endereçados respectivamente por **ObjectEntryId** e **ActorId**; quando o fato trata de uma entidade, usa sua identidade lógica, não um profile reutilizável nem uma ocorrência física. A definição tipada canônica determina os tipos de endereço e valor, os operadores compatíveis e a política do fato. O designer escolhe definições disponíveis e fornece valores compatíveis; adicionar propriedades, tipos ou políticas é responsabilidade de programação. Fatos iniciais, adquiridos por sensores ou compartilhados continuam nos contratos existentes de Knowledge Store, evidência, temporalidade, validade e escopo. Goals e Desires compõem condições sobre as mesmas propriedades; Preconditions consultam essas condições. Effects e Actions referem-se às mesmas definições tipadas em seus contratos próprios, preservando a projeção de Effects em estado hipotético sem escrever World State ou Knowledge durante a busca. Por exemplo, um Group pode conhecer previamente a Posição de um POI endereçado por ObjectEntryId, enquanto um sensor publica propriedades observadas de um Actor endereçado por ActorId. Quando o PEGA disponibilizar a definição tipada de Facção observada, o fato válido Policiais torna a condição Facção = Larapios falsa; sem fato válido, a condição é Desconhecida. Membership de Actor Group do Framework não constitui uma afirmação de facção do PEGA. Esta decisão fixa a semântica de autoria, sem determinar estruturas internas, layout do Inspector, classes, assets, drawers ou algoritmos.
+
 ## Alternativas consideradas
 
 - **Action escolhida diretamente por cada Goal:** rejeitada; duplicaria soluções e faria cada novo comportamento exigir alteração de dados ou lógica de Goals.
@@ -39,7 +42,7 @@ O GDD já prevê Preconditions, Effects e cadeias de Actions, mas a demonstraç�
 
 ## Não decidido
 
-Estruturas de estado, gramática de predicados, algoritmo de planejamento, fórmula de comparação, orçamento numérico, interface de avaliadores e formato de previsão.
+A representação e serialização dos fatos e condições, a apresentação concreta no Inspector, os operadores e semânticas oferecidos por cada definição, a ligação técnica de endereços dinâmicos a Actors ou Targets percebidos e a integração de fatos ObjectEntry e posições conhecidas a Targets, navegação e busca continuam em aberto. Também permanecem em aberto o algoritmo de planejamento, a fórmula de comparação, o orçamento numérico, a interface de avaliadores e o formato de previsão.
 
 ## Relação com decisões anteriores
 

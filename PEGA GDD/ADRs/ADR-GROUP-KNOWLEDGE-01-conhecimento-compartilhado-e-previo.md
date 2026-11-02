@@ -1,7 +1,8 @@
 # ADR-GROUP-KNOWLEDGE-01 — Conhecimento compartilhado e prévio de Groups
 
-- **Status:** Aceito quanto aos princípios arquiteturais; decisões de composição e lifecycle técnico ainda abertas
+- **Status:** Aceito quanto aos princípios arquiteturais e à autoria tipada; composição e lifecycle técnico ainda pendentes
 - **Data:** 2026-10-30
+- **Revisado:** 2026-11-02 — autoria de fatos reutiliza definições canônicas
 - **Owner:** PEGA — integração de Actor Groups e conhecimento
 
 ## Contexto
@@ -22,7 +23,7 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 
 4. **Acesso depende de participação autorizada e vigente.** Referenciar o mesmo `GroupProfile`, um componente de conhecimento ou um identificador não concede acesso automático. A disponibilização e a atualização do conhecimento coletivo devem respeitar o Group real, o owner de conteúdo pertinente, a membership confirmada pelo Framework e as políticas aplicáveis. Não se deve contornar essa verificação para fazer um demonstrador funcionar.
 
-5. **Conhecimento prévio é uma origem legítima de fatos.** Um Group pode iniciar sua participação em um contexto de gameplay já conhecendo fatos explicitamente autorados, sem necessitar de um ingresso físico em Spawn Point, percepção ou Action para legitimá-los. Esses fatos entram na autoridade coletiva com escopo, origem, validade e política apropriados; sua configuração inicial não se confunde com a identidade do Group. Conhecimento adquirido depois, por fontes legítimas, usa a mesma autoridade geral de conhecimento, respeitando as políticas de cada fato.
+5. **Conhecimento prévio é uma origem legítima de fatos.** Um Group pode iniciar sua participação em um contexto de gameplay já conhecendo fatos explicitamente autorados, sem necessitar de ingresso físico em Spawn Point, percepção ou Action para legitimá-los. A autoria declarativa segue o [ADR-GOAP-02](ADR-GOAP-02-modelo-causal-e-planejamento.md): o designer seleciona definições tipadas canônicas disponíveis e fornece valores compatíveis; propriedades, tipos e políticas novos são responsabilidade de programação. Fatos iniciais, adquiridos por sensores ou disponibilizados a membros autorizados usam a mesma autoridade de Knowledge e os mesmos contratos de evidência, validade e escopo. Esses fatos entram no conjunto do Group com a política apropriada; sua configuração inicial não se confunde com a identidade do Group nem prova uma ocorrência física.
 
 6. **Os escopos não se confundem.** O conhecimento Individual continua pertencendo ao agente; não é propagado ao Group automaticamente. Conhecimento coletivo é disponibilizado aos membros autorizados segundo sua política; membership não equivale a copiar fatos nem a conceder conhecimento de outras entidades ou grupos. O escopo Global continua distinto, com distribuição explícita prevista no GDD. Nenhum desses escopos implica compartilhamento de Desejos, decisões, satisfação ou execução de Actions.
 
@@ -49,8 +50,8 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 - Quais classes, interfaces, assets, campos do Inspector ou estruturas internas realizarão o contrato.
 - Qual componente/participante concreto coordena criação e membership, e se o Group Knowledge acompanha o owner Session, Route ou Activity, ou outra composição admitida pelo Framework. Seu lifecycle deve ser compatível com o owner real do Group, sem presumir persistência além dele.
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
-- A representação técnica da autoria inicial, inicialização de fatos, distribuição de mudanças, conflitos entre fontes, retenção e eventual reentrada de Groups. Aplicam-se enquanto isso as políticas semânticas gerais do GDD, não uma política técnica presumida.
-- A implementação do Knowledge State Global, fontes concretas de percepção/investigação e navegação até POIs, inclusive localizabilidade prévia. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) define a integração futura da identidade e manifestação dos POIs com os contratos Object Entry do Framework, mantendo os fatos de Knowledge independentes da ocorrência física.
+- A representação e o fluxo técnicos de autoria inicial no Inspector, a inicialização de fatos, a distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups. A semântica de autoria é compartilhada com as demais condições e fatos, conforme ADR-GOAP-02; detalhes técnicos permanecem pendentes.
+- A implementação do Knowledge State Global, fontes concretas de percepção/investigação e navegação até POIs, inclusive localizabilidade prévia. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
