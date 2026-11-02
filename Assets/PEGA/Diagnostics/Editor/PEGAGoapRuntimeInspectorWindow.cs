@@ -35,7 +35,6 @@ namespace PEGA.Diagnostics.Editor
         private bool _showCausalDetails;
         private bool _showActionDetails;
         private bool _showKnowledgeMetadata;
-        private bool _showActorGroupDetails;
 
         [MenuItem("PEGA/Diagnostics/GOAP Runtime Inspector")]
         private static void OpenWindow()
@@ -625,12 +624,6 @@ namespace PEGA.Diagnostics.Editor
                 }
 
                 DrawKnowledgeFact(
-                    "Identidade de personagem",
-                    view.KnowledgeState.GetObservedCharacterIdentity(actorId),
-                    FormatProfileId,
-                    _showKnowledgeMetadata,
-                    _showKnowledgeMetadata);
-                DrawKnowledgeFact(
                     "Contato visual",
                     view.KnowledgeState.GetCharacterVisualContact(actorId),
                     value => value ? "sim" : "não",
@@ -672,9 +665,6 @@ namespace PEGA.Diagnostics.Editor
                 return;
             }
 
-            _showActorGroupDetails = EditorGUILayout.ToggleLeft(
-                "Exibir proveniência e tempos do conhecimento do Group",
-                _showActorGroupDetails);
             for (int groupIndex = 0; groupIndex < groupStates.Count; groupIndex++)
             {
                 PEGAActorGroupKnowledgeState groupKnowledge = groupStates[groupIndex];
@@ -685,74 +675,23 @@ namespace PEGA.Diagnostics.Editor
                     continue;
                 }
 
-                IReadOnlyList<PEGAActorGroupPriorKnowledgeDefinition> priorKnowledge =
-                    groupKnowledge.PriorEntityKnowledge;
-                EditorGUILayout.LabelField("Fatos prévios do Group", priorKnowledge.Count.ToString());
-                for (int index = 0; index < priorKnowledge.Count; index++)
+                IReadOnlyList<PEGAActorGroupInitialKnowledgeFact> initialKnowledge =
+                    groupKnowledge.InitialKnowledgeFacts;
+                EditorGUILayout.LabelField("Fatos iniciais do Group", initialKnowledge.Count.ToString());
+                for (int index = 0; index < initialKnowledge.Count; index++)
                 {
-                    PEGAActorGroupPriorKnowledgeDefinition definition = priorKnowledge[index];
-                    if (definition == null || definition.EntityIdentity == null)
+                    PEGAActorGroupInitialKnowledgeFact definition = initialKnowledge[index];
+                    if (definition == null)
                     {
                         continue;
                     }
 
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField(
-                        FormatEntityIdentity(definition.EntityIdentity),
-                        $"Autorização: {definition.Mode}",
-                        EditorStyles.boldLabel);
-                    if (groupKnowledge.TryGetKnownEntityFacts(
-                            view.Autonomy.gameObject,
-                            definition.EntityIdentity,
-                            out PEGAKnowledgeFact<ScriptableObject> identityFact,
-                            out PEGAKnowledgeFact<Vector3> locationFact,
-                            out IPEGAActorGroupLocationSubjectEvidence _,
-                            out string priorKnowledgeDiagnostic))
-                    {
-                        DrawKnowledgeFact("Identidade compartilhada", identityFact,
-                            FormatEntityIdentity, _showActorGroupDetails, true);
-                        DrawKnowledgeFact("Localização inicial compartilhada", locationFact,
-                            position => position.ToString("F2"), _showActorGroupDetails, true);
-                    }
-                    else
-                    {
-                        EditorGUILayout.HelpBox(
-                            "O membro não conseguiu consultar os fatos prévios: " + priorKnowledgeDiagnostic,
-                            MessageType.Warning);
-                    }
-
+                    EditorGUILayout.LabelField(definition.FactName, definition.FactDefinitionId, EditorStyles.boldLabel);
                     EditorGUILayout.EndVertical();
                 }
             }
 
-            if (!membership.TryGetKnownEscapeTargets(
-                    out IReadOnlyList<PEGANpcPlanningTarget> targets,
-                    out string knowledgeDiagnostic))
-            {
-                EditorGUILayout.HelpBox(
-                    "O integrante não conseguiu consultar o conhecimento coletivo: " + knowledgeDiagnostic,
-                    MessageType.Warning);
-                return;
-            }
-
-            EditorGUILayout.LabelField("Targets de fuga conhecidos pelo Group", targets.Count.ToString());
-            _showActorGroupDetails = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos dos Targets", _showActorGroupDetails);
-            if (targets.Count == 0)
-            {
-                EditorGUILayout.LabelField("<nenhum Target registrado>");
-            }
-
-            for (int i = 0; i < targets.Count; i++)
-            {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField($"Destino de fuga {i + 1} · {targets[i].KnownPosition:F2}", EditorStyles.boldLabel);
-                if (_showActorGroupDetails)
-                {
-                    DrawTarget(targets[i]);
-                }
-
-                EditorGUILayout.EndVertical();
-            }
         }
 
         private void DrawHistory()
@@ -931,11 +870,6 @@ namespace PEGA.Diagnostics.Editor
                 return "Aproximar personagem conhecido";
             }
 
-            if (actionId == PEGANpcPlanningActionId.TravelToEscapeTarget)
-            {
-                return "Ir para saída conhecida";
-            }
-
             if (actionId == PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition)
             {
                 return "Investigar última posição conhecida";
@@ -959,11 +893,6 @@ namespace PEGA.Diagnostics.Editor
             if (targetKind == PEGANpcPlanningTargetKind.CharacterPosition)
             {
                 return "posição de personagem";
-            }
-
-            if (targetKind == PEGANpcPlanningTargetKind.EscapeDestination)
-            {
-                return "saída";
             }
 
             if (targetKind == PEGANpcPlanningTargetKind.LocalObservationPosition)
@@ -1026,21 +955,6 @@ namespace PEGA.Diagnostics.Editor
 
                 EditorGUILayout.LabelField("  Proveniência / tempo", metadata, EditorStyles.miniLabel);
             }
-        }
-
-        private static string FormatProfileId(ActorProfileId id) => id.IsValid ? id.StableText : "<identidade inválida>";
-
-        private static string FormatEntityIdentity(ScriptableObject identity)
-        {
-            if (identity == null)
-            {
-                return "<identidade indisponível>";
-            }
-
-            return identity is ActorProfile actorProfile &&
-                   actorProfile.TryGetActorProfileId(out ActorProfileId profileId, out _)
-                ? profileId.StableText
-                : $"{identity.GetType().Name} ({identity.name})";
         }
 
         private static string FormatAreaPresence(PEGANpcPerceivedAreaPresence presence) =>

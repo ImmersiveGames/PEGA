@@ -486,7 +486,7 @@ namespace PEGA.NPC
             _knowledgeState != null && _knowledgeState.gameObject == ActorRoot &&
             _approachAction != null &&
             IsCurrentExecutionTargetWithinOpportunity(_executionTargetId, _executionContinuation) &&
-            _approachAction.IsContinuationSupersededByNewRecognition(
+            _approachAction.IsContinuationSupersededByReacquisition(
                 _executionContinuation.ToIntent());
 
         private bool TryValidateContinuation(

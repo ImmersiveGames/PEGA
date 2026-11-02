@@ -122,7 +122,6 @@ namespace PEGA.NPC
             PEGANpcNavMeshMovementIntentSource navigationSource,
             ActorOccurrenceReferenceBinding actorReference,
             NavMeshAgent navigationAgent,
-            PEGAActorGroupMembership actorGroupMembership,
             IPEGANpcLastKnownTargetContinuationProvider lastKnownTargetContinuationProvider)
         {
             Autonomy = autonomy;
@@ -134,7 +133,6 @@ namespace PEGA.NPC
             NavigationSource = navigationSource;
             ActorReference = actorReference;
             NavigationAgent = navigationAgent;
-            ActorGroupMembership = actorGroupMembership;
             LastKnownTargetContinuationProvider = lastKnownTargetContinuationProvider;
         }
 
@@ -146,7 +144,6 @@ namespace PEGA.NPC
         public PEGANpcNavMeshMovementIntentSource NavigationSource { get; }
         public ActorOccurrenceReferenceBinding ActorReference { get; }
         public NavMeshAgent NavigationAgent { get; }
-        public PEGAActorGroupMembership ActorGroupMembership { get; }
         public IPEGANpcLastKnownTargetContinuationProvider LastKnownTargetContinuationProvider { get; }
     }
 }

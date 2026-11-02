@@ -265,30 +265,69 @@ namespace PEGA.NPC
         bool IsValid { get; }
     }
 
+    /// <summary>Type-erased authoring bridge over one canonical typed fact definition.</summary>
+    public interface IPEGAKnowledgeFactDefinition
+    {
+        string Id { get; }
+
+        string Name { get; }
+
+        Type AddressType { get; }
+
+        Type ValueType { get; }
+
+        bool AllowsDesignerAuthoredInitialFact { get; }
+
+        bool TryObserveInitialFact(
+            PEGAKnowledgeFactStore factStore,
+            object address,
+            object value,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult result,
+            out string diagnostic);
+    }
+
     /// <summary>
     /// Stable definition of one fact data and its policy. Reuse the same definition instance for every producer,
     /// reader and writer of that fact; its address is supplied as a typed value by the domain owner.
     /// </summary>
-    public sealed class PEGAKnowledgeFactDefinition<TAddress, TValue>
+    public sealed class PEGAKnowledgeFactDefinition<TAddress, TValue> : IPEGAKnowledgeFactDefinition
     {
         private readonly Func<TAddress, bool> _isValidAddress;
 
         public PEGAKnowledgeFactDefinition(
+            string id,
             string name,
             IPEGAKnowledgeFactPolicy<TValue> policy,
-            Func<TAddress, bool> isValidAddress)
+            Func<TAddress, bool> isValidAddress,
+            bool allowsDesignerAuthoredInitialFact = true)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentException("A stable fact definition id is required.", nameof(id));
+            }
+
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("A fact definition name is required.", nameof(name));
             }
 
+            Id = id.Trim();
             Name = name.Trim();
             Policy = policy ?? throw new ArgumentNullException(nameof(policy));
             _isValidAddress = isValidAddress ?? throw new ArgumentNullException(nameof(isValidAddress));
+            AllowsDesignerAuthoredInitialFact = allowsDesignerAuthoredInitialFact;
         }
 
+        public string Id { get; }
+
         public string Name { get; }
+
+        public Type AddressType => typeof(TAddress);
+
+        public Type ValueType => typeof(TValue);
+
+        public bool AllowsDesignerAuthoredInitialFact { get; }
 
         public IPEGAKnowledgeFactPolicy<TValue> Policy { get; }
 
@@ -296,6 +335,45 @@ namespace PEGA.NPC
             new PEGAKnowledgeFactKey<TAddress, TValue>(this, address);
 
         internal bool IsValidAddress(TAddress address) => _isValidAddress(address);
+
+        bool IPEGAKnowledgeFactDefinition.TryObserveInitialFact(
+            PEGAKnowledgeFactStore factStore,
+            object address,
+            object value,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult result,
+            out string diagnostic)
+        {
+            result = PEGAKnowledgeWriteResult.RejectedInvalid;
+            if (factStore == null || !AllowsDesignerAuthoredInitialFact)
+            {
+                diagnostic = "This fact definition does not allow designer-authored initial observations.";
+                return false;
+            }
+
+            if (address is not TAddress typedAddress || value is not TValue typedValue)
+            {
+                diagnostic = $"Fact definition '{Name}' requires address '{typeof(TAddress).Name}' and value '{typeof(TValue).Name}'.";
+                return false;
+            }
+
+            PEGAKnowledgeFactKey<TAddress, TValue> key = For(typedAddress);
+            if (!key.IsValid)
+            {
+                diagnostic = $"Fact definition '{Name}' rejected its authored address.";
+                return false;
+            }
+
+            result = factStore.Observe(key, typedValue, evidence);
+            if (result == PEGAKnowledgeWriteResult.RejectedInvalid)
+            {
+                diagnostic = $"Fact definition '{Name}' rejected its authored value or evidence.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
     }
 
     /// <summary>Typed address for one value; equality combines its stable data definition and domain identity.</summary>

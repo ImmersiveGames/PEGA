@@ -76,7 +76,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            return PEGANpcKnowledgeFacts.IsIdentityOrPositionChangeFor(change, subjectActorId);
+            return PEGANpcKnowledgeFacts.IsCharacterFactChangeFor(change, subjectActorId);
         }
 
         public override bool TryCreatePlanningCandidates(
@@ -352,21 +352,16 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFact<ActorProfileId> identity =
-                knowledgeView.GetObservedCharacterIdentity(subjectActorId);
-            if (!identity.TryGetValue(out _))
-            {
-                diagnostic = "The target identity is not available from this NPC's Individual or authorized Group knowledge.";
-                return false;
-            }
-
             PEGAKnowledgeFact<Vector3> lastObservedPosition =
                 knowledgeView.GetKnownCharacterPosition(subjectActorId);
-            if (!lastObservedPosition.TryGetValue(out knownPosition) ||
+            PEGAKnowledgeFact<bool> playerFact = knowledgeView.GetIsPlayer(subjectActorId);
+            if (!PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact) ||
+                !lastObservedPosition.TryGetValue(out knownPosition) ||
                 !lastObservedPosition.HasObservationTime ||
+                !lastObservedPosition.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
                 !IsFinite(knownPosition))
             {
-                diagnostic = "The target location is unknown or invalid in this NPC's Individual and authorized Group knowledge.";
+                diagnostic = "The target's Player status or location is unknown in this NPC's Perception-backed Individual knowledge.";
                 return false;
             }
 

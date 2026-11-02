@@ -26,7 +26,7 @@ Este documento recorta as regras do GDD em duas entregas. O GDD é a fonte norma
 
 | Área | Recorte obrigatório |
 |---|---|
-| Immersive Framework | Configurar apenas as superfícies necessárias na versão resolvida do projeto. O projeto declara `com.immersive.framework` **1.1.0-preview.6**; a API pública instalada deve ser consultada em `Documentation~/API/Public-API.md` e validada antes de cada uso. Esse número e os assets existentes não provam funcionamento integrado. |
+| Immersive Framework | Configurar apenas as superfícies necessárias na versão resolvida do projeto. O projeto declara `com.immersive.framework` **1.2.0-preview.4** pelo OpenUPM; a API pública instalada deve ser consultada em `Documentation~/API/Public-API.md` e validada antes de cada uso. Esse número e os assets existentes não provam funcionamento integrado. |
 | Player e Actor | Um Player controlável, solo. Movimento e mecânicas de gameplay pertencem ao PEGA; ActorProfile e alguns caminhos de Player do framework são experimentais. Usar e validar o caminho de autoria suportado pela instalação atual. |
 | Cenário | Armazém compacto, com rotas, pelo menos dois cofres válidos, item principal, prisão, Spawn Point e Spawn Seguro. Completar leitura do mapa e interações necessárias ao ciclo. |
 | Preparação | Duração fixa da missão; escolha gratuita entre cofres; um cofre padrão válido. O tempo encerra a fase. Não existe `Pronto` nem skip no jogo normal; antecipação é apenas ferramenta de debug. |

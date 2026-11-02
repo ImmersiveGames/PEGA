@@ -1,51 +1,60 @@
 using System;
 using Immersive.Framework.Actors;
+using UnityEngine.Scripting;
 using UnityEngine;
 
 namespace PEGA.NPC
 {
     public enum PEGAActorGroupKnowledgeEvidenceOrigin
     {
-        SpawnPointPhysicalIngress = 0,
-        DesignerAuthoredIdentity = 10,
-        AuthorizedInitialLocationSource = 20,
-        DesignerAuthoredInitialFact = 30
+        DesignerAuthoredInitialFact = 0
     }
 
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>
+    [Preserve]
     internal static class PEGANpcKnowledgeFacts
     {
+        [Preserve]
         public static readonly PEGAKnowledgeFactDefinition<byte, PEGANpcPerceivedAreaPresence> PerceivedAreaPresence =
             new PEGAKnowledgeFactDefinition<byte, PEGANpcPerceivedAreaPresence>(
+                "pega.npc.perceived-area-presence",
                 "Perceived area presence",
                 new PEGALatestEvidenceKnowledgePolicy<PEGANpcPerceivedAreaPresence>(
                     areEqual: ArePerceivedAreaPresenceEqual,
                     validateValue: value => value.IsValid ? string.Empty : "Perceived presence evidence is invalid."),
-                address => address == 0);
+                address => address == 0,
+                allowsDesignerAuthoredInitialFact: false);
 
-        public static readonly PEGAKnowledgeFactDefinition<ActorId, ActorProfileId> ObservedCharacterIdentity =
-            new PEGAKnowledgeFactDefinition<ActorId, ActorProfileId>(
-                "Observed character identity",
-                new PEGALatestEvidenceKnowledgePolicy<ActorProfileId>(
-                    areEqual: (left, right) => left.Equals(right),
-                    validateValue: value => value.IsValid ? string.Empty : "ActorProfileId is invalid."),
-                address => address.IsValid);
+        [Preserve]
+        public static readonly PEGAKnowledgeFactDefinition<ActorId, bool> IsPlayer =
+            new PEGAKnowledgeFactDefinition<ActorId, bool>(
+                "pega.actor.is-player",
+                "Is player",
+                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: false);
 
+        [Preserve]
         public static readonly PEGAKnowledgeFactDefinition<ActorId, bool> CharacterVisualContact =
             new PEGAKnowledgeFactDefinition<ActorId, bool>(
+                "pega.actor.character-visual-contact",
                 "Character visual contact",
                 new PEGALatestEvidenceKnowledgePolicy<bool>(),
-                address => address.IsValid);
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: false);
 
+        [Preserve]
         public static readonly PEGAKnowledgeFactDefinition<ActorId, Vector3> LastObservedCharacterPosition =
             new PEGAKnowledgeFactDefinition<ActorId, Vector3>(
+                "pega.actor.last-observed-character-position",
                 "Last observed character position",
                 new PEGALatestEvidenceKnowledgePolicy<Vector3>(
                     areEqual: AreExactlyEqual,
                     validateValue: value => IsFinite(value)
                         ? string.Empty
                         : "Position contains a non-finite coordinate."),
-                address => address.IsValid);
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: false);
 
         public static bool TryGetCharacterSubject(
             PEGAKnowledgeFactChangedEvent change,
@@ -65,23 +74,21 @@ namespace PEGA.NPC
             PEGAKnowledgeFactChangedEvent change,
             ActorId subjectActorId) =>
             change != null && subjectActorId.IsValid &&
-            (change.IsFor(ObservedCharacterIdentity.For(subjectActorId)) ||
+            (change.IsFor(IsPlayer.For(subjectActorId)) ||
              change.IsFor(CharacterVisualContact.For(subjectActorId)) ||
              change.IsFor(LastObservedCharacterPosition.For(subjectActorId)));
 
-        public static bool IsIdentityOrPositionChangeFor(
-            PEGAKnowledgeFactChangedEvent change,
-            ActorId subjectActorId) =>
-            change != null && subjectActorId.IsValid &&
-            (change.IsFor(ObservedCharacterIdentity.For(subjectActorId)) ||
-             change.IsFor(LastObservedCharacterPosition.For(subjectActorId)));
+        public static bool HasPerceptionBackedPlayerFact(PEGAKnowledgeFact<bool> fact) =>
+            fact.TryGetValue(out bool isPlayer) &&
+            isPlayer &&
+            fact.HasObservationTime &&
+            fact.HasOrigin(PEGANpcEvidenceOrigin.Perception);
 
-        public static bool IsIdentityOrContactChangeFor(
-            PEGAKnowledgeFactChangedEvent change,
-            ActorId subjectActorId) =>
-            change != null && subjectActorId.IsValid &&
-            (change.IsFor(ObservedCharacterIdentity.For(subjectActorId)) ||
-             change.IsFor(CharacterVisualContact.For(subjectActorId)));
+        public static bool HasPerceptionBackedPlayerFactAtOrBefore(
+            PEGAKnowledgeFact<bool> fact,
+            double observationTimeSeconds) =>
+            HasPerceptionBackedPlayerFact(fact) &&
+            fact.ObservationTimeSeconds <= observationTimeSeconds + 0.000001d;
 
         public static bool IsPerceptionContactChange(
             PEGAKnowledgeFactChangedEvent change,
@@ -107,34 +114,4 @@ namespace PEGA.NPC
             !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
-    /// <summary>Current Group fact definitions are owned by Group-specific producers, not by the shared store.</summary>
-    internal static class PEGAActorGroupKnowledgeFacts
-    {
-        public static readonly PEGAKnowledgeFactDefinition<ScriptableObject, ScriptableObject> EntityIdentity =
-            new PEGAKnowledgeFactDefinition<ScriptableObject, ScriptableObject>(
-                "Entity identity",
-                new PEGAStructuralKnowledgePolicy<ScriptableObject>(
-                    value => value != null ? string.Empty : "Entity identity is required."),
-                address => address != null);
-
-        public static readonly PEGAKnowledgeFactDefinition<ScriptableObject, Vector3> EntityInitialLocation =
-            new PEGAKnowledgeFactDefinition<ScriptableObject, Vector3>(
-                "Entity initial location",
-                new PEGAStructuralKnowledgePolicy<Vector3>(
-                    value => IsFinite(value) ? string.Empty : "Initial location is not finite."),
-                address => address != null);
-
-        public static readonly PEGAKnowledgeFactDefinition<string, PEGANpcPlanningTarget> SpawnPointEscapeTarget =
-            new PEGAKnowledgeFactDefinition<string, PEGANpcPlanningTarget>(
-                "Spawn Point escape target",
-                new PEGAStructuralKnowledgePolicy<PEGANpcPlanningTarget>(
-                    value => value.IsValid ? string.Empty : "Escape target is invalid."),
-                address => !string.IsNullOrWhiteSpace(address));
-
-        private static bool IsFinite(Vector3 value) =>
-            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
-
-        private static bool IsFinite(float value) =>
-            !float.IsNaN(value) && !float.IsInfinity(value);
-    }
 }

@@ -19,23 +19,36 @@ namespace PEGA.NPC
     }
 
     /// <summary>Evidência radial ancorada à posição conhecida do observador, nunca à posição oculta do alvo.</summary>
-    public readonly struct PEGANpcPerceivedAreaPresence
+    [Serializable]
+    public struct PEGANpcPerceivedAreaPresence
     {
+        [SerializeField]
+        [Tooltip("Se a informação declara presença na área.")]
+        private bool isPresent;
+
+        [SerializeField]
+        [Tooltip("Posição conhecida do observador que ancora a área, não a posição oculta do alvo.")]
+        private Vector3 observerPosition;
+
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Raio da área em metros.")]
+        private float perceivedAreaRadiusMeters;
+
         internal PEGANpcPerceivedAreaPresence(
             bool isPresent,
             Vector3 observerPosition,
             float perceivedAreaRadiusMeters)
         {
-            IsPresent = isPresent;
-            ObserverPosition = observerPosition;
-            PerceivedAreaRadiusMeters = perceivedAreaRadiusMeters;
+            this.isPresent = isPresent;
+            this.observerPosition = observerPosition;
+            this.perceivedAreaRadiusMeters = perceivedAreaRadiusMeters;
         }
 
-        public bool IsPresent { get; }
+        public bool IsPresent => isPresent;
 
-        public Vector3 ObserverPosition { get; }
+        public Vector3 ObserverPosition => observerPosition;
 
-        public float PerceivedAreaRadiusMeters { get; }
+        public float PerceivedAreaRadiusMeters => perceivedAreaRadiusMeters;
 
         internal bool IsValid =>
             IsFinite(ObserverPosition) &&
@@ -138,7 +151,7 @@ namespace PEGA.NPC
             var subjectIds = new HashSet<ActorId>();
             AddSubjects(
                 subjectIds,
-                _factStore.GetFacts(PEGANpcKnowledgeFacts.ObservedCharacterIdentity, Time.timeAsDouble));
+                _factStore.GetFacts(PEGANpcKnowledgeFacts.IsPlayer, Time.timeAsDouble));
             AddSubjects(
                 subjectIds,
                 _factStore.GetFacts(PEGANpcKnowledgeFacts.CharacterVisualContact, Time.timeAsDouble));
@@ -204,12 +217,6 @@ namespace PEGA.NPC
         public PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
             GetFact(PEGANpcKnowledgeFacts.PerceivedAreaPresence.For(0));
 
-        public PEGAKnowledgeFact<ActorProfileId> GetObservedCharacterIdentity(ActorId subjectActorId)
-        {
-            ValidateSubjectForQuery(subjectActorId);
-            return GetFact(PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId));
-        }
-
         public PEGAKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId)
         {
             ValidateSubjectForQuery(subjectActorId);
@@ -239,45 +246,6 @@ namespace PEGA.NPC
             return ObserveFact(
                 PEGANpcKnowledgeFacts.PerceivedAreaPresence.For(0),
                 perceivedPresence,
-                PEGAKnowledgeEvidence.From(origin, observationTimeSeconds));
-        }
-
-        public PEGAKnowledgeWriteResult ObserveCharacterIdentity(
-            ActorId subjectActorId,
-            ActorProfileId observedProfileId,
-            PEGANpcEvidenceOrigin origin,
-            double observationTimeSeconds)
-        {
-            if (!subjectActorId.IsValid)
-            {
-                PEGAKnowledgeFactKey<ActorId, ActorProfileId> key =
-                    PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId);
-                return RejectEvidence(
-                    key,
-                    PEGAKnowledgeEvidence.From(origin, observationTimeSeconds),
-                    "subject ActorId is invalid",
-                    PEGAKnowledgeFact<ActorProfileId>.Unknown(PEGAKnowledgeScope.Individual));
-            }
-
-            if (!observedProfileId.IsValid)
-            {
-                var key = PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId);
-                return RejectEvidence(
-                    key,
-                    PEGAKnowledgeEvidence.From(origin, observationTimeSeconds),
-                    "observed ActorProfileId is invalid",
-                    GetFact(key));
-            }
-
-            if (!TryValidateEvidence(origin, observationTimeSeconds, out string reason))
-            {
-                var key = PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId);
-                return RejectEvidence(key, PEGAKnowledgeEvidence.From(origin, observationTimeSeconds), reason, GetFact(key));
-            }
-
-            return ObserveFact(
-                PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId),
-                observedProfileId,
                 PEGAKnowledgeEvidence.From(origin, observationTimeSeconds));
         }
 
@@ -345,25 +313,6 @@ namespace PEGA.NPC
                 origin,
                 observationTimeSeconds,
                 GetPerceivedAreaPresence());
-
-        public PEGAKnowledgeWriteResult InvalidateObservedCharacterIdentity(
-            ActorId subjectActorId,
-            PEGANpcEvidenceOrigin origin,
-            double observationTimeSeconds)
-        {
-            if (!subjectActorId.IsValid)
-            {
-                var key = PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId);
-                return RejectEvidence(key, PEGAKnowledgeEvidence.From(origin, observationTimeSeconds),
-                    "subject ActorId is invalid", PEGAKnowledgeFact<ActorProfileId>.Unknown(PEGAKnowledgeScope.Individual));
-            }
-
-            return InvalidateLegacyFact(
-                PEGANpcKnowledgeFacts.ObservedCharacterIdentity.For(subjectActorId),
-                origin,
-                observationTimeSeconds,
-                GetObservedCharacterIdentity(subjectActorId));
-        }
 
         public PEGAKnowledgeWriteResult InvalidateCharacterVisualContact(
             ActorId subjectActorId,

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
-using Immersive.Framework.PlayerParticipation;
 using Immersive.Logging.Records;
 using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
@@ -23,18 +22,13 @@ namespace PEGA.NPC
     {
         private const string LogCategory = "PEGA.Gameplay.Perception";
 
-        [Header("Observed Player")]
-        [SerializeField]
-        [Tooltip("Observador da Player Session no escopo da Activity que contém este NPC.")]
-        private PlayerSessionObserver playerSessionObserver;
-
         [Header("Sensor Assets")]
         [SerializeField]
         [Tooltip("Asset do sensor radial que informa presença sem identidade.")]
         private RadialPresenceSensor perceivedAreaSensor;
 
         [SerializeField]
-        [Tooltip("Asset do sensor de visão que confirma identidade e contato visual.")]
+        [Tooltip("Asset do sensor de visão que confirma contato visual; os fatos de Player e posição são gravados separadamente após contato positivo.")]
         private VisionConeSensor visionConeSensor;
 
         [Header("Sampling")]
@@ -329,27 +323,6 @@ namespace PEGA.NPC
             return actorId.IsValid;
         }
 
-        public bool TryBindActivityObserverBeforeActivation(
-            PlayerSessionObserver observer,
-            out string diagnostic)
-        {
-            if (observer == null)
-            {
-                diagnostic = "The current Activity Player Session observer is required before Perception activation.";
-                return false;
-            }
-
-            if (_isConfigured || isActiveAndEnabled || gameObject.activeInHierarchy)
-            {
-                diagnostic = "The Activity observer can only be bound before this Perception Source is activated.";
-                return false;
-            }
-
-            playerSessionObserver = observer;
-            diagnostic = string.Empty;
-            return true;
-        }
-
         private bool TryValidateConfiguration(out string diagnostic)
         {
             diagnostic = string.Empty;
@@ -362,12 +335,6 @@ namespace PEGA.NPC
             if (_knowledgeState == null)
             {
                 diagnostic = $"{nameof(PEGANpcKnowledgeState)} is missing from the NPC root.";
-                return false;
-            }
-
-            if (playerSessionObserver == null)
-            {
-                diagnostic = $"{nameof(PlayerSessionObserver)} must reference the current Activity observer.";
                 return false;
             }
 
@@ -475,13 +442,6 @@ namespace PEGA.NPC
                 return;
             }
 
-            if (!TryResolveCurrentProfile(occurrence, out ActorProfileId currentProfileId, out string diagnostic))
-            {
-                SetTargetDiagnostic(diagnostic);
-                SetGizmoUnavailable();
-                return;
-            }
-
             CharacterController targetController = occurrence.ActorRoot.GetComponent<CharacterController>();
             if (targetController == null || !targetController.enabled || !occurrence.ActorRoot.activeInHierarchy)
             {
@@ -494,63 +454,12 @@ namespace PEGA.NPC
             EvaluateObservation(
                 occurrence,
                 targetController.bounds.center,
-                currentProfileId,
                 observationTimeSeconds);
-        }
-
-        private bool TryResolveCurrentProfile(
-            ActorOccurrence occurrence,
-            out ActorProfileId profileId,
-            out string diagnostic)
-        {
-            profileId = default;
-            if (playerSessionObserver == null ||
-                !playerSessionObserver.TryGetObservation(out PlayerSessionScopedObservationSnapshot observation))
-            {
-                diagnostic = "Player Session observation is currently unavailable.";
-                return false;
-            }
-
-            for (int index = 0; index < observation.Slots.Count; index++)
-            {
-                PlayerSessionScopedSlotObservation slot = observation.Slots[index];
-                if (!slot.Slot.PlayerSlotId.Equals(occurrence.PlayerSlotId))
-                {
-                    continue;
-                }
-
-                if (!slot.IsJoined ||
-                    !slot.HasCurrentActorEvidence ||
-                    !slot.CurrentActor.HasCurrentActor)
-                {
-                    diagnostic = "Player Slot does not have current Actor correlation evidence.";
-                    return false;
-                }
-
-                PlayerActorCorrelationEvidence evidence = slot.CurrentActor.ActorEvidence;
-                if (!evidence.IsValid ||
-                    !evidence.PlayerSlotId.Equals(occurrence.PlayerSlotId) ||
-                    !evidence.ActorId.Equals(occurrence.ActorId) ||
-                    !evidence.Owner.Equals(occurrence.Owner) ||
-                    !slot.Slot.SelectedActorProfileId.Equals(evidence.ActorProfileId))
-                {
-                    diagnostic = "Resolved Actor occurrence does not match current Player Slot identity and owner evidence.";
-                    return false;
-                }
-
-                profileId = evidence.ActorProfileId;
-                diagnostic = string.Empty;
-                return profileId.IsValid;
-            }
-
-            diagnostic = "Player Session observation has no matching Player Slot.";
-            return false;
         }
 
         private void EvaluateObservation(
             ActorOccurrence occurrence,
             Vector3 targetAimPoint,
-            ActorProfileId observedProfileId,
             double observationTimeSeconds)
         {
             if (_perceptionSensorSet == null)
@@ -631,12 +540,6 @@ namespace PEGA.NPC
 
             if (hasVisualContact)
             {
-                PublishIdentityIfChanged(
-                    occurrence.ActorId,
-                    observedProfileId,
-                    observationTimeSeconds,
-                    isTargetReacquisition);
-
                 PEGAKnowledgeFact<Vector3> lastPosition =
                     _knowledgeState.GetLastObservedCharacterPosition(occurrence.ActorId);
                 Vector3 observedRootPosition = occurrence.ActorRoot.transform.position;
@@ -652,6 +555,7 @@ namespace PEGA.NPC
                 }
 
                 PublishTargetContactIfChanged(occurrence.ActorId, true, observationTimeSeconds);
+                PublishPlayerFactIfUnknown(occurrence, observationTimeSeconds);
             }
             else
             {
@@ -750,26 +654,6 @@ namespace PEGA.NPC
                 observationTimeSeconds);
         }
 
-        private void PublishIdentityIfChanged(
-            ActorId subjectActorId,
-            ActorProfileId observedProfileId,
-            double observationTimeSeconds,
-            bool refreshEvidence)
-        {
-            PEGAKnowledgeFact<ActorProfileId> identity =
-                _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            if (refreshEvidence ||
-                !identity.TryGetValue(out ActorProfileId previousProfileId) ||
-                !previousProfileId.Equals(observedProfileId))
-            {
-                _knowledgeState.ObserveCharacterIdentity(
-                    subjectActorId,
-                    observedProfileId,
-                    PEGANpcEvidenceOrigin.Perception,
-                    observationTimeSeconds);
-            }
-        }
-
         private void PublishTargetContactIfChanged(
             ActorId subjectActorId,
             bool hasVisualContact,
@@ -793,21 +677,43 @@ namespace PEGA.NPC
                 observationTimeSeconds);
         }
 
+        private void PublishPlayerFactIfUnknown(
+            ActorOccurrence occurrence,
+            double observationTimeSeconds)
+        {
+            if (!occurrence.HasPlayerSlot || !occurrence.ActorId.IsValid)
+            {
+                return;
+            }
+
+            PEGAKnowledgeFactKey<ActorId, bool> key =
+                PEGANpcKnowledgeFacts.IsPlayer.For(occurrence.ActorId);
+            PEGAKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(key);
+            if (PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact))
+            {
+                return;
+            }
+
+            _knowledgeState.ObserveFact(
+                key,
+                true,
+                PEGAKnowledgeEvidence.From(
+                    PEGANpcEvidenceOrigin.Perception,
+                    observationTimeSeconds,
+                    this,
+                    occurrence.PlayerSlotId));
+        }
+
         private void PublishPlanReevaluationRequestAfterReacquisition(
             ActorId subjectActorId,
             double observationTimeSeconds)
         {
-            PEGAKnowledgeFact<ActorProfileId> identity =
-                _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
             PEGAKnowledgeFact<bool> contact =
                 _knowledgeState.GetCharacterVisualContact(subjectActorId);
             PEGAKnowledgeFact<Vector3> position =
                 _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
 
             bool hasConsolidatedEvidence =
-                identity.TryGetValue(out _) &&
-                HasCurrentPerceptionEvidence(identity.HasOrigin(PEGANpcEvidenceOrigin.Perception), identity.HasObservationTime,
-                    identity.ObservationTimeSeconds, observationTimeSeconds) &&
                 contact.TryGetValue(out bool hasVisualContact) &&
                 hasVisualContact &&
                 HasCurrentPerceptionEvidence(contact.HasOrigin(PEGANpcEvidenceOrigin.Perception), contact.HasObservationTime,
@@ -823,7 +729,6 @@ namespace PEGA.NPC
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("targetActorId", subjectActorId.StableText),
                     LogFields.Field("observationTimeSeconds", observationTimeSeconds),
-                    LogFields.Field("identityStatus", identity.Status),
                     LogFields.Field("contactStatus", contact.Status),
                     LogFields.Field("positionStatus", position.Status));
                 return;

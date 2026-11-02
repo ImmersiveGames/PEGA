@@ -1,154 +1,168 @@
 using System;
 using Immersive.Framework.Actors;
+using Immersive.Framework.ObjectEntry;
 using UnityEngine;
 
 namespace PEGA.NPC
 {
-    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public sealed class PEGAActorGroupInitialKnowledgeFactMenuAttribute : Attribute
-    {
-        public PEGAActorGroupInitialKnowledgeFactMenuAttribute(string menuName)
-        {
-            MenuName = string.IsNullOrWhiteSpace(menuName)
-                ? throw new ArgumentException("A menu name is required.", nameof(menuName))
-                : menuName;
-        }
-
-        public string MenuName { get; }
-    }
-
-    /// <summary>Dados iniciais autorados no Unity e aplicados ao armazenamento genérico do Group proprietário.</summary>
+    /// <summary>One designer-authored address/value pair for an existing canonical fact definition.</summary>
     [Serializable]
-    public abstract class PEGAActorGroupInitialKnowledgeFact
+    public sealed class PEGAActorGroupInitialKnowledgeFact
     {
-        internal abstract string FactName { get; }
+        [SerializeField]
+        private string factDefinitionId = string.Empty;
 
-        internal abstract bool TryObserve(
-            PEGAKnowledgeFactStore factStore,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
-            out string diagnostic);
+        [SerializeField]
+        private PEGAKnowledgeFactAuthoringPayload address = new PEGAKnowledgeFactAuthoringPayload();
 
-        protected static bool TryObserveDefinition<TAddress, TValue>(
+        [SerializeField]
+        private PEGAKnowledgeFactAuthoringPayload value = new PEGAKnowledgeFactAuthoringPayload();
+
+        public string FactDefinitionId => factDefinitionId;
+
+        public string FactName => PEGAKnowledgeFactDefinitionCatalog.TryGet(
+            factDefinitionId, out IPEGAKnowledgeFactDefinition definition)
+                ? definition.Name
+                : string.IsNullOrWhiteSpace(factDefinitionId) ? "<definition unavailable>" : factDefinitionId;
+
+        internal bool TryObserve(
             PEGAKnowledgeFactStore factStore,
-            PEGAKnowledgeFactDefinition<TAddress, TValue> definition,
-            TAddress address,
-            TValue value,
             PEGAKnowledgeEvidence evidence,
             out PEGAKnowledgeWriteResult result,
             out string diagnostic)
         {
             result = PEGAKnowledgeWriteResult.RejectedInvalid;
-            if (factStore == null || definition == null)
+            if (!PEGAKnowledgeFactDefinitionCatalog.TryGet(
+                    factDefinitionId, out IPEGAKnowledgeFactDefinition definition))
             {
-                diagnostic = "A fact store and an available fact definition are required.";
+                diagnostic = $"Fact definition '{factDefinitionId}' is unavailable.";
                 return false;
             }
 
-            PEGAKnowledgeFactKey<TAddress, TValue> key = definition.For(address);
-            if (!key.IsValid)
+            if (!definition.AllowsDesignerAuthoredInitialFact)
             {
-                diagnostic = $"Fact definition '{definition.Name}' rejected its authored address.";
+                diagnostic = $"Fact definition '{definition.Name}' is reserved for its authorized sources.";
                 return false;
             }
 
-            result = factStore.Observe(key, value, evidence);
-            if (result == PEGAKnowledgeWriteResult.RejectedInvalid)
+            if (!address.TryGetValue(definition.AddressType, out object typedAddress, out diagnostic))
             {
-                diagnostic = $"Fact definition '{definition.Name}' rejected its authored value or evidence.";
+                diagnostic = $"Fact definition '{definition.Name}' address: {diagnostic}";
                 return false;
             }
 
+            if (!value.TryGetValue(definition.ValueType, out object typedValue, out diagnostic))
+            {
+                diagnostic = $"Fact definition '{definition.Name}' value: {diagnostic}";
+                return false;
+            }
+
+            return definition.TryObserveInitialFact(
+                factStore,
+                typedAddress,
+                typedValue,
+                evidence,
+                out result,
+                out diagnostic);
+        }
+    }
+
+    /// <summary>
+    /// Unity-serializable payload slots shared by fact definitions. The selected definition chooses the exact
+    /// typed slot; adding another definition with already-supported address/value types needs no authoring class.
+    /// </summary>
+    [Serializable]
+    public struct PEGAKnowledgeFactAuthoringPayload
+    {
+        [SerializeField, HideInInspector] private ActorDeclaration actorDeclaration;
+        [SerializeField, HideInInspector] private string actorIdText;
+        [SerializeField, HideInInspector] private ActorProfile actorProfile;
+        [SerializeField, HideInInspector] private string actorProfileIdText;
+        [SerializeField, HideInInspector] private ObjectEntryIdReference objectEntryId;
+        [SerializeField, HideInInspector] private string stringValue;
+        [SerializeField, HideInInspector] private int integerValue;
+        [SerializeField, HideInInspector] private long longValue;
+        [SerializeField, HideInInspector] private float floatValue;
+        [SerializeField, HideInInspector] private double doubleValue;
+        [SerializeField, HideInInspector] private bool boolValue;
+        [SerializeField, HideInInspector] private Vector3 vector3Value;
+        [SerializeField, HideInInspector] private PEGANpcPerceivedAreaPresence perceivedAreaPresenceValue;
+
+        public static bool Supports(Type type) =>
+            type == typeof(ActorId) ||
+            type == typeof(ActorProfileId) ||
+            type == typeof(ObjectEntryId) ||
+            type == typeof(string) ||
+            type == typeof(byte) ||
+            type == typeof(int) ||
+            type == typeof(long) ||
+            type == typeof(float) ||
+            type == typeof(double) ||
+            type == typeof(bool) ||
+            type == typeof(Vector3) ||
+            type == typeof(PEGANpcPerceivedAreaPresence) ||
+            IsSupportedEnum(type);
+
+        private static bool IsSupportedEnum(Type type) =>
+            type != null && type.IsEnum && Enum.GetUnderlyingType(type) == typeof(int);
+
+        internal bool TryGetValue(Type type, out object resolved, out string diagnostic)
+        {
+            resolved = null;
             diagnostic = string.Empty;
-            return true;
-        }
-    }
-
-    [Serializable]
-    [PEGAActorGroupInitialKnowledgeFactMenu("Presença em área")]
-    public sealed class PEGAActorGroupInitialAreaPresenceFact : PEGAActorGroupInitialKnowledgeFact
-    {
-        [SerializeField]
-        [Tooltip("Indica se a informação inicial declara presença nesta área.")]
-        private bool isPresent = true;
-
-        [SerializeField]
-        [Tooltip("Posição conhecida que ancora este fato de presença em área.")]
-        private Vector3 observerPosition;
-
-        [SerializeField, Min(0.01f)]
-        [Tooltip("Raio da área em metros.")]
-        private float perceivedAreaRadiusMeters = 5f;
-
-        internal override string FactName => PEGANpcKnowledgeFacts.PerceivedAreaPresence.Name;
-
-        internal override bool TryObserve(
-            PEGAKnowledgeFactStore factStore,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
-            out string diagnostic)
-        {
-            var value = new PEGANpcPerceivedAreaPresence(
-                isPresent,
-                observerPosition,
-                perceivedAreaRadiusMeters);
-            return TryObserveDefinition(
-                factStore,
-                PEGANpcKnowledgeFacts.PerceivedAreaPresence,
-                (byte)0,
-                value,
-                evidence,
-                out result,
-                out diagnostic);
-        }
-    }
-
-    [Serializable]
-    [PEGAActorGroupInitialKnowledgeFactMenu("Contato visual de Actor")]
-    public sealed class PEGAActorGroupInitialCharacterVisualContactFact : PEGAActorGroupInitialKnowledgeFact
-    {
-        private const string DescriptorSource = "PEGA.ActorGroup.InitialKnowledge";
-
-        [SerializeField]
-        [Tooltip("Actor ao qual se refere o fato inicial de contato visual deste Group.")]
-        private ActorDeclaration subjectActor;
-
-        [SerializeField]
-        [Tooltip("Estado de contato visual autorado. Observações posteriores continuam na autoridade e no escopo de sua fonte.")]
-        private bool hasVisualContact;
-
-        internal override string FactName => PEGANpcKnowledgeFacts.CharacterVisualContact.Name;
-
-        internal override bool TryObserve(
-            PEGAKnowledgeFactStore factStore,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
-            out string diagnostic)
-        {
-            result = PEGAKnowledgeWriteResult.RejectedInvalid;
-            if (subjectActor == null)
+            if (!Supports(type))
             {
-                diagnostic = "An Actor Declaration is required to address the visual-contact fact.";
+                diagnostic = $"Data type '{type?.FullName ?? "<null>"}' has no Unity authoring payload format.";
                 return false;
             }
 
-            if (!subjectActor.TryCreateDescriptor(
-                    DescriptorSource,
-                    out ActorDescriptor descriptor,
-                    out ActorSetIssue issue))
+            try
             {
-                diagnostic = issue.Message;
+                if (type == typeof(ActorId))
+                {
+                    resolved = ActorId.From(actorIdText);
+                }
+                else if (type == typeof(ActorProfileId))
+                {
+                    resolved = ActorProfileId.From(actorProfileIdText);
+                }
+                else if (type == typeof(ObjectEntryId))
+                {
+                    if (!objectEntryId.TryGetObjectEntryId(out ObjectEntryId id))
+                    {
+                        diagnostic = "Select a valid Framework Object Entry identity.";
+                        return false;
+                    }
+
+                    resolved = id;
+                }
+                else if (type == typeof(string)) resolved = stringValue ?? string.Empty;
+                else if (type == typeof(byte))
+                {
+                    if (integerValue < byte.MinValue || integerValue > byte.MaxValue)
+                    {
+                        diagnostic = "Byte values must be between 0 and 255.";
+                        return false;
+                    }
+
+                    resolved = (byte)integerValue;
+                }
+                else if (type == typeof(int)) resolved = integerValue;
+                else if (type == typeof(long)) resolved = longValue;
+                else if (type == typeof(float)) resolved = floatValue;
+                else if (type == typeof(double)) resolved = doubleValue;
+                else if (type == typeof(bool)) resolved = boolValue;
+                else if (type == typeof(Vector3)) resolved = vector3Value;
+                else if (type == typeof(PEGANpcPerceivedAreaPresence)) resolved = perceivedAreaPresenceValue;
+                else if (type.IsEnum) resolved = Enum.ToObject(type, integerValue);
+                return true;
+            }
+            catch (ArgumentException exception)
+            {
+                diagnostic = exception.Message;
                 return false;
             }
-
-            return TryObserveDefinition(
-                factStore,
-                PEGANpcKnowledgeFacts.CharacterVisualContact,
-                descriptor.ActorId,
-                hasVisualContact,
-                evidence,
-                out result,
-                out diagnostic);
         }
+
     }
 }

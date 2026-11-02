@@ -3404,6 +3404,7 @@ GameObject:
   - component: {fileID: 5400000152}
   - component: {fileID: 5400000153}
   - component: {fileID: 5400000196}
+  - component: {fileID: 5400000201}
   m_Layer: 6
   m_Name: Warehouse Storage Rack West North
   m_TagString: Untagged
@@ -3483,6 +3484,20 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5400000201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.warehouse.storage-rack-west-north
+  requiredness: 20
 --- !u!1 &5400000160
 GameObject:
   m_ObjectHideFlags: 0

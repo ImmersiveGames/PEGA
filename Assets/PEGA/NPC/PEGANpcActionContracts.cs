@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
-using Immersive.Framework.PlayerParticipation;
 using ImmersiveGames.Goap;
 using UnityEngine;
 
@@ -26,7 +25,6 @@ namespace PEGA.NPC
         private PEGANpcPlanningActionId(string stableText) => _stableText = stableText;
 
         public static PEGANpcPlanningActionId ApproachKnownCharacter { get; } = new PEGANpcPlanningActionId("approach-known-target");
-        public static PEGANpcPlanningActionId TravelToEscapeTarget { get; } = new PEGANpcPlanningActionId("travel-to-escape-target");
         public static PEGANpcPlanningActionId InvestigateLastKnownCharacterPosition { get; } = new PEGANpcPlanningActionId("investigate-last-known-target-position");
         public static PEGANpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PEGANpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PEGANpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PEGANpcPlanningActionId("investigate-perceived-area-presence");
@@ -53,7 +51,6 @@ namespace PEGA.NPC
         private PEGANpcActionEffectKind(string stableText) => _stableText = stableText;
 
         public static PEGANpcActionEffectKind ApproachKnownCharacterPosition { get; } = new PEGANpcActionEffectKind("approach-known-target-position");
-        public static PEGANpcActionEffectKind ReachSelectedEscapeDestination { get; } = new PEGANpcActionEffectKind("reach-selected-escape-destination");
         public static PEGANpcActionEffectKind ReachLocalObservationPosition { get; } = new PEGANpcActionEffectKind("reach-local-observation-position");
         public static PEGANpcActionEffectKind ReachSafeSeparationPosition { get; } = new PEGANpcActionEffectKind("reach-safe-separation-position");
 
@@ -179,7 +176,6 @@ namespace PEGA.NPC
         private PEGANpcPlanningTargetKind(string stableText) => _stableText = stableText;
 
         public static PEGANpcPlanningTargetKind CharacterPosition { get; } = new PEGANpcPlanningTargetKind("character-position");
-        public static PEGANpcPlanningTargetKind EscapeDestination { get; } = new PEGANpcPlanningTargetKind("escape-destination");
         public static PEGANpcPlanningTargetKind LocalObservationPosition { get; } = new PEGANpcPlanningTargetKind("local-observation-position");
         public static PEGANpcPlanningTargetKind SafeSeparationPosition { get; } = new PEGANpcPlanningTargetKind("safe-separation-position");
 
@@ -374,9 +370,6 @@ namespace PEGA.NPC
 
         bool UnsubscribeFromPlanReevaluationRequests(IEventBinding binding);
 
-        bool TryBindActivityObserverBeforeActivation(
-            PlayerSessionObserver observer,
-            out string diagnostic);
     }
 
     /// <summary>Optional capability for producing a causal continuation from known target evidence.</summary>
@@ -391,7 +384,7 @@ namespace PEGA.NPC
             PEGANpcLastKnownTargetContinuationIntent intent,
             out string diagnostic);
 
-        bool IsContinuationSupersededByNewRecognition(
+        bool IsContinuationSupersededByReacquisition(
             PEGANpcLastKnownTargetContinuationIntent intent);
 
         bool TryGetKnownTargetPosition(out Vector3 position, out string diagnostic);

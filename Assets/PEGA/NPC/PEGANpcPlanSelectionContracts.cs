@@ -332,17 +332,6 @@ namespace PEGA.NPC
                 true,
                 evidenceTimeSeconds);
 
-        internal static PEGANpcPlanningTarget FromKnownEscapeDestination(
-            PEGANpcPlanningTargetId targetId,
-            Vector3 knownPosition,
-            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
-                targetId,
-                PEGANpcPlanningTargetKind.EscapeDestination,
-                PEGANpcPlanningTargetProvenance.KnowledgeState,
-                knownPosition,
-                true,
-                evidenceTimeSeconds);
-
         internal static PEGANpcPlanningTarget FromLocalObservationPosition(
             PEGANpcPlanningTargetId targetId,
             Vector3 knownPosition,

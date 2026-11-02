@@ -479,10 +479,7 @@ namespace PEGA.NPC
             _goapKnowledgeStateView = new PEGANpcGoapKnowledgeStateView(
                 _knowledgeState,
                 _goapKnowledgeCapabilities);
-            _knowledgeReadView = new PEGANpcKnowledgeReadView(
-                gameObject,
-                _knowledgeState,
-                GetComponent<PEGAActorGroupMembership>());
+            _knowledgeReadView = new PEGANpcKnowledgeReadView(_knowledgeState);
 
             if (!TryCreateActionRuntimeInstances(out diagnostic))
             {
@@ -646,7 +643,6 @@ namespace PEGA.NPC
                 GetComponent<PEGANpcNavMeshMovementIntentSource>(),
                 GetComponent<ActorOccurrenceReferenceBinding>(),
                 GetComponent<NavMeshAgent>(),
-                GetComponent<PEGAActorGroupMembership>(),
                 _continuationProvider);
             for (int index = 0; index < _actionRuntimeInstances.Count; index++)
             {
@@ -984,13 +980,13 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFact<ActorProfileId> identity =
-                _knowledgeState.GetObservedCharacterIdentity(actorId);
+            PEGAKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(
+                PEGANpcKnowledgeFacts.IsPlayer.For(actorId));
             PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
             PEGAKnowledgeFact<Vector3> position = _knowledgeState.GetLastObservedCharacterPosition(actorId);
-            if (!identity.TryGetValue(out _) ||
-                !identity.HasObservationTime ||
-                !identity.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
+            if (!PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFactAtOrBefore(
+                    playerFact,
+                    request.ObservationTimeSeconds) ||
                 !position.TryGetValue(out _) ||
                 !position.HasObservationTime ||
                 !position.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
@@ -998,7 +994,7 @@ namespace PEGA.NPC
                 !contact.HasObservationTime ||
                 !contact.HasOrigin(PEGANpcEvidenceOrigin.Perception))
             {
-                diagnostic = "The NPC does not have the required Perception-backed identity, contact and last-position facts.";
+                diagnostic = "The NPC does not have Perception-backed Player, contact and last-position facts.";
                 return false;
             }
 
@@ -1006,11 +1002,10 @@ namespace PEGA.NPC
             {
                 case PEGANpcPlanReevaluationTrigger.TargetReacquired:
                     if (!hasVisualContact ||
-                        !HasObservationAt(identity, request.ObservationTimeSeconds) ||
                         !HasObservationAt(contact, request.ObservationTimeSeconds) ||
                         !HasObservationAt(position, request.ObservationTimeSeconds))
                     {
-                        diagnostic = "TargetReacquired requires consolidated current identity, contact and position evidence.";
+                        diagnostic = "TargetReacquired requires consolidated current contact and position evidence for a known Player.";
                         return false;
                     }
 
@@ -1019,8 +1014,7 @@ namespace PEGA.NPC
                 case PEGANpcPlanReevaluationTrigger.TargetContactLostBeyondWindow:
                     if (hasVisualContact ||
                         !HasObservationAt(contact, request.ObservationTimeSeconds) ||
-                        position.ObservationTimeSeconds > request.ObservationTimeSeconds + 0.000001d ||
-                        identity.ObservationTimeSeconds > request.ObservationTimeSeconds + 0.000001d)
+                        position.ObservationTimeSeconds > request.ObservationTimeSeconds + 0.000001d)
                     {
                         diagnostic = "TargetContactLostBeyondWindow requires the published real contact-loss sample and preserved earlier Perception evidence.";
                         return false;
@@ -1340,17 +1334,18 @@ namespace PEGA.NPC
                     return false;
                 }
 
-                PEGAKnowledgeFact<ActorProfileId> continuationIdentity =
-                    _knowledgeState.GetObservedCharacterIdentity(targetActorId);
+                PEGAKnowledgeFact<bool> continuationPlayerFact = _knowledgeState.GetFact(
+                    PEGANpcKnowledgeFacts.IsPlayer.For(targetActorId));
                 PEGAKnowledgeFact<Vector3> continuationPosition =
                     _knowledgeState.GetLastObservedCharacterPosition(targetActorId);
-                if (!continuationIdentity.TryGetValue(out _) ||
-                    !continuationIdentity.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
+                if (!PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFactAtOrBefore(
+                        continuationPlayerFact,
+                        _activePlanContinuation.ContactLossObservationTimeSeconds) ||
                     !continuationPosition.TryGetValue(out Vector3 continuationKnownPosition) ||
                     !continuationPosition.HasObservationTime ||
                     !continuationPosition.HasOrigin(PEGANpcEvidenceOrigin.Perception))
                 {
-                    diagnostic = "Plan continuation requires this NPC's Perception-backed target identity and last known position.";
+                    diagnostic = "Plan continuation requires this NPC's Perception-backed Player fact and last known position.";
                     return false;
                 }
 

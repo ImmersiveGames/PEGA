@@ -121,7 +121,7 @@ namespace PEGA.NPC
                 return string.IsNullOrWhiteSpace(diagnostic);
             }
 
-            if (IsCharacterIdentityKnownByPerception(_candidateTargetActorId))
+            if (HasPerceptionBackedPlayerFact(_candidateTargetActorId))
             {
                 return true;
             }
@@ -276,7 +276,7 @@ namespace PEGA.NPC
                 return true;
             }
 
-            return PEGANpcKnowledgeFacts.IsIdentityOrContactChangeFor(
+            return PEGANpcKnowledgeFacts.IsCharacterFactChangeFor(
                 change,
                 _executionTargetActorId);
         }
@@ -300,7 +300,7 @@ namespace PEGA.NPC
             {
                 if (string.IsNullOrWhiteSpace(diagnostic))
                 {
-                    diagnostic = "Radial presence investigation requires current positive Perception evidence and no Perception-backed identity.";
+                    diagnostic = "Radial presence investigation requires current positive Perception evidence and no visually known Player fact.";
                 }
 
                 return false;
@@ -443,9 +443,9 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!subjectActorId.IsValid || IsCharacterIdentityKnownByPerception(subjectActorId))
+            if (!subjectActorId.IsValid || HasPerceptionBackedPlayerFact(subjectActorId))
             {
-                diagnostic = "The radial presence has already been identified by Perception.";
+                diagnostic = "The current target is already known to be a Player through visual Perception.";
                 return false;
             }
 
@@ -498,9 +498,9 @@ namespace PEGA.NPC
                 Math.Abs(plan.EvidenceTimeSeconds - currentEvidenceTimeSeconds) > 0.000001d ||
                 !IsCandidatePositionWithinBounds(presence, plan.TargetPosition) ||
                 !subjectActorId.IsValid ||
-                IsCharacterIdentityKnownByPerception(subjectActorId))
+                HasPerceptionBackedPlayerFact(subjectActorId))
             {
-                diagnostic = "Current radial evidence no longer supports this unidentified-presence investigation.";
+                diagnostic = "Current radial evidence no longer supports investigation of a target whose Player status is visually known.";
                 return false;
             }
 
@@ -536,17 +536,16 @@ namespace PEGA.NPC
             return true;
         }
 
-        private bool IsCharacterIdentityKnownByPerception(ActorId subjectActorId)
+        private bool HasPerceptionBackedPlayerFact(ActorId subjectActorId)
         {
             if (_knowledgeState == null || !subjectActorId.IsValid)
             {
                 return false;
             }
 
-            PEGAKnowledgeFact<ActorProfileId> identity =
-                _knowledgeState.GetObservedCharacterIdentity(subjectActorId);
-            return identity.TryGetValue(out _) &&
-                   identity.HasOrigin(PEGANpcEvidenceOrigin.Perception);
+            PEGAKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(
+                PEGANpcKnowledgeFacts.IsPlayer.For(subjectActorId));
+            return PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact);
         }
 
         private bool ValidateConfiguration(

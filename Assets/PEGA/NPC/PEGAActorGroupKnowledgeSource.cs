@@ -13,11 +13,6 @@ namespace PEGA.NPC
         bool IsConfiguredFor(PEGAActorGroupKnowledgeState knowledgeState);
     }
 
-    /// <summary>Typed identity of the physical manifestation whose position a source recorded.</summary>
-    public interface IPEGAActorGroupLocationSubjectEvidence
-    {
-    }
-
     /// <summary>Optional source owned by one live PEGA Group knowledge authority.</summary>
     public abstract class PEGAActorGroupKnowledgeSource : MonoBehaviour, IPEGAActorGroupKnowledgeFactSource
     {
@@ -36,8 +31,6 @@ namespace PEGA.NPC
         bool IPEGAActorGroupKnowledgeFactSource.IsActiveForOwner => _ownerActive;
 
         protected bool IsKnowledgeSourceActive => _ownerActive;
-
-        internal bool IsKnowledgeSourceActiveForOwner => _ownerActive;
 
         internal bool IsConfiguredFor(PEGAActorGroupKnowledgeState knowledgeState) =>
             ReferenceEquals(actorGroupKnowledgeState, knowledgeState);
@@ -75,34 +68,6 @@ namespace PEGA.NPC
 
         protected virtual void OnKnowledgeSourceExited()
         {
-        }
-
-        internal virtual void RefreshAuthorizedInitialKnowledge()
-        {
-        }
-
-        protected bool TryRecordInitialLocation(
-            ScriptableObject entityIdentity,
-            IPEGAActorGroupLocationSubjectEvidence locationSubjectEvidence,
-            Vector3 initialLocation,
-            double evidenceTimeSeconds,
-            string sourceEvidence,
-            out string diagnostic)
-        {
-            if (!_ownerActive || actorGroupKnowledgeState == null)
-            {
-                diagnostic = "The knowledge source is unavailable outside its Group owner lifecycle.";
-                return false;
-            }
-
-            return actorGroupKnowledgeState.TryRecordAuthorizedInitialLocation(
-                this,
-                entityIdentity,
-                locationSubjectEvidence,
-                initialLocation,
-                evidenceTimeSeconds,
-                sourceEvidence,
-                out diagnostic);
         }
 
         protected bool TryRecordFact<TAddress, TValue>(

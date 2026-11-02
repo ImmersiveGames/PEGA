@@ -20,7 +20,6 @@ MonoBehaviour:
         rid: 4252839036489302104
     desires:
     - {fileID: 11400000, guid: 177736f2fcd348e09dc9a05bb24b81d4, type: 2}
-    - {fileID: 11400000, guid: 0be9cf1f3f3c4e79b751a432f8012ee5, type: 2}
   references:
     version: 2
     RefIds:

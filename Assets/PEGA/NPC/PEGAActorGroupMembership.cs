@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
-using ImmersiveGames.Goap;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,8 +10,6 @@ namespace PEGA.NPC
     [RequireComponent(typeof(ActorDeclaration))]
     [AddComponentMenu("PEGA/Actors/Actor Group Membership")]
     public sealed class PEGAActorGroupMembership : MonoBehaviour,
-        IPEGANpcPlanningInputChangeSource,
-        IGoapKnowledgeCapability,
         IPEGAActorGroupMember,
         IPEGAActorGroupMembershipListener
     {
@@ -22,9 +18,6 @@ namespace PEGA.NPC
         [FormerlySerializedAs("groupDefinitions")]
         [Tooltip("Group Profiles aos quais este Actor pertence. O Framework confirma o vínculo runtime pelo ActorId.")]
         private GroupProfile[] groupProfiles = System.Array.Empty<GroupProfile>();
-
-        [System.NonSerialized]
-        private EventBus<PEGANpcPlanningInputsChangedEvent> _planningInputEvents;
 
         [System.NonSerialized]
         private PEGAActorGroupKnowledgeContext _knowledgeContext;
@@ -43,84 +36,6 @@ namespace PEGA.NPC
         {
             PEGAActorGroupComposition composition = GetComponentInParent<PEGAActorGroupComposition>();
             composition?.TryBindMemberKnowledge(this);
-            if (_knowledgeContext != null)
-            {
-                _knowledgeContext.Changed -= OnGroupKnowledgeChanged;
-                _knowledgeContext.Changed += OnGroupKnowledgeChanged;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_knowledgeContext != null)
-            {
-                _knowledgeContext.Changed -= OnGroupKnowledgeChanged;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            OnDisable();
-            _planningInputEvents?.Clear();
-            _planningInputEvents = null;
-        }
-
-        public IEventBinding SubscribeToPlanningInputChanges(
-            System.Action<PEGANpcPlanningInputsChangedEvent> handler)
-        {
-            if (handler == null)
-            {
-                throw new System.ArgumentNullException(nameof(handler));
-            }
-
-            _planningInputEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
-            return _planningInputEvents.Subscribe(handler);
-        }
-
-        public bool UnsubscribeFromPlanningInputChanges(IEventBinding binding)
-        {
-            if (binding == null)
-            {
-                throw new System.ArgumentNullException(nameof(binding));
-            }
-
-            return _planningInputEvents != null && _planningInputEvents.Unsubscribe(binding);
-        }
-
-        public bool TryGetKnownEscapeTargets(
-            out IReadOnlyList<PEGANpcPlanningTarget> targets,
-            out string diagnostic)
-        {
-            targets = null;
-            if (!TryGetAuthorizedKnowledgeStates(out IReadOnlyList<PEGAActorGroupKnowledgeState> states,
-                    out diagnostic))
-            {
-                return false;
-            }
-
-            var combined = new List<PEGANpcPlanningTarget>();
-            var seen = new HashSet<PEGANpcPlanningTargetId>();
-            for (int index = 0; index < states.Count; index++)
-            {
-                if (!states[index].TryGetKnownEscapeTargets(gameObject,
-                        out IReadOnlyList<PEGANpcPlanningTarget> groupTargets, out diagnostic))
-                {
-                    return false;
-                }
-
-                for (int targetIndex = 0; targetIndex < groupTargets.Count; targetIndex++)
-                {
-                    PEGANpcPlanningTarget target = groupTargets[targetIndex];
-                    if (seen.Add(target.TargetId))
-                    {
-                        combined.Add(target);
-                    }
-                }
-            }
-
-            targets = combined;
-            diagnostic = string.Empty;
-            return true;
         }
 
         internal void BindKnowledgeContext(
@@ -133,15 +48,8 @@ namespace PEGA.NPC
                     ? nameof(knowledgeContext) : nameof(groupAccess));
             }
 
-            OnDisable();
             _knowledgeContext = knowledgeContext;
             _groupAccess = groupAccess;
-            if (isActiveAndEnabled)
-            {
-                _knowledgeContext.Changed += OnGroupKnowledgeChanged;
-            }
-
-            PublishPlanningInputsChanged();
         }
 
         internal void UnbindKnowledgeContext(PEGAActorGroupKnowledgeContext knowledgeContext)
@@ -151,10 +59,8 @@ namespace PEGA.NPC
                 return;
             }
 
-            OnDisable();
             _knowledgeContext = null;
             _groupAccess = null;
-            PublishPlanningInputsChanged();
         }
 
         public bool TryGetAuthorizedKnowledgeStates(
@@ -216,35 +122,13 @@ namespace PEGA.NPC
 
         void IPEGAActorGroupMembershipListener.OnFrameworkGroupMembershipConfirmed(GroupId groupId)
         {
-            if (groupId.IsValid && _knowledgeContext != null &&
-                _knowledgeContext.TryGetAuthority(groupId, out PEGAActorGroupKnowledgeState state) &&
-                state.NotifyFrameworkGroupMembershipConfirmed(gameObject, groupId))
+            if (!groupId.IsValid || _knowledgeContext == null ||
+                !_knowledgeContext.TryGetAuthority(groupId, out PEGAActorGroupKnowledgeState state))
             {
-                PublishPlanningInputsChanged();
+                return;
             }
-        }
 
-        private void OnGroupKnowledgeChanged(
-            GroupId groupId,
-            PEGAKnowledgeFactChangedEvent change)
-        {
-            if ((change == null || change.HasValueOrStatusChanged) &&
-                _knowledgeContext != null && _knowledgeContext.TryGetAuthority(groupId,
-                    out PEGAActorGroupKnowledgeState state) &&
-                state.TryIsMember(gameObject, out bool isMember, out _) && isMember)
-            {
-                PublishPlanningInputsChanged();
-            }
-            else if (change == null)
-            {
-                PublishPlanningInputsChanged();
-            }
-        }
-
-        private void PublishPlanningInputsChanged()
-        {
-            _planningInputEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
-            _planningInputEvents.Publish(new PEGANpcPlanningInputsChangedEvent());
+            state.NotifyFrameworkGroupMembershipConfirmed(gameObject, groupId);
         }
     }
 }

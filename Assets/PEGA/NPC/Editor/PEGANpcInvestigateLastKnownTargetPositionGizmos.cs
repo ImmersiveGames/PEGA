@@ -87,12 +87,10 @@ namespace PEGA.NPC.Editor
             }
 
             ActorId targetActorId = resolution.Occurrence.ActorId;
-            PEGAKnowledgeFact<Immersive.Framework.Actors.ActorProfileId> identity =
-                knowledge.GetObservedCharacterIdentity(targetActorId);
             PEGAKnowledgeFact<Vector3> position = knowledge.GetLastObservedCharacterPosition(targetActorId);
-            if (!identity.TryGetValue(out _) ||
-                !identity.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
-                !position.TryGetValue(out anchor) || !position.HasObservationTime)
+            if (!position.TryGetValue(out anchor) ||
+                !position.HasObservationTime ||
+                !position.HasOrigin(PEGANpcEvidenceOrigin.Perception))
             {
                 anchor = default;
                 return false;
