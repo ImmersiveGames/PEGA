@@ -48,10 +48,21 @@ namespace PEGA.NPC
             EnterOwner(
                 RuntimeContentScope.Activity,
                 context.ActivityName,
-                context.Activity != null && context.Activity.HasValidActivityId);
+                context.Activity != null && context.Activity.HasValidActivityId,
+                context.Activity,
+                context.Contribution);
         }
 
-        void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context) { }
+        void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context)
+        {
+            if (context.ContentRoot == gameObject)
+            {
+                GetComponent<PEGAActorGroupKnowledgeState>()?.EndOwner(
+                    RuntimeContentScope.Activity,
+                    context.Activity,
+                    context.Contribution);
+            }
+        }
 
         void IRouteContentLifecycleReceiver.OnRouteContentEntered(RouteContentLifecycleContext context)
         {
@@ -63,12 +74,28 @@ namespace PEGA.NPC
             EnterOwner(
                 RuntimeContentScope.Route,
                 context.RouteName,
-                context.Route != null && context.Route.HasValidRouteId);
+                context.Route != null && context.Route.HasValidRouteId,
+                context.Route,
+                context.Binding);
         }
 
-        void IRouteContentLifecycleReceiver.OnRouteContentExited(RouteContentLifecycleContext context) { }
+        void IRouteContentLifecycleReceiver.OnRouteContentExited(RouteContentLifecycleContext context)
+        {
+            if (context.ContentRoot == gameObject)
+            {
+                GetComponent<PEGAActorGroupKnowledgeState>()?.EndOwner(
+                    RuntimeContentScope.Route,
+                    context.Route,
+                    context.Binding);
+            }
+        }
 
-        private void EnterOwner(RuntimeContentScope ownerScope, string ownerName, bool hasValidOwner)
+        private void EnterOwner(
+            RuntimeContentScope ownerScope,
+            string ownerName,
+            bool hasValidOwner,
+            UnityEngine.Object ownerIdentity,
+            Component ownerContribution)
         {
             EnsureLoggerInitialized();
             if (!hasValidOwner)
@@ -80,7 +107,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            if (!TryCompose(ownerScope, ownerName, out string diagnostic))
+            if (!TryCompose(ownerScope, ownerName, ownerIdentity, ownerContribution, out string diagnostic))
             {
                 _log.Error(
                     "Actor Group composition failed.",
@@ -94,6 +121,8 @@ namespace PEGA.NPC
         private bool TryCompose(
             RuntimeContentScope ownerScope,
             string ownerName,
+            UnityEngine.Object ownerIdentity,
+            Component ownerContribution,
             out string diagnostic)
         {
             ActorGroupAccessBinding groupAccess = GetComponent<ActorGroupAccessBinding>();
@@ -112,6 +141,36 @@ namespace PEGA.NPC
                 return false;
             }
 
+            PEGAActorGroupKnowledgeState groupKnowledge = GetComponent<PEGAActorGroupKnowledgeState>();
+            bool groupKnowledgeAvailable = false;
+            if (groupKnowledge != null)
+            {
+                if (!groupKnowledge.isActiveAndEnabled)
+                {
+                    _log.Warning(
+                        "Optional Group Knowledge is disabled; Actor Group creation and membership will continue without it.",
+                        LogFields.Field("ownerScope", ownerScope),
+                        LogFields.Field("owner", ownerName));
+                }
+                else if (groupKnowledge.TryBeginOwner(
+                             ownerScope,
+                             ownerIdentity,
+                             ownerContribution,
+                             groupAccess,
+                             out string beginKnowledgeDiagnostic))
+                {
+                    groupKnowledgeAvailable = true;
+                }
+                else
+                {
+                    _log.Warning(
+                        "Optional Group Knowledge could not bind to this Actor Group owner; Actor Group creation and membership will continue.",
+                        LogFields.Field("ownerScope", ownerScope),
+                        LogFields.Field("owner", ownerName),
+                        LogFields.Field("reason", beginKnowledgeDiagnostic));
+                }
+            }
+
             for (int index = 0; index < declaredGroups.Count; index++)
             {
                 GroupProfile profile = declaredGroups[index];
@@ -125,6 +184,15 @@ namespace PEGA.NPC
                 {
                     diagnostic = $"Framework returned an unexpected Group for '{profile.GroupIdText}'.";
                     return false;
+                }
+
+                if (groupKnowledgeAvailable &&
+                    !groupKnowledge.TryRegisterCreatedGroup(group, groupAccess, out string registrationDiagnostic))
+                {
+                    _log.Warning(
+                        "Optional Group Knowledge did not create a store for a Framework Actor Group; composition will continue.",
+                        LogFields.Field("groupId", group.GroupId.StableText),
+                        LogFields.Field("reason", registrationDiagnostic));
                 }
 
                 _log.Info(

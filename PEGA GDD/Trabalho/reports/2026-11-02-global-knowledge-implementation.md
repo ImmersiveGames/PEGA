@@ -1,7 +1,7 @@
 # PEGA — primeira etapa de Global Knowledge
 
 - **Data:** 2026-11-02
-- **Status:** implementação no workspace; importação, compilação e prova no Unity pendentes
+- **Status:** implementação registrada; prova manual no Unity com resultado PASS, conforme relato do usuário em 2026-11-02. O Codex não executou Unity.
 - **Autoridade arquitetural:** [ADR-GROUP-KNOWLEDGE-01](../../ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md)
 
 ## Escopo entregue
@@ -14,7 +14,7 @@ A autoridade é ativada e limpa pelo lifecycle da contribuição Activity. Leitu
 
 ## Limites preservados
 
-- Não implementa Group Knowledge, propagação entre escopos, compartilhamento por membership ou consulta baseada em Actor Group.
+Esta primeira etapa de Global Knowledge não incluiu Group Knowledge, propagação entre escopos, compartilhamento por membership ou consulta baseada em Actor Group. Group Knowledge foi implementado depois e está registrado em [sua própria etapa](2026-11-02-group-knowledge-implementation.md).
 - Não liga fatos Globais a eventos reais do assalto nem implementa a distribuição de eventos prevista no GDD.
 - Não altera Actions, Desires, comportamento ou decisões de planejamento dos NPCs.
 - Não altera o Immersive Framework nem as memberships dos Groups existentes.
@@ -24,8 +24,9 @@ A autoridade é ativada e limpa pelo lifecycle da contribuição Activity. Leitu
 - Estático: a cena referencia a mesma autoridade Global nas três autonomias e declara uma contribuição Activity independente com ID local único.
 - Estático: IDs de objeto da cena e GUIDs `.meta` novos são únicos; as referências locais ao componente Global resolvem para um objeto existente no YAML.
 - Estático: o assembly GOAP permanece sem referências a tipos PEGA; a revisão arquitetural independente pós-implementação foi `CLEAR`.
-- Unity: `PEGAGlobalKnowledgeProofWindow` oferece um procedimento no Play Mode. Ele confirma memberships e Groups vivos pela API oficial, registra `false`, atualiza para `true` e compara valor, status, escopo e proveniência em duas vistas de NPCs de Groups distintos e numa vista GOAP independente. Também verifica que o fato não foi copiado para o armazenamento Individual. **A janela ainda não foi executada no Unity.**
+- Unity manual — **PASS, relatado pelo usuário em 2026-11-02:** `PEGAGlobalKnowledgeProofWindow` confirma memberships e Groups vivos pela API oficial, registra `false`, atualiza para `true` e compara valor, status, escopo, timestamp e proveniência em vistas GOAP de NPCs de Groups distintos e numa vista GOAP independente. Também verifica que o fato não foi copiado para o armazenamento Individual. O resultado foi executado pelo usuário, não pelo Codex; nenhum log ou captura foi anexado nesta revisão.
 
-## Validação manual pendente
 
-Importar e compilar no Unity, abrir a Mission, entrar no Play Mode após a Activity e as memberships estarem ativas, abrir **PEGA → Diagnostics → Global Knowledge Proof**, detectar a Mission e executar a prova. Confirmar também que a autoridade fica indisponível após a saída da Activity e inicia vazia na reentrada.
+## Escopo não coberto por esta prova
+
+A prova não cria produtores de gameplay para `MainObjectiveIdentified`, não integra fatos Globais a Actions ou decisões do planner e não propaga fatos entre escopos. A execução manual PASS foi relatada pelo usuário; o Codex não reexecutou nem inspecionou um log do Unity.

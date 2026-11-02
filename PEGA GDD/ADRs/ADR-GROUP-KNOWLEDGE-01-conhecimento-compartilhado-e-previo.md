@@ -1,8 +1,8 @@
 # ADR-GROUP-KNOWLEDGE-01 — Conhecimento compartilhado e prévio de Groups
 
-- **Status:** Princípios arquiteturais e autoria tipada aceitos; autoridade Global do PEGA implementada por Activity; composição e lifecycle de Group Knowledge ainda pendentes
+- **Status:** Princípios arquiteturais preservados; Individual, Global e Group Knowledge implementados no PEGA. O histórico anterior registra execução de Individual; as provas atuais de Global e Group tiveram PASS manual, conforme relato do usuário.
 - **Data:** 2026-10-30
-- **Revisado:** 2026-11-02 — autoria de fatos reutiliza definições canônicas; primeira etapa de Global Knowledge registrada
+- **Revisado:** 2026-11-02 — autoridade Global e acesso independente de membership; Group Knowledge opcional por GroupId, membership vigente do Framework e lifecycle do owner; provas manuais reportadas PASS
 - **Owner:** PEGA — integração de Actor Groups e conhecimento
 
 ## Contexto
@@ -25,7 +25,7 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 
 5. **Conhecimento prévio é uma origem legítima de fatos.** Um Group pode iniciar sua participação em um contexto de gameplay já conhecendo fatos explicitamente autorados, sem necessitar de ingresso físico em Spawn Point, percepção ou Action para legitimá-los. A autoria declarativa segue o [ADR-GOAP-02](ADR-GOAP-02-modelo-causal-e-planejamento.md): o designer seleciona definições tipadas canônicas disponíveis e fornece valores compatíveis; propriedades, tipos e políticas novos são responsabilidade de programação. Fatos iniciais, adquiridos por sensores ou disponibilizados a membros autorizados usam a mesma autoridade de Knowledge e os mesmos contratos de evidência, validade e escopo. Esses fatos entram no conjunto do Group com a política apropriada; sua configuração inicial não se confunde com a identidade do Group nem prova uma ocorrência física.
 
-6. **Os escopos não se confundem.** O conhecimento Individual continua pertencendo ao agente; não é propagado ao Group automaticamente. Conhecimento coletivo é disponibilizado aos membros autorizados segundo sua política; membership não equivale a copiar fatos nem a conceder conhecimento de outras entidades ou grupos. O escopo Global continua distinto, com distribuição explícita prevista no GDD. Nenhum desses escopos implica compartilhamento de Desejos, decisões, satisfação ou execução de Actions.
+6. **Os escopos não se confundem.** O conhecimento Individual continua pertencendo ao agente; não é propagado ao Group automaticamente. Conhecimento coletivo é disponibilizado aos membros autorizados segundo sua política; membership não equivale a copiar fatos nem a conceder conhecimento de outras entidades ou grupos. Fatos no escopo Global são consultáveis por qualquer consumidor GOAP do contexto de gameplay correspondente, sem membership. Isso define acesso à autoridade Global, não a produção automática de fatos ou a propagação entre escopos; fontes e publicação continuam explícitas segundo o GDD. Nenhum desses escopos implica compartilhamento de Desejos, decisões, satisfação ou execução de Actions.
 
 7. **As fontes e os consumidores são desacoplados.** Fontes podem produzir fatos prévios ou adquiridos em runtime; o Knowledge State decide sua aceitação e manutenção. O GOAP, Actions, Desires e diagnóstico consomem somente as informações legitimamente acessíveis, preservando proveniência e estados conhecidos/desconhecidos. O planejamento não consulta o World State oculto nem converte, por conveniência, uma referência de Group ou de entidade em conhecimento adicional.
 
@@ -47,24 +47,30 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 
 ## Não decidido neste ADR
 
-- Quais classes, interfaces, assets, campos do Inspector ou estruturas internas realizarão o contrato.
-- Qual componente/participante concreto coordena criação e membership, e se o Group Knowledge acompanha o owner Session, Route ou Activity, ou outra composição admitida pelo Framework. Seu lifecycle deve ser compatível com o owner real do Group, sem presumir persistência além dele.
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
 - A representação e o fluxo técnicos de autoria inicial no Inspector, a inicialização de fatos, a distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups. A semântica de autoria é compartilhada com as demais condições e fatos, conforme ADR-GOAP-02; detalhes técnicos permanecem pendentes.
-- Fontes concretas de percepção/investigação para fatos Globais, a distribuição de eventos Globais aos consumidores prevista pelo GDD e navegação até POIs, inclusive localizabilidade prévia. A autoridade PEGA de leitura Global por Activity está registrada abaixo; ela não implementa esses produtores/distribuição nem resolve Group Knowledge. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
+- Fontes concretas de percepção/investigação para fatos Globais e publicação de eventos reais do assalto continuam pendentes; consumidores GOAP do contexto têm acesso à autoridade Global sem membership. A propagação entre escopos, a autoria inicial de fatos de Group e o uso comportamental desses fatos pelo GOAP também permanecem futuros. Navegação até POIs e sua localizabilidade prévia seguem pendentes. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
 
 O código `PEGANpcGangKnowledgeState` e `PEGANpcGangMembership` representa um recorte histórico especializado; não se torna normativo pelo nome ou por estar presente na cena. O antigo `PEGANpcMissionSpawnEntry` misturava inicialização de Groups e ingresso físico de NPC: sua remoção não elimina a necessidade de Group vivo, mas também não autoriza sua restauração automática.
 
-Este ADR **não altera** o GDD: na ficção e nas regras do PEGA, o escopo continua chamado **Gangue**. Define-se apenas que sua infraestrutura técnica de conhecimento coletivo deve se apoiar na abstração geral **Group**. O registro abaixo não declara Group Knowledge implementado, validação no Unity ou aprovação para reintroduzir POIs.
+Este ADR preserva **Gangue** como termo de gameplay do GDD e **Group** como identidade/membership técnica do Framework. A autorização para ler fatos Globais não depende de membership; leituras de fatos Group dependem da membership vigente confirmada pelo Framework. Os registros abaixo separam implementação, prova manual relatada e funcionalidades que continuam pendentes.
 
 ### Implementação PEGA — primeira etapa de Global Knowledge (2026-11-02)
 
 A [implementação registrada](../Trabalho/reports/2026-11-02-global-knowledge-implementation.md) adiciona uma autoridade de fatos Global pertencente a uma contribuição da Activity da Mission. Ela reutiliza `PEGAKnowledgeFactStore` no escopo `Global`, definições tipadas e a política de evidência existente. `IPEGAKnowledgeFactReader` é composta como capability de uma vista GOAP; o mecanismo genérico de GOAP continua sem dependência de tipos PEGA.
 
-Esta etapa oferece uma autoridade comum para consumidores que recebem explicitamente sua referência. Não copia fatos para Knowledge Individual, não depende de membership, não implementa Group Knowledge nem propaga fatos entre escopos. A produção de fatos por eventos reais e sua distribuição de gameplay permanecem pendentes. A prova de Editor foi criada, mas sua execução/importação no Unity não foi confirmada.
+A autoridade Global é compartilhada pelos consumidores GOAP explicitamente compostos no contexto e não depende de membership. Individual permanece em armazenamento e escopo próprios. A prova `PEGAGlobalKnowledgeProofWindow` foi executada manualmente no Unity e teve resultado PASS, conforme relato do usuário; o Codex não executou a prova. A produção de fatos por eventos reais e a propagação entre escopos permanecem pendentes.
+
+### Implementação PEGA — Group Knowledge (2026-11-02)
+
+A [implementação registrada](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md) mantém uma authority PEGA opcional junto à composição de Groups do owner Activity/Route. Ela cria stores genéricos independentes para os `GroupId` reais confirmados pelo Framework; a criação do Actor Group não requer o componente de Knowledge. Cada leitura verifica novamente o Group vivo e a membership oficial vigente por `ActorGroupAccessBinding`; uma consulta sem autorização retorna `NotMember` e um fato vazio `Unknown`, sem valor ou evidência. A saída revoga o acesso e o encerramento do owner limpa os stores.
+
+A composição PEGA cria os Groups por `ActorGroupAccessBinding` no owner Activity/Route comprometido e configura membership no Framework. Group Knowledge é anexado opcionalmente ao mesmo owner; sua ausência ou falha de registro não impede a criação do Group. Esta implementação foi comprovada na Activity da Mission; outras combinações de owners/contextos não fizeram parte da prova.
+
+A prova `PEGAGroupKnowledgeProofWindow` foi executada manualmente no Unity e teve resultado PASS, conforme relato do usuário; o Codex não executou a prova. A execução usou os três larápios e dois Groups da Mission para conferir compartilhamento entre os dois membros do primeiro Group, fato separado no segundo, isolamento das leituras, revogação/restauração de acesso por Leave/Join, acesso Global e independência do Knowledge Individual. Não executou Actions nem decisões de planejamento.
 
 ## Autoridade e rastreabilidade
 

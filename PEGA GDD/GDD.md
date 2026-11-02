@@ -3,8 +3,8 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.12.0
-**Última atualização:** 2026-10-15
+**Versão:** 0.14.0
+**Última atualização:** 2026-11-02
 
 ---
 
@@ -746,15 +746,17 @@ Ele segue até essa posição enquanto tenta readquirir o alvo pela percepção 
 :::decision
 **Decisão:** **Gangue** é a unidade de cooperação e conhecimento. Não existe uma entidade separada de grupo de entrada.
 
-Cada Knowledge Data possui política de escopo e propagação configurável. Fatos de escopo **Individual** não se propagam; dados de escopo **Gangue** seguem a política configurada, que pode ser imediata; fatos **Globais** são distribuídos às gangues explicitamente definidas. Um larápio criado posteriormente recebe somente os fatos que sua política de escopo lhe disponibilizar.
+Cada Knowledge Data possui políticas próprias de validade, atualização e proveniência. No escopo **Individual**, a informação permanece com o agente salvo publicação explícita. No escopo **Gangue**, os fatos ocupam o estado coletivo do Actor Group correspondente, identificado por seu `GroupId` real, e só são legíveis por membros com membership vigente confirmada pelo Framework. Fatos no escopo **Global** são acessíveis a qualquer consumidor GOAP do contexto de gameplay correspondente, sem depender de Group ou membership. A origem e publicação dos fatos são explícitas; conhecimento em um escopo não propaga fatos a outro. Um larápio criado posteriormente tem acesso somente aos fatos disponibilizados por suas fontes e membership vigentes.
 
 | Escopo | Regra |
 |---|---|
 | Individual | Informação mantida pelo agente conforme a política daquele dado; percepção individual permanece aqui salvo propagação explícita. |
-| Gangue | Fatos propagados aos membros da mesma gangue conforme a política configurada para aquele dado. |
-| Global | Fatos explicitamente distribuídos às gangues definidas, incluindo os Eventos Globais do assalto. |
+| Gangue | Fatos separados por `GroupId`, legíveis apenas por membros com membership vigente confirmada pelo Framework. |
+| Global | Fatos Globais válidos são acessíveis a qualquer consumidor GOAP do contexto de gameplay correspondente, sem depender de Group ou membership. |
 
 Gangues diferentes mantêm Knowledge State e reservas independentes salvo dados explicitamente globais. Compartilhar informação não significa compartilhar Desejos nem produzir a mesma reação. Informação global dinâmica também pode posteriormente ser atualizada conforme sua política de validade.
+
+Global define o alcance da leitura, não a origem do fato: somente fontes e eventos autorizados publicam nele, e registrar um fato Global não propaga fatos Individuais ou de Group automaticamente.
 :::
 
 ### Posse, desejo e inversão da perseguição

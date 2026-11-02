@@ -28,13 +28,15 @@ Os nomes `Desire Definition`, `Desire Settings` e `Desire Profiles` também apar
 
 ### Onde encontrar os assets
 
-- Comportamentos: [`Assets/PEGA/NPC/Actions`](../Assets/PEGA/NPC/Actions/)
-- Desejos: [`Assets/PEGA/NPC/Desires`](../Assets/PEGA/NPC/Desires/)
-- Condições: [`Assets/PEGA/NPC/Goal Conditions`](../Assets/PEGA/NPC/Goal%20Conditions/)
-- Ajustes de cada desejo: [`Assets/PEGA/NPC/Desire Settings`](../Assets/PEGA/NPC/Desire%20Settings/)
-- Combinações para NPCs: [`Assets/PEGA/NPC/Desire Profiles`](../Assets/PEGA/NPC/Desire%20Profiles/)
-- Prefab base: [`Assets/PEGA/NPC/PEGA_NPCActorRuntimeBase.prefab`](../Assets/PEGA/NPC/PEGA_NPCActorRuntimeBase.prefab)
-- Cena com os dois larápios: [`Assets/PEGA/Scenes/MissionActivityContent.unity`](../Assets/PEGA/Scenes/MissionActivityContent.unity)
+- Comportamentos: [`Assets/PEGA/NPC/Actions`](../../Assets/PEGA/NPC/Actions/)
+- Desejos: [`Assets/PEGA/NPC/Desires`](../../Assets/PEGA/NPC/Desires/)
+- Perfis de Actor Group: [`Assets/PEGA/NPC/ActorGroups/Profiles`](../../Assets/PEGA/NPC/ActorGroups/Profiles/)
+- Knowledge: [`Assets/PEGA/NPC/Knowledge`](../../Assets/PEGA/NPC/Knowledge/)
+- Condições: [`Assets/PEGA/NPC/Goals/Conditions`](../../Assets/PEGA/NPC/Goals/Conditions/)
+- Ajustes de cada desejo: [`Assets/PEGA/NPC/Desires/Settings`](../../Assets/PEGA/NPC/Desires/Settings/)
+- Combinações para NPCs: [`Assets/PEGA/NPC/Desires/Profiles`](../../Assets/PEGA/NPC/Desires/Profiles/)
+- Prefab base: [`Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab`](../../Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab)
+- Cena com três larápios e dois Actor Groups: [`Assets/PEGA/Scenes/MissionActivityContent.unity`](../../Assets/PEGA/Scenes/MissionActivityContent.unity)
 
 O caminho geral é: uma definição de **Desire** aponta para uma **Goal Condition**; um asset **Desire Settings** escolhe essa definição e ajusta seus valores; um **Desire Profile** referencia essas configurações; e o componente **Autonomy** do NPC recebe o Profile e sua lista de **Available Behaviors**. O Profile não contém cópias isoladas das configurações: se o mesmo asset Desire Settings for usado em mais de um Profile, editar esse asset afeta todos eles.
 
@@ -44,20 +46,20 @@ O caminho geral é: uma definição de **Desire** aponta para uma **Goal Conditi
 
 Os três assets de Desire disponíveis são:
 
-- [`PursueRick.asset`](../Assets/PEGA/NPC/Desires/PursueRick.asset) — perseguir Rick reconhecido; usa `CharacterPositionReached`.
-- [`MaintainSafeDistance.asset`](../Assets/PEGA/NPC/Desires/MaintainSafeDistance.asset) — manter distância segura; usa `SafeSeparationReached`.
-- [`InvestigatePresence.asset`](../Assets/PEGA/NPC/Desires/InvestigatePresence.asset) — investigar presença percebida; usa `InvestigationPositionReached`.
+- [`PursueRick.asset`](../../Assets/PEGA/NPC/Desires/PursueRick.asset) — perseguir Rick reconhecido; usa `CharacterPositionReached`.
+- [`MaintainSafeDistance.asset`](../../Assets/PEGA/NPC/Desires/MaintainSafeDistance.asset) — manter distância segura; usa `SafeSeparationReached`.
+- [`InvestigatePresence.asset`](../../Assets/PEGA/NPC/Desires/InvestigatePresence.asset) — investigar presença percebida; usa `InvestigationPositionReached`.
 
-As três condições correspondentes estão na pasta `Goal Conditions`. Elas são variações da condição atual **Target Reached Goal Condition**, configuradas para diferentes tipos de destino. O asset `CharacterPositionReached.asset` também exige contato visual atual quando o resultado é observado.
+As três condições correspondentes estão na pasta `Goals/Conditions`. Elas são variações da condição atual **Target Reached Goal Condition**, configuradas para diferentes tipos de destino. O asset `CharacterPositionReached.asset` também exige contato visual atual quando o resultado é observado.
 
 ### Comportamentos disponíveis
 
 O prefab base contém estes quatro assets:
 
-- [`ApproachKnownCharacter.asset`](../Assets/PEGA/NPC/Actions/ApproachKnownCharacter.asset) — aproximar-se de personagem conhecido.
-- [`MoveAwayFromCharacter.asset`](../Assets/PEGA/NPC/Actions/MoveAwayFromCharacter.asset) — afastar-se de personagem conhecido.
-- [`SearchLastKnownPosition.asset`](../Assets/PEGA/NPC/Actions/SearchLastKnownPosition.asset) — procurar na última posição conhecida.
-- [`InvestigateDetectedPresence.asset`](../Assets/PEGA/NPC/Actions/InvestigateDetectedPresence.asset) — investigar presença detectada.
+- [`ApproachKnownCharacter.asset`](../../Assets/PEGA/NPC/Actions/Definitions/ApproachKnownCharacter.asset) — aproximar-se de personagem conhecido.
+- [`MoveAwayFromCharacter.asset`](../../Assets/PEGA/NPC/Actions/Definitions/MoveAwayFromCharacter.asset) — afastar-se de personagem conhecido.
+- [`SearchLastKnownPosition.asset`](../../Assets/PEGA/NPC/Actions/Definitions/SearchLastKnownPosition.asset) — procurar na última posição conhecida.
+- [`InvestigateDetectedPresence.asset`](../../Assets/PEGA/NPC/Actions/Definitions/InvestigateDetectedPresence.asset) — investigar presença detectada.
 
 O comportamento de fuga por uma saída conhecida foi removido junto com a integração de conhecimento específica de Spawn Points. Essa capacidade permanece pendente de reconstrução sobre os contratos aprovados de Knowledge.
 
@@ -65,7 +67,7 @@ As Actions de aproximação e afastamento exigem dois fatos Individuais obtidos 
 
 ## 4. Tutorial: configurar outro NPC para teste
 
-Este procedimento cria uma cópia de teste na cena de missão existente, preservando as ligações de Player e Gang que já estão configuradas nos larápios.
+Este procedimento cria uma cópia de teste na cena de missão existente, preservando as ligações de Player e Actor Group já configuradas. Confira a membership do Group no componente do NPC duplicado antes de salvar.
 
 1. Na janela **Project**, abra `Assets/PEGA/Scenes/MissionActivityContent.unity`.
 2. Na janela **Hierarchy**, selecione `Larapio NPC - Pursuit Demo` ou `Larapio NPC - Self-Preservation Demo` e use **Ctrl+D** para duplicá-lo.
@@ -87,9 +89,9 @@ Se quiser mudar qual condição define um Desire, faça cópias dos assets de `D
 
 Também é possível criar assets pelos menus da janela **Project**: botão direito > **Create** > **PEGA** > **NPC**. As opções incluem **Desire Definition**, **Desire Settings**, **Desire Profiles** e **GOAP** > **Target Reached Goal Condition**. A última opção cria outra configuração da condição que já existe; não cria um tipo novo de Goal.
 
-## 5. Os dois larápios demonstrativos
+## 5. Os três larápios demonstrativos
 
-Os dois objetos na cena são instâncias do mesmo prefab base e usam a mesma lista de cinco comportamentos. Cada um recebe um Profile diferente no Inspector da cena.
+Os três objetos na cena são instâncias do mesmo prefab base e usam a mesma lista de comportamentos. Os dois larápios originais permanecem no primeiro Actor Group e conservam seus Profiles distintos. O terceiro tem identidade própria, usa o Profile `Demo_PursuitFocus` como o primeiro demonstrador e pertence a um segundo Actor Group com `GroupProfile` próprio.
 
 ### `Larapio NPC - Pursuit Demo` — foco em perseguição
 
@@ -99,7 +101,7 @@ Usa `Demo_PursuitFocus`. No contexto `Normal`, seus Desire Settings dão peso-ba
 
 Usa `Demo_SelfPreservationFocus`. No mesmo contexto, dá peso-base **4** a `MaintainSafeDistance` e **0,5** a `PursueRick` e `InvestigatePresence`.
 
-Os assets Desire Settings estão em `Desire Settings`; os dois Profiles estão em `Desire Profiles`. Ambos usam `Normal` e têm `Plan Time Reference Seconds` igual a **10 segundos**.
+Os assets Desire Settings estão em `Desires/Settings`; os dois Profiles estão em `Desires/Profiles`. Ambos usam `Normal` e têm `Plan Time Reference Seconds` igual a **10 segundos**. O terceiro larápio reutiliza o Profile de perseguição do primeiro, sem alterar os comportamentos dos dois originais.
 
 Esses pesos favorecem uma motivação, mas não são uma prioridade absoluta. O GOAP também considera o tempo estimado dos planos e quais comportamentos e alvos são viáveis com o conhecimento atual. A ordem das linhas em `Desire Settings` não força a primeira motivação a vencer. Um plano bem mais curto pode vencer outro cujo Desire tenha peso maior.
 
@@ -155,20 +157,29 @@ Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conf
 - Desire Definitions, Desire Settings, Profiles, condições e comportamentos são assets compartilháveis. O Profile apenas referencia os Desire Settings; se um mesmo asset for usado por mais de um Profile, editá-lo altera a configuração em todos eles. Uma Desire Definition compartilhada dá significado à motivação e aponta para sua condição; uma mudança nela afeta todos os Settings que a referenciam. Os Assets de comportamento também são compartilhados, enquanto `Available Behaviors` define quais deles aquele NPC pode usar. Para um experimento isolado, faça cópias do Profile e dos Settings que pretende mudar; atribua a cópia ao NPC de teste.
 - O histórico de satisfação dos NPCs é runtime e não é salvo como uma configuração do Profile. Reiniciar o Play Mode inicia outro teste.
 
-Este guia descreve a superfície atual do Unity. Para regras de jogo, o GDD permanece a referência normativa: [PEGA GDD](../PEGA%20GDD/GDD.md). A existência de uma regra no GDD não comprova que já exista uma opção de autoria ou implementação para ela.
+Este guia descreve a superfície atual do Unity. Para regras de jogo, o GDD permanece a referência normativa: [PEGA GDD](../GDD.md). A existência de uma regra no GDD não comprova que já exista uma opção de autoria ou implementação para ela.
+
+
+
+
+
+
 
 ## 9. Knowledge: escopos, acesso e validação
 
-O [ADR-GROUP-KNOWLEDGE-01](../PEGA%20GDD/ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md) preserva os escopos **Individual**, **Group** e **Global**. O núcleo PEGA mantém definições tipadas, políticas, evidências, proveniência e um armazenamento comum; identidade técnica endereça fatos, mas não prova que um NPC conhece a entidade. Consumidores leem fatos armazenados e não completam dados ausentes consultando Player Session, declarações de Actor ou World State.
+O [ADR-GROUP-KNOWLEDGE-01](../ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md) preserva os escopos **Individual**, **Group** e **Global**. O núcleo PEGA reutiliza definições tipadas, políticas, evidências, proveniência e [`PEGAKnowledgeFactStore`](../../Assets/PEGA/NPC/Knowledge/Core/PEGAKnowledgeFactStore.cs). Identidades técnicas endereçam fatos, mas não provam que um NPC conhece uma entidade; consumidores não completam dados ausentes consultando Player Session, declarações de Actor ou World State.
 
-Individual e Group mantêm autoridades e lifecycles separados. O acesso a fatos de Group exige o Group vivo e membership oficial vigente; somente esse escopo usa `GroupId` e membership. Global continua sem autoridade implementada. A representação e o store genéricos permanecem em [`PEGAKnowledgeFactStore`](../Assets/PEGA/NPC/PEGAKnowledgeFactStore.cs). As definições atuais incluem `IsPlayer`, contato visual, última posição e presença radial; todas estão reservadas a fontes, sem autoria inicial. Perception publica `IsPlayer` somente após contato visual com uma ocorrência vinculada a Player Slot pelo Framework. Presença radial, sozinha, mantém identidade e posição desconhecidas. Approach e Avoid consomem o fato `IsPlayer` e uma posição Perception-backed sem resolver `ActorProfile` nem consultar Player Session. Após perder contato, o NPC conserva a última posição; uma readquisição visual posterior substitui a continuação pelo estado atual. Os Profiles de Desejos continuam determinando qual plano compete melhor.
+**Individual Knowledge** permanece próprio de cada NPC. Perception registra fatos Individuais de identidade, contato visual, última posição e presença radial. Approach e Avoid usam fatos com evidência de Perception; o GOAP continua usando os Profiles de Desejos e capacidades já configurados.
 
-O mecanismo genérico de autoria inicial permanece no código, mas os fatos atuais não estão autorizados para autoria inicial. A configuração demonstrativa de conhecimento de Rick e as integrações de Group com Profile/localização e Spawn Point foram removidas; nenhum dado prévio de Group é configurado na cena. Knowledge de Group não é consumido pelo GOAP nesta fundação. Essas capacidades dependem de uma reconstrução posterior conforme o ADR.
+**Global Knowledge** tem uma autoridade PEGA compartilhada no contexto da Activity da Mission. A mesma capability de leitura tipada é composta explicitamente nas vistas de Knowledge GOAP dos três NPCs e fica disponível sem membership. A disponibilidade do fato não obriga o planner a escolhê-lo nem executa Actions; ainda não há produtor de gameplay para o fato demonstrador `MainObjectiveIdentified`. Fatos Globais não são cópias nos stores Individuais.
+
+**Group Knowledge** é opcional e usa stores independentes por `GroupId` do Framework. O componente `PEGAActorGroupKnowledgeState` acompanha o owner PEGA que compõe os Groups; sua ausência não impede criar ou usar Actor Groups. `PEGAActorGroupKnowledgeReader` só devolve conteúdo quando o Framework confirma que o Group está vivo e o Actor possui membership vigente. Uma consulta negada retorna `NotMember` separadamente de um fato ausente e não expõe valor ou proveniência. Sair do Group revoga a leitura; o encerramento do owner limpa os stores. Os três leitores da Mission apontam para a autoridade, mas cada leitura continua limitada à membership do Group solicitado.
+
+Group Knowledge não é copiado ao Knowledge Individual nem integrado a Actions, Desires ou decisões do planner. A cena não autoriza fatos iniciais de Group: a prova escreve valores temporários no Play Mode. Propagação entre Individual, Group e Global, produção de fatos por eventos reais e uso comportamental dos fatos pelo GOAP permanecem futuros.
 
 ### Evidências e validação
 
-- **Validação manual histórica, informada pelo usuário antes desta limpeza:** importação/compilação, membership do Group, compartilhamento da identidade inicial de Rick, separação de localização, Perception, perda de contato e uso da última evidência pelo GOAP. Ela descreve o estado anterior e não comprova a configuração atual após a remoção.
-- **Verificação estática desta correção:** buscas de resíduos de `RecognizedActorProfile` e `PlayerSession` nos consumidores, conferência dos caminhos de publicação/leitura e call sites da continuação, além de `git diff --check`. Isso não comprova compilação ou comportamento em execução.
-- **Validação atual:** Unity import, compilação, Play Mode e comportamento dos dois NPCs ainda não foram executados nesta correção; devem ser conferidos manualmente.
-
-Permanecem pendentes a autoria de fatos iniciais para definições autorizadas, o consumo de conhecimento de Group, o estado Global, fontes e consumidores para outras naturezas de fatos e a aprendizagem/uso de saídas. Esta correção trata apenas dos fatos individuais usados pelos dois comportamentos demonstrativos e não reduz os requisitos do GDD nem substitui suas fontes normativas.
+- **Global Knowledge — Unity manual: PASS, relatado pelo usuário.** `PEGAGlobalKnowledgeProofWindow` registra e atualiza um fato Global, compara valor, status, escopo, timestamp e proveniência nas vistas GOAP de NPCs em Groups distintos e numa vista independente; também confirma que o Knowledge Individual permanece separado.
+- **Group Knowledge — Unity manual: PASS, relatado pelo usuário.** `PEGAGroupKnowledgeProofWindow` verifica os dois membros do primeiro Group, o membro do segundo, fatos separados, leituras cruzadas negadas e redigidas, revogação/restauração via Leave/Join, acesso Global preservado e independência Individual. Não executa Actions nem decisões do planner.
+- **Individual Knowledge:** implementação e execução anterior são registradas no contexto deste ADR. Esta etapa não repetiu uma prova comportamental Individual; as provas Global/Group atuais verificam que esse estado continua independente.
+- O Codex não executou as provas. O PASS foi informado pelo usuário; não há log ou captura de Unity anexado a este registro.

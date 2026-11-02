@@ -1070,7 +1070,7 @@ namespace PEGA.NPC
 
             _latestSelection = selection;
             _log.Debug(
-                "NPC consolidated event-driven GOAP reevaluation against its Individual and authorized Group knowledge.",
+                "NPC consolidated event-driven GOAP reevaluation against its Individual knowledge.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("causes", causes),
                 LogFields.Field("targetActorId", targetActorId.IsValid ? targetActorId.StableText : string.Empty),
