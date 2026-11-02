@@ -12,7 +12,7 @@
 
 **Tech Stack:** Unity 6.5, PEGA C#, Immersive Framework Actor Occurrence Publication, `ActivityContentBehaviour`, `RuntimeContentOwner`, `PEGANpcGangKnowledgeState`, `PEGANpcSpawnPoint`, `PEGANpcNavMeshMovementIntentSource`, `PEGAActorMovementMechanic`, canonical PEGA logger, temporary Native Editor authoring with `PrefabUtility`.
 
-**Spec:** `docs/superpowers/specs/2026-10-23-pega-105-mission-ingress-design.md`
+**Especificação:** [desenho de ingresso na Mission](../specs/2026-10-23-pega-105-mission-ingress-design.md)
 
 ## Global Constraints
 

@@ -12,7 +12,7 @@
 
 **Tech Stack:** Unity 6000.5.0f1, C#, `ScriptableObject`, `MonoBehaviour`, `NavMeshAgent.CalculatePath` ([API Unity](https://docs.unity.cn/ScriptReference/AI.NavMeshAgent.CalculatePath.html)), Actions/Knowledge State do PEGA e o logger canônico via `PEGALogging`.
 
-**Spec:** [docs/superpowers/specs/2026-10-21-pega-goap-desires-plan-selection-design.md](../specs/2026-10-21-pega-goap-desires-plan-selection-design.md)
+**Especificação:** [desenho de Desires e seleção de planos](../specs/2026-10-21-pega-goap-desires-plan-selection-design.md)
 
 ## Global Constraints
 

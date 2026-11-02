@@ -12,7 +12,7 @@
 
 **Resolved package note:** o PEGA resolve `com.immersive.framework` no hash `7baf6a336ea98aa6558d06e401791c4015e4181e`. O contrato instalado do `PlayerGameplayInputReader` expõe leitura do `InputActionReference` e `RuntimeGameplayAvailable`, ligado ao `PlayerInput` atual; o teste envia eventos pelo Input System e não altera o Framework nem seu binding.
 
-**Spec:** [docs/superpowers/specs/2026-10-22-pega-n04-local-investigation-design.md](../specs/2026-10-22-pega-n04-local-investigation-design.md)
+**Especificação:** [desenho de investigação local](../specs/2026-10-22-pega-n04-local-investigation-design.md)
 
 ## Global Constraints
 

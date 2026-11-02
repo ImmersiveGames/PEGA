@@ -8,7 +8,7 @@
 
 **Tech Stack:** Unity 6000.5.0f1, C#, resolved `com.immersive.framework` 1.2.0-preview.4 (`ActorId`/`ActorProfileId`, Experimental), PEGA `PEGALogging`.
 
-**Spec:** `docs/superpowers/specs/2026-10-19-pega-npc-knowledge-state-design.md`
+**Especificação:** [PEGA NPC Knowledge State](../specs/2026-10-19-pega-npc-knowledge-state-design.md)
 
 ## Global Constraints
 

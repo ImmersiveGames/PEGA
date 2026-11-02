@@ -141,4 +141,4 @@ Cada verificação gera evento estruturado por `PEGALogging`; o resumo final con
 2. O usuário aprovou o progresso intermediário do GOAP sem satisfação do Desejo e determinou que o timeout de N05 siga limitando a investigação, inclusive sem destino local válido, sem ciclos de replanejamento sem progresso.
 3. O usuário aprovou a validação temporária automatizada na Mission, com movimento real de Rick pela cadeia normal do Player e autonomia do NPC preservada.
 
-O plano de implementação foi preparado em `docs/superpowers/plans/2026-10-22-pega-n91-n04-local-investigation.md` e aprovado pelo usuário. A implementação foi preparada no workspace; o card N04 permanece aberto até authoring do prefab e aceitação funcional manual no Unity.
+O plano de implementação correspondente está em [2026-10-22-pega-n91-n04-local-investigation.md](../plans/2026-10-22-pega-n91-n04-local-investigation.md). O registro afirma que o plano foi aprovado e a implementação preparada no workspace; o card N04 permanece aberto até authoring do prefab e aceitação funcional manual no Unity.

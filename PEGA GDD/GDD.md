@@ -1232,7 +1232,10 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | [MVP](MVP.md) | Recorta as regras deste GDD no primeiro vertical slice e na Demo completa. |
 | [ADR de pré-produção](ADR-PREPRODUCAO.md) | Diretriz arquitetural transversal do PEGA (§13), decisões de produção e marcos de integração; não substitui regras e contratos de gameplay. |
 | ADRs de arquitetura GOAP | Decisões subordinadas às regras de gameplay deste GDD: [domínio e composição](ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [modelo causal e planejamento](ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [seleção e estabilidade](ADRs/ADR-GOAP-03-selecao-e-estabilidade.md) e [interações informativas](ADRs/ADR-GOAP-04-interacoes-informativas.md). |
-| [Registro conceitual do GOAP](../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) | Origem histórica dos acordos formalizados nos ADRs; não substitui este GDD como autoridade de gameplay. |
+| [Análise macro de objetivos](Analises/pega-gdd-activity-analysis.md) | Análise derivada de cobertura do GDD/MVP; não é fonte normativa nem roadmap. |
+| [Especificações comportamentais dos objetivos](Analises/pega-objective-specifications.md) | Especificações derivadas para revisão; GDD, MVP e ADRs continuam sendo as fontes de autoridade. |
+| [Guia prático de GOAP](Guias/PEGA-GOAP-guia-pratico.md) | Guia experimental da superfície atual de autoria no Unity; não amplia as regras do GDD. |
+| [Registro conceitual do GOAP](ADRs/Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) | Origem histórica dos acordos formalizados nos ADRs; não substitui este GDD como autoridade de gameplay. |
 | [TASKS](TASKS.md) | Tarefas executáveis derivadas do escopo do MVP. |
 | [Art Book](ArtBook.md) | Direção visual e referências de personagens, gangues e cenários. |
 | [Tabela de Atributos e Habilidades.xlsx](Tabela%20de%20Atributos%20e%20Habilidades.xlsx) | Referência auxiliar histórica para ideias de distribuição de habilidades por gangue e valores preliminares de classificação/créditos. Agilidade, HP/dano, Defesa, Vigor, fórmulas e valores da planilha não são contratos atuais nem dados validados. |

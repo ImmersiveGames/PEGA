@@ -52,5 +52,5 @@ Substitui a leitura em que “Desejo/Goal” era um conceito único e refina a f
 - [GDD — Contextos e satisfação dos Desejos](../GDD.md#contextos-e-satisfação-dos-desejos)
 - [GDD — Desejos e prioridades por arquétipo](../GDD.md#desejos-e-prioridades-por-arquétipo)
 - [GDD — Áreas, POIs e investigação](../GDD.md#áreas-pois-e-investigação)
-- [Registro conceitual — seleção, competência e investigação](../../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
+- [Registro conceitual — seleção, competência e investigação](Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
 

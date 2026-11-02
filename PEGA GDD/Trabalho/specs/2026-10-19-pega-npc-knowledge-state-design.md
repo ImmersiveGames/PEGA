@@ -13,7 +13,7 @@ This slice establishes the state contract and its read/write boundary. Perceptio
 ## 2. Authority and traceability
 
 - **Trello #68** is the operational work item. Its four acceptance checklist items cover fact states, legitimate evidence, individual queries without hidden-world access, and evidence-based updates/invalidation. The card remains in `A fazer`; this design does not update Trello.
-- **OBJ-07 — Manter conhecimento limitado e válido dos larápios** in `docs/pega-objective-specifications.md` supplies the behavior contract.
+- **OBJ-07 — Manter conhecimento limitado e válido dos larápios** in [`Analises/pega-objective-specifications.md`](../../Analises/pega-objective-specifications.md) supplies the behavior contract.
 - **GDD — “Conhecimento modular, memória e validade da informação”** defines independent facts, positive and negative knowledge, per-fact validity/update/invalidation, and observation-time ordering. **“Perda de alvo”** requires retaining only the last known position when contact is lost. **“Conhecimento da gangue e informação global”** defines sharing scopes; this slice implements Individual scope only.
 - `MVP.md`, `TASKS.md`, and `ADR-PREPRODUCAO.md` provide the related MVP boundary, work decomposition, and production ordering. They are not changed by this task.
 

@@ -3,7 +3,7 @@
 **Status:** catálogo derivado para análise e especificação; não é roadmap nem altera fontes normativas.
 **Data:** 2026-10-15
 **Ponto de entrada:** [Especificações comportamentais dos objetivos](pega-objective-specifications.md).
-**Fontes normativas:** [GDD](../PEGA%20GDD/GDD.md), [MVP](../PEGA%20GDD/MVP.md) e [ADR de pré-produção](../PEGA%20GDD/ADR-PREPRODUCAO.md). [TASKS](../PEGA%20GDD/TASKS.md) foi consultado apenas para entender a estrutura operacional existente, sem inferir regras de gameplay.
+**Fontes normativas:** [GDD](../GDD.md), [MVP](../MVP.md) e [ADR de pré-produção](../ADR-PREPRODUCAO.md). [TASKS](../TASKS.md) foi consultado apenas para entender a estrutura operacional existente, sem inferir regras de gameplay.
 
 ## Propósito e regras de leitura
 

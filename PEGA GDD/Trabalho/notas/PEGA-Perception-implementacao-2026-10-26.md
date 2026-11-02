@@ -3,7 +3,7 @@
 **Data:** 26 de outubro de 2026
 **Natureza:** nota descritiva de implementação local; não é ADR nem amplia decisões arquiteturais.
 
-Esta implementação aplica a fronteira aprovada na [decisão de GOAP e Perception, ADR de pré-produção §7](../PEGA%20GDD/ADR-PREPRODUCAO.md#7-evolução-arquitetural-de-goap-e-perception) e no [ADR-GOAP-01, itens 1–5](../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md#decisão). Os detalhes abaixo descrevem o caminho atual do PEGA; não definem a composição obrigatória para outros jogos.
+Esta implementação aplica a fronteira aprovada na [decisão de GOAP e Perception, ADR de pré-produção §7](../../ADR-PREPRODUCAO.md#7-evolução-arquitetural-de-goap-e-perception) e no [ADR-GOAP-01, itens 1–5](../../ADRs/ADR-GOAP-01-composicao-e-fronteiras.md#decisão). Os detalhes abaixo descrevem o caminho do PEGA registrado em 2026-10-26; não definem a composição obrigatória para outros jogos.
 
 ## Fronteiras e composição atuais
 

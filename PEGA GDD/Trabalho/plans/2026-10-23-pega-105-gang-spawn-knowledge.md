@@ -12,7 +12,7 @@
 
 **Tech Stack:** Unity C#, trigger `BoxCollider` with kinematic `Rigidbody`, `CharacterController` velocity, shared PEGA NavMesh movement source, Foundation EventBus, PEGA canonical logger.
 
-**Spec:** `docs/superpowers/specs/2026-10-23-pega-105-gang-spawn-knowledge-design.md`
+**Especificação:** [desenho de conhecimento da Gangue e Spawn Point](../specs/2026-10-23-pega-105-gang-spawn-knowledge-design.md)
 
 ## Global Constraints
 

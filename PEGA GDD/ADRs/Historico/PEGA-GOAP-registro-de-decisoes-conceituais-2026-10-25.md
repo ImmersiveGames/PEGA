@@ -175,13 +175,13 @@ A projeção de Effects do próprio plano é parte essencial do GOAP; **previsõ
 
 As decisões deste registro foram formalizadas nas seguintes fontes de arquitetura:
 
-1. [ADR de pré-produção — Diretriz arquitetural transversal do PEGA, §13](../PEGA%20GDD/ADR-PREPRODUCAO.md#13-diretriz-arquitetural-transversal-do-pega): autoridade geral para modularidade, intercambialidade e escalabilidade em todo o PEGA.
-2. [ADR-GOAP-01 — Domínio e evolução por composição](../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md): aplicação da diretriz transversal ao GOAP, ownership do PEGA e fronteiras com Immersive.
-3. [ADR-GOAP-02 — Condições, Effects e planejamento causal](../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md): Goals independentes de Actions, condições triestado, projeções, avaliadores e previsões opcionais.
-4. [ADR-GOAP-03 — Seleção de intenção, personalidade e estabilidade](../PEGA%20GDD/ADRs/ADR-GOAP-03-selecao-e-estabilidade.md): personalidade, competência, alternativas informativas e continuidade em níveis separados.
-5. [ADR-GOAP-04 — Tentativas informativas e evidências de interação](../PEGA%20GDD/ADRs/ADR-GOAP-04-interacoes-informativas.md): condições de tentativa, requisitos de sucesso, Effects observados e conhecimento autorizado.
+1. [ADR de pré-produção — Diretriz arquitetural transversal do PEGA, §13](../../ADR-PREPRODUCAO.md#13-diretriz-arquitetural-transversal-do-pega): autoridade geral para modularidade, intercambialidade e escalabilidade em todo o PEGA.
+2. [ADR-GOAP-01 — Domínio e evolução por composição](../ADR-GOAP-01-composicao-e-fronteiras.md): aplicação da diretriz transversal ao GOAP, ownership do PEGA e fronteiras com Immersive.
+3. [ADR-GOAP-02 — Condições, Effects e planejamento causal](../ADR-GOAP-02-modelo-causal-e-planejamento.md): Goals independentes de Actions, condições triestado, projeções, avaliadores e previsões opcionais.
+4. [ADR-GOAP-03 — Seleção de intenção, personalidade e estabilidade](../ADR-GOAP-03-selecao-e-estabilidade.md): personalidade, competência, alternativas informativas e continuidade em níveis separados.
+5. [ADR-GOAP-04 — Tentativas informativas e evidências de interação](../ADR-GOAP-04-interacoes-informativas.md): condições de tentativa, requisitos de sucesso, Effects observados e conhecimento autorizado.
 
-O [GDD](../PEGA%20GDD/GDD.md) foi reconciliado para manter as regras de gameplay vigentes em uma única autoridade. Este registro continua disponível como histórico e justificativa conceitual, não como um catálogo normativo paralelo. Os ADRs registram a arquitetura-alvo e não declaram a implementação concluída.
+O [GDD](../../GDD.md) foi reconciliado para manter as regras de gameplay vigentes em uma única autoridade. Este registro continua disponível como histórico e justificativa conceitual, não como um catálogo normativo paralelo. Os ADRs registram a arquitetura-alvo e não declaram a implementação concluída.
 
 ### Síntese executiva
 

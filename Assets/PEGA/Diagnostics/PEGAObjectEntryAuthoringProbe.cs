@@ -4,18 +4,52 @@ using UnityEngine;
 
 namespace PEGA.Diagnostics
 {
-    /// <summary>Componente temporário sem comportamento para validar os seletores de Object Entry no Inspector.</summary>
+    /// <summary>Diagnóstico para validar a autoria e a consulta de Object Entry no Inspector.</summary>
     [AddComponentMenu("PEGA/Diagnostics/Object Entry Authoring Probe")]
     public sealed class PEGAObjectEntryAuthoringProbe : MonoBehaviour
     {
-        [SerializeField, Tooltip("Campo temporário para validar a seleção identity-only do ObjectEntryId.")]
+        [SerializeField, Tooltip("Referência identity-only para um ObjectEntryId indexado.")]
         private ObjectEntryIdReference identityOnly;
 
-        [SerializeField, Tooltip("Campo temporário para validar a seleção de identidade e o owner opcional independente.")]
+        [SerializeField, Tooltip("StableObjectReference com identidade e seletor de owner opcional.")]
         private StableObjectReference identityWithOptionalOwner;
+
+        [SerializeField, Tooltip("Binding de consulta oficial no mesmo owner Route ou Activity.")]
+        private ObjectEntryOccurrenceQueryBinding occurrenceQueryBinding;
 
         public ObjectEntryIdReference IdentityOnly => identityOnly;
 
         public StableObjectReference IdentityWithOptionalOwner => identityWithOptionalOwner;
+
+#if UNITY_EDITOR
+        [ContextMenu("Resolve Referenced Object Entry Occurrence")]
+        private void ResolveReferencedOccurrence()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("Enter Play Mode after the Route or Activity owner commits to resolve this occurrence.", this);
+                return;
+            }
+
+            if (occurrenceQueryBinding == null)
+            {
+                Debug.LogError("Assign the Framework Object Entry Occurrence Query binding.", this);
+                return;
+            }
+
+            ObjectEntryOccurrenceResolution result = occurrenceQueryBinding.Resolve(identityWithOptionalOwner);
+            string identity = identityWithOptionalOwner.TryGetObjectEntryId(out ObjectEntryId objectEntryId)
+                ? objectEntryId.StableText
+                : "<invalid>";
+
+            if (result.Succeeded)
+            {
+                Debug.Log($"Object Entry '{identity}' resolved to '{result.Occurrence.name}' ({result.Status}).", result.Occurrence);
+                return;
+            }
+
+            Debug.LogWarning($"Object Entry '{identity}' query returned {result.Status}: {result.Diagnostic}", this);
+        }
+#endif
     }
 }

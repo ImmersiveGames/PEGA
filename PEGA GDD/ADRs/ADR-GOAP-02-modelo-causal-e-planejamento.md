@@ -53,5 +53,5 @@ Preserva do GDD o uso de conhecimento legítimo, capacidades, custo temporal com
 - [GDD — Planejamento inimigo por GOAP](../GDD.md#planejamento-inimigo-por-goap)
 - [GDD — Conhecimento modular, memória e validade da informação](../GDD.md#conhecimento-modular-memória-e-validade-da-informação)
 - [GDD — Perda de alvo](../GDD.md#perda-de-alvo)
-- [Registro conceitual — Goals, condições, Actions e planejamento](../../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
+- [Registro conceitual — Goals, condições, Actions e planejamento](Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
 

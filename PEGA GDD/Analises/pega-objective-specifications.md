@@ -224,7 +224,7 @@ Os recortes são cumulativos apenas quando a fonte diz isso:
 
 **Família:** Operação dos larápios. **Perspectiva:** gameplay/NPC.
 
-**Fontes:** [GDD](../PEGA%20GDD/GDD.md) — “Objetivo principal e valores secundários”, “Áreas, POIs e investigação”, “Percepção determinística”, “Armadilhas: detecção e desarme”, “Conhecimento modular, memória e validade da informação”, “Perda de alvo” e “Conhecimento da gangue e informação global”; [MVP](../PEGA%20GDD/MVP.md), seção A; [ADR de pré-produção](../PEGA%20GDD/ADR-PREPRODUCAO.md), MC-02; [ADR-GOAP-02](../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md) e [ADR-GOAP-04](../PEGA%20GDD/ADRs/ADR-GOAP-04-interacoes-informativas.md).
+**Fontes:** [GDD](../GDD.md) — “Objetivo principal e valores secundários”, “Áreas, POIs e investigação”, “Percepção determinística”, “Armadilhas: detecção e desarme”, “Conhecimento modular, memória e validade da informação”, “Perda de alvo” e “Conhecimento da gangue e informação global”; [MVP](../MVP.md), seção A; [ADR de pré-produção](../ADR-PREPRODUCAO.md), MC-02; [ADR-GOAP-02](../ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md) e [ADR-GOAP-04](../ADRs/ADR-GOAP-04-interacoes-informativas.md).
 
 **Propósito e resultado observável.** Larápios agem com fatos obtidos por fontes permitidas, com validade e escopo definidos. Presença percebida não força reação; dado desconhecido não equivale a ausência confirmada; estado oculto não é consultado pelo planner.
 
@@ -262,7 +262,7 @@ Os recortes são cumulativos apenas quando a fonte diz isso:
 
 **Família:** Operação dos larápios. **Perspectiva:** gameplay/NPC.
 
-**Fontes:** [GDD](../PEGA%20GDD/GDD.md) — “Planejamento inimigo por GOAP”, “Peso, oportunidade e custo dos planos”, “Contrato de Actions”, “Contextos e satisfação dos Desejos”, “Replanejamento, tempo e execução”, “Desejos e prioridades por arquétipo”, “Posse, desejo e inversão da perseguição” e “Fuga e escolha de saída”; [MVP](../PEGA%20GDD/MVP.md), seções A–B; [ADR de pré-produção](../PEGA%20GDD/ADR-PREPRODUCAO.md), MC-02/MC-04; [ADR-GOAP-01](../PEGA%20GDD/ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [ADR-GOAP-02](../PEGA%20GDD/ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [ADR-GOAP-03](../PEGA%20GDD/ADRs/ADR-GOAP-03-selecao-e-estabilidade.md) e [ADR-GOAP-04](../PEGA%20GDD/ADRs/ADR-GOAP-04-interacoes-informativas.md).
+**Fontes:** [GDD](../GDD.md) — “Planejamento inimigo por GOAP”, “Peso, oportunidade e custo dos planos”, “Contrato de Actions”, “Contextos e satisfação dos Desejos”, “Replanejamento, tempo e execução”, “Desejos e prioridades por arquétipo”, “Posse, desejo e inversão da perseguição” e “Fuga e escolha de saída”; [MVP](../MVP.md), seções A–B; [ADR de pré-produção](../ADR-PREPRODUCAO.md), MC-02/MC-04; [ADR-GOAP-01](../ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [ADR-GOAP-02](../ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [ADR-GOAP-03](../ADRs/ADR-GOAP-03-selecao-e-estabilidade.md) e [ADR-GOAP-04](../ADRs/ADR-GOAP-04-interacoes-informativas.md).
 
 **Propósito e resultado observável.** Larápios perseguem objetivos declarados por sua configuração e escolhem planos a partir de conhecimento e Actions possíveis; o assalto pode avançar sem controle direto do jogador. Somente larápios usam GOAP; Rick/Petra não são IA/GOAP.
 
