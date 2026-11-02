@@ -154,7 +154,6 @@ namespace PEGA.Diagnostics.Editor
                     break;
                 case 3:
                     DrawKnowledge(view);
-                    DrawActorGroupKnowledge(view);
                     break;
                 case 4:
                     DrawHistory();
@@ -639,61 +638,6 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private void DrawActorGroupKnowledge(RuntimeView view)
-        {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Knowledge State compartilhado do Actor Group", EditorStyles.boldLabel);
-            PEGAActorGroupMembership membership = view.Autonomy.GetComponent<PEGAActorGroupMembership>();
-            if (membership == null)
-            {
-                EditorGUILayout.LabelField("<NPC sem configuração de Actor Groups>");
-                return;
-            }
-
-            if (!membership.TryGetAuthorizedKnowledgeStates(
-                    out IReadOnlyList<PEGAActorGroupKnowledgeState> groupStates,
-                    out string accessDiagnostic))
-            {
-                EditorGUILayout.HelpBox("Conhecimento de Group indisponível: " + accessDiagnostic, MessageType.Info);
-                return;
-            }
-
-            EditorGUILayout.LabelField("Groups autorizados com conhecimento", groupStates.Count.ToString());
-            if (groupStates.Count == 0)
-            {
-                EditorGUILayout.LabelField("<nenhum Group com fatos compartilhados>");
-                return;
-            }
-
-            for (int groupIndex = 0; groupIndex < groupStates.Count; groupIndex++)
-            {
-                PEGAActorGroupKnowledgeState groupKnowledge = groupStates[groupIndex];
-                EditorGUILayout.LabelField(groupKnowledge.GroupProfile.GroupIdText, EditorStyles.boldLabel);
-                if (!PEGAGoapRuntimeInspectorReader.IsActorGroupKnowledgeReady(groupKnowledge))
-                {
-                    EditorGUILayout.HelpBox("O estado compartilhado ainda não foi inicializado.", MessageType.Info);
-                    continue;
-                }
-
-                IReadOnlyList<PEGAActorGroupInitialKnowledgeFact> initialKnowledge =
-                    groupKnowledge.InitialKnowledgeFacts;
-                EditorGUILayout.LabelField("Fatos iniciais do Group", initialKnowledge.Count.ToString());
-                for (int index = 0; index < initialKnowledge.Count; index++)
-                {
-                    PEGAActorGroupInitialKnowledgeFact definition = initialKnowledge[index];
-                    if (definition == null)
-                    {
-                        continue;
-                    }
-
-                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField(definition.FactName, definition.FactDefinitionId, EditorStyles.boldLabel);
-                    EditorGUILayout.EndVertical();
-                }
-            }
-
-        }
-
         private void DrawHistory()
         {
             EditorGUILayout.LabelField("Histórico observado", EditorStyles.largeLabel);
@@ -987,7 +931,6 @@ namespace PEGA.Diagnostics.Editor
         private static readonly FieldInfo LatestSelectionField = typeof(PEGANpcAutonomy).GetField("_latestSelection", InstancePrivate);
         private static readonly FieldInfo ActionProvidersField = typeof(PEGANpcAutonomy).GetField("_actionProviders", InstancePrivate);
         private static readonly FieldInfo IndividualFactStoreField = typeof(PEGANpcKnowledgeState).GetField("_factStore", InstancePrivate);
-        private static readonly FieldInfo GroupFactStoreField = typeof(PEGAActorGroupKnowledgeState).GetField("_factStore", InstancePrivate);
 
         public static RuntimeView Read(PEGANpcAutonomy autonomy)
         {
@@ -1024,12 +967,6 @@ namespace PEGA.Diagnostics.Editor
             }
 
             return view;
-        }
-
-        public static bool IsActorGroupKnowledgeReady(PEGAActorGroupKnowledgeState groupKnowledge)
-        {
-            object factStore = ReadRawField(GroupFactStoreField, groupKnowledge, "store de fatos do Group", null);
-            return factStore is PEGAKnowledgeFactStore;
         }
 
         private static void ReadActionProviders(PEGANpcAutonomy autonomy, RuntimeView view)

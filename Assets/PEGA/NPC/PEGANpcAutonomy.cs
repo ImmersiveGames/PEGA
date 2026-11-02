@@ -32,6 +32,10 @@ namespace PEGA.NPC
         [Tooltip("Capabilities this NPC can use to pursue its Desires. Adding a behavior does not add a Desire; changes to a shared behavior asset affect every NPC that references it.")]
         private PEGANpcActionDefinitionAsset[] availableBehaviors = Array.Empty<PEGANpcActionDefinitionAsset>();
 
+        [SerializeField]
+        [Tooltip("Optional Activity-owned Global Knowledge authority composed into this NPC's GOAP Knowledge view.")]
+        private PEGAGlobalKnowledgeState globalKnowledgeState;
+
         [SerializeField, Min(1), HideInInspector]
         [Tooltip("Technical limit on candidate evaluations during causal planning.")]
         private int causalSearchCandidateEvaluationBudget = 128;
@@ -88,6 +92,8 @@ namespace PEGA.NPC
         private bool _actionRuntimesInitialized;
 
         public int ActionDefinitionCount => availableBehaviors != null ? availableBehaviors.Length : 0;
+
+        public IGoapKnowledgeStateView GoapKnowledgeState => _goapKnowledgeStateView;
 
         public PEGANpcActionDefinitionAsset GetActionDefinitionAt(int index)
         {
@@ -558,6 +564,11 @@ namespace PEGA.NPC
                 }
 
                 _goapKnowledgeCapabilities.Add(capability);
+            }
+
+            if (globalKnowledgeState != null && !_goapKnowledgeCapabilities.Contains(globalKnowledgeState))
+            {
+                _goapKnowledgeCapabilities.Add(globalKnowledgeState);
             }
 
             diagnostic = string.Empty;

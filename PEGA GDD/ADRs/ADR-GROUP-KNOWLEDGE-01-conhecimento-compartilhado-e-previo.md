@@ -1,8 +1,8 @@
 # ADR-GROUP-KNOWLEDGE-01 — Conhecimento compartilhado e prévio de Groups
 
-- **Status:** Aceito quanto aos princípios arquiteturais e à autoria tipada; composição e lifecycle técnico ainda pendentes
+- **Status:** Princípios arquiteturais e autoria tipada aceitos; autoridade Global do PEGA implementada por Activity; composição e lifecycle de Group Knowledge ainda pendentes
 - **Data:** 2026-10-30
-- **Revisado:** 2026-11-02 — autoria de fatos reutiliza definições canônicas
+- **Revisado:** 2026-11-02 — autoria de fatos reutiliza definições canônicas; primeira etapa de Global Knowledge registrada
 - **Owner:** PEGA — integração de Actor Groups e conhecimento
 
 ## Contexto
@@ -51,14 +51,20 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 - Qual componente/participante concreto coordena criação e membership, e se o Group Knowledge acompanha o owner Session, Route ou Activity, ou outra composição admitida pelo Framework. Seu lifecycle deve ser compatível com o owner real do Group, sem presumir persistência além dele.
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
 - A representação e o fluxo técnicos de autoria inicial no Inspector, a inicialização de fatos, a distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups. A semântica de autoria é compartilhada com as demais condições e fatos, conforme ADR-GOAP-02; detalhes técnicos permanecem pendentes.
-- A implementação do Knowledge State Global, fontes concretas de percepção/investigação e navegação até POIs, inclusive localizabilidade prévia. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
+- Fontes concretas de percepção/investigação para fatos Globais, a distribuição de eventos Globais aos consumidores prevista pelo GDD e navegação até POIs, inclusive localizabilidade prévia. A autoridade PEGA de leitura Global por Activity está registrada abaixo; ela não implementa esses produtores/distribuição nem resolve Group Knowledge. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
 
 O código `PEGANpcGangKnowledgeState` e `PEGANpcGangMembership` representa um recorte histórico especializado; não se torna normativo pelo nome ou por estar presente na cena. O antigo `PEGANpcMissionSpawnEntry` misturava inicialização de Groups e ingresso físico de NPC: sua remoção não elimina a necessidade de Group vivo, mas também não autoriza sua restauração automática.
 
-Este ADR **não altera** o GDD: na ficção e nas regras do PEGA, o escopo continua chamado **Gangue**. Define-se apenas que sua infraestrutura técnica de conhecimento coletivo deve se apoiar na abstração geral **Group**. O ADR não declara capacidade nova já implementada, validação do Unity ou aprovação para reintroduzir POIs.
+Este ADR **não altera** o GDD: na ficção e nas regras do PEGA, o escopo continua chamado **Gangue**. Define-se apenas que sua infraestrutura técnica de conhecimento coletivo deve se apoiar na abstração geral **Group**. O registro abaixo não declara Group Knowledge implementado, validação no Unity ou aprovação para reintroduzir POIs.
+
+### Implementação PEGA — primeira etapa de Global Knowledge (2026-11-02)
+
+A [implementação registrada](../Trabalho/reports/2026-11-02-global-knowledge-implementation.md) adiciona uma autoridade de fatos Global pertencente a uma contribuição da Activity da Mission. Ela reutiliza `PEGAKnowledgeFactStore` no escopo `Global`, definições tipadas e a política de evidência existente. `IPEGAKnowledgeFactReader` é composta como capability de uma vista GOAP; o mecanismo genérico de GOAP continua sem dependência de tipos PEGA.
+
+Esta etapa oferece uma autoridade comum para consumidores que recebem explicitamente sua referência. Não copia fatos para Knowledge Individual, não depende de membership, não implementa Group Knowledge nem propaga fatos entre escopos. A produção de fatos por eventos reais e sua distribuição de gameplay permanecem pendentes. A prova de Editor foi criada, mas sua execução/importação no Unity não foi confirmada.
 
 ## Autoridade e rastreabilidade
 

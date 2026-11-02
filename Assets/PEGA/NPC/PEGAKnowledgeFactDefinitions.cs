@@ -5,11 +5,6 @@ using UnityEngine;
 
 namespace PEGA.NPC
 {
-    public enum PEGAActorGroupKnowledgeEvidenceOrigin
-    {
-        DesignerAuthoredInitialFact = 0
-    }
-
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>
     [Preserve]
     internal static class PEGANpcKnowledgeFacts

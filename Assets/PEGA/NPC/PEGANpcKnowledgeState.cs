@@ -65,7 +65,7 @@ namespace PEGA.NPC
 
     /// <summary>Individual knowledge authority for one NPC Actor; all fact kinds use the same generic store.</summary>
     [DisallowMultipleComponent]
-    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IGoapKnowledgeCapability
+    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IPEGAKnowledgeFactReader
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
@@ -77,6 +77,10 @@ namespace PEGA.NPC
 
         [NonSerialized]
         private bool _loggerInitialized;
+
+        public PEGAKnowledgeScope Scope => PEGAKnowledgeScope.Individual;
+
+        public bool IsAvailable => _factStore != null;
 
         [NonSerialized]
         private EventBus<PEGAKnowledgeFactChangedEvent> _knowledgeChangeEvents;
@@ -142,6 +146,14 @@ namespace PEGA.NPC
         {
             EnsureStateInitialized();
             return _factStore.Get(key, Time.timeAsDouble);
+        }
+
+        public PEGAKnowledgeFact<TValue> ReadFact<TAddress, TValue>(
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            double queryTimeSeconds)
+        {
+            EnsureStateInitialized();
+            return _factStore.Get(key, queryTimeSeconds);
         }
 
         /// <summary>Returns character subjects represented by this NPC's current character-fact adapters.</summary>

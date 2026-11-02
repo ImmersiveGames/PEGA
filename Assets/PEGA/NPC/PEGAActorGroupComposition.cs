@@ -18,11 +18,6 @@ namespace PEGA.NPC
         IReadOnlyList<GroupProfile> GroupProfiles { get; }
     }
 
-    internal interface IPEGAActorGroupMembershipListener
-    {
-        void OnFrameworkGroupMembershipConfirmed(GroupId groupId);
-    }
-
     /// <summary>Cria os Groups declarados pelo owner e associa seus Actors pelos IDs lógicos.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorGroupAccessBinding))]
@@ -36,13 +31,6 @@ namespace PEGA.NPC
         [SerializeField]
         [Tooltip("Groups criados explicitamente por este owner. Um Group pode não ter membros.")]
         private GroupProfile[] groupsToCreate = Array.Empty<GroupProfile>();
-
-        [SerializeField]
-        [Tooltip("Contexto PEGA de conhecimento compartilhado pelos owners desta Session. Opcional quando não há conhecimento de Group.")]
-        private PEGAActorGroupKnowledgeContext knowledgeContext;
-
-        private readonly List<PEGAActorGroupKnowledgeState> _activeKnowledgeStates = new();
-        private readonly List<PEGAActorGroupMembership> _boundKnowledgeMembers = new();
 
         [NonSerialized]
         private ScopedLogger _log;
@@ -63,13 +51,7 @@ namespace PEGA.NPC
                 context.Activity != null && context.Activity.HasValidActivityId);
         }
 
-        void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context)
-        {
-            if (context.ContentRoot == gameObject)
-            {
-                ReleaseKnowledge();
-            }
-        }
+        void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context) { }
 
         void IRouteContentLifecycleReceiver.OnRouteContentEntered(RouteContentLifecycleContext context)
         {
@@ -84,15 +66,7 @@ namespace PEGA.NPC
                 context.Route != null && context.Route.HasValidRouteId);
         }
 
-        void IRouteContentLifecycleReceiver.OnRouteContentExited(RouteContentLifecycleContext context)
-        {
-            if (context.ContentRoot == gameObject)
-            {
-                ReleaseKnowledge();
-            }
-        }
-
-        private void OnDestroy() => ReleaseKnowledge();
+        void IRouteContentLifecycleReceiver.OnRouteContentExited(RouteContentLifecycleContext context) { }
 
         private void EnterOwner(RuntimeContentScope ownerScope, string ownerName, bool hasValidOwner)
         {
@@ -133,36 +107,9 @@ namespace PEGA.NPC
                     groupAccess,
                     out List<GroupProfile> declaredGroups,
                     out List<ResolvedMembership> memberships,
-                    out List<IPEGAActorGroupMember> configuredActors,
                     out diagnostic))
             {
                 return false;
-            }
-
-            var localKnowledgeStates = new List<PEGAActorGroupKnowledgeState>();
-            var knowledgeByGroup = new HashSet<GroupId>();
-            PEGAActorGroupKnowledgeState[] knowledgeCandidates =
-                GetComponentsInChildren<PEGAActorGroupKnowledgeState>(true);
-            for (int index = 0; index < knowledgeCandidates.Length; index++)
-            {
-                PEGAActorGroupKnowledgeState state = knowledgeCandidates[index];
-                if (!IsWithinThisContribution(state.transform))
-                {
-                    continue;
-                }
-
-                GroupProfile profile = state.GroupProfile;
-                if (knowledgeContext == null || profile == null ||
-                    !profile.TryGetGroupId(out GroupId groupId, out diagnostic) ||
-                    !knowledgeByGroup.Add(groupId) || !declaredGroups.Contains(profile))
-                {
-                    diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                        ? "Each Group knowledge state requires one distinct Group created by this owner and an explicit shared context."
-                        : diagnostic;
-                    return false;
-                }
-
-                localKnowledgeStates.Add(state);
             }
 
             for (int index = 0; index < declaredGroups.Count; index++)
@@ -187,26 +134,6 @@ namespace PEGA.NPC
                     LogFields.Field("groupId", group.GroupId.StableText));
             }
 
-            for (int index = 0; index < localKnowledgeStates.Count; index++)
-            {
-                PEGAActorGroupKnowledgeState state = localKnowledgeStates[index];
-                if (!state.TryActivate(groupAccess, knowledgeContext, ownerScope.ToString(), out diagnostic))
-                {
-                    ReleaseKnowledge();
-                    return false;
-                }
-
-                _activeKnowledgeStates.Add(state);
-            }
-
-            for (int index = 0; index < configuredActors.Count; index++)
-            {
-                if (configuredActors[index] is PEGAActorGroupMembership member && knowledgeContext != null)
-                {
-                    TryBindMemberKnowledge(member);
-                }
-            }
-
             for (int index = 0; index < memberships.Count; index++)
             {
                 ResolvedMembership membership = memberships[index];
@@ -216,21 +143,18 @@ namespace PEGA.NPC
                         out diagnostic))
                 {
                     diagnostic = $"Actor Group '{membership.GroupId.StableText}' is unavailable for membership. {diagnostic}";
-                    ReleaseKnowledge();
                     return false;
                 }
 
                 if (group.HasProfile && group.Profile != membership.Profile)
                 {
                     diagnostic = $"Actor '{membership.ActorId.StableText}' references a different Group Profile for '{membership.GroupId.StableText}'.";
-                    ReleaseKnowledge();
                     return false;
                 }
 
                 if (!groupAccess.TryJoinGroup(membership.GroupId, membership.ActorId, out diagnostic))
                 {
                     diagnostic = $"Could not associate Actor '{membership.ActorId.StableText}' with Group '{membership.GroupId.StableText}'. {diagnostic}";
-                    ReleaseKnowledge();
                     return false;
                 }
 
@@ -241,7 +165,6 @@ namespace PEGA.NPC
                         out diagnostic) || !isMember)
                 {
                     diagnostic = $"Framework did not confirm membership of Actor '{membership.ActorId.StableText}' in Group '{membership.GroupId.StableText}'. {diagnostic}";
-                    ReleaseKnowledge();
                     return false;
                 }
 
@@ -252,11 +175,6 @@ namespace PEGA.NPC
                     LogFields.Field("groupId", membership.GroupId.StableText),
                     LogFields.Field("actorId", membership.ActorId.StableText),
                     LogFields.Field("actorRoot", membership.Configuration.ActorRoot.name));
-
-                if (membership.Configuration is IPEGAActorGroupMembershipListener listener)
-                {
-                    listener.OnFrameworkGroupMembershipConfirmed(membership.GroupId);
-                }
             }
 
             diagnostic = string.Empty;
@@ -267,12 +185,10 @@ namespace PEGA.NPC
             ActorGroupAccessBinding groupAccess,
             out List<GroupProfile> declaredGroups,
             out List<ResolvedMembership> memberships,
-            out List<IPEGAActorGroupMember> configuredActors,
             out string diagnostic)
         {
             declaredGroups = new List<GroupProfile>();
             memberships = new List<ResolvedMembership>();
-            configuredActors = new List<IPEGAActorGroupMember>();
             var declaredById = new Dictionary<GroupId, GroupProfile>();
             if (groupsToCreate == null)
             {
@@ -357,8 +273,6 @@ namespace PEGA.NPC
                     diagnostic = $"ActorId '{actorId.StableText}' is declared more than once under this Group composition.";
                     return false;
                 }
-
-                configuredActors.Add(configuration);
 
                 var seenGroups = new HashSet<GroupId>();
                 IReadOnlyList<GroupProfile> profiles = configuration.GroupProfiles;
@@ -448,51 +362,6 @@ namespace PEGA.NPC
 
             _log = PEGALogging.CreateScopedLogger<PEGAActorGroupComposition>(LogCategory, gameObject.name);
             _loggerInitialized = true;
-        }
-
-        private void ReleaseKnowledge()
-        {
-            for (int index = 0; index < _boundKnowledgeMembers.Count; index++)
-            {
-                if (_boundKnowledgeMembers[index] != null)
-                {
-                    _boundKnowledgeMembers[index].UnbindKnowledgeContext(knowledgeContext);
-                }
-            }
-
-            _boundKnowledgeMembers.Clear();
-            for (int index = 0; index < _activeKnowledgeStates.Count; index++)
-            {
-                if (_activeKnowledgeStates[index] != null)
-                {
-                    _activeKnowledgeStates[index].Deactivate();
-                }
-            }
-
-            _activeKnowledgeStates.Clear();
-        }
-
-        internal bool TryBindMemberKnowledge(PEGAActorGroupMembership member)
-        {
-            if (member == null || knowledgeContext == null ||
-                !IsWithinThisContribution(member.transform))
-            {
-                return false;
-            }
-
-            ActorGroupAccessBinding groupAccess = GetComponent<ActorGroupAccessBinding>();
-            if (groupAccess == null || !groupAccess.IsAccessAvailable)
-            {
-                return false;
-            }
-
-            if (!_boundKnowledgeMembers.Contains(member))
-            {
-                member.BindKnowledgeContext(knowledgeContext, groupAccess);
-                _boundKnowledgeMembers.Add(member);
-            }
-
-            return true;
         }
 
         private readonly struct ResolvedMembership
