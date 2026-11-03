@@ -14,82 +14,120 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FaceSpriteLibrary
   tracks:
   - trackId: eyes
+    displayName: eyes
     atlas: {fileID: 2800000, guid: 2269aea11bb142247adbc7e006bb6ed3, type: 3}
     gridSize: {x: 5, y: 5}
     sprites:
     - id: eyes.opened
+      displayName: eyes.opened
       atlasCoordinate: {x: 0, y: 0}
     - id: eyes.closed
+      displayName: eyes.closed
       atlasCoordinate: {x: 1, y: 0}
     - id: eyes.happy
+      displayName: eyes.happy
       atlasCoordinate: {x: 2, y: 0}
     - id: eyes.angry.opened
+      displayName: eyes.angry.opened
       atlasCoordinate: {x: 3, y: 0}
     - id: eyes.angry.closed
+      displayName: eyes.angry.closed
       atlasCoordinate: {x: 4, y: 0}
     - id: eyes.scared.closed
+      displayName: eyes.scared.closed
       atlasCoordinate: {x: 0, y: 1}
-    - id: eyes.scared.closed
+    - id: d9e4a3b655854d5d9d1d17e5505e3841
+      displayName: eyes.scared.closed
       atlasCoordinate: {x: 1, y: 1}
     - id: eyes.sad
+      displayName: eyes.sad
       atlasCoordinate: {x: 2, y: 1}
     - id: eyes.suspicius
+      displayName: eyes.suspicius
       atlasCoordinate: {x: 3, y: 1}
     - id: eyes.tired
+      displayName: eyes.tired
       atlasCoordinate: {x: 4, y: 1}
     - id: eyes.surprised
+      displayName: eyes.surprised
       atlasCoordinate: {x: 0, y: 2}
     - id: eyes.enchanted
+      displayName: eyes.enchanted
       atlasCoordinate: {x: 1, y: 2}
     - id: eyes.crying
+      displayName: eyes.crying
       atlasCoordinate: {x: 2, y: 2}
     - id: eyes.blink.right
+      displayName: eyes.blink.right
       atlasCoordinate: {x: 3, y: 2}
     - id: eyes.blink.left
+      displayName: eyes.blink.left
       atlasCoordinate: {x: 4, y: 2}
     - id: eyes.bruised
+      displayName: eyes.bruised
       atlasCoordinate: {x: 0, y: 3}
     - id: eyes.astonished
+      displayName: eyes.astonished
       atlasCoordinate: {x: 1, y: 3}
     - id: eyes.bored
+      displayName: eyes.bored
       atlasCoordinate: {x: 2, y: 3}
     - id: eyes.looking.up
+      displayName: eyes.looking.up
       atlasCoordinate: {x: 3, y: 3}
     - id: eyes.looking.down
+      displayName: eyes.looking.down
       atlasCoordinate: {x: 4, y: 3}
     - id: eyes.looking.right
+      displayName: eyes.looking.right
       atlasCoordinate: {x: 0, y: 4}
     - id: eyes.looking.left
+      displayName: eyes.looking.left
       atlasCoordinate: {x: 1, y: 4}
     - id: eyes.dead
+      displayName: eyes.dead
       atlasCoordinate: {x: 2, y: 4}
     - id: eyes.no.eyes
+      displayName: eyes.no.eyes
       atlasCoordinate: {x: 3, y: 4}
   - trackId: mouth
+    displayName: mouth
     atlas: {fileID: 2800000, guid: b1e08281cd932bb468faee09e842ac81, type: 3}
     gridSize: {x: 2, y: 6}
     sprites:
     - id: mouth.normal.closed
+      displayName: mouth.normal.closed
       atlasCoordinate: {x: 0, y: 0}
     - id: mouth.surprised
+      displayName: mouth.surprised
       atlasCoordinate: {x: 1, y: 0}
     - id: mouth.smile
+      displayName: mouth.smile
       atlasCoordinate: {x: 0, y: 1}
     - id: mouth.astonished
+      displayName: mouth.astonished
       atlasCoordinate: {x: 1, y: 1}
     - id: mouth.sad
+      displayName: mouth.sad
       atlasCoordinate: {x: 0, y: 2}
     - id: mouth.naughty
+      displayName: mouth.naughty
       atlasCoordinate: {x: 1, y: 2}
     - id: mouth.opened
+      displayName: mouth.opened
       atlasCoordinate: {x: 0, y: 3}
     - id: mouth.speak.full
+      displayName: mouth.speak.full
       atlasCoordinate: {x: 1, y: 3}
     - id: mouth.smirk
+      displayName: mouth.smirk
       atlasCoordinate: {x: 0, y: 4}
     - id: mouth.speak.mid
+      displayName: mouth.speak.mid
       atlasCoordinate: {x: 1, y: 4}
     - id: mouth.angry
+      displayName: mouth.angry
       atlasCoordinate: {x: 0, y: 5}
     - id: mouth.speak.min
+      displayName: mouth.speak.min
       atlasCoordinate: {x: 1, y: 5}

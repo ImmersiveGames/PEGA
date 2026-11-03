@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7003466271270886440
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_Name
+      value: Soggy Robber
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 3e3f605ef9c782d40913c31f75e108fb, type: 2}
+    - target: {fileID: 5866666021909216657, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8917466806693763589, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      propertyPath: m_Name
+      value: Soggy_Robber_Armature
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 37222274490507875}
+  m_SourcePrefab: {fileID: 100100000, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+--- !u!137 &583626574354535807 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1646001680427873961, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+  m_PrefabInstance: {fileID: 7003466271270886440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &2109410021678014626 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8968758449928387722, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+  m_PrefabInstance: {fileID: 7003466271270886440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7921874240486957433 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: eb4f46f4e7e16a542ab44c43f6988173, type: 3}
+  m_PrefabInstance: {fileID: 7003466271270886440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &37222274490507875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7921874240486957433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f08b9b39da1bbc4790d818ac03dd29c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FaceController
+  debugLogging: 0
+  trackBindings:
+  - trackId: eyes
+    targetRenderer: {fileID: 583626574354535807}
+    materialIndex: 0
+  - trackId: mouth
+    targetRenderer: {fileID: 2109410021678014626}
+    materialIndex: 0
+  defaultState: {fileID: 11400000, guid: 9d9f757397119c04bacb33f62fc8d980, type: 2}
+  states:
+  - {fileID: 11400000, guid: 9d9f757397119c04bacb33f62fc8d980, type: 2}
+  - {fileID: 11400000, guid: a00bee0e8af5698489ef24b0a2033800, type: 2}
+  animations:
+  - {fileID: 11400000, guid: 3814e6d7643b68f46a7c00accd8ce0be, type: 2}
