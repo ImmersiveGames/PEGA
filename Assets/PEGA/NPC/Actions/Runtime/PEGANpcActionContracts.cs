@@ -28,6 +28,7 @@ namespace PEGA.NPC
         public static PEGANpcPlanningActionId InvestigateLastKnownCharacterPosition { get; } = new PEGANpcPlanningActionId("investigate-last-known-target-position");
         public static PEGANpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PEGANpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PEGANpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PEGANpcPlanningActionId("investigate-perceived-area-presence");
+        public static PEGANpcPlanningActionId NavigateToKnownGroupObjectEntryPosition { get; } = new PEGANpcPlanningActionId("navigate-to-known-group-object-entry-position");
 
         public static PEGANpcPlanningActionId FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PEGANpcPlanningActionId(stableText.Trim());
@@ -53,6 +54,7 @@ namespace PEGA.NPC
         public static PEGANpcActionEffectKind ApproachKnownCharacterPosition { get; } = new PEGANpcActionEffectKind("approach-known-target-position");
         public static PEGANpcActionEffectKind ReachLocalObservationPosition { get; } = new PEGANpcActionEffectKind("reach-local-observation-position");
         public static PEGANpcActionEffectKind ReachSafeSeparationPosition { get; } = new PEGANpcActionEffectKind("reach-safe-separation-position");
+        public static PEGANpcActionEffectKind ReachKnownGroupObjectEntryPosition { get; } = new PEGANpcActionEffectKind("reach-known-group-object-entry-position");
 
         public static PEGANpcActionEffectKind FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PEGANpcActionEffectKind(stableText.Trim());
@@ -178,6 +180,7 @@ namespace PEGA.NPC
         public static PEGANpcPlanningTargetKind CharacterPosition { get; } = new PEGANpcPlanningTargetKind("character-position");
         public static PEGANpcPlanningTargetKind LocalObservationPosition { get; } = new PEGANpcPlanningTargetKind("local-observation-position");
         public static PEGANpcPlanningTargetKind SafeSeparationPosition { get; } = new PEGANpcPlanningTargetKind("safe-separation-position");
+        public static PEGANpcPlanningTargetKind GroupObjectEntryPosition { get; } = new PEGANpcPlanningTargetKind("group-object-entry-position");
 
         public static PEGANpcPlanningTargetKind FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PEGANpcPlanningTargetKind(stableText.Trim());
@@ -224,6 +227,7 @@ namespace PEGA.NPC
         public PEGANpcActionPlanningContext(
             PEGANpcKnowledgeState knowledgeState,
             PEGANpcKnowledgeReadView knowledgeReadView,
+            IGoapKnowledgeStateView composedKnowledgeState,
             ActorId targetActorId,
             bool hasPerceptionBackedTargetContact,
             PEGANpcPlanContinuation? planContinuation,
@@ -232,6 +236,8 @@ namespace PEGA.NPC
             KnowledgeState = knowledgeState;
             KnowledgeReadView = knowledgeReadView ??
                 throw new ArgumentNullException(nameof(knowledgeReadView));
+            ComposedKnowledgeState = composedKnowledgeState ??
+                throw new ArgumentNullException(nameof(composedKnowledgeState));
             TargetActorId = targetActorId;
             HasPerceptionBackedTargetContact = hasPerceptionBackedTargetContact;
             PlanContinuation = planContinuation;
@@ -241,6 +247,7 @@ namespace PEGA.NPC
 
         public PEGANpcKnowledgeState KnowledgeState { get; }
         public PEGANpcKnowledgeReadView KnowledgeReadView { get; }
+        public IGoapKnowledgeStateView ComposedKnowledgeState { get; }
         public ActorId TargetActorId { get; }
         public bool HasPerceptionBackedTargetContact { get; }
         public PEGANpcPlanContinuation? PlanContinuation { get; }

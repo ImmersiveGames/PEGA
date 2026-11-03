@@ -184,15 +184,20 @@ namespace PEGA.NPC
                 return false;
             }
 
+            PEGANpcTargetReachedEffect reachedEffect = target.Target.TargetId.IdentityKind ==
+                PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition
+                ? new PEGANpcTargetReachedEffect(
+                    target.Target.TargetId,
+                    target.Target.Kind,
+                    target.Target.EvidenceTimeSeconds,
+                    target.Target.KnownPosition)
+                : new PEGANpcTargetReachedEffect(
+                    target.Target.TargetId,
+                    target.Target.Kind,
+                    target.Target.EvidenceTimeSeconds);
             actionDefinition = new GoapActionDefinition(
                 Array.Empty<IGoapCondition>(),
-                new IGoapEffect[]
-                {
-                    new PEGANpcTargetReachedEffect(
-                        target.Target.TargetId,
-                        target.Target.Kind,
-                        target.Target.EvidenceTimeSeconds)
-                });
+                new IGoapEffect[] { reachedEffect });
             diagnostic = string.Empty;
             return true;
         }
@@ -350,6 +355,10 @@ namespace PEGA.NPC
                 if (!(state.ProjectedEffects[effectIndex] is PEGANpcTargetReachedEffect reachedEffect) ||
                     !knowledge.TryGetKnownTarget(reachedEffect.TargetId, out PEGANpcGoapKnownTarget reachedTarget) ||
                     reachedTarget.Target.Kind != reachedEffect.TargetKind ||
+                    (!reachedEffect.HasTargetPosition &&
+                     reachedTarget.Target.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition) ||
+                    (reachedEffect.HasTargetPosition &&
+                     !reachedTarget.Target.KnownPosition.Equals(reachedEffect.TargetPosition)) ||
                     Math.Abs(reachedTarget.Target.EvidenceTimeSeconds - reachedEffect.EvidenceTimeSeconds) > 0.000001d)
                 {
                     diagnostic = "The projected state contains Effects that the navigation evaluator cannot resolve to a legitimate known position.";
@@ -396,6 +405,9 @@ namespace PEGA.NPC
                 if (plan.CausalEffects[index] is PEGANpcTargetReachedEffect declaredEffect &&
                     declaredEffect.TargetId == observedEffect.TargetId &&
                     declaredEffect.TargetKind == observedEffect.TargetKind &&
+                    (declaredEffect.HasTargetPosition
+                        ? declaredEffect.TargetPosition.Equals(observedEffect.TargetPosition)
+                        : observedEffect.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition) &&
                     Math.Abs(declaredEffect.EvidenceTimeSeconds - plan.EvidenceTimeSeconds) <= 0.000001d)
                 {
                     observedEffects = Array.AsReadOnly<IGoapEffect>(new[] { declaredEffect });

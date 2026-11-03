@@ -476,7 +476,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeState
   initialKnowledge:
-  - groupProfile: {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+  - groupProfile: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     facts:
     - definitionId: pega.object-entry.position
       address:
@@ -511,6 +511,39 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+    - definitionId: pega.object-entry.position
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-demo-poi
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 10}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
 --- !u!1001 &2500000500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -534,7 +567,15 @@ PrefabInstance:
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
       value:
-      objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
+      objectReference: {fileID: 11400000, guid: 3f30b72cbf6b4955a93f886140bc7ea1, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.data[4]
+      value:
+      objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: globalKnowledgeState
       value:

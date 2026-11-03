@@ -333,6 +333,76 @@ namespace PEGA.NPC
                 factStore.Get(key, queryTimeSeconds));
         }
 
+        internal bool TryReadGroupFactsForActor<TAddress, TValue>(
+            ActorId actorId,
+            PEGAKnowledgeFactDefinition<TAddress, TValue> definition,
+            double queryTimeSeconds,
+            out IReadOnlyList<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> groups,
+            out PEGAActorGroupKnowledgeAccessStatus accessStatus,
+            out string diagnostic)
+        {
+            groups = Array.Empty<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
+            diagnostic = string.Empty;
+            if (definition == null || double.IsNaN(queryTimeSeconds) ||
+                double.IsInfinity(queryTimeSeconds) || queryTimeSeconds < 0d)
+            {
+                accessStatus = PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+                diagnostic = "Group fact enumeration requires a canonical definition and finite query time.";
+                return false;
+            }
+
+            if (!actorId.IsValid)
+            {
+                accessStatus = PEGAActorGroupKnowledgeAccessStatus.InvalidActor;
+                diagnostic = "Group fact enumeration requires a valid logical ActorId.";
+                return false;
+            }
+
+            if (!IsAvailable || _groupAccess == null ||
+                !_groupAccess.TryGetGroupsForActor(
+                    actorId,
+                    int.MaxValue,
+                    out IReadOnlyList<GroupId> liveGroupIds,
+                    out diagnostic))
+            {
+                accessStatus = PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "The exact Group owner or Framework membership query is unavailable."
+                    : diagnostic;
+                return false;
+            }
+
+            var factSets = new List<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
+            for (int index = 0; index < liveGroupIds.Count; index++)
+            {
+                GroupId groupId = liveGroupIds[index];
+                if (!_factStores.ContainsKey(groupId))
+                {
+                    continue;
+                }
+
+                PEGAActorGroupKnowledgeAccessStatus currentAccess = TryGetAuthorizedStore(
+                    actorId,
+                    groupId,
+                    out PEGAKnowledgeFactStore factStore);
+                if (currentAccess != PEGAActorGroupKnowledgeAccessStatus.Authorized)
+                {
+                    accessStatus = currentAccess;
+                    diagnostic = $"Framework membership for Actor '{actorId.StableText}' in Group '{groupId.StableText}' changed or became unavailable during fact enumeration.";
+                    return false;
+                }
+
+                factSets.Add(new PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>(
+                    groupId,
+                    factStore.GetFacts(definition, queryTimeSeconds)));
+            }
+
+            groups = Array.AsReadOnly(factSets.ToArray());
+            accessStatus = PEGAActorGroupKnowledgeAccessStatus.Authorized;
+            diagnostic = string.Empty;
+            return true;
+        }
+
         internal bool HasRegisteredGroup(GroupId groupId) => _factStores.ContainsKey(groupId);
 
         private PEGAActorGroupKnowledgeAccessStatus TryGetWritableStore(

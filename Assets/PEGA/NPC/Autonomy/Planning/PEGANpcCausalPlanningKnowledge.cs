@@ -101,9 +101,29 @@ namespace PEGA.NPC
             PEGANpcPlanningTargetId targetId,
             PEGANpcPlanningTargetKind targetKind,
             double evidenceTimeSeconds)
+            : this(targetId, targetKind, evidenceTimeSeconds, default, false)
+        {
+        }
+
+        public PEGANpcTargetReachedEffect(
+            PEGANpcPlanningTargetId targetId,
+            PEGANpcPlanningTargetKind targetKind,
+            double evidenceTimeSeconds,
+            Vector3 targetPosition)
+            : this(targetId, targetKind, evidenceTimeSeconds, targetPosition, true)
+        {
+        }
+
+        private PEGANpcTargetReachedEffect(
+            PEGANpcPlanningTargetId targetId,
+            PEGANpcPlanningTargetKind targetKind,
+            double evidenceTimeSeconds,
+            Vector3 targetPosition,
+            bool hasTargetPosition)
         {
             if (!targetId.IsValid || !targetKind.IsValid ||
-                double.IsNaN(evidenceTimeSeconds) || double.IsInfinity(evidenceTimeSeconds) || evidenceTimeSeconds < 0d)
+                double.IsNaN(evidenceTimeSeconds) || double.IsInfinity(evidenceTimeSeconds) || evidenceTimeSeconds < 0d ||
+                (hasTargetPosition && !IsFinite(targetPosition)))
             {
                 throw new ArgumentException(
                     "A valid planning Target identity, kind and evidence time are required.",
@@ -113,6 +133,8 @@ namespace PEGA.NPC
             TargetId = targetId;
             TargetKind = targetKind;
             EvidenceTimeSeconds = evidenceTimeSeconds;
+            TargetPosition = targetPosition;
+            HasTargetPosition = hasTargetPosition;
         }
 
         public PEGANpcPlanningTargetId TargetId { get; }
@@ -120,6 +142,20 @@ namespace PEGA.NPC
         public PEGANpcPlanningTargetKind TargetKind { get; }
 
         public double EvidenceTimeSeconds { get; }
+
+        public Vector3 TargetPosition { get; }
+
+        public bool HasTargetPosition { get; }
+
+        public Immersive.Framework.Actors.GroupId KnowledgeGroupId => TargetId.KnowledgeGroupId;
+
+        public Immersive.Framework.ObjectEntry.ObjectEntryId ObjectEntryId => TargetId.ObjectEntryId;
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
     /// <summary>Temporary progress condition owned by the established last-known-target continuation.</summary>

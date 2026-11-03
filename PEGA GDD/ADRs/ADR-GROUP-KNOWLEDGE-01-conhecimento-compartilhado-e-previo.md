@@ -1,8 +1,8 @@
 # ADR-GROUP-KNOWLEDGE-01 — Conhecimento compartilhado e prévio de Groups
 
-- **Status:** Princípios arquiteturais preservados; Knowledge Individual, Group e Global, autoria inicial e diagnóstico implementados no PEGA. Validação manual no Unity reportada pelo usuário.
+- **Status:** Princípios arquiteturais preservados; Knowledge Individual, Group e Global, autoria inicial, diagnóstico e integração de posição ObjectEntry do Group ao GOAP implementados no PEGA. O início do deslocamento foi reportado visualmente no Unity; chegada e satisfação final do Goal não estão comprovadas neste registro.
 - **Data:** 2026-10-30
-- **Revisado:** 2026-11-03 — autoria inicial nos três escopos e diagnóstico de leitura, além das autoridades e membership vigentes já registradas
+- **Revisado:** 2026-11-03 — autoria inicial, diagnóstico e integração Group Knowledge → Target/Action/GOAP; início do deslocamento reportado no Play Mode
 - **Owner:** PEGA — integração de Actor Groups e conhecimento
 
 ## Contexto
@@ -48,8 +48,8 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 ## Não decidido neste ADR
 
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
-- A distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups permanecem pendentes. A semântica comum de autoria continua vinculada ao ADR-GOAP-02; autoria de condições GOAP não está implementada.
-- Fontes concretas de percepção/investigação para fatos Globais, sensores de Object Entry, produtores de eventos reais do assalto e propagação entre escopos continuam pendentes; consumidores GOAP do contexto têm acesso à authority Global sem membership. O uso comportamental de fatos Group pelo GOAP, a integração de propriedades Object Entry a Targets e a navegação até POIs também permanecem futuros. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física.
+- A distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups permanecem pendentes. A semântica comum de autoria continua vinculada ao ADR-GOAP-02; autoria/avaliação genérica de condições GOAP permanece pendente, embora esta feature tenha uma GoalCondition especializada para a posição conhecida de ObjectEntry pelo Group.
+- Fontes concretas de percepção/investigação para fatos Globais, sensores de Object Entry, produtores de eventos reais do assalto e propagação entre escopos continuam pendentes; consumidores GOAP do contexto têm acesso à authority Global sem membership. A integração de posição ObjectEntry conhecida pelo Group a Target, Action causal, planejamento e navegação foi implementada neste recorte do PEGA; outras propriedades/fontes e formas de descobrir ou atualizar posições continuam futuras. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
@@ -76,9 +76,19 @@ A prova `PEGAGroupKnowledgeProofWindow` foi executada manualmente no Unity e tev
 
 A evolução posterior reutiliza um catálogo canônico de definições e a mesma linha serializada **Identidade → Propriedade → Valor** nos escopos Individual, Group e Global. Os fatos entram nos stores e authorities existentes, preservando as políticas, evidências, temporalidade e validade próprias de cada definição. Fatos Group só são inicializados para Groups realmente criados pelo owner; leituras do Inspector confirmam novamente Group vivo e membership atual antes de mostrar valores.
 
-Na `MissionActivityContent`, Group `pega.gang.larapios` e a authority Global usam a definição `pega.object-entry.position` para o mesmo `ObjectEntryId` `pega.warehouse.storage-rack-west-north`. O valor inicial do Group é `(-5, 1, 15.700001)` e o Global é `(200, 0, 200)`. Os stores permanecem independentes. O GOAP Runtime Inspector mostra fatos Individual, os Groups pertinentes e o Global acessível, com origem, escopo, timestamps e validade; leituras Group negadas ocultam os fatos.
+Na `MissionActivityContent`, a configuração atual do Second Group `pega.mission.actor-group.second` e a authority Global usam a definição `pega.object-entry.position` para o mesmo `ObjectEntryId` `pega.warehouse.storage-rack-west-north`. O valor inicial do Group é `(-5, 1, 15.700001)` e o Global é `(200, 0, 200)`. Os stores permanecem independentes. O GOAP Runtime Inspector mostra fatos Individual, os Groups pertinentes e o Global acessível, com origem, escopo, timestamps e validade; leituras Group negadas ocultam os fatos.
 
-O usuário reportou validação manual no Unity em 2026-11-03, incluindo conhecimento inicial, membership autorizada, acesso negado, isolamento entre Groups e leitura Global. Esta revisão não repetiu a execução. Continuam pendentes a autoria/avaliação de condições GOAP, sensores de Object Entry, integração de posições conhecidas a Targets/navegação, produtores de eventos de gameplay e propagação entre escopos. A descrição do corte está registrada em [Group Knowledge](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md).
+O usuário reportou validação manual no Unity em 2026-11-03, incluindo conhecimento inicial, membership autorizada, acesso negado, isolamento entre Groups e leitura Global. Esta revisão não repetiu essas provas. A autoria/avaliação genérica de condições GOAP, sensores de Object Entry, produtores de eventos de gameplay e propagação entre escopos continuam pendentes. A integração concreta de posição conhecida de POI do Group ao GOAP e o relato de início do deslocamento estão registrados em [Group Knowledge](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md); chegada e satisfação do Goal não estão evidenciadas.
+
+### Integração de posição ObjectEntry do Group ao GOAP (2026-11-03)
+
+A Action `NavigateToKnownGroupObjectEntryPosition` enumera fatos válidos da definição canônica `pega.object-entry.position` pelo `PEGAActorGroupKnowledgeReader`. O Reader só retorna stores de Groups encontrados pela consulta de membership efetiva do Framework e preserva o `GroupId` proprietário. A Action transforma cada fato autorizado em Target tipado por `GroupId` e `ObjectEntryId`; não lê transform, ocorrência física, World State, Global Knowledge nem Knowledge Individual para descobrir ou completar a posição.
+
+O GOAP cria a Action causal com Effect hipotético de `TargetReached`, avalia a disponibilidade da rota antes de expandir esse Effect e seleciona entre Goals/planos válidos pela política normal de Desire, custo e score. Na execução, a navegação usa a posição conhecida; o Effect só é observado após o resultado de sucesso e a confirmação de chegada, com membership e fato Group ainda válidos. A condição do Goal consulta a mesma authority Group e não considera conhecimento da coordenada, sozinho, como chegada. Nenhuma regra de seleção absoluta foi adicionada.
+
+Na configuração inicial da demonstração, a posição Group do rack coincidia com o centro de seu collider; a cena inclui essa geometria na construção da NavMesh. Como a Action exige rota completa até a posição conhecida, essa autoria era incompatível com uma chegada caminhável e é consistente com os logs de um candidato sem plano. Os logs fornecidos não registram o status concreto da rota, então a rejeição específica do destino original é uma inferência estática ainda sem diagnóstico de execução. A configuração atual usa o POI próprio `pega.warehouse.second-group-demo-poi`, declarado pelo mecanismo oficial de identidade e com posição inicial explícita somente no Second Group. O Goal/Desire do NPC referencia essa identidade; a configuração Global antiga do rack permanece em sua authority separada e não participa deste Target/Goal.
+
+**Evidência:** composição, definições, referências, leitores e caminho causal estão presentes estaticamente no PEGA; a revisão arquitetural independente do corte foi `CLEAR` estático. O responsável reportou visualmente que o NPC iniciou o deslocamento no Play Mode. Não há evidência inspecionável nesta revisão de chegada final, Effect observado ou satisfação do Goal; o Codex não executou Unity. O [relatório de implementação](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md) registra os detalhes e a distinção entre implementação, relato e validação pendente.
 
 ## Autoridade e rastreabilidade
 

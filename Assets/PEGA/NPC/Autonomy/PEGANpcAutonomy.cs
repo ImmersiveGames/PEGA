@@ -1404,6 +1404,7 @@ namespace PEGA.NPC
             var actionContext = new PEGANpcActionPlanningContext(
                 _knowledgeState,
                 _knowledgeReadView,
+                _goapKnowledgeStateView,
                 targetActorId,
                 hasPerceptionBackedTargetContact,
                 planContinuation,

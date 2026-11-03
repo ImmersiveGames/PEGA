@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using Immersive.Framework.ObjectEntry;
 using ImmersiveGames.Goap;
 using PEGA.Actors;
 using UnityEngine;
@@ -28,7 +29,8 @@ namespace PEGA.NPC
         StableDataId = 10,
         InvestigationSample = 20,
         CharacterSeparationDestination = 30,
-        PerceivedAreaInvestigationSample = 40
+        PerceivedAreaInvestigationSample = 40,
+        GroupObjectEntryPosition = 50
     }
 
     public enum PEGANpcPlanPurpose
@@ -56,6 +58,8 @@ namespace PEGA.NPC
         private readonly double _contactLossObservationTimeSeconds;
         private readonly int _sampleOrdinal;
         private readonly double _presenceObservationTimeSeconds;
+        private readonly ObjectEntryId _objectEntryId;
+        private readonly GroupId _knowledgeGroupId;
 
         private PEGANpcPlanningTargetId(
             PEGANpcPlanningTargetIdentityKind identityKind,
@@ -63,7 +67,9 @@ namespace PEGA.NPC
             string stableDataId,
             double contactLossObservationTimeSeconds = 0d,
             int sampleOrdinal = 0,
-            double presenceObservationTimeSeconds = 0d)
+            double presenceObservationTimeSeconds = 0d,
+            ObjectEntryId objectEntryId = default,
+            GroupId knowledgeGroupId = default)
         {
             IdentityKind = identityKind;
             _actorId = actorId;
@@ -71,6 +77,8 @@ namespace PEGA.NPC
             _contactLossObservationTimeSeconds = contactLossObservationTimeSeconds;
             _sampleOrdinal = sampleOrdinal;
             _presenceObservationTimeSeconds = presenceObservationTimeSeconds;
+            _objectEntryId = objectEntryId;
+            _knowledgeGroupId = knowledgeGroupId;
         }
 
         public PEGANpcPlanningTargetIdentityKind IdentityKind { get; }
@@ -87,6 +95,8 @@ namespace PEGA.NPC
             PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
                 IsNonNegativeFinite(_presenceObservationTimeSeconds) &&
                 _sampleOrdinal >= 0,
+            PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
+                _objectEntryId.IsValid && _knowledgeGroupId.IsValid,
             _ => false
         };
 
@@ -105,6 +115,10 @@ namespace PEGA.NPC
                 _presenceObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
                 "|",
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
+            PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition => string.Concat(
+                _objectEntryId.StableText ?? string.Empty,
+                "|",
+                _knowledgeGroupId.StableText ?? string.Empty),
             _ => string.Empty
         };
 
@@ -121,6 +135,10 @@ namespace PEGA.NPC
         internal double PerceivedAreaEvidenceTimeSeconds => _presenceObservationTimeSeconds;
 
         internal int PerceivedAreaSampleOrdinal => _sampleOrdinal;
+
+        public ObjectEntryId ObjectEntryId => _objectEntryId;
+
+        public GroupId KnowledgeGroupId => _knowledgeGroupId;
 
         internal static PEGANpcPlanningTargetId ForActor(ActorId actorId) =>
             actorId.IsValid
@@ -168,6 +186,18 @@ namespace PEGA.NPC
                     string.Empty)
                 : default;
 
+        internal static PEGANpcPlanningTargetId ForGroupObjectEntryPosition(
+            ObjectEntryId objectEntryId,
+            GroupId knowledgeGroupId) =>
+            objectEntryId.IsValid && knowledgeGroupId.IsValid
+                ? new PEGANpcPlanningTargetId(
+                    PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition,
+                    default,
+                    string.Empty,
+                    objectEntryId: objectEntryId,
+                    knowledgeGroupId: knowledgeGroupId)
+                : default;
+
         public bool Equals(PEGANpcPlanningTargetId other)
         {
             if (IdentityKind != other.IdentityKind)
@@ -188,6 +218,9 @@ namespace PEGA.NPC
                 PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
                     _presenceObservationTimeSeconds.Equals(other._presenceObservationTimeSeconds) &&
                     _sampleOrdinal == other._sampleOrdinal,
+                PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
+                    _objectEntryId == other._objectEntryId &&
+                    _knowledgeGroupId == other._knowledgeGroupId,
                 _ => false
             };
         }
@@ -217,6 +250,12 @@ namespace PEGA.NPC
                     hash = (hash * 397) ^ (int)timeBits;
                     hash = (hash * 397) ^ (int)(timeBits >> 32);
                     return (hash * 397) ^ _sampleOrdinal;
+                }
+
+                if (IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+                {
+                    hash = (hash * 397) ^ _objectEntryId.GetHashCode();
+                    return (hash * 397) ^ _knowledgeGroupId.GetHashCode();
                 }
 
                 return hash ^ StringComparer.Ordinal.GetHashCode(StableOrderValue);
@@ -249,6 +288,16 @@ namespace PEGA.NPC
                 int evidenceTimeOrder = _presenceObservationTimeSeconds.CompareTo(
                     other._presenceObservationTimeSeconds);
                 return evidenceTimeOrder != 0 ? evidenceTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
+            }
+
+            if (IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+            {
+                int objectEntryOrder = string.CompareOrdinal(
+                    _objectEntryId.StableText,
+                    other._objectEntryId.StableText);
+                return objectEntryOrder != 0
+                    ? objectEntryOrder
+                    : string.CompareOrdinal(_knowledgeGroupId.StableText, other._knowledgeGroupId.StableText);
             }
 
             return string.CompareOrdinal(StableOrderValue, other.StableOrderValue);
@@ -294,6 +343,10 @@ namespace PEGA.NPC
 
         public PEGANpcPlanningTargetProvenance Provenance { get; }
 
+        public ObjectEntryId ObjectEntryId => TargetId.ObjectEntryId;
+
+        public GroupId KnowledgeGroupId => TargetId.KnowledgeGroupId;
+
         public Vector3 KnownPosition { get; }
 
         public bool HasEvidenceTime { get; }
@@ -329,6 +382,18 @@ namespace PEGA.NPC
                 PEGANpcPlanningTargetKind.SafeSeparationPosition,
                 PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
                 derivedPosition,
+                true,
+                evidenceTimeSeconds);
+
+        internal static PEGANpcPlanningTarget FromKnownGroupObjectEntryPosition(
+            ObjectEntryId objectEntryId,
+            GroupId knowledgeGroupId,
+            Vector3 knownPosition,
+            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
+                PEGANpcPlanningTargetId.ForGroupObjectEntryPosition(objectEntryId, knowledgeGroupId),
+                PEGANpcPlanningTargetKind.GroupObjectEntryPosition,
+                PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
+                knownPosition,
                 true,
                 evidenceTimeSeconds);
 
