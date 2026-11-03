@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 namespace PEGA.NPC
 {
     [CreateAssetMenu(fileName = "InvestigateDetectedPresence", menuName = "PEGA/NPC/Investigation/Investigate Detected Presence")]
-    public sealed class PEGANpcInvestigatePerceivedAreaPresenceAction : PEGANpcNavigationAction,
+    public sealed class PEGANpcInvestigatePerceivedAreaPresenceAction : PEGANpcActionProviderAsset,
         IPEGANpcKnowledgeChangeRelevanceProvider,
         IPEGANpcAttemptedTargetProvider
     {

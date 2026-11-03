@@ -29,6 +29,7 @@ namespace PEGA.NPC
         public static PEGANpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PEGANpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PEGANpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PEGANpcPlanningActionId("investigate-perceived-area-presence");
         public static PEGANpcPlanningActionId NavigateToKnownGroupObjectEntryPosition { get; } = new PEGANpcPlanningActionId("navigate-to-known-group-object-entry-position");
+        public static PEGANpcPlanningActionId InvestigateKnownGroupPoi { get; } = new PEGANpcPlanningActionId("investigate-known-group-poi");
 
         public static PEGANpcPlanningActionId FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PEGANpcPlanningActionId(stableText.Trim());
@@ -55,6 +56,7 @@ namespace PEGA.NPC
         public static PEGANpcActionEffectKind ReachLocalObservationPosition { get; } = new PEGANpcActionEffectKind("reach-local-observation-position");
         public static PEGANpcActionEffectKind ReachSafeSeparationPosition { get; } = new PEGANpcActionEffectKind("reach-safe-separation-position");
         public static PEGANpcActionEffectKind ReachKnownGroupObjectEntryPosition { get; } = new PEGANpcActionEffectKind("reach-known-group-object-entry-position");
+        public static PEGANpcActionEffectKind CompleteGroupPoiInvestigation { get; } = new PEGANpcActionEffectKind("complete-group-poi-investigation");
 
         public static PEGANpcActionEffectKind FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PEGANpcActionEffectKind(stableText.Trim());
@@ -364,6 +366,18 @@ namespace PEGA.NPC
         bool TryUpdateExecutionTarget(
             PEGANpcPlanSnapshot currentPlan,
             PEGANpcPlanSnapshot updatedPlan,
+            out string diagnostic);
+    }
+
+    /// <summary>Validates a confirmed Effect before it is reused as a causal checkpoint on a later GOAP evaluation.</summary>
+    public interface IPEGANpcObservedEffectCheckpointValidator
+    {
+        bool CanPreserveObservedEffect(IGoapEffect effect);
+
+        bool IsObservedEffectCheckpointValid(
+            IGoapEffect effect,
+            IGoapKnowledgeStateView knowledgeState,
+            Vector3 actorPosition,
             out string diagnostic);
     }
 

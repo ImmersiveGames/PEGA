@@ -126,7 +126,9 @@ namespace PEGA.NPC
 
                 PEGANpcDesireDefinition desire = configuration.Definition;
                 satisfaction.TryGet(desire.DesireId, out PEGANpcDesireSatisfactionSnapshot currentSatisfaction);
-                bool applicable = configuration.IsApplicable(currentSatisfaction);
+                bool applicable = configuration.IsApplicable(
+                    currentSatisfaction,
+                    input.CausalKnowledge != null ? input.CausalKnowledge.KnowledgeState : null);
                 float effectiveWeight = applicable
                     ? configuration.EvaluateEffectiveWeight(currentSatisfaction)
                     : 0f;

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Serialization;
+using ImmersiveGames.Goap;
 
 namespace PEGA.NPC
 {
@@ -12,6 +13,10 @@ namespace PEGA.NPC
         [FormerlySerializedAs("definition")]
         [Tooltip("Shared Desire Definition that names the motivation and describes when its Goal is fulfilled. Editing the definition affects every Setting that references it.")]
         private PEGANpcDesireDefinition desireDefinition;
+
+        [SerializeField]
+        [Tooltip("Optional condition over this Actor's authorized Knowledge State. Unknown or false makes the Desire inapplicable; Goal satisfaction remains independent.")]
+        private PEGANpcGoapConditionAsset applicabilityCondition;
 
         [SerializeField]
         [Tooltip("Turn this off to exclude this Desire from the Profile context that uses this Setting.")]
@@ -41,6 +46,8 @@ namespace PEGA.NPC
 
         public PEGANpcDesireDefinition Definition => desireDefinition;
 
+        public PEGANpcGoapConditionAsset ApplicabilityCondition => applicabilityCondition;
+
         public bool EnabledForContext => enabledForContext;
 
         public float BaseWeight => baseWeight;
@@ -53,15 +60,31 @@ namespace PEGA.NPC
 
         public int MaximumCompletedExecutions => completionLimit;
 
-        public bool IsApplicable(PEGANpcDesireSatisfactionSnapshot satisfaction)
+        public bool IsApplicable(PEGANpcDesireSatisfactionSnapshot satisfaction) =>
+            IsApplicable(satisfaction, null);
+
+        public bool IsApplicable(
+            PEGANpcDesireSatisfactionSnapshot satisfaction,
+            IGoapStateView knownState)
         {
             if (!enabledForContext)
             {
                 return false;
             }
 
-            return completionLimit < 0 ||
-                   satisfaction.CompletedExecutions < completionLimit;
+            if (completionLimit >= 0 && satisfaction.CompletedExecutions >= completionLimit)
+            {
+                return false;
+            }
+
+            if (applicabilityCondition == null)
+            {
+                return true;
+            }
+
+            return knownState != null &&
+                   knownState.Source == GoapStateSource.KnowledgeState &&
+                   applicabilityCondition.Evaluate(knownState) == GoapTruthValue.True;
         }
 
         public float EvaluateEffectiveWeight(PEGANpcDesireSatisfactionSnapshot satisfaction)
@@ -90,6 +113,12 @@ namespace PEGA.NPC
             if (!desireDefinition.TryValidate(out diagnostic))
             {
                 diagnostic = $"Definition: {diagnostic}";
+                return false;
+            }
+
+            if (applicabilityCondition != null && !applicabilityCondition.TryValidate(out diagnostic))
+            {
+                diagnostic = $"Desire '{desireDefinition.DesireId}' applicability condition: {diagnostic}";
                 return false;
             }
 

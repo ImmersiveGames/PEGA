@@ -228,7 +228,8 @@ namespace PEGA.NPC
 
         internal PEGANpcCausalPlanningKnowledge(
             IGoapKnowledgeStateView knowledgeState,
-            IReadOnlyList<PEGANpcPlanningTarget> knownTargets)
+            IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
+            IReadOnlyList<IGoapEffect> observedCheckpoints = null)
         {
             if (knowledgeState == null || knowledgeState.Source != GoapStateSource.KnowledgeState)
             {
@@ -243,7 +244,9 @@ namespace PEGA.NPC
             }
 
             KnowledgeState = knowledgeState;
-            InitialState = new GoapHypotheticalState(KnowledgeState);
+            InitialState = new GoapHypotheticalState(
+                KnowledgeState,
+                observedCheckpoints ?? Array.Empty<IGoapEffect>());
 
             PEGANpcGoapKnownTarget[] targets = new PEGANpcGoapKnownTarget[knownTargets.Count];
             for (int index = 0; index < knownTargets.Count; index++)

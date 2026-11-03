@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: add1ef004d2b4c10afde7d813f8a3119, type: 3}
-  m_Name: Demo_SecondGroupKnownPoi
+  m_Name: Demo_SecondGroupActivityExit
   m_EditorClassIdentifier:
   definition: {fileID: 11400000, guid: 82ce9e2cc7214e0e93a8f2a453b6f12e, type: 2}
+  applicabilityCondition: {fileID: 11400000, guid: bb4de2c0063d4120a91a1cf8125716e8, type: 2}
   enabledForContext: 1
   baseWeight: 24
   satisfactionGain: 1
   maximumSatisfaction: 1
   satisfactionWeightModifier: 0
-  maximumCompletedExecutions: -1
+  maximumCompletedExecutions: 1

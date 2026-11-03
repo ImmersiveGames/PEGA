@@ -105,6 +105,16 @@ namespace PEGA.NPC
             return availableBehaviors[index];
         }
 
+        internal long AllocateActionExecutionId()
+        {
+            if (_nextActionExecutionId == long.MaxValue)
+            {
+                throw new InvalidOperationException("This NPC exhausted its monotonic Action execution identity range.");
+            }
+
+            return ++_nextActionExecutionId;
+        }
+
         public bool TryGetActionExecution(
             PEGANpcPlanningActionId actionId,
             out PEGANpcActionExecutionSnapshot execution)
@@ -192,6 +202,13 @@ namespace PEGA.NPC
         private long _activeActionRequestId;
 
         [System.NonSerialized]
+        private long _nextActionExecutionId;
+
+        [System.NonSerialized]
+        private readonly List<ObservedEffectCheckpoint> _observedEffectCheckpoints =
+            new List<ObservedEffectCheckpoint>();
+
+        [System.NonSerialized]
         private PEGANpcPlanSelectionResult _latestSelection;
 
         [System.NonSerialized]
@@ -258,6 +275,18 @@ namespace PEGA.NPC
                 ActorId == other.ActorId &&
                 Math.Abs(ObservationTimeSeconds - other.ObservationTimeSeconds) <= 0.000001d;
 
+        }
+
+        private readonly struct ObservedEffectCheckpoint
+        {
+            public ObservedEffectCheckpoint(PEGANpcPlanningActionId actionId, IGoapEffect effect)
+            {
+                ActionId = actionId;
+                Effect = effect;
+            }
+
+            public PEGANpcPlanningActionId ActionId { get; }
+            public IGoapEffect Effect { get; }
         }
 
         [System.Flags]
@@ -1467,6 +1496,7 @@ namespace PEGA.NPC
             }
 
             candidates = Array.AsReadOnly(actionCandidates.ToArray());
+            IReadOnlyList<IGoapEffect> observedCheckpoints = GetCurrentObservedCheckpoints();
             PEGANpcPlanningInput input = new PEGANpcPlanningInput(
                 PEGANpcPlanningValidationMode.LiveKnowledge,
                 PEGANpcDesireContext.Normal,
@@ -1476,7 +1506,8 @@ namespace PEGA.NPC
                     ? _activePlanContinuation
                     : (PEGANpcPlanContinuation?)null,
                 _goapKnowledgeStateView,
-                causalSearchCandidateEvaluationBudget);
+                causalSearchCandidateEvaluationBudget,
+                observedCheckpoints);
             selection = PEGANpcPlanSelector.Select(
                 input,
                 _normalContext,
@@ -1505,6 +1536,69 @@ namespace PEGA.NPC
 
             targets.Add(candidate);
             return true;
+        }
+
+        private IReadOnlyList<IGoapEffect> GetCurrentObservedCheckpoints()
+        {
+            List<IGoapEffect> valid = new List<IGoapEffect>(_observedEffectCheckpoints.Count);
+            for (int index = _observedEffectCheckpoints.Count - 1; index >= 0; index--)
+            {
+                ObservedEffectCheckpoint checkpoint = _observedEffectCheckpoints[index];
+                IPEGANpcActionProvider provider = GetAction(checkpoint.ActionId);
+                if (!(provider is IPEGANpcObservedEffectCheckpointValidator validator) ||
+                    !validator.IsObservedEffectCheckpointValid(
+                        checkpoint.Effect,
+                        _goapKnowledgeStateView,
+                        transform.position,
+                        out _))
+                {
+                    _observedEffectCheckpoints.RemoveAt(index);
+                    continue;
+                }
+
+                valid.Add(checkpoint.Effect);
+            }
+
+            valid.Reverse();
+            return Array.AsReadOnly(valid.ToArray());
+        }
+
+        private void PreserveConfirmedCheckpoints(
+            IPEGANpcActionProvider provider,
+            IReadOnlyList<IGoapEffect> observedEffects)
+        {
+            if (!(provider is IPEGANpcObservedEffectCheckpointValidator validator) || observedEffects == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < observedEffects.Count; index++)
+            {
+                IGoapEffect effect = observedEffects[index];
+                if (!validator.CanPreserveObservedEffect(effect) ||
+                    !validator.IsObservedEffectCheckpointValid(
+                        effect,
+                        _goapKnowledgeStateView,
+                        transform.position,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (effect is PEGANpcTargetReachedEffect reached)
+                {
+                    for (int existingIndex = _observedEffectCheckpoints.Count - 1; existingIndex >= 0; existingIndex--)
+                    {
+                        if (_observedEffectCheckpoints[existingIndex].Effect is PEGANpcTargetReachedEffect existing &&
+                            existing.TargetId == reached.TargetId)
+                        {
+                            _observedEffectCheckpoints.RemoveAt(existingIndex);
+                        }
+                    }
+                }
+
+                _observedEffectCheckpoints.Add(new ObservedEffectCheckpoint(provider.Contract.ActionId, effect));
+            }
         }
 
         private void HandleNoSelectedPlan(
@@ -2012,6 +2106,7 @@ namespace PEGA.NPC
                 }
                 else
                 {
+                    PreserveConfirmedCheckpoints(sourceAction, observedCausalEffects);
                     GoapObservedStateView observedState = new GoapObservedStateView(
                         _goapKnowledgeStateView,
                         observedCausalEffects);
@@ -2321,7 +2416,7 @@ namespace PEGA.NPC
                     string.Equals(definition.DesireId, desireId, StringComparison.Ordinal))
                 {
                     satisfaction.TryGet(desireId, out PEGANpcDesireSatisfactionSnapshot current);
-                    return configuration.IsApplicable(current);
+                    return configuration.IsApplicable(current, _goapKnowledgeStateView);
                 }
             }
 

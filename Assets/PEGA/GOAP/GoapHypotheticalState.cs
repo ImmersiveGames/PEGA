@@ -11,6 +11,8 @@ namespace ImmersiveGames.Goap
     {
         IGoapKnowledgeStateView KnowledgeState { get; }
 
+        IReadOnlyList<IGoapEffect> ObservedEffects { get; }
+
         IReadOnlyList<IGoapEffect> ProjectedEffects { get; }
     }
 
@@ -21,15 +23,24 @@ namespace ImmersiveGames.Goap
     public sealed class GoapHypotheticalState : IGoapHypotheticalStateView
     {
         private readonly IGoapKnowledgeStateView _knowledgeState;
+        private readonly IReadOnlyList<IGoapEffect> _observedEffects;
         private readonly IReadOnlyList<IGoapEffect> _projectedEffects;
 
         public GoapHypotheticalState(IGoapKnowledgeStateView knowledgeState)
-            : this(knowledgeState, new List<IGoapEffect>())
+            : this(knowledgeState, Array.Empty<IGoapEffect>(), Array.Empty<IGoapEffect>())
+        {
+        }
+
+        public GoapHypotheticalState(
+            IGoapKnowledgeStateView knowledgeState,
+            IEnumerable<IGoapEffect> observedEffects)
+            : this(knowledgeState, observedEffects, Array.Empty<IGoapEffect>())
         {
         }
 
         private GoapHypotheticalState(
             IGoapKnowledgeStateView knowledgeState,
+            IEnumerable<IGoapEffect> observedEffects,
             IEnumerable<IGoapEffect> projectedEffects)
         {
             GoapConditionEvaluation.ValidateState(knowledgeState);
@@ -41,12 +52,15 @@ namespace ImmersiveGames.Goap
             }
 
             _knowledgeState = knowledgeState;
+            _observedEffects = CopyEffects(observedEffects);
             _projectedEffects = CopyEffects(projectedEffects);
         }
 
         public GoapStateSource Source => GoapStateSource.HypotheticalState;
 
         public IGoapKnowledgeStateView KnowledgeState => _knowledgeState;
+
+        public IReadOnlyList<IGoapEffect> ObservedEffects => _observedEffects;
 
         public IReadOnlyList<IGoapEffect> ProjectedEffects => _projectedEffects;
 
@@ -80,7 +94,7 @@ namespace ImmersiveGames.Goap
                 projectedEffects.Add(action.Effects[index]);
             }
 
-            return new GoapHypotheticalState(_knowledgeState, projectedEffects);
+            return new GoapHypotheticalState(_knowledgeState, _observedEffects, projectedEffects);
         }
 
         private static IReadOnlyList<IGoapEffect> CopyEffects(IEnumerable<IGoapEffect> effects)
@@ -94,7 +108,7 @@ namespace ImmersiveGames.Goap
             foreach (IGoapEffect effect in effects)
             {
                 copy.Add(effect ?? throw new ArgumentException(
-                    "Projected effects cannot contain null declarations.",
+                    "GOAP Effects cannot contain null declarations.",
                     nameof(effects)));
             }
 

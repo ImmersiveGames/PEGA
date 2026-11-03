@@ -12,10 +12,11 @@ using UnityEngine.Serialization;
 namespace PEGA.NPC
 {
     // Cada Action concreta é uma definição compartilhada; PEGANpcAutonomy cria um clone runtime por Actor.
-    public abstract class PEGANpcNavigationAction : PEGANpcActionDefinitionAsset,
+    public abstract class PEGANpcActionProviderAsset : PEGANpcActionDefinitionAsset,
         IPEGANpcActionProvider,
         IPEGANpcExecutionTargetUpdater,
-        IPEGANpcCausalActionStepEvaluator
+        IPEGANpcCausalActionStepEvaluator,
+        IPEGANpcObservedEffectCheckpointValidator
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Actions";
 
@@ -25,7 +26,8 @@ namespace PEGA.NPC
         private float arrivalToleranceMeters = 1.25f;
 
         private ScopedLogger _log;
-        private long _requestId;
+        private long _executionId;
+        private long _navigationRequestId;
         private bool _hasNavigationSnapshot;
         private PEGANpcNavigationSnapshot _navigationSnapshot;
         private bool _hasEffectTarget;
@@ -58,7 +60,7 @@ namespace PEGA.NPC
                 bool effectObserved = TryGetObservedEffect(out _);
                 return new PEGANpcActionExecutionSnapshot(
                     Outcome,
-                    _requestId,
+                    _executionId,
                     DeclaredEffect,
                     effectObserved,
                     _diagnostic);
@@ -119,23 +121,28 @@ namespace PEGA.NPC
         public bool TryGetObservedEffect(out PEGANpcObservedActionEffect observedEffect)
         {
             observedEffect = default;
-            if (Outcome != PEGANpcActionOutcome.Success || !_hasNavigationSnapshot)
+            if (Outcome != PEGANpcActionOutcome.Success ||
+                (Contract.RequiresNavigation && !_hasNavigationSnapshot))
             {
                 return false;
             }
 
             PEGANpcActionEffectDeclaration declaration = DeclaredEffect;
-            float actualDistance = _navigationSnapshot.ActualDistanceToTargetMeters;
+            float actualDistance = Contract.RequiresNavigation
+                ? _navigationSnapshot.ActualDistanceToTargetMeters
+                : GetPlanarDistance(ActorTransform.position, declaration.TargetPosition);
             if (!declaration.Kind.IsValid ||
                 !declaration.IsTargetResolved ||
                 !declaration.TargetId.IsValid ||
                 !declaration.TargetKind.IsValid ||
-                _navigationSnapshot.RequestId <= 0 ||
+                _executionId <= 0 ||
                 !IsFinite(declaration.TargetPosition) ||
                 !IsNonNegativeFinite(declaration.TargetRadiusMeters) ||
                 !IsNonNegativeFinite(actualDistance) ||
                 actualDistance > declaration.TargetRadiusMeters ||
-                (_navigationSnapshot.TargetPosition - declaration.TargetPosition).sqrMagnitude > 0.000001f ||
+                (Contract.RequiresNavigation &&
+                 (_navigationSnapshot.RequestId != _navigationRequestId ||
+                  (_navigationSnapshot.TargetPosition - declaration.TargetPosition).sqrMagnitude > 0.000001f)) ||
                 !IsActionSpecificEffectObserved(out _))
             {
                 return false;
@@ -145,15 +152,15 @@ namespace PEGA.NPC
                 declaration.Kind,
                 declaration.TargetId,
                 declaration.TargetKind,
-                _navigationSnapshot.RequestId,
-                _navigationSnapshot.TargetPosition,
+                _executionId,
+                declaration.TargetPosition,
                 declaration.TargetRadiusMeters,
                 actualDistance,
                 _completedAtTimeSeconds);
             return true;
         }
 
-        public float IntrinsicDurationSeconds => 0f;
+        public virtual float IntrinsicDurationSeconds => 0f;
 
         public abstract bool TryCreatePlanningCandidates(
             PEGANpcActionPlanningContext context,
@@ -455,6 +462,49 @@ namespace PEGA.NPC
             return delta.magnitude <= effect.TargetRadiusMeters;
         }
 
+        public bool CanPreserveObservedEffect(IGoapEffect effect) =>
+            effect is PEGANpcTargetReachedEffect reached &&
+            reached.TargetKind == Contract.TargetKind &&
+            reached.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
+            reached.TargetId.ObjectEntryId.IsValid &&
+            reached.KnowledgeGroupId.IsValid &&
+            reached.HasTargetPosition;
+
+        public bool IsObservedEffectCheckpointValid(
+            IGoapEffect effect,
+            IGoapKnowledgeStateView knowledgeState,
+            Vector3 actorPosition,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!(effect is PEGANpcTargetReachedEffect reached) ||
+                !CanPreserveObservedEffect(effect) ||
+                !PEGAPoiGroupKnowledge.TryGetReader(knowledgeState, out PEGAActorGroupKnowledgeReader reader))
+            {
+                diagnostic = "The checkpoint is not a Group-known logical Object Entry arrival or the Group reader is unavailable.";
+                return false;
+            }
+
+            PEGAActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
+                reached.KnowledgeGroupId,
+                PEGAObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
+                Time.timeAsDouble);
+            Vector3 delta = actorPosition - reached.TargetPosition;
+            delta.y = 0f;
+            if (!position.IsAuthorized || position.Fact.Scope != PEGAKnowledgeScope.Group ||
+                !position.Fact.TryGetValue(out Vector3 knownPosition) ||
+                !position.Fact.HasObservationTime ||
+                !knownPosition.Equals(reached.TargetPosition) ||
+                Math.Abs(position.Fact.ObservationTimeSeconds - reached.EvidenceTimeSeconds) > 0.000001d ||
+                delta.magnitude > arrivalToleranceMeters)
+            {
+                diagnostic = "The Group membership, known position evidence or Actor's physical arrival checkpoint is no longer current.";
+                return false;
+            }
+
+            return true;
+        }
+
         public bool IsTargetPositionWithinTolerance(Vector3 left, Vector3 right)
         {
             float toleranceMeters = DeclaredEffect.TargetRadiusMeters;
@@ -474,8 +524,8 @@ namespace PEGA.NPC
             out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (Outcome != PEGANpcActionOutcome.Running || _requestId <= 0 ||
-                !_hasNavigationSnapshot || _navigationSnapshot.RequestId != _requestId ||
+            if (Outcome != PEGANpcActionOutcome.Running || _navigationRequestId <= 0 ||
+                !_hasNavigationSnapshot || _navigationSnapshot.RequestId != _navigationRequestId ||
                 currentPlan.ActionId != Contract.ActionId || updatedPlan.ActionId != Contract.ActionId ||
                 currentPlan.DesireId != updatedPlan.DesireId ||
                 currentPlan.Purpose != updatedPlan.Purpose ||
@@ -496,7 +546,7 @@ namespace PEGA.NPC
 
             if (NavigationSource == null || !NavigationSource.IsReady ||
                 !NavigationSource.TryUpdateNavigationTarget(
-                    _requestId,
+                    _navigationRequestId,
                     updatedPlan.TargetPosition,
                     arrivalToleranceMeters,
                     out diagnostic))
@@ -516,7 +566,8 @@ namespace PEGA.NPC
                 "NPC navigation Action updated the destination of its current execution request.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", ActorRoot.name),
-                LogFields.Field("requestId", _requestId),
+                LogFields.Field("requestId", _executionId),
+                LogFields.Field("navigationRequestId", _navigationRequestId),
                 LogFields.Field("previousTargetPosition", currentPlan.TargetPosition),
                 LogFields.Field("updatedTargetPosition", updatedPlan.TargetPosition));
             return true;
@@ -585,10 +636,87 @@ namespace PEGA.NPC
 
         protected virtual bool IsExpectedPreconditionInvalidation() => false;
 
+        protected virtual void TickNonNavigationAction()
+        {
+        }
+
+        protected long CurrentExecutionId => _executionId;
+
+        protected bool TryStartStationaryAction(
+            PEGANpcPlanningTargetId targetId,
+            Vector3 targetPosition,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (Contract.RequiresNavigation)
+            {
+                diagnostic = "A stationary Action cannot start through a navigation-required contract.";
+                return false;
+            }
+
+            if (Outcome == PEGANpcActionOutcome.Running)
+            {
+                diagnostic = "This Action already owns an active execution.";
+                return false;
+            }
+
+            ResetExecution();
+            _executionId = RuntimeContext.Autonomy.AllocateActionExecutionId();
+            _effectTargetId = targetId;
+            _effectTarget = targetPosition;
+            _hasEffectTarget = targetId.IsValid && IsFinite(targetPosition);
+            if (!IsRuntimeActive || !_hasEffectTarget || !IsNonNegativeFinite(arrivalToleranceMeters))
+            {
+                diagnostic = "The stationary Action requires an active runtime, valid known Target and finite arrival radius.";
+                CompleteWithoutNavigation(PEGANpcActionOutcome.Invalid, targetPosition, diagnostic);
+                return false;
+            }
+
+            float distance = GetPlanarDistance(ActorTransform.position, targetPosition);
+            if (!IsNonNegativeFinite(distance) || distance > arrivalToleranceMeters)
+            {
+                diagnostic = "The Actor must physically be within the configured POI radius before this Action starts.";
+                CompleteWithoutNavigation(PEGANpcActionOutcome.Invalid, targetPosition, diagnostic);
+                return false;
+            }
+
+            Outcome = PEGANpcActionOutcome.Running;
+            _diagnostic = string.Empty;
+            _log.Debug(
+                "NPC non-navigation Action started.",
+                LogFields.Field("action", GetType().Name),
+                LogFields.Field("actorRoot", ActorRoot.name),
+                LogFields.Field("requestId", _executionId),
+                LogFields.Field("arrivalRadiusMeters", arrivalToleranceMeters),
+                LogFields.Field("declaredEffect", ActionEffectKind),
+                LogFields.Field("targetX", targetPosition.x),
+                LogFields.Field("targetY", targetPosition.y),
+                LogFields.Field("targetZ", targetPosition.z));
+            return true;
+        }
+
+        protected void CompleteAction(
+            PEGANpcActionOutcome outcome,
+            string diagnostic,
+            bool expectedPreconditionInvalidation = false)
+        {
+            if (Contract.RequiresNavigation)
+            {
+                throw new InvalidOperationException("CompleteAction is only valid for a non-navigation Action contract.");
+            }
+
+            Complete(
+                outcome,
+                diagnostic,
+                PEGANpcNavigationOutcome.Invalid,
+                expectedPreconditionInvalidation);
+        }
+
         protected override bool OnRuntimeInitialize(out string diagnostic)
         {
             EnsureLoggerInitialized();
-            if (NavigationSource == null || NavigationSource.gameObject != ActorRoot)
+            if (Contract.RequiresNavigation &&
+                (NavigationSource == null || NavigationSource.gameObject != ActorRoot))
             {
                 diagnostic = "The navigation Action requires the Actor's NavMesh movement source.";
                 return false;
@@ -647,11 +775,13 @@ namespace PEGA.NPC
                 targetPosition,
                 speedRegime,
                 arrivalToleranceMeters,
-                out _requestId,
+                out _navigationRequestId,
                 out diagnostic);
 
-            if (_requestId > 0 && NavigationSource.TryGetSnapshot(
-                    _requestId,
+            _executionId = RuntimeContext.Autonomy.AllocateActionExecutionId();
+
+            if (_navigationRequestId > 0 && NavigationSource.TryGetSnapshot(
+                    _navigationRequestId,
                     out _navigationSnapshot))
             {
                 _hasNavigationSnapshot = true;
@@ -659,7 +789,7 @@ namespace PEGA.NPC
 
             if (!started)
             {
-                if (_requestId <= 0)
+                if (_navigationRequestId <= 0)
                 {
                     CompleteWithoutNavigation(
                         PEGANpcActionOutcome.Invalid,
@@ -685,7 +815,8 @@ namespace PEGA.NPC
                 "NPC navigation Action started.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", ActorRoot.name),
-                LogFields.Field("requestId", _requestId),
+                LogFields.Field("requestId", _executionId),
+                LogFields.Field("navigationRequestId", _navigationRequestId),
                 LogFields.Field("intrinsicDurationSeconds", IntrinsicDurationSeconds),
                 LogFields.Field("arrivalRadiusMeters", arrivalToleranceMeters),
                 LogFields.Field("speedRegime", speedRegime),
@@ -735,8 +866,14 @@ namespace PEGA.NPC
                 return;
             }
 
+            if (!Contract.RequiresNavigation)
+            {
+                TickNonNavigationAction();
+                return;
+            }
+
             if (NavigationSource == null || !NavigationSource.IsReady || !NavigationSource.TryGetSnapshot(
-                    _requestId,
+                    _navigationRequestId,
                     out _navigationSnapshot))
             {
                 Complete(
@@ -823,9 +960,9 @@ namespace PEGA.NPC
         {
             _diagnostic = diagnostic ?? string.Empty;
             _completedAtTimeSeconds = Time.timeAsDouble;
-            if (NavigationSource != null && _requestId > 0)
+            if (NavigationSource != null && _navigationRequestId > 0)
             {
-                NavigationSource.FinishRequest(_requestId, navigationOutcome, _diagnostic);
+                NavigationSource.FinishRequest(_navigationRequestId, navigationOutcome, _diagnostic);
             }
 
             Outcome = outcome;
@@ -833,14 +970,16 @@ namespace PEGA.NPC
             if (outcome == PEGANpcActionOutcome.Invalid && !expectedPreconditionInvalidation)
             {
                 _log.Warning(
-                    "NPC navigation Action failed before reaching its target.",
+                    Contract.RequiresNavigation
+                        ? "NPC navigation Action failed before reaching its target."
+                        : "NPC non-navigation Action failed before confirming its Effect.",
                     LogFields.Field("actorRoot", ActorRoot.name),
                     LogFields.Field("action", GetType().Name),
                     LogFields.Field("diagnostic", result.Diagnostic));
             }
 
             _log.Debug(
-                "NPC navigation Action finished.",
+                "NPC Action finished.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", ActorRoot.name),
                 LogFields.Field("requestId", result.RequestId),
@@ -881,7 +1020,7 @@ namespace PEGA.NPC
             Outcome = outcome;
             PEGANpcActionEffectDeclaration declaredEffect = DeclaredEffect;
             _log.Error(
-                "NPC navigation Action could not start.",
+                "NPC Action could not start.",
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", ActorRoot.name),
                 LogFields.Field("result", outcome),
@@ -937,13 +1076,14 @@ namespace PEGA.NPC
                 return;
             }
 
-            _log = PEGALogging.CreateScopedLogger<PEGANpcNavigationAction>(LogCategory, ActorRoot.name);
+            _log = PEGALogging.CreateScopedLogger<PEGANpcActionProviderAsset>(LogCategory, ActorRoot.name);
             _loggerInitialized = true;
         }
 
         private void ResetExecution()
         {
-            _requestId = 0;
+            _executionId = 0;
+            _navigationRequestId = 0;
             _hasNavigationSnapshot = false;
             _navigationSnapshot = default;
             _hasEffectTarget = false;
@@ -956,6 +1096,13 @@ namespace PEGA.NPC
 
         private static bool IsFinite(Vector3 value) =>
             IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static float GetPlanarDistance(Vector3 left, Vector3 right)
+        {
+            Vector3 delta = left - right;
+            delta.y = 0f;
+            return delta.magnitude;
+        }
 
         private static bool IsFinite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);

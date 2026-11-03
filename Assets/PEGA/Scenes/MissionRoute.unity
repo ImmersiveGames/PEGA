@@ -2904,6 +2904,9 @@ Transform:
   - {fileID: 5400000171}
   - {fileID: 5400000181}
   - {fileID: 5400000211}
+  - {fileID: 5400000221}
+  - {fileID: 5400000231}
+  - {fileID: 5400000241}
   m_Father: {fileID: 1691138843}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5400000002
@@ -2917,7 +2920,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
   m_Name:
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_SerializedVersion: 0
   m_AgentTypeID: 0
   m_CollectObjects: 0
@@ -3488,64 +3491,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5400000201
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5400000150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
-  objectEntryId: pega.warehouse.storage-rack-west-north
-  requiredness: 20
---- !u!114 &5400000202
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5400000150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
---- !u!114 &5400000203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5400000150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding
---- !u!114 &5400000204
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5400000150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c34500b211aa49be8f7a206f27f81517, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Diagnostics.PEGAObjectEntryAuthoringProbe
-  identityOnly:
-    objectEntryIdText: pega.warehouse.storage-rack-west-north
-  identityWithOptionalOwner:
-    objectEntryIdText: pega.warehouse.storage-rack-west-north
-    ownerSelectorKind: 10
-    routeOwner: {fileID: 11400000, guid: 9e000000000000000000000000000001, type: 2}
-    activityOwner: {fileID: 0}
-  occurrenceQueryBinding: {fileID: 5400000203}
 --- !u!1 &5400000160
 GameObject:
   m_ObjectHideFlags: 0
@@ -4008,6 +3953,64 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5400000201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.warehouse.storage-rack-west-north
+  requiredness: 20
+--- !u!114 &5400000202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+--- !u!114 &5400000203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding
+--- !u!114 &5400000204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34500b211aa49be8f7a206f27f81517, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Diagnostics.PEGAObjectEntryAuthoringProbe
+  identityOnly:
+    objectEntryIdText: pega.warehouse.storage-rack-west-north
+  identityWithOptionalOwner:
+    objectEntryIdText: pega.warehouse.storage-rack-west-north
+    ownerSelectorKind: 10
+    routeOwner: {fileID: 11400000, guid: 9e000000000000000000000000000001, type: 2}
+    activityOwner: {fileID: 0}
+  occurrenceQueryBinding: {fileID: 5400000203}
 --- !u!1 &5400000210
 GameObject:
   m_ObjectHideFlags: 0
@@ -4062,6 +4065,183 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5400000210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+--- !u!1 &5400000220
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5400000221}
+  - component: {fileID: 5400000222}
+  - component: {fileID: 5400000223}
+  m_Layer: 6
+  m_Name: Second Group Investigation POI West
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5400000221
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000220}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -20, y: 0, z: -40}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5400000001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5400000222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.warehouse.second-group-investigation-poi-west
+  requiredness: 20
+--- !u!114 &5400000223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+--- !u!1 &5400000230
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5400000231}
+  - component: {fileID: 5400000232}
+  - component: {fileID: 5400000233}
+  m_Layer: 6
+  m_Name: Second Group Investigation POI South
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5400000231
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000230}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 30, y: 0, z: -20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5400000001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5400000232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.warehouse.second-group-investigation-poi-south
+  requiredness: 20
+--- !u!114 &5400000233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+--- !u!1 &5400000240
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5400000241}
+  - component: {fileID: 5400000242}
+  - component: {fileID: 5400000243}
+  m_Layer: 6
+  m_Name: Second Group Activity Exit POI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5400000241
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000240}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 36, y: 0, z: 36}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5400000001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5400000242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.warehouse.activity-exit-poi
+  requiredness: 20
+--- !u!114 &5400000243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5400000240}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}

@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c529b8f67ac4b4ab41ae2046ca529c2, type: 3}
-  m_Name: ReachSecondGroupDemoPoi
+  m_Name: InvestigateSecondGroupRequiredPois
   m_EditorClassIdentifier:
-  desireId: n91-demo-second-group-known-poi-position-n01
-  displayName: Chegar à posição conhecida do POI do Second Group
-  desiredGoalCondition: {fileID: 11400000, guid: 3bf4f7bb06af4438a37d75f1f68da425, type: 2}
+  desireId: n91-second-group-investigate-required-pois-n01
+  displayName: Investigar POIs obrigatórios pendentes do Second Group
+  desiredGoalCondition: {fileID: 11400000, guid: d45e19a98b2f455fb75f8a6f0d779201, type: 2}

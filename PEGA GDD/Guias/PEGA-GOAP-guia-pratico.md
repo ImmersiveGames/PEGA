@@ -6,21 +6,24 @@ Este guia ajuda Game Designers e testadores a configurar NPCs com os assets que 
 
 ## 1. Como pensar em um NPC GOAP
 
-Pense no NPC como alguém que combina três coisas:
+Pense no NPC como alguém que combina motivação, conhecimento e capacidades. Mantenha estes conceitos separados:
 
-- **Desejos:** o que ele tenta alcançar, por exemplo manter distância de um personagem.
+- **Desire:** a motivação e seu peso relativo. Sua aplicabilidade pode depender do Knowledge atual.
+- **Goal:** a condição de estado cuja satisfação representa o resultado desejado.
+- **Intenção:** o Desire que venceu a seleção no contexto atual.
+- **Plano:** a cadeia causal de Actions e Targets que pode satisfazer o Goal escolhido.
 - **Conhecimento:** o que ele percebeu ou sabe. O NPC só pode escolher alvos que estejam disponíveis para ele.
 - **Comportamentos disponíveis:** o que ele sabe fazer, como aproximar-se de um personagem conhecido ou investigar uma presença.
 
-O GOAP procura um comportamento que possa aproximar o NPC de um desejo, usando o conhecimento disponível. Marcar um comportamento em **Available Behaviors** não obriga o NPC a executá-lo; o desejo, o conhecimento e a viabilidade do comportamento também precisam combinar.
+O GOAP compara Desires aplicáveis e planos causais viáveis com os Targets conhecidos. Uma Action pode preparar o estado necessário a outra; após resultados observados, o GOAP reavalia, continua ou reconstrói/substitui o plano conforme validade, custo restante e estabilidade. Isso não fixa uma lista de destinos. Effects projetados durante a busca são hipóteses; Effects observados são evidências e só são reutilizados enquanto suas condições de validade forem verdadeiras.
 
 ## 2. Os elementos de autoria
 
 | Nome no Unity | Para que serve | O que pode ser editado hoje |
 |---|---|---|
 | **Desire** (definição) | Dá nome a uma motivação e aponta para a condição que a considera atendida. | `Desire Id`, `Display Name` e `Desired Goal Condition`. |
-| **Goal Condition** | Diz que resultado conta como atingir aquele desejo. | Os assets atuais verificam a chegada a um tipo conhecido de destino. |
-| **Desire Settings** | Ajusta como um Desire participa do Profile e do contexto. | `Desire Definition`, `Enabled For Context`, `Base Weight`, controles de satisfação e `Completion Limit`. |
+| **Goal Condition** | Diz que resultado conta como satisfazer o Goal daquele Desire. | Existem condições de chegada e condições tipadas para investigações/saída do Second Group. |
+| **Desire Settings** | Ajusta elegibilidade, peso e satisfação do Desire no contexto. | `Desire Definition`, `Applicability Condition` opcional, `Enabled For Context`, `Base Weight`, controles de satisfação e `Completion Limit`. |
 | **Desire Profile** | Reúne Desire Settings por contexto e define como comparar o peso dos Desires com o tempo estimado dos planos. | `Contexts`; em cada contexto, `Context`, `Plan Comparison`, `Plan Time Reference Seconds`, `Weight And Time Balance` e `Desire Settings`. |
 | **Available Behaviors** | Lista os comportamentos que o NPC pode considerar. | Uma lista de assets de comportamento no componente **Autonomy** do NPC. |
 
@@ -38,19 +41,21 @@ Os nomes `Desire Definition`, `Desire Settings` e `Desire Profiles` também apar
 - Prefab base: [`Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab`](../../Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab)
 - Cena com três larápios e dois Actor Groups: [`Assets/PEGA/Scenes/MissionActivityContent.unity`](../../Assets/PEGA/Scenes/MissionActivityContent.unity)
 
-O caminho geral é: uma definição de **Desire** aponta para uma **Goal Condition**; um asset **Desire Settings** escolhe essa definição e ajusta seus valores; um **Desire Profile** referencia essas configurações; e o componente **Autonomy** do NPC recebe o Profile e sua lista de **Available Behaviors**. O Profile não contém cópias isoladas das configurações: se o mesmo asset Desire Settings for usado em mais de um Profile, editar esse asset afeta todos eles.
+O caminho geral é: uma definição de **Desire** aponta para uma **Goal Condition**; um asset **Desire Settings** escolhe essa definição, pode fornecer uma condição de aplicabilidade e ajusta seus valores; um **Desire Profile** referencia essas configurações; e o componente **Autonomy** do NPC recebe o Profile e sua lista de **Available Behaviors**. Aplicabilidade, satisfação do Goal e disponibilidade de plano são avaliações distintas. O Profile não contém cópias isoladas das configurações: se o mesmo asset Desire Settings for usado em mais de um Profile, editar esse asset afeta todos eles.
 
 ## 3. Os recursos incluídos no projeto
 
 ### Desejos e condições
 
-Os três assets de Desire disponíveis são:
+Os assets de Desire incluem os exemplos gerais e os dois Desires da demonstração Second Group:
 
 - [`PursueRick.asset`](../../Assets/PEGA/NPC/Desires/PursueRick.asset) — perseguir Rick reconhecido; usa `CharacterPositionReached`.
 - [`MaintainSafeDistance.asset`](../../Assets/PEGA/NPC/Desires/MaintainSafeDistance.asset) — manter distância segura; usa `SafeSeparationReached`.
 - [`InvestigatePresence.asset`](../../Assets/PEGA/NPC/Desires/InvestigatePresence.asset) — investigar presença percebida; usa `InvestigationPositionReached`.
+- [`InvestigateSecondGroupRequiredPois.asset`](../../Assets/PEGA/NPC/Desires/InvestigateSecondGroupRequiredPois.asset) — investigar POIs obrigatórios ainda pendentes no Second Group.
+- [`ReachSecondGroupActivityExit.asset`](../../Assets/PEGA/NPC/Desires/ReachSecondGroupActivityExit.asset) — alcançar a saída depois que as investigações obrigatórias forem concluídas.
 
-As três condições correspondentes estão na pasta `Goals/Conditions`. Elas são variações da condição atual **Target Reached Goal Condition**, configuradas para diferentes tipos de destino. O asset `CharacterPositionReached.asset` também exige contato visual atual quando o resultado é observado.
+As condições correspondentes estão na pasta `Goals/Conditions`. As condições de investigação e de saída consultam fatos válidos do Group autorizado e Effects observados; conhecer uma posição, por si só, não satisfaz chegada ou investigação.
 
 ### Comportamentos disponíveis
 
@@ -60,8 +65,10 @@ O prefab base contém estes quatro assets:
 - [`MoveAwayFromCharacter.asset`](../../Assets/PEGA/NPC/Actions/Definitions/MoveAwayFromCharacter.asset) — afastar-se de personagem conhecido.
 - [`SearchLastKnownPosition.asset`](../../Assets/PEGA/NPC/Actions/Definitions/SearchLastKnownPosition.asset) — procurar na última posição conhecida.
 - [`InvestigateDetectedPresence.asset`](../../Assets/PEGA/NPC/Actions/Definitions/InvestigateDetectedPresence.asset) — investigar presença detectada.
+- [`NavigateToKnownGroupObjectEntryPosition.asset`](../../Assets/PEGA/NPC/Actions/Definitions/NavigateToKnownGroupObjectEntryPosition.asset) — navegar a uma posição tipada de POI conhecida pelo Group, usando a avaliação e execução de rota existentes.
+- [`InvestigateKnownGroupPoi.asset`](../../Assets/PEGA/NPC/Actions/Definitions/InvestigateKnownGroupPoi.asset) — permanecer no POI conhecido, confirmar a investigação e publicar o fato de conclusão no Group Knowledge.
 
-O comportamento de fuga por uma saída conhecida foi removido junto com a integração de conhecimento específica de Spawn Points. Essa capacidade permanece pendente de reconstrução sobre os contratos aprovados de Knowledge.
+O demonstrador usa a Action de navegação para alcançar a saída após as investigações. Isso não inicia uma transição para `ResultActivity` nem implementa, por si só, o fluxo de Fuga Final do GDD.
 
 As Actions de aproximação e afastamento exigem dois fatos Individuais obtidos por Perception: `IsPlayer == true` e uma última posição observada válida. O `ActorId` endereça esses fatos, mas não comprova sozinho que o alvo é Player. A fonte só publica `IsPlayer` após contato visual com uma ocorrência vinculada a Player Slot; presença radial mantém o fato desconhecido e pode sustentar a investigação local. Ao perder contato, a última posição continua disponível. A continuação é aberta somente quando o plano selecionado pertence à Action de aproximação; a readquisição visual ou a reavaliação após o intervalo configurado devolve a escolha aos planos normais do GOAP.
 
@@ -91,7 +98,7 @@ Também é possível criar assets pelos menus da janela **Project**: botão dire
 
 ## 5. Os três larápios demonstrativos
 
-Os três objetos na cena são instâncias do mesmo prefab base e usam a mesma lista de comportamentos. Os dois larápios originais permanecem no primeiro Actor Group e conservam seus Profiles distintos. O terceiro tem identidade própria, usa o Profile `Demo_PursuitFocus` como o primeiro demonstrador e pertence a um segundo Actor Group com `GroupProfile` próprio.
+Os três objetos na cena são instâncias do mesmo prefab base. Os dois larápios originais permanecem no primeiro Actor Group e conservam seus Profiles distintos. `Larapio NPC - Second Group Demo` tem identidade e `GroupProfile` próprios e usa o Profile `Demo_SecondGroupInvestigationAndExit`.
 
 ### `Larapio NPC - Pursuit Demo` — foco em perseguição
 
@@ -101,11 +108,21 @@ Usa `Demo_PursuitFocus`. No contexto `Normal`, seus Desire Settings dão peso-ba
 
 Usa `Demo_SelfPreservationFocus`. No mesmo contexto, dá peso-base **4** a `MaintainSafeDistance` e **0,5** a `PursueRick` e `InvestigatePresence`.
 
-Os assets Desire Settings estão em `Desires/Settings`; os dois Profiles estão em `Desires/Profiles`. Ambos usam `Normal` e têm `Plan Time Reference Seconds` igual a **10 segundos**. O terceiro larápio reutiliza o Profile de perseguição do primeiro, sem alterar os comportamentos dos dois originais.
+Os Profiles estão em `Desires/Profiles`; seus Desire Settings estão em `Desires/Settings`. Os dois Profiles anteriores usam `Normal` e `Plan Time Reference Seconds` igual a **10 segundos**. A demonstração Second Group também usa `Normal`, a mesma referência de **10 segundos** e uma política multiplicativa normal.
 
 Esses pesos favorecem uma motivação, mas não são uma prioridade absoluta. O GOAP também considera o tempo estimado dos planos e quais comportamentos e alvos são viáveis com o conhecimento atual. A ordem das linhas em `Desire Settings` não força a primeira motivação a vencer. Um plano bem mais curto pode vencer outro cujo Desire tenha peso maior.
 
-Nos Profiles demonstrativos, `Weight Reduction From Satisfaction` é **0** e `Completion Limit` é **-1** (sem limite). O histórico de satisfação, portanto, não reduz os pesos nem desativa esses Desires nesses exemplos.
+Nos Profiles de perseguição e autopreservação, `Weight Reduction From Satisfaction` é **0** e `Completion Limit` é **-1** (sem limite). No Profile Second Group, a redução por satisfação também é **0**; investigar pode repetir enquanto houver POI pendente, e o Desire de saída limita a conclusão a uma execução. O histórico de satisfação não altera os pesos destes Profiles.
+
+### `Larapio NPC - Second Group Demo` — investigar POIs e alcançar a saída
+
+Na cena `MissionActivityContent`, este NPC é membro do Group `pega.mission.actor-group.second` (Group Profile [`PEGAMissionSecondActorGroupProfile.asset`](../../Assets/PEGA/NPC/ActorGroups/Profiles/PEGAMissionSecondActorGroupProfile.asset)). O Profile de Desire contém `InvestigateSecondGroupRequiredPois` e `ReachSecondGroupActivityExit`, ambos com peso-base **24**. O primeiro só é aplicável enquanto existir investigação obrigatória pendente; o segundo só fica aplicável quando todas as investigações obrigatórias têm conclusão conhecida. O Goal de saída exige também a chegada observada à saída.
+
+Sua lista `Available Behaviors` conserva os quatro comportamentos-base e acrescenta `NavigateToKnownGroupObjectEntryPosition` e `InvestigateKnownGroupPoi`. O Group inicia com fatos tipados de posição, investigação obrigatória e conclusão pendente para três `ObjectEntryId`s; a saída tem posição e o fato de papel `pega.poi.activity-exit`. O override de `Global Knowledge State` do NPC está vazio; a authority Global da Activity usada pelos demonstradores anteriores não é composta nesta vista GOAP.
+
+A Action de investigação tem pausa configurada de **2 segundos** e raio de chegada de **1,25 m**. A posição chega ao planner pelo Group Knowledge e a navegação reutiliza o provider normal de rota. Para cada POI pendente, o GOAP avalia a cadeia causal navegação → chegada válida → investigação; a comparação usa a rota real estimada mais a duração da investigação. Com os pesos iguais, os custos disponíveis influenciam a escolha. Depois de cada investigação confirmada, a conclusão é lida de volta no Group Knowledge e o GOAP reavalia a partir da posição atual. Não há ordem de waypoints configurada. Quando não resta POI obrigatório pendente, o Desire de saída pode competir normalmente e seu Goal só se satisfaz depois da chegada confirmada.
+
+**Evidência de Play Mode:** o responsável reportou que os três POIs foram investigados, a saída foi alcançada e os Goals correspondentes foram satisfeitos; os logs do Unity corroboraram o resultado. Encontros ocasionais com o Player e as reavaliações associadas foram aceitos para este escopo. O Codex não executou Unity nem inspecionou os arquivos brutos dos logs, que não estão anexados ao repositório.
 
 ## 6. Experimentar combinações
 
@@ -150,10 +167,9 @@ Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conf
 ## 8. Limitações atuais
 
 - O contexto disponível é somente `Normal`. Um Profile não adiciona contextos novos apenas por ser editado no Inspector.
-- A autoria de condições está limitada às quatro configurações existentes de **Target Reached Goal Condition**. É possível criar outra instância desse tipo, mas não definir por assets uma condição com significado diferente.
-- As motivações configuráveis são os quatro Desires listados neste guia. Um novo tipo de condição ou comportamento exige trabalho técnico; não basta criar outro Profile.
-- Os cinco comportamentos são opções, não comandos. Se o NPC não tem o conhecimento necessário, se não há um alvo válido ou se nenhuma combinação atende ao Desire, ele pode não iniciar um deles.
-- A integração anterior de fuga por saída conhecida foi removida e ainda não foi reconstruída. A Fuga Final descrita no GDD também não deve ser considerada disponível só porque seus requisitos estão documentados.
+- A autoria de condições ainda depende de tipos de condição implementados em código. O demonstrador acrescenta condições tipadas para atividade de investigação, conclusão coletiva e chegada à saída; criar uma semântica arbitrária só com assets continua fora da superfície atual.
+- Desires e Actions são combináveis por Profile e `Available Behaviors`, mas um novo tipo de condição ou Action exige trabalho técnico. O GOAP decide entre candidaturas conhecidas e viáveis; esses campos não comandam uma sequência.
+- A navegação conhecida do Second Group inclui o POI de saída nesta demonstração. Ela não transiciona a Activity para `ResultActivity` nem demonstra a Fuga Final completa do GDD.
 - Desire Definitions, Desire Settings, Profiles, condições e comportamentos são assets compartilháveis. O Profile apenas referencia os Desire Settings; se um mesmo asset for usado por mais de um Profile, editá-lo altera a configuração em todos eles. Uma Desire Definition compartilhada dá significado à motivação e aponta para sua condição; uma mudança nela afeta todos os Settings que a referenciam. Os Assets de comportamento também são compartilhados, enquanto `Available Behaviors` define quais deles aquele NPC pode usar. Para um experimento isolado, faça cópias do Profile e dos Settings que pretende mudar; atribua a cópia ao NPC de teste.
 - O histórico de satisfação dos NPCs é runtime e não é salvo como uma configuração do Profile. Reiniciar o Play Mode inicia outro teste.
 
@@ -175,20 +191,31 @@ Para adicionar uma propriedade canônica, o programador declara sua definição 
 
 Na configuração de demonstração da `Mission`, o primeiro NPC também começa com `pega.actor.last-observed-character-position` para o Actor do Player resolvido pelo `ActorOccurrenceReferenceBinding`, com valor `(100, 0, 100)`. Perception escreve a mesma definição para o mesmo `ActorId` quando observa esse Actor; a origem `DesignerAuthoredInitial` permanece distinta da origem `Perception` e ambas passam pela política canônica. O usuário reportou essa equivalência de identidade/propriedade validada no Unity.
 
-**Global Knowledge** tem uma autoridade PEGA compartilhada no contexto da Activity da Mission. A mesma capability de leitura tipada é composta explicitamente nas vistas de Knowledge GOAP dos três NPCs e fica disponível sem membership. A disponibilidade do fato não obriga o planner a escolhê-lo nem executa Actions; ainda não há produtor de gameplay para o fato demonstrador `MainObjectiveIdentified`. Fatos Globais não são cópias nos stores Individuais.
+**Global Knowledge** tem uma autoridade PEGA compartilhada no contexto da Activity da Mission. A capability é composta nos dois NPCs demonstradores originais; `Larapio NPC - Second Group Demo` deixa `Global Knowledge State` sem referência. A disponibilidade de fatos Global nos outros NPCs não obriga o planner a escolhê-los nem executa Actions; ainda não há produtor de gameplay para o fato demonstrador `MainObjectiveIdentified`. Fatos Globais não são cópias nos stores Individuais.
 
 **Group Knowledge** é opcional e usa stores independentes por `GroupId` do Framework. O componente `PEGAActorGroupKnowledgeState` acompanha o owner PEGA que compõe os Groups; sua ausência não impede criar ou usar Actor Groups. `PEGAActorGroupKnowledgeReader` só devolve conteúdo quando o Framework confirma que o Group está vivo e o Actor possui membership vigente. Uma consulta negada retorna `NotMember` separadamente de um fato ausente e não expõe valor ou proveniência. Sair do Group revoga a leitura; o encerramento do owner limpa os stores. Os três leitores da Mission apontam para a autoridade, mas cada leitura continua limitada à membership do Group solicitado.
 
-Na cena `Mission`, o componente `PEGAActorGroupKnowledgeState` da composição autoriza um fato inicial para o `PEGAGangGroupProfile` (`pega.gang.larapios`), depois da criação real do Group pelo owner. O componente Global da Activity autoriza outro fato para a mesma propriedade e identidade. Ambos usam `pega.object-entry.position` e `pega.warehouse.storage-rack-west-north`; o valor Group é `(-5, 1, 15.700001)` e o Global é `(200, 0, 200)`. A leitura Group continua limitada à membership vigente, e nenhum dos valores é copiado para o Knowledge Individual ou para o outro store.
+Em uma etapa anterior de prova de autoria, `pega.object-entry.position` para `pega.warehouse.storage-rack-west-north` foi configurado no Group e no Global com valores distintos (`(-5, 1, 15.700001)` e `(200, 0, 200)`). A configuração final da demonstração substituiu o fato inicial do Second Group por posições dos três POIs de investigação e da saída; o fato Global antigo do rack permanece em sua authority. O `Second Group Demo` não compõe essa authority Global, e nenhum fato Global contém as posições dos POIs demonstrativos.
 
-Para observar os dados durante a execução, abra **PEGA > Diagnostics > GOAP Runtime Inspector**, selecione um NPC da `Mission` e abra a aba **Conhecimento**. A seção Individual mostra os fatos do NPC; Global mostra a autoridade da Activity quando composta; Group lista as authorities pertinentes, seu `GroupId`, membership confirmada ou negada e fatos somente quando a leitura está autorizada. Compare um dos dois NPCs do Group `pega.gang.larapios` com o NPC do `pega.mission.actor-group.second`: o membro autorizado pode ler o fato da Gangue, enquanto o membro do outro Group não recebe seu valor ou proveniência. Ambos podem ler o fato Global `(200, 0, 200)`. Ative **Exibir fonte e payload de cada evidência** para inspecionar origem e payload.
+Para observar os dados durante a execução, abra **PEGA > Diagnostics > GOAP Runtime Inspector**, selecione um NPC da `Mission` e abra a aba **Conhecimento**. A seção Individual mostra os fatos do NPC; Global mostra a authority da Activity apenas quando composta; Group lista as authorities pertinentes, seu `GroupId`, membership confirmada ou negada e fatos somente quando a leitura está autorizada. Compare os membros de Groups distintos: o membro autorizado pode ler seu fato Group, enquanto outro Group não recebe seu valor ou proveniência. Os demonstradores originais também podem ler o fato Global `(200, 0, 200)`; a vista do `Second Group Demo` não compõe essa authority. Ative **Exibir fonte e payload de cada evidência** para inspecionar origem e payload.
 
-O Inspector é somente leitura: ausência de fato, fato desconhecido/inválido, autoridade indisponível e acesso negado permanecem estados distintos; a aba não consulta World State nem cria fatos. A autoria inicial e a leitura dos três escopos foram validadas manualmente no Unity pelo usuário em 2026-11-03. Isso não integra esses fatos a Actions, Desires ou decisões do planner. Permanecem pendentes condições GOAP declarativas, sensores de Object Entry, produtores de eventos reais e uso de posições conhecidas para Targets/navegação.
+O Inspector é somente leitura: ausência de fato, fato desconhecido/inválido, authority indisponível e acesso negado permanecem estados distintos; a aba não consulta World State nem cria fatos. No Second Group Demo, Targets, aplicabilidade, Preconditions e condições dos Goals consultam Group Knowledge autorizado; os fatos de posição são autoria prévia do Group, não leitura da Transform nem resolução da ocorrência física. A Action de investigação registra `pega.poi.investigation-completed` no mesmo Group somente após a pausa contínua, validação local, escrita aceita e leitura de volta da evidência.
 
 ### Evidências e validação
 
 - **Global Knowledge — Unity manual: PASS, relatado pelo usuário.** `PEGAGlobalKnowledgeProofWindow` registra e atualiza um fato Global, compara valor, status, escopo, timestamp e proveniência nas vistas GOAP de NPCs em Groups distintos e numa vista independente; também confirma que o Knowledge Individual permanece separado.
 - **Group Knowledge — Unity manual: PASS, relatado pelo usuário.** `PEGAGroupKnowledgeProofWindow` verifica os dois membros do primeiro Group, o membro do segundo, fatos separados, leituras cruzadas negadas e redigidas, revogação/restauração via Leave/Join, acesso Global preservado e independência Individual. Não executa Actions nem decisões do planner.
 - **Autoria inicial e diagnóstico — Unity manual: validado pelo usuário em 2026-11-03.** A cena configura o mesmo fato Object Entry nos escopos Group e Global com valores diferentes; o Runtime Inspector mostra identidade, propriedade, valor, evidência e controle de acesso conforme a membership.
+- **Investigar POIs e sair — Play Mode: validado visualmente pelo responsável e corroborado pelos logs do Unity.** Foram reportadas a investigação dos três POIs, chegada à saída e satisfação dos respectivos Goals. Encontros ocasionais com o Player e as reavaliações decorrentes foram aceitos no escopo atual. O Codex não executou Unity nem inspecionou os logs brutos; nenhum artefato da execução foi anexado a este guia.
 - **Individual Knowledge:** implementação e execução anterior são registradas no contexto deste ADR. Esta etapa não repetiu uma prova comportamental Individual; as provas Global/Group atuais verificam que esse estado continua independente.
-- O Codex não executou as provas. O PASS foi informado pelo usuário; não há log ou captura de Unity anexado a este registro.
+- As provas de Knowledge e o resultado completo do demonstrador são relatos do responsável; este guia não declara validação independente do Codex em Unity.
+
+## 10. Configurar ou adaptar conjuntos de POIs
+
+Para reproduzir a demonstração, abra `MissionActivityContent` com o startup de rota `FrameworkStartup` e mantenha, no `Larapio NPC - Second Group Demo`, o Group Profile `PEGAMissionSecondActorGroupProfile`, o Desire Profile `Demo_SecondGroupInvestigationAndExit` e as seis Actions disponíveis. Confirme que sua membership efetiva pertence ao `pega.mission.actor-group.second` e que o campo `Global Knowledge State` está vazio.
+
+Na Route, cada POI precisa de uma identidade `ObjectEntryId` própria declarada por `ObjectEntryDeclaration` do Immersive Framework. Na autoria inicial do Knowledge do Second Group, configure por identidade os fatos tipados `pega.object-entry.position`, `pega.poi.investigation-required = true` e `pega.poi.investigation-completed = false` para cada POI de investigação. Para a saída, configure `pega.object-entry.position` e `pega.poi.activity-exit = true`. A configuração existente usa os POIs `pega.warehouse.second-group-demo-poi`, `pega.warehouse.second-group-investigation-poi-west`, `pega.warehouse.second-group-investigation-poi-south` e `pega.warehouse.activity-exit-poi`.
+
+Para adaptar o conjunto, altere as declarações e fatos Group e mantenha as Actions/Goal Conditions vinculadas ao mesmo Group Profile. Marque como investigação obrigatória apenas os POIs que participam do critério coletivo; cada posição deve ser caminhável pela NavMesh. A Action `InvestigateKnownGroupPoi` expõe a duração configurável em segundos e raio de chegada; ela só publica conclusão após cumprir a pausa sem interrupção, revalidar as Preconditions, obter escrita Group aceita sob membership vigente e ler de volta o fato com a evidência da execução. Os Desires devem manter condições de aplicabilidade apropriadas: investigações pendentes para o Desire de investigação e todas as obrigatórias concluídas para o Desire de saída.
+
+A ordem não é configurada. A Action de navegação estima rota e custo em cada posição; a Action de investigação acrescenta sua duração. Após o resultado observado e a atualização de Knowledge, o GOAP recalcula alternativas a partir do estado e posição atuais. Não ordene os fatos por preferência de visita e não injete destinos diretamente no sistema de movimento.

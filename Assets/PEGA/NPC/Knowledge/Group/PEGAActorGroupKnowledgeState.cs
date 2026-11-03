@@ -286,6 +286,35 @@ namespace PEGA.NPC
             return PEGAActorGroupKnowledgeAccessStatus.Authorized;
         }
 
+        /// <summary>Records a typed Group fact only after the Framework confirms the Actor's current membership.</summary>
+        public PEGAActorGroupKnowledgeAccessStatus ObserveFactForActor<TAddress, TValue>(
+            ActorId actorId,
+            GroupId groupId,
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            TValue value,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult writeResult)
+        {
+            writeResult = PEGAKnowledgeWriteResult.RejectedInvalid;
+            PEGAActorGroupKnowledgeAccessStatus access = TryGetAuthorizedStore(
+                actorId,
+                groupId,
+                out PEGAKnowledgeFactStore factStore);
+            if (access != PEGAActorGroupKnowledgeAccessStatus.Authorized)
+            {
+                return access;
+            }
+
+            if (!key.IsValid || !evidence.IsValid)
+            {
+                return PEGAActorGroupKnowledgeAccessStatus.Authorized;
+            }
+
+            writeResult = factStore.Observe(key, value, evidence);
+            LogWrite(groupId, key, writeResult, evidence);
+            return PEGAActorGroupKnowledgeAccessStatus.Authorized;
+        }
+
         /// <summary>Invalidates a typed fact in a live Group owned by this exact content owner.</summary>
         public PEGAActorGroupKnowledgeAccessStatus InvalidateFact<TAddress, TValue>(
             GroupId groupId,

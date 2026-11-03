@@ -483,7 +483,7 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText: pega.warehouse.storage-rack-west-north
+          objectEntryIdText: pega.warehouse.second-group-demo-poi
         stringValue:
         integerValue: 0
         longValue: 0
@@ -506,12 +506,45 @@ MonoBehaviour:
         floatValue: 0
         doubleValue: 0
         boolValue: 0
-        vector3Value: {x: -5, y: 1, z: 15.700001}
+        vector3Value: {x: 0, y: 0, z: 10}
         perceivedAreaPresenceValue:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-    - definitionId: pega.object-entry.position
+    - definitionId: pega.poi.investigation-required
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-demo-poi
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 1
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -539,7 +572,271 @@ MonoBehaviour:
         floatValue: 0
         doubleValue: 0
         boolValue: 0
-        vector3Value: {x: 0, y: 0, z: 10}
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.object-entry.position
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: -20, y: 0, z: -40}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.investigation-required
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 1
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.investigation-completed
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.object-entry.position
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 30, y: 0, z: -20}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.investigation-required
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 1
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.investigation-completed
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.object-entry.position
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.activity-exit-poi
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 36, y: 0, z: 36}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+    - definitionId: pega.poi.activity-exit
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.warehouse.activity-exit-poi
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText:
+        stringValue:
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 1
+        vector3Value: {x: 0, y: 0, z: 0}
         perceivedAreaPresenceValue:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
@@ -569,24 +866,28 @@ PrefabInstance:
       value:
       objectReference: {fileID: 11400000, guid: 3f30b72cbf6b4955a93f886140bc7ea1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: availableBehaviors.Array.size
-      value: 5
+      propertyPath: globalKnowledgeState
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: availableBehaviors.Array.data[4]
+      propertyPath: availableBehaviors.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[4]'
       value:
       objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
-      propertyPath: globalKnowledgeState
+      propertyPath: 'availableBehaviors.Array.data[5]'
       value:
-      objectReference: {fileID: 3500000003}
+      objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'groupProfiles.Array.data[0]'
       value:
       objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 29.6
+      value: 24.5
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -594,7 +895,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7.9
+      value: 16.2
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -622,6 +923,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.size
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

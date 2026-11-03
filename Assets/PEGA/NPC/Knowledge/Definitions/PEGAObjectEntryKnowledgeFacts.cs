@@ -21,6 +21,33 @@ namespace PEGA.NPC
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 
+        [Preserve]
+        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationRequired =
+            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+                "pega.poi.investigation-required",
+                "POI investigation required",
+                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: true);
+
+        [Preserve]
+        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationCompleted =
+            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+                "pega.poi.investigation-completed",
+                "POI investigation completed",
+                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: true);
+
+        [Preserve]
+        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> ActivityExit =
+            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+                "pega.poi.activity-exit",
+                "Activity exit POI",
+                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: true);
+
         private static bool AreExactlyEqual(Vector3 left, Vector3 right) =>
             left.x == right.x && left.y == right.y && left.z == right.z;
 

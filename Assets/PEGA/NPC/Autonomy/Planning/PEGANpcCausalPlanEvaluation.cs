@@ -263,7 +263,7 @@ namespace PEGA.NPC
                 PEGANpcDesireConfiguration configuration = activeContext.Configurations[desireIndex];
                 PEGANpcDesireDefinition desire = configuration.Definition;
                 satisfaction.TryGet(desire.DesireId, out PEGANpcDesireSatisfactionSnapshot currentSatisfaction);
-                if (!configuration.IsApplicable(currentSatisfaction) ||
+                if (!configuration.IsApplicable(currentSatisfaction, input.CausalKnowledge.KnowledgeState) ||
                     !IsContinuationOwner(input, desire))
                 {
                     continue;

@@ -10,7 +10,7 @@ using UnityEngine;
 namespace PEGA.NPC
 {
     [CreateAssetMenu(fileName = "ApproachKnownCharacter", menuName = "PEGA/NPC/Movement/Approach Known Character")]
-    public sealed class PEGANpcApproachKnownCharacterAction : PEGANpcNavigationAction,
+    public sealed class PEGANpcApproachKnownCharacterAction : PEGANpcActionProviderAsset,
         IPEGANpcLastKnownTargetContinuationProvider,
         IPEGANpcKnowledgeChangeRelevanceProvider
     {

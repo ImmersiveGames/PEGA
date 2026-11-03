@@ -684,7 +684,8 @@ namespace PEGA.NPC
             IReadOnlyList<PEGANpcPlanningActionCandidate> actionCandidates,
             PEGANpcPlanContinuation? planContinuation = null,
             IGoapKnowledgeStateView knowledgeState = null,
-            int causalSearchCandidateEvaluationBudget = 128)
+            int causalSearchCandidateEvaluationBudget = 128,
+            IReadOnlyList<IGoapEffect> observedCheckpoints = null)
         {
             ValidationMode = validationMode;
             Context = context;
@@ -699,7 +700,8 @@ namespace PEGA.NPC
             {
                 CausalKnowledge = new PEGANpcCausalPlanningKnowledge(
                     knowledgeState,
-                    KnownTargets);
+                    KnownTargets,
+                    observedCheckpoints);
             }
         }
 

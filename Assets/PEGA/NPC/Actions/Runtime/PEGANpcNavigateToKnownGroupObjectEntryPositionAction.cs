@@ -11,7 +11,7 @@ namespace PEGA.NPC
     [CreateAssetMenu(
         fileName = "NavigateToKnownGroupObjectEntryPosition",
         menuName = "PEGA/NPC/Movement/Navigate To Known Group Object Entry Position")]
-    public sealed class PEGANpcNavigateToKnownGroupObjectEntryPositionAction : PEGANpcNavigationAction
+    public sealed class PEGANpcNavigateToKnownGroupObjectEntryPositionAction : PEGANpcActionProviderAsset
     {
         private PEGAActorGroupKnowledgeReader _groupKnowledgeReader;
         private PEGANpcPlanSnapshot _executionPlan;

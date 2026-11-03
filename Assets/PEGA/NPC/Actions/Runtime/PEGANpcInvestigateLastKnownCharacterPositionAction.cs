@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 namespace PEGA.NPC
 {
     [CreateAssetMenu(fileName = "SearchLastKnownPosition", menuName = "PEGA/NPC/Investigation/Search Last Known Position")]
-    public sealed class PEGANpcInvestigateLastKnownCharacterPositionAction : PEGANpcNavigationAction,
+    public sealed class PEGANpcInvestigateLastKnownCharacterPositionAction : PEGANpcActionProviderAsset,
         IPEGANpcKnowledgeChangeRelevanceProvider,
         IPEGANpcAttemptedTargetProvider
     {

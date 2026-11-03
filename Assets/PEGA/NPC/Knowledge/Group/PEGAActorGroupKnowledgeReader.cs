@@ -155,6 +155,64 @@ namespace PEGA.NPC
                     : PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable);
         }
 
+        /// <summary>Submits a fact to the unique owning Group authority, which checks this Actor's current membership.</summary>
+        public PEGAActorGroupKnowledgeAccessStatus SubmitGroupFact<TAddress, TValue>(
+            GroupId groupId,
+            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            TValue value,
+            PEGAKnowledgeEvidence evidence,
+            out PEGAKnowledgeWriteResult writeResult)
+        {
+            writeResult = PEGAKnowledgeWriteResult.RejectedInvalid;
+            if (!groupId.IsValid || !key.IsValid || !evidence.IsValid)
+            {
+                return PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+            }
+
+            ActorDeclaration actor = GetComponent<ActorDeclaration>();
+            if (!TryReadActorId(actor, out ActorId actorId))
+            {
+                return PEGAActorGroupKnowledgeAccessStatus.InvalidActor;
+            }
+
+            if (authorityStates == null || authorityStates.Length == 0)
+            {
+                return PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+            }
+
+            PEGAActorGroupKnowledgeState selectedOwner = null;
+            var visited = new HashSet<PEGAActorGroupKnowledgeState>();
+            for (int index = 0; index < authorityStates.Length; index++)
+            {
+                PEGAActorGroupKnowledgeState authority = authorityStates[index];
+                if (authority == null || !authority.isActiveAndEnabled || !visited.Add(authority) ||
+                    !authority.HasRegisteredGroup(groupId))
+                {
+                    continue;
+                }
+
+                if (selectedOwner != null)
+                {
+                    return PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority;
+                }
+
+                selectedOwner = authority;
+            }
+
+            if (selectedOwner == null)
+            {
+                return PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable;
+            }
+
+            return selectedOwner.ObserveFactForActor(
+                actorId,
+                groupId,
+                key,
+                value,
+                evidence,
+                out writeResult);
+        }
+
         /// <summary>
         /// Enumera fatos tipados somente de Groups retornados pela consulta de membership efetiva do Framework.
         /// Cada resultado preserva o GroupId proprietário; authorities conflitantes falham como ambíguas.

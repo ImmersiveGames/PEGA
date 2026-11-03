@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 namespace PEGA.NPC
 {
     [CreateAssetMenu(fileName = "MoveAwayFromCharacter", menuName = "PEGA/NPC/Movement/Move Away from Character")]
-    public sealed class PEGANpcAvoidKnownCharacterAction : PEGANpcNavigationAction,
+    public sealed class PEGANpcAvoidKnownCharacterAction : PEGANpcActionProviderAsset,
         IPEGANpcKnowledgeChangeRelevanceProvider
     {
         private const float MinimumSeparationMeters = 0.1f;
