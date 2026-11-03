@@ -10,11 +10,11 @@
       "hash": "481f5e01a26f158118ff475230910944aba676ef"
     },
     "com.immersive.composition": {
-      "version": "https://github.com/ImmersiveGames/com.immersive.composition.git",
-      "depth": 0,
-      "source": "git",
+      "version": "0.1.0-preview.3",
+      "depth": 1,
+      "source": "registry",
       "dependencies": {},
-      "hash": "ef577765d0b565a020f3e98f6e5eaae681333c29"
+      "url": "https://package.openupm.com"
     },
     "com.immersive.foundation": {
       "version": "https://github.com/ImmersiveGames/com.immersive.foundation.git",
@@ -24,17 +24,16 @@
       "hash": "86b5e17d69ffa72b302f323628ec494362702f42"
     },
     "com.immersive.framework": {
-      "version": "https://github.com/ImmersiveGames/com.immersive.framework.git",
+      "version": "file:C:/Projetos/ImmersivePackages/com.immersive.framework",
       "depth": 0,
-      "source": "git",
+      "source": "local",
       "dependencies": {
         "com.immersive.composition": "0.1.0-preview.3",
         "com.immersive.foundation": "0.2.3",
         "com.immersive.logging": "0.2.4",
         "com.unity.cinemachine": "3.1.7",
         "com.unity.inputsystem": "1.19.0"
-      },
-      "hash": "7baf6a336ea98aa6558d06e401791c4015e4181e"
+      }
     },
     "com.immersive.logging": {
       "version": "https://github.com/ImmersiveGames/com.immersive.logging.git",

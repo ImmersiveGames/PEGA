@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Immersive.Framework.Actors;
 using ImmersiveGames.Goap;
 using PEGA.NPC;
 using UnityEditor;
@@ -34,8 +33,7 @@ namespace PEGA.Diagnostics.Editor
         private bool _showPlanDetails;
         private bool _showCausalDetails;
         private bool _showActionDetails;
-        private bool _showKnowledgeMetadata;
-        private bool _showGangTargetDetails;
+        private bool _showKnowledgeEvidenceDetails;
 
         [MenuItem("PEGA/Diagnostics/GOAP Runtime Inspector")]
         private static void OpenWindow()
@@ -155,7 +153,6 @@ namespace PEGA.Diagnostics.Editor
                     break;
                 case 3:
                     DrawKnowledge(view);
-                    DrawGangKnowledge(view);
                     break;
                 case 4:
                     DrawHistory();
@@ -588,102 +585,204 @@ namespace PEGA.Diagnostics.Editor
 
         private void DrawKnowledge(RuntimeView view)
         {
-            EditorGUILayout.LabelField("Knowledge State individual", EditorStyles.largeLabel);
+            EditorGUILayout.LabelField("Conhecimento disponível ao NPC", EditorStyles.largeLabel);
             if (view.KnowledgeState == null)
             {
                 EditorGUILayout.HelpBox("PEGANpcKnowledgeState indisponível no NPC resolvido.", MessageType.Warning);
                 return;
             }
 
-            if (!view.KnowledgeReady)
+            PEGAKnowledgeRuntimeInspectorSnapshot snapshot =
+                PEGAKnowledgeRuntimeInspectorSnapshotReader.Read(view.Autonomy, view.KnowledgeState);
+            EditorGUILayout.LabelField(
+                $"Consulta em t={snapshot.QueryTimeSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)} s",
+                EditorStyles.miniLabel);
+            _showKnowledgeEvidenceDetails = EditorGUILayout.ToggleLeft(
+                "Exibir fonte e payload de cada evidência",
+                _showKnowledgeEvidenceDetails);
+
+            if (snapshot.HasReadableAuthority && !snapshot.HasRegisteredFacts && !snapshot.HasEnumerationIssues)
             {
-                EditorGUILayout.HelpBox("O armazenamento do Knowledge State não está inicializado; nenhuma consulta foi feita para evitar inicialização pelo Inspector.", MessageType.Info);
-                return;
+                EditorGUILayout.HelpBox(
+                    "Nenhuma chave de fato está registrada nas authorities legíveis neste momento. O Inspector não consulta World State nem cria fatos para completar a lista.",
+                    MessageType.Info);
             }
 
-            _showKnowledgeMetadata = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos", _showKnowledgeMetadata);
-            DrawKnowledgeFact(
-                "Presença na área percebida",
-                view.KnowledgeState.GetPerceivedAreaPresence(),
-                FormatAreaPresence,
-                _showKnowledgeMetadata,
-                true);
-            if (view.KnownActors.Count == 0)
+            DrawKnowledgeFactSection(
+                "Individual · authority do NPC",
+                snapshot.IndividualAvailable,
+                snapshot.IndividualAuthorityStatus,
+                snapshot.IndividualFacts);
+
+            EditorGUILayout.LabelField("Group · authorities coletivas", EditorStyles.largeLabel);
+            EditorGUILayout.LabelField(snapshot.GroupReaderStatus, EditorStyles.miniLabel);
+            if (snapshot.Groups.Count == 0)
             {
-                EditorGUILayout.LabelField("Nenhum Actor consta no índice atual de sujeitos conhecidos.");
-                return;
+                EditorGUILayout.HelpBox(
+                    "Nenhum Group com store de Knowledge foi encontrado nas authorities configuradas para este NPC.",
+                    MessageType.Info);
             }
 
-            for (int i = 0; i < view.KnownActors.Count; i++)
+            for (int index = 0; index < snapshot.Groups.Count; index++)
             {
-                ActorId actorId = view.KnownActors[i];
+                PEGAKnowledgeRuntimeInspectorGroup group = snapshot.Groups[index];
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField($"Sujeito conhecido {i + 1}", EditorStyles.boldLabel);
-                if (_showKnowledgeMetadata)
+                EditorGUILayout.LabelField(
+                    string.IsNullOrWhiteSpace(group.DisplayName) ? group.GroupId.StableText : group.DisplayName,
+                    EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("GroupId", group.GroupId.StableText);
+                EditorGUILayout.LabelField("Acesso", FormatGroupAccess(group.AccessStatus));
+                if (group.IsCurrentMember.HasValue)
                 {
-                    EditorGUILayout.LabelField("ActorId", actorId.StableText, EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(
+                        "Membership vigente",
+                        group.IsCurrentMember.Value ? "confirmada · leitura autorizada" : "não confirmada · leitura negada");
                 }
 
-                DrawKnowledgeFact(
-                    "Identidade de personagem",
-                    view.KnowledgeState.GetObservedCharacterIdentity(actorId),
-                    FormatProfileId,
-                    _showKnowledgeMetadata,
-                    _showKnowledgeMetadata);
-                DrawKnowledgeFact(
-                    "Contato visual",
-                    view.KnowledgeState.GetCharacterVisualContact(actorId),
-                    value => value ? "sim" : "não",
-                    _showKnowledgeMetadata,
-                    true);
-                DrawKnowledgeFact(
-                    "Última posição observada",
-                    view.KnowledgeState.GetLastObservedCharacterPosition(actorId),
-                    value => value.ToString("F2"),
-                    _showKnowledgeMetadata,
-                    true);
+                if (!group.CanRead)
+                {
+                    EditorGUILayout.HelpBox(
+                        string.IsNullOrWhiteSpace(group.Diagnostic)
+                            ? "Acesso negado ou authority indisponível; os fatos deste Group foram ocultados."
+                            : group.Diagnostic,
+                        group.AccessStatus == PEGAActorGroupKnowledgeAccessStatus.NotMember
+                            ? MessageType.Info
+                            : MessageType.Warning);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField(group.Diagnostic, EditorStyles.miniLabel);
+                    DrawKnowledgeFacts(group.Facts);
+                }
+
                 EditorGUILayout.EndVertical();
             }
+
+            DrawKnowledgeFactSection(
+                "Global · authority da Activity",
+                snapshot.GlobalAvailable,
+                snapshot.GlobalAuthorityStatus,
+                snapshot.GlobalFacts);
         }
 
-        private void DrawGangKnowledge(RuntimeView view)
+        private void DrawKnowledgeFactSection(
+            string title,
+            bool available,
+            string authorityStatus,
+            IReadOnlyList<PEGAKnowledgeRuntimeInspectorFact> facts)
         {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Knowledge State compartilhado da Gangue", EditorStyles.boldLabel);
-            PEGANpcGangMembership membership = view.Autonomy.GetComponent<PEGANpcGangMembership>();
-            PEGANpcGangKnowledgeState gang = membership != null ? membership.GangKnowledgeState : null;
-            if (gang == null)
+            EditorGUILayout.LabelField(title, EditorStyles.largeLabel);
+            EditorGUILayout.LabelField(authorityStatus, EditorStyles.miniLabel);
+            if (!available)
             {
-                EditorGUILayout.LabelField("<NPC sem GangKnowledgeState associado>");
+                EditorGUILayout.HelpBox(
+                    "Esta authority não está disponível para leitura no runtime atual; seus fatos não foram consultados.",
+                    MessageType.Info);
                 return;
             }
 
-            if (!PEGAGoapRuntimeInspectorReader.IsGangKnowledgeReady(gang))
+            DrawKnowledgeFacts(facts);
+        }
+
+        private void DrawKnowledgeFacts(IReadOnlyList<PEGAKnowledgeRuntimeInspectorFact> facts)
+        {
+            if (facts == null || facts.Count == 0)
             {
-                EditorGUILayout.HelpBox("O estado compartilhado ainda não foi inicializado; nenhuma consulta foi feita.", MessageType.Info);
                 return;
             }
 
-            IReadOnlyList<PEGANpcPlanningTarget> targets = gang.GetKnownEscapeTargets();
-            EditorGUILayout.LabelField("Targets de fuga conhecidos pela Gangue", targets.Count.ToString());
-            _showGangTargetDetails = EditorGUILayout.ToggleLeft("Exibir IDs, proveniência e tempos dos Targets", _showGangTargetDetails);
-            if (targets.Count == 0)
+            for (int index = 0; index < facts.Count; index++)
             {
-                EditorGUILayout.LabelField("<nenhum Target registrado>");
-            }
-
-            for (int i = 0; i < targets.Count; i++)
-            {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField($"Destino de fuga {i + 1} · {targets[i].KnownPosition:F2}", EditorStyles.boldLabel);
-                if (_showGangTargetDetails)
-                {
-                    DrawTarget(targets[i]);
-                }
-
-                EditorGUILayout.EndVertical();
+                DrawKnowledgeFact(facts[index]);
             }
         }
+
+        private void DrawKnowledgeFact(PEGAKnowledgeRuntimeInspectorFact fact)
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Identidade tipada", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                $"{fact.AddressTypeName} · {fact.AddressText}",
+                EditorStyles.wordWrappedLabel);
+            EditorGUILayout.LabelField("Escopo", fact.Scope.ToString());
+            EditorGUILayout.LabelField("Propriedade", fact.DefinitionName);
+            EditorGUILayout.LabelField("ID canônico", fact.DefinitionId);
+            EditorGUILayout.LabelField("Tipo do valor", fact.ValueTypeName);
+            EditorGUILayout.LabelField("Registro", fact.HasStoredRecord ? "presente nesta authority" : "inexistente neste escopo");
+            EditorGUILayout.LabelField("Integridade da definição/endereço", fact.IsValid ? "válidos" : "inválidos");
+            EditorGUILayout.LabelField("Estado", FormatKnowledgeStatus(fact.Status));
+            EditorGUILayout.LabelField(
+                "Valor",
+                fact.HasValue ? fact.ValueText : "<sem valor conhecido>",
+                EditorStyles.wordWrappedLabel);
+            EditorGUILayout.LabelField(
+                "Validade",
+                !fact.IsValid
+                    ? "inválido · chave ou definição rejeitada"
+                    : fact.Status == PEGAKnowledgeStatus.Known
+                        ? "válido no instante da consulta"
+                        : fact.Status == PEGAKnowledgeStatus.Invalidated
+                            ? "invalidado pela política/evidência registrada"
+                            : fact.HasStoredRecord
+                                ? "desconhecido · registro sem valor atualmente conhecido"
+                                : "desconhecido · fato não registrado neste escopo");
+            EditorGUILayout.LabelField("Origens", FormatKnowledgeOrigins(fact.Origins));
+            EditorGUILayout.LabelField(
+                "Timestamp da observação",
+                fact.HasObservationTime
+                    ? $"t={fact.ObservationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s"
+                    : "<não fornecido>");
+            if (fact.InvalidationCauses != PEGAKnowledgeInvalidationCause.None)
+            {
+                EditorGUILayout.LabelField("Causas de invalidação", fact.InvalidationCauses.ToString());
+            }
+
+            if (!string.IsNullOrWhiteSpace(fact.Diagnostic))
+            {
+                EditorGUILayout.HelpBox(fact.Diagnostic, MessageType.Warning);
+            }
+
+            if (_showKnowledgeEvidenceDetails)
+            {
+                if (fact.Evidence.Count == 0)
+                {
+                    EditorGUILayout.LabelField("Evidências", "<nenhuma>", EditorStyles.miniLabel);
+                }
+                else
+                {
+                    for (int index = 0; index < fact.Evidence.Count; index++)
+                    {
+                        PEGAKnowledgeRuntimeInspectorEvidence evidence = fact.Evidence[index];
+                        EditorGUILayout.LabelField(
+                            $"Evidência {index + 1}",
+                            $"origem={evidence.Origin}; t={evidence.ObservationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s",
+                            EditorStyles.miniLabel);
+                        EditorGUILayout.LabelField("  Fonte", evidence.Source, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.LabelField("  Payload", evidence.Payload, EditorStyles.wordWrappedLabel);
+                    }
+                }
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private static string FormatKnowledgeStatus(PEGAKnowledgeStatus status) => status switch
+        {
+            PEGAKnowledgeStatus.Known => "Conhecido",
+            PEGAKnowledgeStatus.Invalidated => "Invalidado",
+            _ => "Desconhecido"
+        };
+
+        private static string FormatGroupAccess(PEGAActorGroupKnowledgeAccessStatus status) => status switch
+        {
+            PEGAActorGroupKnowledgeAccessStatus.Authorized => "autorizado",
+            PEGAActorGroupKnowledgeAccessStatus.NotMember => "negado · NPC não é membro vigente",
+            PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable => "Group inexistente ou não confirmado como vivo",
+            PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable => "authority/binding indisponível",
+            PEGAActorGroupKnowledgeAccessStatus.InvalidActor => "ActorId do NPC inválido ou indisponível",
+            PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority => "múltiplas authorities declaram o Group",
+            _ => status.ToString()
+        };
 
         private void DrawHistory()
         {
@@ -861,11 +960,6 @@ namespace PEGA.Diagnostics.Editor
                 return "Aproximar personagem conhecido";
             }
 
-            if (actionId == PEGANpcPlanningActionId.TravelToEscapeTarget)
-            {
-                return "Ir para saída conhecida";
-            }
-
             if (actionId == PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition)
             {
                 return "Investigar última posição conhecida";
@@ -889,11 +983,6 @@ namespace PEGA.Diagnostics.Editor
             if (targetKind == PEGANpcPlanningTargetKind.CharacterPosition)
             {
                 return "posição de personagem";
-            }
-
-            if (targetKind == PEGANpcPlanningTargetKind.EscapeDestination)
-            {
-                return "saída";
             }
 
             if (targetKind == PEGANpcPlanningTargetKind.LocalObservationPosition)
@@ -935,33 +1024,21 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField("Tempo da evidência", target.HasEvidenceTime ? $"{target.EvidenceTimeSeconds:0.###} s" : "<não fornecido>");
         }
 
-        private static void DrawKnowledgeFact<T>(
-            string label,
-            PEGANpcKnowledgeFact<T> fact,
-            Func<T, string> formatValue,
-            bool showMetadata,
-            bool showValue)
+        private static string FormatKnowledgeOrigins(IReadOnlyList<PEGAKnowledgeEvidenceOrigin> origins)
         {
-            string value = fact.TryGetValue(out T observedValue)
-                ? showValue ? formatValue(observedValue) : "<valor disponível nos detalhes técnicos>"
-                : "<sem valor conhecido>";
-            EditorGUILayout.LabelField(label, $"{fact.Status}: {value}");
-            if (showMetadata)
+            if (origins == null || origins.Count == 0)
             {
-                string metadata = $"origem={fact.Origins}; invalidação={fact.InvalidationCauses}";
-                if (fact.HasObservationTime)
-                {
-                    metadata += $"; observação t={fact.ObservationTimeSeconds:0.###}s";
-                }
-
-                EditorGUILayout.LabelField("  Proveniência / tempo", metadata, EditorStyles.miniLabel);
+                return "<nenhuma>";
             }
+
+            var names = new string[origins.Count];
+            for (int index = 0; index < origins.Count; index++)
+            {
+                names[index] = origins[index].ToString();
+            }
+
+            return $"[{string.Join(", ", names)}]";
         }
-
-        private static string FormatProfileId(ActorProfileId id) => id.IsValid ? id.StableText : "<identidade inválida>";
-
-        private static string FormatAreaPresence(PEGANpcPerceivedAreaPresence presence) =>
-            $"presença={presence.IsPresent}; posição do observador={presence.ObserverPosition:F2}; raio={presence.PerceivedAreaRadiusMeters:0.##} m";
     }
 
     internal sealed class RuntimeView
@@ -974,8 +1051,6 @@ namespace PEGA.Diagnostics.Editor
         public PEGANpcPlanSelectionResult LatestSelection;
         public readonly List<IPEGANpcActionProvider> ActionProviders = new List<IPEGANpcActionProvider>();
         public PEGANpcKnowledgeState KnowledgeState;
-        public bool KnowledgeReady;
-        public readonly List<ActorId> KnownActors = new List<ActorId>();
         public readonly List<string> Issues = new List<string>();
     }
 
@@ -989,10 +1064,6 @@ namespace PEGA.Diagnostics.Editor
         private static readonly FieldInfo ActivePlanField = typeof(PEGANpcAutonomy).GetField("_activePlan", InstancePrivate);
         private static readonly FieldInfo LatestSelectionField = typeof(PEGANpcAutonomy).GetField("_latestSelection", InstancePrivate);
         private static readonly FieldInfo ActionProvidersField = typeof(PEGANpcAutonomy).GetField("_actionProviders", InstancePrivate);
-        private static readonly FieldInfo KnowledgeSubjectsField = typeof(PEGANpcKnowledgeState).GetField("_knowledgeBySubject", InstancePrivate);
-        private static readonly FieldInfo PerceivedAreaField = typeof(PEGANpcKnowledgeState).GetField("_perceivedAreaPresence", InstancePrivate);
-        private static readonly FieldInfo GangTargetsField = typeof(PEGANpcGangKnowledgeState).GetField("_knownEscapePoints", InstancePrivate);
-
         public static RuntimeView Read(PEGANpcAutonomy autonomy)
         {
             RuntimeView view = new RuntimeView { Autonomy = autonomy };
@@ -1009,36 +1080,12 @@ namespace PEGA.Diagnostics.Editor
             ReadActionProviders(autonomy, view);
 
             view.KnowledgeState = autonomy.GetComponent<PEGANpcKnowledgeState>();
-            if (view.KnowledgeState != null)
-            {
-                object subjects = ReadRawField(KnowledgeSubjectsField, view.KnowledgeState, "índice de sujeitos do Knowledge State", view.Issues);
-                object perceivedArea = ReadRawField(PerceivedAreaField, view.KnowledgeState, "fato de presença percebida", view.Issues);
-                view.KnowledgeReady = subjects is IDictionary && perceivedArea != null;
-                if (subjects is IDictionary dictionary)
-                {
-                    foreach (object key in dictionary.Keys)
-                    {
-                        if (key is ActorId actorId && actorId.IsValid)
-                        {
-                            view.KnownActors.Add(actorId);
-                        }
-                    }
-
-                    view.KnownActors.Sort((left, right) => string.CompareOrdinal(left.StableText, right.StableText));
-                }
-            }
-            else
+            if (view.KnowledgeState == null)
             {
                 view.Issues.Add("Componente PEGANpcKnowledgeState não encontrado no NPC resolvido.");
             }
 
             return view;
-        }
-
-        public static bool IsGangKnowledgeReady(PEGANpcGangKnowledgeState gang)
-        {
-            object targets = ReadRawField(GangTargetsField, gang, "índice de Targets compartilhados", null);
-            return targets is IDictionary;
         }
 
         private static void ReadActionProviders(PEGANpcAutonomy autonomy, RuntimeView view)

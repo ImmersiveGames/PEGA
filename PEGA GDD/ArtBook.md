@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Art Book / Character Bible
 **Status:** Fonte ativa de direção visual
-**Versão:** 0.2.0
+**Versão:** 0.2.1
 **Fonte principal:** conceitos e referências visuais mantidos em `assets/documents/art-book/`
 **Documento relacionado:** [Game Design Document](GDD.md)
 **Última atualização:** 2026-10-10
@@ -83,7 +83,7 @@ Petra Patrol é parceira de Rick e cofundadora da **P.E.G.A. Larópolis**. O GDD
 
 As gangues são a principal base visual dos inimigos. Cada grupo precisa ter tema, paleta, comportamento, humor e silhueta próprios. O GDD original apresenta várias gangues, cada uma com arquétipos internos e líderes.
 
-### Os Trapalhões do Crime
+### Os Trapalhões do Crime (The Crime Bunglers)
 
 Grupo criminoso excêntrico, caótico e cômico. É uma mistura de crime clássico cartunesco com situações atrapalhadas. Funciona bem como gangue inicial por ter leitura simples, humor direto e arquétipos fáceis de entender.
 
@@ -94,19 +94,19 @@ Grupo criminoso excêntrico, caótico e cômico. É uma mistura de crime clássi
 | Leitura de gameplay | Inimigos comuns, distrações, obstáculos e força bruta. |
 | Tom | Leve, cômico, caótico e acessível. |
 
-#### Ladrões Listrados
+#### Ladrões Listrados (Striped Robber)
 
 Ladrões comuns do grupo. Usam trajes listrados inspirados em criminosos clássicos de quadrinhos. Devem ser simples, imediatamente reconhecíveis e úteis como base visual da gangue.
 
-#### Ladrões Molhados
+#### Ladrões Molhados (Soggy Robber)
 
 Inimigos um pouco mais inteligentes, inspirados em artimanhas e situações elaboradas. A leitura visual pode reforçar esperteza, bagunça e uso de truques ambientais.
 
-#### Capangas Atrapalhados
+#### Capangas Atrapalhados (Clumsy Henchman)
 
 Capangas cômicos e desastrados. Devem transmitir caos e obediência atrapalhada, funcionando como suporte visual para humor e confusão.
 
-#### Marombas Ameaçadores
+#### Marombas Ameaçadores (Threatening Brute)
 
 Inimigos fisicamente imponentes. Eles representam força bruta dentro da gangue e precisam ter silhueta mais larga, pesada e intimidadora.
 
@@ -442,5 +442,6 @@ Imagem de referência: `assets/documents/art-book/nome-do-asset.png`
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.2.1 | 2026-11-03 | Adicionados os nomes em inglês dos Trapalhões do Crime e de seus arquétipos (ver GDD). |
 | 0.2.0 | 2026-10-10 | Fonte visual ativa, separada dos contratos do GDD; perguntas de escopo resolvidas removidas e referências inexistentes atualizadas. |
 | 0.1.0 | 2026-07-08 | Criação do Art Book com direção visual, fichas de gangues, imagens de referência e seções iniciais de cenários. |

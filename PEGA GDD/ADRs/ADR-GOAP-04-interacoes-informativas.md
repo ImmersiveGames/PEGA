@@ -45,5 +45,5 @@ Refina o contrato existente de Actions para distinguir requisitos de sucesso de 
 - [GDD — Contrato de Actions](../GDD.md#contrato-de-actions)
 - [GDD — Conhecimento modular, memória e validade da informação](../GDD.md#conhecimento-modular-memória-e-validade-da-informação)
 - [GDD — Áreas, POIs e investigação](../GDD.md#áreas-pois-e-investigação)
-- [Registro conceitual — interações com requisitos desconhecidos](../../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
+- [Registro conceitual — interações com requisitos desconhecidos](Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md)
 

@@ -49,5 +49,5 @@ Este ADR revisado substitui as decisões anteriores deste documento que mantinha
 - [GDD — Contextos e satisfação dos Desejos](../GDD.md#contextos-e-satisfação-dos-desejos)
 - [ADR de pré-produção — decisão vigente para GOAP e Perception, §7](../ADR-PREPRODUCAO.md#7-evolução-arquitetural-de-goap-e-perception)
 - [ADR de pré-produção — diretriz arquitetural transversal, §13](../ADR-PREPRODUCAO.md#13-diretriz-arquitetural-transversal-do-pega)
-- [Registro conceitual — fronteiras do PEGA e do Immersive](../../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md), registro histórico e não normativo; posições anteriores sobre ownership são supersedidas por esta revisão.
+- [Registro conceitual — fronteiras do PEGA e do Immersive](Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md), registro histórico e não normativo; posições anteriores sobre ownership são supersedidas por esta revisão.
 

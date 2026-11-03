@@ -3,8 +3,8 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.12.0
-**Última atualização:** 2026-10-15
+**Versão:** 0.14.1
+**Última atualização:** 2026-11-02
 
 ---
 
@@ -662,6 +662,18 @@ Os larápios são os principais inimigos de PEGA. Eles são organizados em gangu
 | Vampiros Pálidos | Fantasmas da Noite | Controle, sedução ou drenagem de energia. |
 | Múmia Maldita | Fantasmas da Noite | Desorientação, faixas e terror. |
 
+### Nomes em inglês dos Trapalhões do Crime
+
+Nomes oficiais em inglês da gangue da Demo, usados também para nomear modelos e assets na Unity (pasta/FBX com espaço; assets com underscore).
+
+| Português | Inglês | Pasta/FBX | Assets |
+|---|---|---|---|
+| Os Trapalhões do Crime | The Crime Bunglers | — | — |
+| Ladrões Listrados | Striped Robber | `Striped Robber` | `Striped_Robber` |
+| Ladrões Molhados | Soggy Robber | `Soggy Robber` | `Soggy_Robber` |
+| Capangas Atrapalhados | Clumsy Henchman | `Clumsy Henchman` | `Clumsy_Henchman` |
+| Marombas Ameaçadores | Threatening Brute | `Threatening Brute` | `Threatening_Brute` |
+
 > [!BEST_PRACTICE]
 > Cada gangue deve ter pelo menos um inimigo comum, um inimigo de suporte, um inimigo de pressão e um líder. Isso ajuda a criar variedade sem transformar cada fase em um conjunto imprevisível demais.
 
@@ -746,15 +758,17 @@ Ele segue até essa posição enquanto tenta readquirir o alvo pela percepção 
 :::decision
 **Decisão:** **Gangue** é a unidade de cooperação e conhecimento. Não existe uma entidade separada de grupo de entrada.
 
-Cada Knowledge Data possui política de escopo e propagação configurável. Fatos de escopo **Individual** não se propagam; dados de escopo **Gangue** seguem a política configurada, que pode ser imediata; fatos **Globais** são distribuídos às gangues explicitamente definidas. Um larápio criado posteriormente recebe somente os fatos que sua política de escopo lhe disponibilizar.
+Cada Knowledge Data possui políticas próprias de validade, atualização e proveniência. No escopo **Individual**, a informação permanece com o agente salvo publicação explícita. No escopo **Gangue**, os fatos ocupam o estado coletivo do Actor Group correspondente, identificado por seu `GroupId` real, e só são legíveis por membros com membership vigente confirmada pelo Framework. Fatos no escopo **Global** são acessíveis a qualquer consumidor GOAP do contexto de gameplay correspondente, sem depender de Group ou membership. A origem e publicação dos fatos são explícitas; conhecimento em um escopo não propaga fatos a outro. Um larápio criado posteriormente tem acesso somente aos fatos disponibilizados por suas fontes e membership vigentes.
 
 | Escopo | Regra |
 |---|---|
 | Individual | Informação mantida pelo agente conforme a política daquele dado; percepção individual permanece aqui salvo propagação explícita. |
-| Gangue | Fatos propagados aos membros da mesma gangue conforme a política configurada para aquele dado. |
-| Global | Fatos explicitamente distribuídos às gangues definidas, incluindo os Eventos Globais do assalto. |
+| Gangue | Fatos separados por `GroupId`, legíveis apenas por membros com membership vigente confirmada pelo Framework. |
+| Global | Fatos Globais válidos são acessíveis a qualquer consumidor GOAP do contexto de gameplay correspondente, sem depender de Group ou membership. |
 
 Gangues diferentes mantêm Knowledge State e reservas independentes salvo dados explicitamente globais. Compartilhar informação não significa compartilhar Desejos nem produzir a mesma reação. Informação global dinâmica também pode posteriormente ser atualizada conforme sua política de validade.
+
+Global define o alcance da leitura, não a origem do fato: somente fontes e eventos autorizados publicam nele, e registrar um fato Global não propaga fatos Individuais ou de Group automaticamente.
 :::
 
 ### Posse, desejo e inversão da perseguição
@@ -1230,7 +1244,10 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 | [MVP](MVP.md) | Recorta as regras deste GDD no primeiro vertical slice e na Demo completa. |
 | [ADR de pré-produção](ADR-PREPRODUCAO.md) | Diretriz arquitetural transversal do PEGA (§13), decisões de produção e marcos de integração; não substitui regras e contratos de gameplay. |
 | ADRs de arquitetura GOAP | Decisões subordinadas às regras de gameplay deste GDD: [domínio e composição](ADRs/ADR-GOAP-01-composicao-e-fronteiras.md), [modelo causal e planejamento](ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), [seleção e estabilidade](ADRs/ADR-GOAP-03-selecao-e-estabilidade.md) e [interações informativas](ADRs/ADR-GOAP-04-interacoes-informativas.md). |
-| [Registro conceitual do GOAP](../docs/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) | Origem histórica dos acordos formalizados nos ADRs; não substitui este GDD como autoridade de gameplay. |
+| [Análise macro de objetivos](Analises/pega-gdd-activity-analysis.md) | Análise derivada de cobertura do GDD/MVP; não é fonte normativa nem roadmap. |
+| [Especificações comportamentais dos objetivos](Analises/pega-objective-specifications.md) | Especificações derivadas para revisão; GDD, MVP e ADRs continuam sendo as fontes de autoridade. |
+| [Guia prático de GOAP](Guias/PEGA-GOAP-guia-pratico.md) | Guia experimental da superfície atual de autoria no Unity; não amplia as regras do GDD. |
+| [Registro conceitual do GOAP](ADRs/Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) | Origem histórica dos acordos formalizados nos ADRs; não substitui este GDD como autoridade de gameplay. |
 | [TASKS](TASKS.md) | Tarefas executáveis derivadas do escopo do MVP. |
 | [Art Book](ArtBook.md) | Direção visual e referências de personagens, gangues e cenários. |
 | [Tabela de Atributos e Habilidades.xlsx](Tabela%20de%20Atributos%20e%20Habilidades.xlsx) | Referência auxiliar histórica para ideias de distribuição de habilidades por gangue e valores preliminares de classificação/créditos. Agilidade, HP/dano, Defesa, Vigor, fórmulas e valores da planilha não são contratos atuais nem dados validados. |
@@ -1239,6 +1256,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.14.1 | 2026-11-03 | Registrados os nomes em inglês da gangue Os Trapalhões do Crime e de seus quatro arquétipos, com convenção de nomes para assets Unity. |
 | 0.14.0 | 2026-10-25 | Referenciada a diretriz arquitetural transversal do PEGA e sua aplicação ao GOAP. |
 | 0.13.0 | 2026-10-25 | Separados Goal, Desejo, intenção e plano; consolidados planejamento por estados hipotéticos, competência decisória, estabilidade, valor informacional e tentativas legítimas conforme decisões aprovadas e ADRs GOAP. |
 | 0.12.0 | 2026-10-15 | Definida no HUB, depois da seleção da missão e Briefing, a entrada por Join dos dispositivos locais, escolha e confirmação individual dos personagens (com duplicação permitida) e início apenas por botão explícito Iniciar Missão; alinhado o fluxo com a Demo. |
