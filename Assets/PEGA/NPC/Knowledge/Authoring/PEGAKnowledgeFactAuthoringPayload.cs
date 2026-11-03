@@ -5,17 +5,21 @@ using UnityEngine;
 
 namespace PEGA.NPC
 {
+    public enum PEGAKnowledgeActorIdentitySource
+    {
+        ActorDeclaration = 0,
+        CurrentPlayerActorFromNpcBinding = 1
+    }
+
     /// <summary>
-    /// Unity-serializable payload slots shared by fact definitions. The selected definition chooses the exact
-    /// typed slot; adding another definition with already-supported address/value types needs no authoring class.
+    /// Typed Inspector slots shared by fact addresses and values. The selected canonical definition determines
+    /// which slot is read; ActorId is always resolved through a Framework identity contract.
     /// </summary>
     [Serializable]
     public struct PEGAKnowledgeFactAuthoringPayload
     {
+        [SerializeField, HideInInspector] private PEGAKnowledgeActorIdentitySource actorIdentitySource;
         [SerializeField, HideInInspector] private ActorDeclaration actorDeclaration;
-        [SerializeField, HideInInspector] private string actorIdText;
-        [SerializeField, HideInInspector] private ActorProfile actorProfile;
-        [SerializeField, HideInInspector] private string actorProfileIdText;
         [SerializeField, HideInInspector] private ObjectEntryIdReference objectEntryId;
         [SerializeField, HideInInspector] private string stringValue;
         [SerializeField, HideInInspector] private int integerValue;
@@ -28,7 +32,6 @@ namespace PEGA.NPC
 
         public static bool Supports(Type type) =>
             type == typeof(ActorId) ||
-            type == typeof(ActorProfileId) ||
             type == typeof(ObjectEntryId) ||
             type == typeof(string) ||
             type == typeof(byte) ||
@@ -44,9 +47,15 @@ namespace PEGA.NPC
         private static bool IsSupportedEnum(Type type) =>
             type != null && type.IsEnum && Enum.GetUnderlyingType(type) == typeof(int);
 
-        internal bool TryGetValue(Type type, out object resolved, out string diagnostic)
+        internal bool TryGetValue(
+            Type type,
+            ActorOccurrenceReferenceBinding actorBinding,
+            out object resolved,
+            out bool pending,
+            out string diagnostic)
         {
             resolved = null;
+            pending = false;
             diagnostic = string.Empty;
             if (!Supports(type))
             {
@@ -54,17 +63,14 @@ namespace PEGA.NPC
                 return false;
             }
 
+            if (type == typeof(ActorId))
+            {
+                return TryGetActorId(actorBinding, out resolved, out pending, out diagnostic);
+            }
+
             try
             {
-                if (type == typeof(ActorId))
-                {
-                    resolved = ActorId.From(actorIdText);
-                }
-                else if (type == typeof(ActorProfileId))
-                {
-                    resolved = ActorProfileId.From(actorProfileIdText);
-                }
-                else if (type == typeof(ObjectEntryId))
+                if (type == typeof(ObjectEntryId))
                 {
                     if (!objectEntryId.TryGetObjectEntryId(out ObjectEntryId id))
                     {
@@ -100,6 +106,75 @@ namespace PEGA.NPC
                 diagnostic = exception.Message;
                 return false;
             }
+        }
+
+        private bool TryGetActorId(
+            ActorOccurrenceReferenceBinding actorBinding,
+            out object resolved,
+            out bool pending,
+            out string diagnostic)
+        {
+            resolved = null;
+            pending = false;
+            if (actorIdentitySource == PEGAKnowledgeActorIdentitySource.ActorDeclaration)
+            {
+                if (actorDeclaration == null)
+                {
+                    diagnostic = "Select a Framework ActorDeclaration for the ActorId address.";
+                    return false;
+                }
+
+                try
+                {
+                    ActorId actorId = actorDeclaration.ActorId;
+                    if (!actorId.IsValid)
+                    {
+                        diagnostic = "The selected ActorDeclaration does not provide a valid ActorId.";
+                        return false;
+                    }
+
+                    resolved = actorId;
+                    diagnostic = string.Empty;
+                    return true;
+                }
+                catch (ArgumentException exception)
+                {
+                    diagnostic = exception.Message;
+                    return false;
+                }
+            }
+
+            if (actorIdentitySource != PEGAKnowledgeActorIdentitySource.CurrentPlayerActorFromNpcBinding)
+            {
+                diagnostic = "Select a supported Framework Actor identity source.";
+                return false;
+            }
+
+            if (actorBinding == null)
+            {
+                diagnostic = "This NPC has no ActorOccurrenceReferenceBinding to resolve its current Player Actor.";
+                return false;
+            }
+
+            if (!actorBinding.TryGetCurrent(out ActorOccurrenceResolution resolution))
+            {
+                pending = resolution.Status == ActorOccurrenceResolutionStatus.Unavailable ||
+                          resolution.Status == ActorOccurrenceResolutionStatus.Stale;
+                diagnostic = string.IsNullOrWhiteSpace(resolution.Diagnostic)
+                    ? "The NPC's current Player Actor identity is not available yet."
+                    : resolution.Diagnostic;
+                return false;
+            }
+
+            if (!resolution.Occurrence.HasPlayerSlot || !resolution.Occurrence.ActorId.IsValid)
+            {
+                diagnostic = "The NPC binding did not resolve a Player Actor with a valid ActorId.";
+                return false;
+            }
+
+            resolved = resolution.Occurrence.ActorId;
+            diagnostic = string.Empty;
+            return true;
         }
     }
 }

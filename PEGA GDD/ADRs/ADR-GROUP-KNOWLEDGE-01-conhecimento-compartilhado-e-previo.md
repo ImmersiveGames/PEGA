@@ -1,8 +1,8 @@
 # ADR-GROUP-KNOWLEDGE-01 — Conhecimento compartilhado e prévio de Groups
 
-- **Status:** Princípios arquiteturais preservados; Individual, Global e Group Knowledge implementados no PEGA. O histórico anterior registra execução de Individual; as provas atuais de Global e Group tiveram PASS manual, conforme relato do usuário.
+- **Status:** Princípios arquiteturais preservados; Knowledge Individual, Group e Global, autoria inicial e diagnóstico implementados no PEGA. Validação manual no Unity reportada pelo usuário.
 - **Data:** 2026-10-30
-- **Revisado:** 2026-11-02 — autoridade Global e acesso independente de membership; Group Knowledge opcional por GroupId, membership vigente do Framework e lifecycle do owner; provas manuais reportadas PASS
+- **Revisado:** 2026-11-03 — autoria inicial nos três escopos e diagnóstico de leitura, além das autoridades e membership vigentes já registradas
 - **Owner:** PEGA — integração de Actor Groups e conhecimento
 
 ## Contexto
@@ -31,7 +31,7 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 
    **Esclarecimento de aplicação do GDD:** identificadores técnicos oficiais, como `ActorId` e `ObjectEntryId`, servem para endereçar fatos sobre entidades; possuir uma referência não significa que o NPC conheça a entidade ou suas propriedades. Conhecimentos sobre papel ou categoria de gameplay, localização, estado, conteúdo e outras características são fatos independentes, adquiridos e disponibilizados segundo suas próprias evidências e políticas. Nome, aparência e `ActorProfileId` não são requisitos gerais de identificação para o GOAP: só interessam quando uma regra concreta de gameplay precisar dessas informações. Fontes autorizadas podem consultar o Framework para produzir fatos; consumidores não podem completar fatos ausentes recorrendo à Player Session, ao Profile ou à manifestação física. Este esclarecimento não introduz um sistema de reconhecimento nem altera as regras do GDD.
 
-8. **A inicialização do Group não é efeito implícito de consultar conhecimento.** A composição deve usar o contrato oficial de criação e associação do Framework no owner/lifecycle adequado. A autoria da cena, a existência de um componente ou um binding serializado não substituem a efetiva criação do Group e a confirmação de seus membros. A responsabilidade concreta por coordenar isso deve ser determinada em uma etapa própria, sem recuperar automaticamente a antiga composição de ingresso ou acoplar a inicialização de Groups a Spawn Points.
+8. **A inicialização do Group não é efeito implícito de consultar conhecimento.** A composição deve usar o contrato oficial de criação e associação do Framework no owner/lifecycle adequado. A autoria da cena, a existência de um componente ou um binding serializado não substituem a efetiva criação do Group e a confirmação de seus membros. No PEGA, a composição da Mission cria os Groups pelo binding oficial; a authority opcional de Knowledge aplica fatos iniciais somente após confirmar o Group vivo criado por esse owner, sem recuperar a antiga composição de ingresso ou acoplar a inicialização de Groups a Spawn Points.
 
 9. **Especializações não definem o contrato geral.** Gangues, Spawn Points e POIs podem fornecer fatos e regras específicas do PEGA, mas não podem ser pré-requisitos para a capacidade geral de conhecimento de Groups. É permitido preservar e adaptar peças existentes quando sua responsabilidade for legítima; não se aprova a criação de autoridades paralelas, camadas redundantes ou mudanças no Framework sem necessidade demonstrada.
 
@@ -48,8 +48,8 @@ Acrescentar conhecimento prévio a essa especialização, sem antes definir a re
 ## Não decidido neste ADR
 
 - Como representar e combinar múltiplas memberships de um mesmo Actor, quando essa capacidade for necessária.
-- A representação e o fluxo técnicos de autoria inicial no Inspector, a inicialização de fatos, a distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups. A semântica de autoria é compartilhada com as demais condições e fatos, conforme ADR-GOAP-02; detalhes técnicos permanecem pendentes.
-- Fontes concretas de percepção/investigação para fatos Globais e publicação de eventos reais do assalto continuam pendentes; consumidores GOAP do contexto têm acesso à autoridade Global sem membership. A propagação entre escopos, a autoria inicial de fatos de Group e o uso comportamental desses fatos pelo GOAP também permanecem futuros. Navegação até POIs e sua localizabilidade prévia seguem pendentes. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física; a integração de propriedades de POI a Targets segue pendente.
+- A distribuição de mudanças, os conflitos entre fontes, a retenção e eventual reentrada de Groups permanecem pendentes. A semântica comum de autoria continua vinculada ao ADR-GOAP-02; autoria de condições GOAP não está implementada.
+- Fontes concretas de percepção/investigação para fatos Globais, sensores de Object Entry, produtores de eventos reais do assalto e propagação entre escopos continuam pendentes; consumidores GOAP do contexto têm acesso à authority Global sem membership. O uso comportamental de fatos Group pelo GOAP, a integração de propriedades Object Entry a Targets e a navegação até POIs também permanecem futuros. O [ADR-POI-01](ADR-POI-01-identidade-manifestacao-e-conhecimento.md) fixa a autoridade de ObjectEntryId/ocorrência e distingue posição conhecida de manifestação física.
 - A atualização de nomes de classes e arquivos históricos, a reversão ou preservação de cada componente existente e qualquer mudança no Framework. Essas decisões exigem investigação específica do workspace e dos contratos efetivos.
 
 ## Relação com o estado atual e decisões existentes
@@ -71,6 +71,14 @@ A [implementação registrada](../Trabalho/reports/2026-11-02-group-knowledge-im
 A composição PEGA cria os Groups por `ActorGroupAccessBinding` no owner Activity/Route comprometido e configura membership no Framework. Group Knowledge é anexado opcionalmente ao mesmo owner; sua ausência ou falha de registro não impede a criação do Group. Esta implementação foi comprovada na Activity da Mission; outras combinações de owners/contextos não fizeram parte da prova.
 
 A prova `PEGAGroupKnowledgeProofWindow` foi executada manualmente no Unity e teve resultado PASS, conforme relato do usuário; o Codex não executou a prova. A execução usou os três larápios e dois Groups da Mission para conferir compartilhamento entre os dois membros do primeiro Group, fato separado no segundo, isolamento das leituras, revogação/restauração de acesso por Leave/Join, acesso Global e independência do Knowledge Individual. Não executou Actions nem decisões de planejamento.
+
+### Autoria inicial e diagnóstico (2026-11-03)
+
+A evolução posterior reutiliza um catálogo canônico de definições e a mesma linha serializada **Identidade → Propriedade → Valor** nos escopos Individual, Group e Global. Os fatos entram nos stores e authorities existentes, preservando as políticas, evidências, temporalidade e validade próprias de cada definição. Fatos Group só são inicializados para Groups realmente criados pelo owner; leituras do Inspector confirmam novamente Group vivo e membership atual antes de mostrar valores.
+
+Na `MissionActivityContent`, Group `pega.gang.larapios` e a authority Global usam a definição `pega.object-entry.position` para o mesmo `ObjectEntryId` `pega.warehouse.storage-rack-west-north`. O valor inicial do Group é `(-5, 1, 15.700001)` e o Global é `(200, 0, 200)`. Os stores permanecem independentes. O GOAP Runtime Inspector mostra fatos Individual, os Groups pertinentes e o Global acessível, com origem, escopo, timestamps e validade; leituras Group negadas ocultam os fatos.
+
+O usuário reportou validação manual no Unity em 2026-11-03, incluindo conhecimento inicial, membership autorizada, acesso negado, isolamento entre Groups e leitura Global. Esta revisão não repetiu a execução. Continuam pendentes a autoria/avaliação de condições GOAP, sensores de Object Entry, integração de posições conhecidas a Targets/navegação, produtores de eventos de gameplay e propagação entre escopos. A descrição do corte está registrada em [Group Knowledge](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md).
 
 ## Autoridade e rastreabilidade
 

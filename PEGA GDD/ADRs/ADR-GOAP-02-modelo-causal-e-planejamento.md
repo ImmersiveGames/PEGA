@@ -2,7 +2,7 @@
 
 - **Status:** Aceito
 - **Data:** 2026-10-25
-- **Revisado:** 2026-11-02 — autoria declarativa tipada e reutilizável
+- **Revisado:** 2026-11-03 — autoria de fatos iniciais e diagnóstico de Knowledge implementados
 - **Owner:** PEGA — planejamento GOAP
 
 ## Contexto
@@ -40,9 +40,13 @@ O GDD já prevê Preconditions, Effects e cadeias de Actions, mas a demonstraç�
 - A regra atual do GDD para perda de alvo continua valendo: não há extrapolação automática de movimento. Previsores futuros não a alteram sem revisão explícita de gameplay.
 - Este ADR não determina representação de predicados, estado hipotético, busca ou perfis em código/Unity.
 
+## Implementação PEGA — autoria de fatos e diagnóstico (2026-11-03)
+
+O PEGA passou a oferecer no Inspector autoria de fatos iniciais como **Identidade → Propriedade canônica → Valor** nos escopos Individual, Group e Global. As definições tipadas continuam compartilhadas pelo catálogo e pelas fontes de percepção; cada autoridade grava no seu próprio Knowledge State com evidência, validade e política da definição. A aba Conhecimento do GOAP Runtime Inspector enumera os fatos realmente legíveis e apresenta identidade, propriedade, valor, escopo, proveniência, timestamps e validade. A configuração e o fluxo foram validados manualmente no Unity pelo usuário; esta revisão documental não repetiu a execução. A [implementação e a prova reportada](../Trabalho/reports/2026-11-02-group-knowledge-implementation.md) registram o Object Entry e os valores usados na Mission.
+
 ## Não decidido
 
-A representação e serialização dos fatos e condições, a apresentação concreta no Inspector, os operadores e semânticas oferecidos por cada definição, a ligação técnica de endereços dinâmicos a Actors ou Targets percebidos e a integração de fatos ObjectEntry e posições conhecidas a Targets, navegação e busca continuam em aberto. Também permanecem em aberto o algoritmo de planejamento, a fórmula de comparação, o orçamento numérico, a interface de avaliadores e o formato de previsão.
+A autoria e a leitura de fatos armazenados já têm uma superfície no Inspector; isso não implementa autoria declarativa nem avaliação de condições GOAP. Permanecem em aberto os operadores e semânticas oferecidos às condições, Goals/Preconditions/Effects declarativos, a ligação de endereços dinâmicos a Actors ou Targets percebidos e a integração de fatos ObjectEntry e posições conhecidas a Targets, navegação e busca. Também permanecem em aberto o algoritmo de planejamento, a fórmula de comparação, o orçamento numérico, a interface de avaliadores e o formato de previsão.
 
 ## Relação com decisões anteriores
 

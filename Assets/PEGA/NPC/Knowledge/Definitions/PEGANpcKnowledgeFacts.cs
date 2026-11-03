@@ -49,7 +49,7 @@ namespace PEGA.NPC
                         ? string.Empty
                         : "Position contains a non-finite coordinate."),
                 address => address.IsValid,
-                allowsDesignerAuthoredInitialFact: false);
+                allowsDesignerAuthoredInitialFact: true);
 
         public static bool TryGetCharacterSubject(
             PEGAKnowledgeFactChangedEvent change,

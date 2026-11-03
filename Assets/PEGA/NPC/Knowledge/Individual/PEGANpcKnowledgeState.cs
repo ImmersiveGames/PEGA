@@ -15,7 +15,8 @@ namespace PEGA.NPC
     {
         None = 0,
         Perception = 1,
-        ActionResult = 2
+        ActionResult = 2,
+        DesignerAuthoredInitial = 3
     }
 
     /// <summary>Evidência radial ancorada à posição conhecida do observador, nunca à posição oculta do alvo.</summary>
@@ -65,12 +66,34 @@ namespace PEGA.NPC
 
     /// <summary>Individual knowledge authority for one NPC Actor; all fact kinds use the same generic store.</summary>
     [DisallowMultipleComponent]
-    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IPEGAKnowledgeFactReader
+    public sealed class PEGANpcKnowledgeState : MonoBehaviour, IPEGAKnowledgeFactReader, IPEGAKnowledgeFactWriter
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
+        private const double InitialKnowledgeRetryIntervalSeconds = 0.1d;
+
+        [SerializeField, Tooltip("Conhecimentos iniciais deste NPC. Cada linha usa uma definição canônica e entra no Knowledge State Individual.")]
+        private List<PEGAKnowledgeFactAuthoringEntry> initialKnowledge = new List<PEGAKnowledgeFactAuthoringEntry>();
 
         [NonSerialized]
         private PEGAKnowledgeFactStore _factStore;
+
+        [NonSerialized]
+        private HashSet<int> _processedInitialKnowledgeEntries;
+
+        [NonSerialized]
+        private PEGAKnowledgeFactAuthoringEntry[] _initialKnowledgeSnapshot;
+
+        [NonSerialized]
+        private ActorOccurrenceReferenceBinding _actorBinding;
+
+        [NonSerialized]
+        private bool _applyingInitialKnowledge;
+
+        [NonSerialized]
+        private double _initialKnowledgeObservationTimeSeconds;
+
+        [NonSerialized]
+        private double _nextInitialKnowledgeRetryTimeSeconds;
 
         [NonSerialized]
         private ScopedLogger _log;
@@ -87,8 +110,36 @@ namespace PEGA.NPC
 
         private void Awake()
         {
-            EnsureStateInitialized();
+            _initialKnowledgeObservationTimeSeconds = Time.timeAsDouble;
+            _initialKnowledgeSnapshot = initialKnowledge != null
+                ? initialKnowledge.ToArray()
+                : Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+            _actorBinding = GetComponent<ActorOccurrenceReferenceBinding>();
+            if (_actorBinding != null)
+            {
+                _actorBinding.Changed += OnActorBindingChanged;
+            }
+
+            EnsureFactStoreInitialized();
             EnsureLoggerInitialized();
+            ApplyPendingInitialKnowledge();
+        }
+
+        private void LateUpdate()
+        {
+            if (!HasPendingInitialKnowledgeEntries())
+            {
+                return;
+            }
+
+            double now = Time.timeAsDouble;
+            if (now < _nextInitialKnowledgeRetryTimeSeconds)
+            {
+                return;
+            }
+
+            _nextInitialKnowledgeRetryTimeSeconds = now + InitialKnowledgeRetryIntervalSeconds;
+            ApplyPendingInitialKnowledge();
         }
 
         /// <summary>Assina mudanças confirmadas deste NPC para qualquer definição de fato.</summary>
@@ -129,6 +180,12 @@ namespace PEGA.NPC
 
         private void OnDestroy()
         {
+            if (_actorBinding != null)
+            {
+                _actorBinding.Changed -= OnActorBindingChanged;
+                _actorBinding = null;
+            }
+
             if (_factStore != null)
             {
                 _factStore.Changed -= OnFactChanged;
@@ -389,7 +446,9 @@ namespace PEGA.NPC
                 "NPC knowledge evidence was rejected.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("fact", key.Name),
+                LogFields.Field("factDefinitionId", key.Definition.Id),
                 LogFields.Field("factAddress", key.AddressValue),
+                LogFields.Field("scope", Scope),
                 LogFields.Field("previousStatus", current.Status),
                 LogFields.Field("evidenceOrigin", evidence.Origin),
                 LogFields.Field("storedOrigins", current.Origins),
@@ -424,7 +483,9 @@ namespace PEGA.NPC
                         : "NPC knowledge fact was updated.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("fact", key.Name),
+                LogFields.Field("factDefinitionId", key.Definition.Id),
                 LogFields.Field("factAddress", key.AddressValue),
+                LogFields.Field("scope", Scope),
                 LogFields.Field("result", result),
                 LogFields.Field("previousStatus", previous.Status),
                 LogFields.Field("currentStatus", current.Status),
@@ -464,6 +525,11 @@ namespace PEGA.NPC
 
         private void EnsureStateInitialized()
         {
+            EnsureFactStoreInitialized();
+        }
+
+        private void EnsureFactStoreInitialized()
+        {
             if (_factStore != null)
             {
                 return;
@@ -472,6 +538,75 @@ namespace PEGA.NPC
             _factStore = new PEGAKnowledgeFactStore(PEGAKnowledgeScope.Individual);
             _factStore.Changed += OnFactChanged;
         }
+
+        private void ApplyPendingInitialKnowledge()
+        {
+            if (_initialKnowledgeSnapshot == null || _initialKnowledgeSnapshot.Length == 0)
+            {
+                return;
+            }
+
+            _processedInitialKnowledgeEntries ??= new HashSet<int>();
+            _applyingInitialKnowledge = true;
+            try
+            {
+                for (int index = 0; index < _initialKnowledgeSnapshot.Length; index++)
+                {
+                    if (_processedInitialKnowledgeEntries.Contains(index))
+                    {
+                        continue;
+                    }
+
+                    PEGAKnowledgeFactAuthoringEntry entry = _initialKnowledgeSnapshot[index];
+                    PEGAKnowledgeEvidence evidence = PEGAKnowledgeEvidence.From(
+                        PEGANpcEvidenceOrigin.DesignerAuthoredInitial,
+                        _initialKnowledgeObservationTimeSeconds,
+                        this,
+                        entry.DefinitionId);
+                    PEGAKnowledgeFactInitialAuthoringStatus status = entry.TryApply(
+                        _actorBinding,
+                        this,
+                        evidence,
+                        out PEGAKnowledgeWriteResult result,
+                        out string diagnostic);
+                    if (status == PEGAKnowledgeFactInitialAuthoringStatus.Pending)
+                    {
+                        continue;
+                    }
+
+                    _processedInitialKnowledgeEntries.Add(index);
+                    if (status == PEGAKnowledgeFactInitialAuthoringStatus.Rejected ||
+                        result == PEGAKnowledgeWriteResult.RejectedInvalid)
+                    {
+                        EnsureLoggerInitialized();
+                        _log.Warning(
+                            "Designer-authored initial knowledge was rejected.",
+                            LogFields.Field("actorRoot", gameObject.name),
+                            LogFields.Field("entryIndex", index),
+                            LogFields.Field("factDefinitionId", entry.DefinitionId),
+                            LogFields.Field("writeResult", result),
+                            LogFields.Field("reason", diagnostic));
+                    }
+                }
+            }
+            finally
+            {
+                _applyingInitialKnowledge = false;
+            }
+        }
+
+        private void OnActorBindingChanged(ActorOccurrenceReferenceChange change)
+        {
+            if (!_applyingInitialKnowledge)
+            {
+                ApplyPendingInitialKnowledge();
+            }
+        }
+
+        private bool HasPendingInitialKnowledgeEntries() =>
+            _initialKnowledgeSnapshot != null &&
+            _processedInitialKnowledgeEntries != null &&
+            _processedInitialKnowledgeEntries.Count < _initialKnowledgeSnapshot.Length;
 
         private void EnsureLoggerInitialized()
         {

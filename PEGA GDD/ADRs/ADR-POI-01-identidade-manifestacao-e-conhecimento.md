@@ -1,7 +1,7 @@
 # ADR-POI-01 — Identidade, manifestação e conhecimento de POIs
 
-- **Status:** Aceito quanto à autoridade e à semântica; integrações PEGA de propriedades e Targets ainda pendentes
-- **Revisado:** 2026-11-02 — posição conhecida separada de ocorrência física
+- **Status:** Aceito quanto à autoridade e à semântica; autoria canônica de Position(ObjectEntryId) implementada. Sensores e integração com Targets/navegação pendentes.
+- **Revisado:** 2026-11-03 — posição Object Entry autorada e observável nos escopos Group e Global
 - **Data:** 2026-10-30
 - **Owner:** PEGA — mundo, identidade de POIs e integração com conhecimento/GOAP
 
@@ -11,7 +11,7 @@ O GDD descreve POIs como objetos relevantes do cenário e distingue o **World St
 
 A decisão técnica aprovada anteriormente criou identidade e resolução física próprias do PEGA. Essa decisão é **substituída**: os contratos instalados do Immersive Framework para identidade `ObjectEntry` e binding entre identidade lógica e ocorrência física não haviam sido devidamente considerados. A decisão anterior duplicava uma autoridade que deve pertencer ao Framework.
 
-Este ADR preserva os requisitos funcionais de POIs, identidade, localização e conhecimento, mas substitui as decisões técnicas incompatíveis. Ele registra a arquitetura alvo e as dependências pendentes; não declara que a nova integração esteja implementada ou validada.
+Este ADR preserva os requisitos funcionais de POIs, identidade, localização e conhecimento, mas substitui as decisões técnicas incompatíveis. Ele registra a arquitetura, o estado implementado e as integrações que continuam pendentes. A validação manual reportada pelo usuário é identificada como tal; esta atualização não a reexecutou.
 
 ## Decisões vigentes
 
@@ -27,7 +27,7 @@ Este ADR preserva os requisitos funcionais de POIs, identidade, localização e 
 
 ## Identidade, localização e autorização
 
-Exemplo de autoria: quando as definições tipadas necessárias existirem e permitirem conhecimento inicial, o Group Knowledge pode associar o ObjectEntryId de um cofre à propriedade Tipo com valor Cofre e à propriedade Posição com valor (0, 1, 0), preservando a evidência de conhecimento inicial. Um Desire pode consultar essa mesma propriedade Posição. O vetor afirma que o Group conhece a posição; não comprova que a ocorrência física esteja carregada ou resolvida. Usá-lo como Target de navegação depende da integração PEGA ainda pendente.
+Exemplo implementado na Mission: Group e Global associam o mesmo `ObjectEntryId` `pega.warehouse.storage-rack-west-north` à definição canônica `pega.object-entry.position`, com valores distintos por escopo. A definição `Position` permite autoria inicial e mantém evidência própria; uma definição `Type` ainda não está disponível. As coordenadas afirmam apenas o que cada escopo conhece e não comprovam que a ocorrência física esteja carregada ou resolvida. Usar essa posição em condições GOAP, como Target de navegação, depende de integração PEGA ainda pendente. O usuário reportou validação manual no Unity em 2026-11-03.
 
 A referência de autoria usa ObjectEntryId e preserva as opções do Framework para entrada manual e picker de identidades indexadas. Selecionar o endereço identifica o sujeito do fato; não cria propriedades, atribui posição ou concede autorização de Knowledge.
 
@@ -35,8 +35,8 @@ A referência de autoria usa ObjectEntryId e preserva as opções do Framework p
 
 - A implementação PEGA anterior de identidade e registro/resolução de manifestações foi retirada. O Framework agora oferece a consulta pública read-only Experimental; este ADR não cria um substituto PEGA nem afirma que a resposta da consulta seja publicada no Knowledge.
 - Conhecimento genérico, fatos e políticas, Actors, GOAP e consumidores não exclusivos do mecanismo anterior permanecem em seus owners existentes.
-- O payload genérico de fatos aceita ObjectEntryId como endereço, mas as definições canônicas atuais ainda não descrevem propriedades de POI; isso não demonstra integração completa nem uso como Target.
-- Permanecem pendentes: definições tipadas e políticas para propriedades de POI; vínculo entre ObjectEntryId/posição conhecida, Targets GOAP e navegação; fontes que legitimamente descobrem ou atualizam posição; escolha do seletor exato pelo consumidor PEGA quando precisar consultar um owner e tratamento explícito de Ambiguous, sem escolha arbitrária; validação de unicidade lógica de IDs; acompanhamento de rotas após mudança de manifestação; e retry/atualização. A consulta pública, seus resultados explícitos e o seletor de owner já são contratos disponíveis do Framework.
+- A definição canônica `pega.object-entry.position` usa `ObjectEntryId` como endereço e admite posição inicial no Knowledge. Isso ainda não representa a posição da ocorrência física nem integra o fato a um Target.
+- Permanecem pendentes: outras definições tipadas de POI, como Type; sensores/fontes que legitimamente descubram ou atualizem posição; vínculo entre ObjectEntryId/posição conhecida, condições GOAP, Targets e navegação; escolha do seletor exato pelo consumidor PEGA quando precisar consultar um owner e tratamento explícito de Ambiguous, sem escolha arbitrária; validação de unicidade lógica de IDs; acompanhamento de rotas após mudança de manifestação; e retry/atualização. A consulta pública, seus resultados explícitos e o seletor de owner já são contratos disponíveis do Framework.
 - A antiga decisão técnica foi substituída porque deixou de reutilizar os contratos de identidade e binding já disponíveis no Framework. Essa correção documental e a remoção da implementação PEGA não implementam nem validam a futura arquitetura.
 
 ## Relação com decisões existentes

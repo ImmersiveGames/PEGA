@@ -1,7 +1,7 @@
 # PEGA — Group Knowledge
 
 - **Data:** 2026-11-02
-- **Status:** implementação presente; prova manual no Unity com resultado PASS, conforme relato do usuário. O Codex não executou Unity.
+- **Status:** implementação presente; a primeira prova de leitura Group está relatada como PASS em 2026-11-02 e a evolução de autoria inicial/diagnóstico foi validada manualmente em 2026-11-03 pelo usuário. O Codex não executou Unity nesta revisão.
 - **Decisão arquitetural:** [ADR-GROUP-KNOWLEDGE-01](../../ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md)
 - **Etapa anterior:** [Global Knowledge](2026-11-02-global-knowledge-implementation.md)
 
@@ -33,7 +33,19 @@ O `Packages/manifest.json` do PEGA resolve `com.immersive.framework` por depend�
 ## Limites e evolução futura
 
 - Não há propagação automática entre Individual, Group e Global.
-- A Mission não autoriza conhecimento inicial de Group; a prova registra fatos temporários durante o Play Mode.
+- Na etapa inicial deste relatório, a Mission ainda não tinha autoria de Group e a prova registrava fatos temporários no Play Mode. A evolução posterior descrita abaixo adicionou a configuração serializada de fatos iniciais Group e Global.
 - O GOAP dispõe de leitura Global via capability composta, mas a prova não integra os fatos a Actions, Desires ou decisões do planner. Group Knowledge é validado por leitura explícita e não participa do planejamento atual.
 - Não há produtor de gameplay conectado ao fato demonstrador Global nem distribuição de eventos reais do assalto.
 - Não foi alterado o Immersive Framework.
+
+## Atualização — autoria inicial e diagnóstico dos três escopos (2026-11-03)
+
+A evolução implementada reorganiza as definições tipadas canônicas e a entrada de autoria compartilhada sem introduzir um armazenamento concorrente. O Inspector usa o catálogo para compor **Identidade → Propriedade → Valor** em Individual, Group e Global. Individual, Group e Global continuam escrevendo em seus Knowledge States e stores existentes, com as respectivas authorities, políticas e evidências. Perception continua consumindo as mesmas definições canônicas.
+
+Uma nova propriedade fica declarada como definição tipada canônica em `Assets/PEGA/NPC/Knowledge/Definitions`, com ID, tipos de endereço/valor e política. `PEGAKnowledgeFactDefinitionCatalog` encontra automaticamente os campos estáticos de definição e rejeita IDs duplicados; a matriz genérica do Inspector a apresenta quando os payloads tipados disponíveis cobrem seus tipos. Os consumidores continuam usando a definição sem uma lista ou editor duplicado por propriedade.
+
+Para Group, `PEGAActorGroupComposition` cria os Groups reais usando o contrato oficial do Framework. `PEGAActorGroupKnowledgeState` só aplica a autoria do perfil declarado depois de confirmar o Group vivo criado pelo owner; as leituras dos membros verificam membership vigente. O Inspector GOAP mostra autoridades e fatos por escopo, propriedade, identidade, valor, origem, timestamps e validade, e oculta fatos Group quando a membership não autoriza a consulta.
+
+Na cena `MissionActivityContent`, um NPC também tem um fato Individual inicial `pega.actor.last-observed-character-position` endereçado pelo Actor do Player resolvido via binding e com valor `(100, 0, 100)`. A Perception publica a mesma definição e identidade quando observa o Actor, com origem própria e a política canônica. O fato Group de `pega.gang.larapios` e o Global usam a mesma definição `pega.object-entry.position` e o mesmo Object Entry `pega.warehouse.storage-rack-west-north`, com valores `(-5, 1, 15.700001)` e `(200, 0, 200)`, respectivamente. Os stores permanecem independentes. O usuário reportou validação manual no Unity em 2026-11-03, incluindo autoria inicial, identidade/propriedade equivalentes entre Individual e Perception, leitura autorizada, acesso negado, isolamento entre Groups e conhecimento Global; esta atualização documental não repetiu a prova.
+
+Permanecem pendentes: autoria e avaliação de condições GOAP, sensores/fontes de Object Entry, produtores de eventos reais do assalto, propagação entre escopos e uso de posições conhecidas para Targets/navegação. O [ADR-GROUP-KNOWLEDGE-01](../../ADRs/ADR-GROUP-KNOWLEDGE-01-conhecimento-compartilhado-e-previo.md), o [ADR-GOAP-02](../../ADRs/ADR-GOAP-02-modelo-causal-e-planejamento.md), o [ADR-POI-01](../../ADRs/ADR-POI-01-identidade-manifestacao-e-conhecimento.md) e o [guia prático GOAP](../../Guias/PEGA-GOAP-guia-pratico.md) registram o estado consolidado.

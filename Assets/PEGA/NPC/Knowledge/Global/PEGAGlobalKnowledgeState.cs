@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Immersive.Framework.Actors;
 using Immersive.Framework.ActivityFlow;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
@@ -15,9 +17,14 @@ namespace PEGA.NPC
     [AddComponentMenu("PEGA/Knowledge/Global Knowledge State")]
     public sealed class PEGAGlobalKnowledgeState : MonoBehaviour,
         IPEGAKnowledgeFactReader,
+        IPEGAKnowledgeFactWriter,
         IActivityContentLifecycleReceiver
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
+
+        [SerializeField, Tooltip("Fatos iniciais da Activity. Cada linha usa o catálogo canônico e é publicada somente na authority Global deste owner.")]
+        private List<PEGAKnowledgeFactAuthoringEntry> initialKnowledge =
+            new List<PEGAKnowledgeFactAuthoringEntry>();
 
         [NonSerialized]
         private PEGAKnowledgeFactStore _factStore;
@@ -27,6 +34,15 @@ namespace PEGA.NPC
 
         [NonSerialized]
         private Immersive.Framework.Authoring.ActivityAsset _activeActivity;
+
+        [NonSerialized]
+        private PEGAKnowledgeFactAuthoringEntry[] _initialKnowledgeSnapshot;
+
+        [NonSerialized]
+        private ActorOccurrenceReferenceBinding _actorBinding;
+
+        [NonSerialized]
+        private double _initialKnowledgeObservationTimeSeconds;
 
         [NonSerialized]
         private ScopedLogger _log;
@@ -63,10 +79,16 @@ namespace PEGA.NPC
             ClearStore();
             _factStore = new PEGAKnowledgeFactStore(PEGAKnowledgeScope.Global);
             _activeActivity = context.Activity;
+            _initialKnowledgeSnapshot = initialKnowledge != null
+                ? initialKnowledge.ToArray()
+                : Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+            _actorBinding = GetComponent<ActorOccurrenceReferenceBinding>();
+            _initialKnowledgeObservationTimeSeconds = Time.timeAsDouble;
             _log.Info(
                 "Activity-owned Global Knowledge became available.",
                 LogFields.Field("activity", context.Activity.ActivityName),
                 LogFields.Field("contentRoot", gameObject.name));
+            ApplyInitialKnowledge();
         }
 
         void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context)
@@ -188,6 +210,8 @@ namespace PEGA.NPC
             LogField[] fields =
             {
                 LogFields.Field("fact", key.Name),
+                LogFields.Field("factDefinitionId", key.Definition.Id),
+                LogFields.Field("factAddress", key.AddressValue),
                 LogFields.Field("scope", Scope),
                 LogFields.Field("writeResult", result),
                 LogFields.Field("origin", evidence.Origin),
@@ -234,6 +258,57 @@ namespace PEGA.NPC
             _factStore?.Clear();
             _factStore = null;
             _activeActivity = null;
+            _initialKnowledgeSnapshot = null;
+            _actorBinding = null;
+            _initialKnowledgeObservationTimeSeconds = 0d;
+        }
+
+        private void ApplyInitialKnowledge()
+        {
+            if (_initialKnowledgeSnapshot == null || _initialKnowledgeSnapshot.Length == 0)
+            {
+                return;
+            }
+
+            for (int index = 0; index < _initialKnowledgeSnapshot.Length; index++)
+            {
+                PEGAKnowledgeFactAuthoringEntry entry = _initialKnowledgeSnapshot[index];
+                PEGAKnowledgeFactInitialAuthoringStatus status = entry.TryApply(
+                    _actorBinding,
+                    this,
+                    PEGAKnowledgeEvidence.From(
+                        PEGANpcEvidenceOrigin.DesignerAuthoredInitial,
+                        _initialKnowledgeObservationTimeSeconds,
+                        this,
+                        entry.DefinitionId),
+                    out PEGAKnowledgeWriteResult result,
+                    out string diagnostic);
+
+                if (status == PEGAKnowledgeFactInitialAuthoringStatus.Pending)
+                {
+                    diagnostic = "The selected Actor identity is not resolved during this Activity owner entry; use a resolved ActorDeclaration or an available binding.";
+                }
+
+                if ((status != PEGAKnowledgeFactInitialAuthoringStatus.Applied ||
+                     result == PEGAKnowledgeWriteResult.RejectedInvalid) &&
+                    string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = $"The Global fact writer rejected the value with result '{result}'; check the definition policy and typed value.";
+                }
+
+                if (status != PEGAKnowledgeFactInitialAuthoringStatus.Applied ||
+                    result == PEGAKnowledgeWriteResult.RejectedInvalid)
+                {
+                    EnsureLoggerInitialized();
+                    _log.Error(
+                        "Designer-authored initial Global Knowledge was rejected.",
+                        LogFields.Field("activity", _activeActivity != null ? _activeActivity.ActivityName : "unavailable"),
+                        LogFields.Field("entryIndex", index),
+                        LogFields.Field("factDefinitionId", entry.DefinitionId),
+                        LogFields.Field("writeResult", result),
+                        LogFields.Field("reason", diagnostic));
+                }
+            }
         }
     }
 }

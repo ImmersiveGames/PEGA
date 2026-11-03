@@ -145,29 +145,62 @@ namespace PEGA.NPC
             bool groupKnowledgeAvailable = false;
             if (groupKnowledge != null)
             {
+                if (!groupKnowledge.TryValidateInitialKnowledgeGroups(
+                        declaredGroups,
+                        out string initialKnowledgeDiagnostic))
+                {
+                    _log.Error(
+                        "Group initial Knowledge authoring was rejected; Framework Group creation and membership will continue, and an enabled Group Knowledge authority will still bind independently.",
+                        LogFields.Field("ownerScope", ownerScope),
+                        LogFields.Field("owner", ownerName),
+                        LogFields.Field("reason", initialKnowledgeDiagnostic));
+                }
+
                 if (!groupKnowledge.isActiveAndEnabled)
                 {
-                    _log.Warning(
-                        "Optional Group Knowledge is disabled; Actor Group creation and membership will continue without it.",
-                        LogFields.Field("ownerScope", ownerScope),
-                        LogFields.Field("owner", ownerName));
+                    if (groupKnowledge.HasAuthoredInitialKnowledge)
+                    {
+                        _log.Error(
+                            "Designer-authored Group Knowledge was rejected because its optional authority is disabled; Framework Group creation and membership will continue.",
+                            LogFields.Field("ownerScope", ownerScope),
+                            LogFields.Field("owner", ownerName));
+                    }
+                    else
+                    {
+                        _log.Warning(
+                            "Optional Group Knowledge is disabled; Actor Group creation and membership will continue without it.",
+                            LogFields.Field("ownerScope", ownerScope),
+                            LogFields.Field("owner", ownerName));
+                    }
                 }
                 else if (groupKnowledge.TryBeginOwner(
                              ownerScope,
                              ownerIdentity,
                              ownerContribution,
                              groupAccess,
+                             declaredGroups,
                              out string beginKnowledgeDiagnostic))
                 {
                     groupKnowledgeAvailable = true;
                 }
                 else
                 {
-                    _log.Warning(
-                        "Optional Group Knowledge could not bind to this Actor Group owner; Actor Group creation and membership will continue.",
-                        LogFields.Field("ownerScope", ownerScope),
-                        LogFields.Field("owner", ownerName),
-                        LogFields.Field("reason", beginKnowledgeDiagnostic));
+                    if (groupKnowledge.HasAuthoredInitialKnowledge)
+                    {
+                        _log.Error(
+                            "Designer-authored Group Knowledge was rejected because its authority could not bind to this owner; Framework Group creation and membership will continue.",
+                            LogFields.Field("ownerScope", ownerScope),
+                            LogFields.Field("owner", ownerName),
+                            LogFields.Field("reason", beginKnowledgeDiagnostic));
+                    }
+                    else
+                    {
+                        _log.Warning(
+                            "Optional Group Knowledge could not bind to this Actor Group owner; Actor Group creation and membership will continue.",
+                            LogFields.Field("ownerScope", ownerScope),
+                            LogFields.Field("owner", ownerName),
+                            LogFields.Field("reason", beginKnowledgeDiagnostic));
+                    }
                 }
             }
 
@@ -189,10 +222,20 @@ namespace PEGA.NPC
                 if (groupKnowledgeAvailable &&
                     !groupKnowledge.TryRegisterCreatedGroup(group, groupAccess, out string registrationDiagnostic))
                 {
-                    _log.Warning(
-                        "Optional Group Knowledge did not create a store for a Framework Actor Group; composition will continue.",
-                        LogFields.Field("groupId", group.GroupId.StableText),
-                        LogFields.Field("reason", registrationDiagnostic));
+                    if (groupKnowledge.HasAuthoredInitialKnowledgeFor(profile))
+                    {
+                        _log.Error(
+                            "Designer-authored Group Knowledge was rejected because no store was registered for this live Framework Group; composition will continue.",
+                            LogFields.Field("groupId", group.GroupId.StableText),
+                            LogFields.Field("reason", registrationDiagnostic));
+                    }
+                    else
+                    {
+                        _log.Warning(
+                            "Optional Group Knowledge did not create a store for a Framework Actor Group; composition will continue.",
+                            LogFields.Field("groupId", group.GroupId.StableText),
+                            LogFields.Field("reason", registrationDiagnostic));
+                    }
                 }
 
                 _log.Info(

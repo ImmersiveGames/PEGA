@@ -4,7 +4,11 @@ using System.Reflection;
 
 namespace PEGA.NPC
 {
-    /// <summary>Transient lookup of canonical fact definitions already declared by PEGA.</summary>
+    /// <summary>Índice transitório das definições canônicas de fatos declaradas pelo PEGA.</summary>
+    /// <remarks>
+    /// Declare cada propriedade como campo estático readonly que implemente IPEGAKnowledgeFactDefinition
+    /// em Knowledge/Definitions. A descoberta é automática e IDs duplicados são rejeitados.
+    /// </remarks>
     public static class PEGAKnowledgeFactDefinitionCatalog
     {
         private static readonly Dictionary<string, IPEGAKnowledgeFactDefinition> Definitions = Build();
