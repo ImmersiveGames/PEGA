@@ -3,7 +3,7 @@
 **Projeto:** `PEGA`
 **Tipo de documento:** Game Design Document
 **Status:** Fonte de verdade ativa para as regras e arquitetura de gameplay
-**Versão:** 0.14.0
+**Versão:** 0.14.1
 **Última atualização:** 2026-11-02
 
 ---
@@ -662,6 +662,18 @@ Os larápios são os principais inimigos de PEGA. Eles são organizados em gangu
 | Vampiros Pálidos | Fantasmas da Noite | Controle, sedução ou drenagem de energia. |
 | Múmia Maldita | Fantasmas da Noite | Desorientação, faixas e terror. |
 
+### Nomes em inglês dos Trapalhões do Crime
+
+Nomes oficiais em inglês da gangue da Demo, usados também para nomear modelos e assets na Unity (pasta/FBX com espaço; assets com underscore).
+
+| Português | Inglês | Pasta/FBX | Assets |
+|---|---|---|---|
+| Os Trapalhões do Crime | The Crime Bunglers | — | — |
+| Ladrões Listrados | Striped Robber | `Striped Robber` | `Striped_Robber` |
+| Ladrões Molhados | Soggy Robber | `Soggy Robber` | `Soggy_Robber` |
+| Capangas Atrapalhados | Clumsy Henchman | `Clumsy Henchman` | `Clumsy_Henchman` |
+| Marombas Ameaçadores | Threatening Brute | `Threatening Brute` | `Threatening_Brute` |
+
 > [!BEST_PRACTICE]
 > Cada gangue deve ter pelo menos um inimigo comum, um inimigo de suporte, um inimigo de pressão e um líder. Isso ajuda a criar variedade sem transformar cada fase em um conjunto imprevisível demais.
 
@@ -1244,6 +1256,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.14.1 | 2026-11-03 | Registrados os nomes em inglês da gangue Os Trapalhões do Crime e de seus quatro arquétipos, com convenção de nomes para assets Unity. |
 | 0.14.0 | 2026-10-25 | Referenciada a diretriz arquitetural transversal do PEGA e sua aplicação ao GOAP. |
 | 0.13.0 | 2026-10-25 | Separados Goal, Desejo, intenção e plano; consolidados planejamento por estados hipotéticos, competência decisória, estabilidade, valor informacional e tentativas legítimas conforme decisões aprovadas e ADRs GOAP. |
 | 0.12.0 | 2026-10-15 | Definida no HUB, depois da seleção da missão e Briefing, a entrada por Join dos dispositivos locais, escolha e confirmação individual dos personagens (com duplicação permitida) e início apenas por botão explícito Iniciar Missão; alinhado o fluxo com a Demo. |
