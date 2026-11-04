@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f27d31cf2a23349b7b8bb8e36fbb12, type: 3}
+  m_Name: FL_Threatening_Brute
+  m_EditorClassIdentifier: Assembly-CSharp::FaceSpriteLibrary
+  tracks:
+  - trackId: eyes
+    displayName: eyes
+    atlas: {fileID: 2800000, guid: 10dc846b8269bf948a86818d8c55a476, type: 3}
+    gridSize: {x: 4, y: 6}
+    sprites:
+    - id: eyes.opened
+      displayName: eyes.normal.opened
+      atlasCoordinate: {x: 0, y: 0}
+    - id: 0090d78135bd43a28b7cdcb04f71d77f
+      displayName: eyes.sad.closed
+      atlasCoordinate: {x: 1, y: 0}
+    - id: d302ea19d77f468bbb6258a79b2ed3ec
+      displayName: eyes.crying
+      atlasCoordinate: {x: 2, y: 0}
+    - id: d2f9ea2921464c569122922aa25f7575
+      displayName: eyes.look.up
+      atlasCoordinate: {x: 3, y: 0}
+    - id: 15336eab127a440d9cffd5f9e7626a7d
+      displayName: eyes.normal.closed
+      atlasCoordinate: {x: 0, y: 1}
+    - id: 5d8657eb239c468f9594e751a1a5eb9e
+      displayName: eyes.sad.opened
+      atlasCoordinate: {x: 1, y: 1}
+    - id: 0f350683fac64bd89e69ddaaeb40fe74
+      displayName: eyes.blink.right
+      atlasCoordinate: {x: 2, y: 1}
+    - id: acdb574510a44dd19d024e4b60d00be7
+      displayName: eyes.look.down
+      atlasCoordinate: {x: 3, y: 1}
+    - id: b28a36cead8f472b81db09f8e3347919
+      displayName: eyes.happy.closed
+      atlasCoordinate: {x: 0, y: 2}
+    - id: 67ad65e0df394bdab1f55e5e15f85f9e
+      displayName: eyes.suspicius.opened
+      atlasCoordinate: {x: 1, y: 2}
+    - id: 66ba41f0cd7349ee86041e9c9c6943b1
+      displayName: eyes.blink.left
+      atlasCoordinate: {x: 2, y: 2}
+    - id: 5841e9ae58414cb3a2f2c8456077cc8e
+      displayName: eyes.look.right
+      atlasCoordinate: {x: 3, y: 2}
+    - id: 8df7ecf9275341038cf577f8c84faec7
+      displayName: eyes.angry.opened
+      atlasCoordinate: {x: 0, y: 3}
+    - id: 67d2d1de14f7400e86a44915cb771a31
+      displayName: eyes.tired.opened
+      atlasCoordinate: {x: 1, y: 3}
+    - id: 8d276dd77ac14b7d90d79e2ce06c0e07
+      displayName: eyes.hurted.opened
+      atlasCoordinate: {x: 2, y: 3}
+    - id: f5cb6557b3f54ea6884bccbc83e243c1
+      displayName: eyes.look.left
+      atlasCoordinate: {x: 3, y: 3}
+    - id: 50dbed29f1f9438e98dad8d4ef6048f8
+      displayName: eyes.angry.closed
+      atlasCoordinate: {x: 0, y: 4}
+    - id: 812b61a3989749cdba77626853916a78
+      displayName: eyes.shocked.opened
+      atlasCoordinate: {x: 1, y: 4}
+    - id: 1376e467e7824f3c9f775083812e379f
+      displayName: eyes.surprised.opened
+      atlasCoordinate: {x: 2, y: 4}
+    - id: 808efb668f8e475183c9c237e7737135
+      displayName: eyes.dead.closed
+      atlasCoordinate: {x: 3, y: 4}
+    - id: 3eccb05f15db4157b7cd0456f74ecbd1
+      displayName: eyes.scared.opened
+      atlasCoordinate: {x: 0, y: 5}
+    - id: 39536846022647c3b7764de3f7eaacc9
+      displayName: eyes.amazed.opened
+      atlasCoordinate: {x: 1, y: 5}
+    - id: bdfcd1d16eba44fcae6ceffe0f78abef
+      displayName: eyes.naughty.opened
+      atlasCoordinate: {x: 2, y: 5}
+    - id: cd4692ed869c4c90af542673828e5b5c
+      displayName: eyes.empty.opened
+      atlasCoordinate: {x: 3, y: 5}
+  - trackId: mouth
+    displayName: mouth
+    atlas: {fileID: 2800000, guid: 6ac1a7062f8fc0a4a8af9b96a7b40fdf, type: 3}
+    gridSize: {x: 2, y: 6}
+    sprites:
+    - id: mouth.normal.closed
+      displayName: mouth.normal.closed
+      atlasCoordinate: {x: 0, y: 0}
+    - id: mouth.surprised
+      displayName: mouth.opened
+      atlasCoordinate: {x: 1, y: 0}
+    - id: mouth.smile
+      displayName: mouth.smile
+      atlasCoordinate: {x: 0, y: 1}
+    - id: mouth.astonished
+      displayName: mouth.astonished
+      atlasCoordinate: {x: 1, y: 1}
+    - id: mouth.sad
+      displayName: mouth.sad
+      atlasCoordinate: {x: 0, y: 2}
+    - id: mouth.naughty
+      displayName: mouth.surprised
+      atlasCoordinate: {x: 1, y: 2}
+    - id: mouth.opened
+      displayName: mouth.smirk
+      atlasCoordinate: {x: 0, y: 3}
+    - id: mouth.speak.full
+      displayName: mouth.speak.full
+      atlasCoordinate: {x: 1, y: 3}
+    - id: mouth.smirk
+      displayName: mouth.naughty
+      atlasCoordinate: {x: 0, y: 4}
+    - id: mouth.speak.mid
+      displayName: mouth.speak.mid
+      atlasCoordinate: {x: 1, y: 4}
+    - id: mouth.angry
+      displayName: mouth.angry
+      atlasCoordinate: {x: 0, y: 5}
+    - id: mouth.speak.min
+      displayName: mouth.speak.min
+      atlasCoordinate: {x: 1, y: 5}

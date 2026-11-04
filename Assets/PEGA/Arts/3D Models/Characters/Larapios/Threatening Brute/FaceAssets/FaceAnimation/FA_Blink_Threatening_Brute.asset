@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47e212913a96b3b4eb09689019071140, type: 3}
+  m_Name: FA_Blink_Threatening_Brute
+  m_EditorClassIdentifier: Assembly-CSharp::FaceAnimation
+  id: FA_Blink_Stripped_Robber
+  playbackMode: 2
+  interval: 6
+  templateState: {fileID: 11400000, guid: e05a109b5393cf34db8ec7d121bb2146, type: 2}
+  spriteLibrary: {fileID: 11400000, guid: 374d6ce7032ad5f429349a28d71e35a1, type: 2}
+  tracks:
+  - trackId: eyes
+    enabled: 1
+    sourceMode: 0
+    stateFrames:
+    - frameId: eye.closed
+      duration: 0.1
+    - frameId: eye.opened
+      duration: 0.1
+    spriteFrames: []

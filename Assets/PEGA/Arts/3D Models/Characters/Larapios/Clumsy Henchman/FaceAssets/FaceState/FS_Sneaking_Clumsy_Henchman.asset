@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FS_Sneaking_Clumsy_Henchman
   m_EditorClassIdentifier: Assembly-CSharp::FaceState
   id: FS_Sneaking_Stripped_Robber
-  spriteLibrary: {fileID: 11400000, guid: b1b5d92aaed5e194b81ae2569d5db2f4, type: 2}
+  spriteLibrary: {fileID: 11400000, guid: f63bf8d7b63fda543a4525c2a1537933, type: 2}
   trackStates:
   - trackId: eyes
     defaultFrameId: eye.opened

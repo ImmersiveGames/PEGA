@@ -15,8 +15,8 @@ MonoBehaviour:
   id: FA_Blink_Stripped_Robber
   playbackMode: 2
   interval: 6
-  templateState: {fileID: 11400000, guid: 9d9f757397119c04bacb33f62fc8d980, type: 2}
-  spriteLibrary: {fileID: 11400000, guid: b1b5d92aaed5e194b81ae2569d5db2f4, type: 2}
+  templateState: {fileID: 11400000, guid: d6b48f0c8b0812244a40d68b96fdfdd5, type: 2}
+  spriteLibrary: {fileID: 11400000, guid: f63bf8d7b63fda543a4525c2a1537933, type: 2}
   tracks:
   - trackId: eyes
     enabled: 1
