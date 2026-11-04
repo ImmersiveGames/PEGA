@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &2935314520663088543
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_Name
+      value: Clumsy_Henchman
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 29e26c9557c74eb58e791ed59c6365fe, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8120092024855360577}
+  m_SourcePrefab: {fileID: 100100000, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+--- !u!137 &2304256135410123873 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3982881632281025022, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+  m_PrefabInstance: {fileID: 2935314520663088543}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2629324624863060174 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+  m_PrefabInstance: {fileID: 2935314520663088543}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8120092024855360577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2629324624863060174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f08b9b39da1bbc4790d818ac03dd29c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FaceController
+  debugLogging: 0
+  trackBindings:
+  - trackId: eyes
+    targetRenderer: {fileID: 2304256135410123873}
+    materialIndex: 0
+  - trackId: mouth
+    targetRenderer: {fileID: 2965310839276047417}
+    materialIndex: 0
+  defaultState: {fileID: 11400000, guid: d6b48f0c8b0812244a40d68b96fdfdd5, type: 2}
+  states:
+  - {fileID: 11400000, guid: d6b48f0c8b0812244a40d68b96fdfdd5, type: 2}
+  - {fileID: 11400000, guid: 2a48ed6791bb87744b75836a13b92343, type: 2}
+  animations:
+  - {fileID: 11400000, guid: 9be9ffb679ea2af46a5615ca823f7d47, type: 2}
+--- !u!137 &2965310839276047417 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -9107769940584083034, guid: 3dca2b4e67895444c9b76b5e57af79e4, type: 3}
+  m_PrefabInstance: {fileID: 2935314520663088543}
+  m_PrefabAsset: {fileID: 0}
