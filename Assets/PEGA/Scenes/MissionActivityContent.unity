@@ -119,6 +119,98 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &442300474
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 442300476}
+  - component: {fileID: 442300475}
+  m_Layer: 0
+  m_Name: Object Entry Recognition Access
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &442300475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442300474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding
+--- !u!4 &442300476
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442300474}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &651366912
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 651366914}
+  - component: {fileID: 651366913}
+  m_Layer: 0
+  m_Name: Caixa - Teste Object Entry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &651366913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651366912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: e03449f1358b493f8c676768919fda5e
+  requiredness: 10
+--- !u!4 &651366914
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651366912}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4, y: 0, z: -9.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1059446699}
+  - {fileID: 1341495667}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &889876565
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -141,11 +233,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 50cc10f079d64953a4defd4cdad34817, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: globalKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 3500000003}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -215,6 +307,230 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 6100000101}
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!1 &1059446698
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1059446699}
+  - component: {fileID: 1059446702}
+  - component: {fileID: 1059446701}
+  - component: {fileID: 1059446700}
+  m_Layer: 0
+  m_Name: Corpo
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1059446699
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059446698}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.552, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 651366914}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1059446700
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059446698}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1059446701
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059446698}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1059446702
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059446698}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1341495666
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1341495667}
+  - component: {fileID: 1341495670}
+  - component: {fileID: 1341495669}
+  - component: {fileID: 1341495668}
+  m_Layer: 0
+  m_Name: Tampa
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1341495667
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341495666}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.755, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 651366914}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1341495668
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341495666}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1341495669
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341495666}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1341495670
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341495666}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &2500000200
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,7 +575,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ActivityFlow.ActivityContentContribution
   activity: {fileID: 11400000, guid: a0000000000000000000000000000001, type: 2}
   localContentId: pega.mission.initial-player-join
@@ -274,11 +590,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b9a5ffbb42643c3ab9ba6af6c43198d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionJoinTrigger
   scope: 20
   reason: pega.mission.initial-player-join
-  controlScheme:
+  controlScheme: 
 --- !u!114 &2500000205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -289,8 +605,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9c2502b9b7f40f3bd093c32e90b6bcf, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   joinTrigger: {fileID: 2500000204}
 --- !u!1001 &2500000300
 PrefabInstance:
@@ -314,11 +630,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 7adfc5722b064a5e9042be531f114c8f, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: globalKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 3500000003}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -416,7 +732,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85d7265d52614a42aa9b6eca99186812, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorGroupAccessBinding
 --- !u!114 &2500000403
 MonoBehaviour:
@@ -428,7 +744,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ActivityFlow.ActivityContentContribution
   activity: {fileID: 11400000, guid: a0000000000000000000000000000001, type: 2}
   localContentId: pega.mission.actor-groups
@@ -453,7 +769,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f577d439e2014fc8b58b8649f8829790, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupComposition
   groupsToCreate:
   - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
@@ -473,7 +789,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8a54d837fd8471e91cbb2b895884211, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeState
   initialKnowledge:
   - groupProfile: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
@@ -484,7 +800,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-demo-poi
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -499,8 +815,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -517,7 +833,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-demo-poi
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -532,8 +848,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -550,7 +866,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-demo-poi
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -565,8 +881,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -583,7 +899,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -598,8 +914,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -616,7 +932,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -631,8 +947,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -649,7 +965,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-west
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -664,8 +980,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -682,7 +998,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -697,8 +1013,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -715,7 +1031,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -730,8 +1046,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -748,7 +1064,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.second-group-investigation-poi-south
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -763,8 +1079,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -781,7 +1097,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.activity-exit-poi
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -796,8 +1112,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -814,7 +1130,7 @@ MonoBehaviour:
         actorDeclaration: {fileID: 0}
         objectEntryId:
           objectEntryIdText: pega.warehouse.activity-exit-poi
-        stringValue:
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -829,8 +1145,8 @@ MonoBehaviour:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
         objectEntryId:
-          objectEntryIdText:
-        stringValue:
+          objectEntryIdText: 
+        stringValue: 
         integerValue: 0
         longValue: 0
         floatValue: 0
@@ -863,11 +1179,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 3f30b72cbf6b4955a93f886140bc7ea1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: globalKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: availableBehaviors.Array.size
@@ -875,15 +1191,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[4]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[5]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'groupProfiles.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -980,7 +1296,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ActivityFlow.ActivityContentContribution
   activity: {fileID: 11400000, guid: a0000000000000000000000000000001, type: 2}
   localContentId: pega.mission.global-knowledge
@@ -995,7 +1311,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a4a22e4638a47989df495b5b65fed12, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAGlobalKnowledgeState
   initialKnowledge:
   - definitionId: pega.object-entry.position
@@ -1004,7 +1320,7 @@ MonoBehaviour:
       actorDeclaration: {fileID: 0}
       objectEntryId:
         objectEntryIdText: pega.warehouse.storage-rack-west-north
-      stringValue:
+      stringValue: 
       integerValue: 0
       longValue: 0
       floatValue: 0
@@ -1019,8 +1335,8 @@ MonoBehaviour:
       actorIdentitySource: 0
       actorDeclaration: {fileID: 0}
       objectEntryId:
-        objectEntryIdText:
-      stringValue:
+        objectEntryIdText: 
+      stringValue: 
       integerValue: 0
       longValue: 0
       floatValue: 0
@@ -1056,7 +1372,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
@@ -1070,7 +1386,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
@@ -1084,7 +1400,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
@@ -1095,3 +1411,5 @@ SceneRoots:
   - {fileID: 2500000201}
   - {fileID: 2500000401}
   - {fileID: 3500000001}
+  - {fileID: 651366914}
+  - {fileID: 442300476}

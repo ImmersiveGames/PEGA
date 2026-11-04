@@ -2919,8 +2919,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_SerializedVersion: 0
   m_AgentTypeID: 0
   m_CollectObjects: 0
@@ -3963,7 +3963,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.warehouse.storage-rack-west-north
   requiredness: 20
@@ -3977,7 +3977,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
 --- !u!114 &5400000203
 MonoBehaviour:
@@ -3989,7 +3989,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding
 --- !u!114 &5400000204
 MonoBehaviour:
@@ -4001,7 +4001,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c34500b211aa49be8f7a206f27f81517, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Diagnostics.PEGAObjectEntryAuthoringProbe
   identityOnly:
     objectEntryIdText: pega.warehouse.storage-rack-west-north
@@ -4054,7 +4054,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.warehouse.second-group-demo-poi
   requiredness: 20
@@ -4068,7 +4068,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
 --- !u!1 &5400000220
 GameObject:
@@ -4113,7 +4113,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.warehouse.second-group-investigation-poi-west
   requiredness: 20
@@ -4127,7 +4127,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
 --- !u!1 &5400000230
 GameObject:
@@ -4172,7 +4172,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.warehouse.second-group-investigation-poi-south
   requiredness: 20
@@ -4186,7 +4186,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
 --- !u!1 &5400000240
 GameObject:
@@ -4231,7 +4231,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.warehouse.activity-exit-poi
   requiredness: 20
@@ -4245,7 +4245,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
