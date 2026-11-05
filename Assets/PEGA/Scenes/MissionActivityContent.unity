@@ -223,6 +223,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Larapio NPC - Pursuit Demo
       objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
       value: actor.6090887a2b9844529442aeba98a8df21
@@ -543,6 +547,8 @@ GameObject:
   - component: {fileID: 2500000202}
   - component: {fileID: 2500000204}
   - component: {fileID: 2500000205}
+  - component: {fileID: 2500000206}
+  - component: {fileID: 2500000207}
   m_Layer: 0
   m_Name: PEGA Mission Player Admission
   m_TagString: Untagged
@@ -608,6 +614,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   joinTrigger: {fileID: 2500000204}
+--- !u!114 &2500000206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
+  selectionMode: 10
+  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  actorDeclaration: {fileID: 0}
+  useSessionOwner: 0
+  routeOwner: {fileID: 0}
+  activityOwner: {fileID: 0}
+--- !u!114 &2500000207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2500000200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dce2a13ff4344d4bb1cb5fbf14fbd42e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAMissionPlayerObjectEntryRecognitionAccess
+  recognitionQuery: {fileID: 442300475}
+  playerActorReference: {fileID: 2500000206}
 --- !u!1001 &2500000300
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -622,7 +660,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -1168,6 +1206,10 @@ PrefabInstance:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
       value: Larapio NPC - Second Group Demo
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ImmersiveFrameworkSettings
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ImmersiveFrameworkSettingsAsset
   activeGameApplication: {fileID: 11400000, guid: 8d000000000000000000000000000001, type: 2}
-  editorPlayModeStartup: 1
+  editorPlayModeStartup: 0
   frameRatePolicy:
     mode: 10
     targetFrameRate: 60
