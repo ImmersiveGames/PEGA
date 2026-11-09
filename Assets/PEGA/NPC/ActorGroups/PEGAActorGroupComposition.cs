@@ -286,6 +286,10 @@ namespace PEGA.NPC
                     LogFields.Field("groupId", membership.GroupId.StableText),
                     LogFields.Field("actorId", membership.ActorId.StableText),
                     LogFields.Field("actorRoot", membership.Configuration.ActorRoot.name));
+
+                membership.Configuration.ActorRoot
+                    .GetComponent<PEGAActorGroupKnowledgeReader>()?
+                    .NotifyPlanningInputsChanged();
             }
 
             diagnostic = string.Empty;

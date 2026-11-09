@@ -240,7 +240,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -675,7 +675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -1224,7 +1224,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId

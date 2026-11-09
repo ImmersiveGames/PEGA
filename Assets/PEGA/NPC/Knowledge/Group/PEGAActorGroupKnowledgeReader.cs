@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using Immersive.Logging.Loggers;
+using Immersive.Logging.Records;
 using ImmersiveGames.Goap;
+using PEGA.Diagnostics;
 using UnityEngine;
 
 namespace PEGA.NPC
@@ -76,11 +80,63 @@ namespace PEGA.NPC
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorDeclaration))]
     [AddComponentMenu("PEGA/Knowledge/Actor Group Knowledge Reader")]
-    public sealed class PEGAActorGroupKnowledgeReader : MonoBehaviour, IGoapKnowledgeCapability
+    public sealed class PEGAActorGroupKnowledgeReader : MonoBehaviour,
+        IGoapKnowledgeCapability,
+        IPEGANpcPlanningInputChangeSource
     {
+        private const string LogCategory = "PEGA.Gameplay.Knowledge";
+
         [SerializeField]
         [Tooltip("PEGA Group Knowledge owners that can be consulted by this Actor. Each owner checks live Framework membership before returning a fact.")]
         private PEGAActorGroupKnowledgeState[] authorityStates = Array.Empty<PEGAActorGroupKnowledgeState>();
+
+        [NonSerialized]
+        private EventBus<PEGANpcPlanningInputsChangedEvent> _planningInputChangeEvents;
+
+        [NonSerialized]
+        private ScopedLogger _log;
+
+        [NonSerialized]
+        private bool _loggerInitialized;
+
+        public IEventBinding SubscribeToPlanningInputChanges(
+            Action<PEGANpcPlanningInputsChangedEvent> handler)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            EnsurePlanningInputChangeEventsInitialized();
+            return _planningInputChangeEvents.Subscribe(change =>
+            {
+                try
+                {
+                    handler(change);
+                }
+                catch (Exception exception)
+                {
+                    LogPlanningInputChangeSubscriberFailure(handler, exception);
+                }
+            });
+        }
+
+        public bool UnsubscribeFromPlanningInputChanges(IEventBinding binding)
+        {
+            if (binding == null)
+            {
+                throw new ArgumentNullException(nameof(binding));
+            }
+
+            return _planningInputChangeEvents != null &&
+                _planningInputChangeEvents.Unsubscribe(binding);
+        }
+
+        internal void NotifyPlanningInputsChanged()
+        {
+            EnsurePlanningInputChangeEventsInitialized();
+            _planningInputChangeEvents.Publish(new PEGANpcPlanningInputsChangedEvent());
+        }
 
         /// <summary>Consults one Group fact; denied and unavailable results contain an empty Unknown fact.</summary>
         public PEGAActorGroupKnowledgeReadResult<TValue> ReadGroupFact<TAddress, TValue>(
@@ -299,6 +355,36 @@ namespace PEGA.NPC
                 accessStatus,
                 Array.Empty<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>(),
                 diagnostic);
+
+        private void OnDestroy()
+        {
+            _planningInputChangeEvents?.Clear();
+            _planningInputChangeEvents = null;
+        }
+
+        private void EnsurePlanningInputChangeEventsInitialized()
+        {
+            _planningInputChangeEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
+        }
+
+        private void LogPlanningInputChangeSubscriberFailure(
+            Action<PEGANpcPlanningInputsChangedEvent> handler,
+            Exception exception)
+        {
+            if (!_loggerInitialized)
+            {
+                _log = PEGALogging.CreateScopedLogger<PEGAActorGroupKnowledgeReader>(
+                    LogCategory,
+                    gameObject.name);
+                _loggerInitialized = true;
+            }
+
+            _log.Error(
+                "Group Knowledge planning-input subscriber failed; the confirmed Framework membership remains committed.",
+                exception,
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("subscriberMethod", handler.Method.Name));
+        }
 
         private static bool TryReadActorId(ActorDeclaration actor, out ActorId actorId)
         {
