@@ -17,6 +17,10 @@ GameObject:
   - component: {fileID: 114000005}
   - component: {fileID: 114000006}
   - component: {fileID: 114000007}
+  - component: {fileID: 114000008}
+  - component: {fileID: 114000009}
+  - component: {fileID: 114000010}
+  - component: {fileID: 114000011}
   - component: {fileID: 143000000}
   m_Layer: 8
   m_Name: PEGA_PlayerActorRuntimeHost
@@ -52,7 +56,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bd151acf79cd456a9997d26d3af27439, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerActorRuntimeHost
   playerActorDeclaration: {fileID: 114000001}
   presentationMount: {fileID: 400000001}
@@ -66,7 +70,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26cc512b3155464caed4dc48a6c9de6d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.PlayerActorDeclaration
   actorId: 
   actorKind: 20
@@ -84,7 +88,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c812d9e056c74baaa92f5ccb8b31e8c4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorCameraSubjectAuthoring
   observationTransform: {fileID: 400000002}
   framingRadius: 0
@@ -98,7 +102,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 390f1d653bee4a0dbc17dce425c59eaa, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerGameplayInputReader
 --- !u!114 &114000004
 MonoBehaviour:
@@ -110,7 +114,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 724481bb75bd4769af20d6fbf4b04cd1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementMechanic
   intentSource: {fileID: 114000005}
   maxSpeed: 6
@@ -137,7 +141,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b2a12a820c343d2b49e6da48ce17cb4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerMovementIntentSource
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   additionalMoveDeadzone: 0
@@ -152,7 +156,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
   turnMaximumSpeedMetersPerSecond: 1
   turnMinimumAngleDegrees: 60
@@ -167,15 +171,70 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: add8f78c638f4a6ebc59a6a6c12773aa, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerObjectEntryDiscoverySource
-  discoveryRadiusMeters: 12
-  scanIntervalSeconds: 0.2
-  candidateLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  drawDiscoveryGizmos: 1
+  candidateDiscoverySensorInstance: {fileID: 114000010}
+  discoveryVisualizationLevel: 1
   drawGizmosWhenUnselected: 1
+--- !u!114 &114000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d751d35ae6aa4834bcb837e2af5539ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerObjectEntrySelectionSource
+  selectionRangeMeters: 5
+  aimAssistViewportRadius: 0.45
+  stickyViewportMargin: 0.1
+  proximityWeight: 0.3
+  playerFacingWeight: 0.2
+  facingIntentAlignmentThreshold: 0.9
+  facingIntentAdvantage: 0.2
+  switchScoreMargin: 0.12
+  switchConfirmationSeconds: 0.15
+  selectionVisualizationLevel: 1
+--- !u!114 &114000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88c2bd146acf46eeb29712f407641f2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ImmersiveGames.Perception.Runtime::ImmersiveGames.Perception.PerceptionSensorSet
+--- !u!114 &114000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e67bfe840df49f0a57fa218bb4d2511, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ImmersiveGames.Perception.Runtime::ImmersiveGames.Perception.PerceptionSensorInstance
+  definition: {fileID: 11400000, guid: 9b3271d9e2a1482ba33ba1c74a1e991c, type: 2}
+--- !u!114 &114000011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fef973a2263a4b53ac6bfb2e95f61f7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerSelectionFeedbackPresenter
 --- !u!143 &143000000
 CharacterController:
   m_ObjectHideFlags: 0

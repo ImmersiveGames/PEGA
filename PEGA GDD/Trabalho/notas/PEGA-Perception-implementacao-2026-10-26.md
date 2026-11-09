@@ -3,6 +3,8 @@
 **Data:** 26 de outubro de 2026
 **Natureza:** nota descritiva de implementação local; não é ADR nem amplia decisões arquiteturais.
 
+> **Estado histórico:** esta nota descreve a composição observada em 26/10/2026. A integração local evoluiu desde então para instâncias de sensor em componentes Unity e aquisição espacial compartilhada. Para o estado atual de descoberta e seleção de Object Entries e seus limites, consulte o [relatório de implementação de 09/11/2026](../reports/2026-11-09-player-object-entry-discovery-selection-feedback.md). As regras abaixo permanecem apenas como registro daquele estado histórico.
+
 Esta implementação aplica a fronteira aprovada na [decisão de GOAP e Perception, ADR de pré-produção §7](../../ADR-PREPRODUCAO.md#7-evolução-arquitetural-de-goap-e-perception) e no [ADR-GOAP-01, itens 1–5](../../ADRs/ADR-GOAP-01-composicao-e-fronteiras.md#decisão). Os detalhes abaixo descrevem o caminho do PEGA registrado em 2026-10-26; não definem a composição obrigatória para outros jogos.
 
 ## Fronteiras e composição atuais

@@ -21,6 +21,11 @@ GameObject:
   - component: {fileID: 114000003}
   - component: {fileID: 114000005}
   - component: {fileID: 2765785676748957259}
+  - component: {fileID: 114000020}
+  - component: {fileID: 114000021}
+  - component: {fileID: 114000022}
+  - component: {fileID: 114000023}
+  - component: {fileID: 114000024}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -166,11 +171,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
-  perceivedAreaSensor: {fileID: 11400000, guid: c2c0e59356744dfb84cddc2b159f933f, type: 2}
-  visionConeSensor: {fileID: 11400000, guid: 46cfc68821984915b809c3553fafd3f6, type: 2}
-  observationIntervalSeconds: 0.25
+  perceivedAreaSensorInstance: {fileID: 114000021}
+  visionConeSensorInstance: {fileID: 114000022}
   lostContactEvadedIntervalSeconds: 5
-  drawPerceptionGizmos: 1
+  perceptionVisualizationLevel: 1
   drawGizmosWhenUnselected: 0
 --- !u!114 &114000010
 MonoBehaviour:
@@ -420,3 +424,65 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000000, guid: 86a4d390d9e54322908942e3c5d053a4, type: 3}
   m_PrefabInstance: {fileID: 700000001}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &114000020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88c2bd146acf46eeb29712f407641f2e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ImmersiveGames.Perception.Runtime::ImmersiveGames.Perception.PerceptionSensorSet
+--- !u!114 &114000021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e67bfe840df49f0a57fa218bb4d2511, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ImmersiveGames.Perception.Runtime::ImmersiveGames.Perception.PerceptionSensorInstance
+  definition: {fileID: 11400000, guid: c2c0e59356744dfb84cddc2b159f933f, type: 2}
+--- !u!114 &114000022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e67bfe840df49f0a57fa218bb4d2511, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ImmersiveGames.Perception.Runtime::ImmersiveGames.Perception.PerceptionSensorInstance
+  definition: {fileID: 11400000, guid: 46cfc68821984915b809c3553fafd3f6, type: 2}
+--- !u!114 &114000023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de045063a42c4e8e843635c0879da4b7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceQueryBinding
+--- !u!114 &114000024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding

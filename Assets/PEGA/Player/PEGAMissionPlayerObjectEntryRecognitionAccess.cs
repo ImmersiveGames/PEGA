@@ -30,18 +30,23 @@ namespace PEGA.Player
         private string _boundActivityName = string.Empty;
         private string _boundPlayerRootName = string.Empty;
         private string _boundPlayerRootEntityId = string.Empty;
+        private ActorOccurrenceId _boundPlayerActorOccurrenceId;
         private string _boundQueryAnchorName = string.Empty;
         private string _boundQueryAnchorEntityId = string.Empty;
         private bool _hasBoundAccess;
+        private bool _isApplicationQuitting;
 
         protected override void OnActivityContentEntered(ActivityContentLifecycleContext context)
         {
+            _isApplicationQuitting = false;
+            _lastReportedDiagnostic = string.Empty;
             _activeActivityName = context.ActivityName;
             StartWatchingPlayer("activity-content-entered");
         }
 
         private void OnEnable()
         {
+            _isApplicationQuitting = false;
             if (IsActivityContentActive)
             {
                 StartWatchingPlayer("activity-content-enabled");
@@ -50,6 +55,13 @@ namespace PEGA.Player
 
         private void StartWatchingPlayer(string reason)
         {
+            if (_isApplicationQuitting)
+            {
+                StopWatchingPlayer();
+                DetachFromPlayer("application-quit");
+                return;
+            }
+
             if (playerActorReference == null || recognitionQuery == null)
             {
                 DetachFromPlayer("access-configuration-invalid");
@@ -61,6 +73,13 @@ namespace PEGA.Player
             playerActorReference.Changed -= OnPlayerActorReferenceChanged;
             playerActorReference.Changed += OnPlayerActorReferenceChanged;
             RefreshPlayerBinding(reason);
+        }
+
+        private void OnApplicationQuit()
+        {
+            _isApplicationQuitting = true;
+            StopWatchingPlayer();
+            DetachFromPlayer("application-quit");
         }
 
         protected override void OnActivityContentExited(ActivityContentLifecycleContext context)
@@ -83,6 +102,12 @@ namespace PEGA.Player
 
         private void RefreshPlayerBinding(string reason)
         {
+            if (_isApplicationQuitting)
+            {
+                DetachFromPlayer("application-quit");
+                return;
+            }
+
             if (!IsActivityContentActive ||
                 playerActorReference == null ||
                 recognitionQuery == null)
@@ -119,7 +144,8 @@ namespace PEGA.Player
 
             if (_hasBoundAccess &&
                 object.ReferenceEquals(_boundSource, source) &&
-                object.ReferenceEquals(_boundQuery, recognitionQuery))
+                object.ReferenceEquals(_boundQuery, recognitionQuery) &&
+                _boundPlayerActorOccurrenceId.Equals(player.Occurrence.Id))
             {
                 _lastReportedDiagnostic = string.Empty;
                 return;
@@ -130,7 +156,10 @@ namespace PEGA.Player
                 DetachFromPlayer("player-actor-or-query-replaced");
             }
 
-            if (!source.TryBindRecognitionQuery(recognitionQuery, out string diagnostic))
+            if (!source.TryBindRecognitionQuery(
+                    recognitionQuery,
+                    playerActorReference,
+                    out string diagnostic))
             {
                 DetachFromPlayer("query-binding-rejected");
                 ReportConfigurationError(diagnostic);
@@ -142,6 +171,7 @@ namespace PEGA.Player
             _boundActivityName = _activeActivityName;
             _boundPlayerRootName = playerRoot.name;
             _boundPlayerRootEntityId = playerRoot.GetEntityId().ToString();
+            _boundPlayerActorOccurrenceId = player.Occurrence.Id;
             _boundQueryAnchorName = recognitionQuery.gameObject.name;
             _boundQueryAnchorEntityId = recognitionQuery.GetEntityId().ToString();
             _hasBoundAccess = true;
@@ -152,6 +182,7 @@ namespace PEGA.Player
                 LogFields.Field("activity", _boundActivityName),
                 LogFields.Field("playerRoot", _boundPlayerRootName),
                 LogFields.Field("playerOccurrenceId", _boundPlayerRootEntityId),
+                LogFields.Field("frameworkActorOccurrenceId", _boundPlayerActorOccurrenceId.ToString()),
                 LogFields.Field("queryAnchor", _boundQueryAnchorName),
                 LogFields.Field("queryAnchorEntityId", _boundQueryAnchorEntityId),
                 LogFields.Field("reason", reason));
@@ -179,6 +210,7 @@ namespace PEGA.Player
 
             if (!_hasBoundAccess)
             {
+                _boundPlayerActorOccurrenceId = default;
                 return;
             }
 
@@ -187,6 +219,7 @@ namespace PEGA.Player
                 LogFields.Field("activity", _boundActivityName),
                 LogFields.Field("playerRoot", _boundPlayerRootName),
                 LogFields.Field("playerOccurrenceId", _boundPlayerRootEntityId),
+                LogFields.Field("frameworkActorOccurrenceId", _boundPlayerActorOccurrenceId.ToString()),
                 LogFields.Field("queryAnchor", _boundQueryAnchorName),
                 LogFields.Field("queryAnchorEntityId", _boundQueryAnchorEntityId),
                 LogFields.Field("reason", reason));
@@ -195,6 +228,7 @@ namespace PEGA.Player
             _boundActivityName = string.Empty;
             _boundPlayerRootName = string.Empty;
             _boundPlayerRootEntityId = string.Empty;
+            _boundPlayerActorOccurrenceId = default;
             _boundQueryAnchorName = string.Empty;
             _boundQueryAnchorEntityId = string.Empty;
         }

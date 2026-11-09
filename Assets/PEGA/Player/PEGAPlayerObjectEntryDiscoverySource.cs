@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
 using UnityEngine;
 
@@ -11,30 +13,22 @@ namespace PEGA.Player
     /// <summary>Descobre ocorrências físicas de Object Entry próximas ao Player.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(PerceptionSensorSet))]
     [AddComponentMenu("PEGA/Player/Object Entry Discovery Source")]
     public sealed class PEGAPlayerObjectEntryDiscoverySource : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.PlayerObjectDiscovery";
-        private const float MinimumScanIntervalSeconds = 0.05f;
-        private const int InitialColliderBufferCapacity = 32;
 
-        [Header("Physical Discovery")]
-        [SerializeField, Min(0.1f)]
-        [Tooltip("Raio do volume esférico 3D consultado ao redor do centro físico do Player (m).")]
-        private float discoveryRadiusMeters = 12f;
-
-        [SerializeField, Min(MinimumScanIntervalSeconds)]
-        [Tooltip("Intervalo entre consultas de colliders no volume do Player (s).")]
-        private float scanIntervalSeconds = 0.2f;
-
+        [Header("Discovery Sensor Instance")]
         [SerializeField]
-        [Tooltip("Layers que podem conter colliders de Object Entries candidatos.")]
-        private LayerMask candidateLayers = ~0;
+        [Tooltip("Instância composta no Actor cujo asset configura a descoberta espacial de Object Entries.")]
+        private PerceptionSensorInstance candidateDiscoverySensorInstance;
 
         [Header("Scene View")]
         [SerializeField]
-        [Tooltip("Desenha o volume e as ocorrências descobertas na Scene View.")]
-        private bool drawDiscoveryGizmos = true;
+        [Tooltip("Off oculta a descoberta; Resumido mostra o volume, contagem e marcadores; Detalhado mostra estados, identidades e diagnósticos dos candidatos.")]
+        private PEGADiagnosticVisualizationLevel discoveryVisualizationLevel =
+            PEGADiagnosticVisualizationLevel.Summary;
 
         [SerializeField]
         [Tooltip("Desenha os Gizmos mesmo quando este Player não está selecionado.")]
@@ -44,10 +38,19 @@ namespace PEGA.Player
         private CharacterController _characterController;
 
         [NonSerialized]
-        private Collider[] _overlapBuffer = new Collider[InitialColliderBufferCapacity];
+        private PerceptionSensorSet _perceptionSensorSet;
+
+        [NonSerialized]
+        private PerceptionSensorInstance _configuredDiscoverySensorInstance;
+
+        [NonSerialized]
+        private PerceptionSensorDefinition _configuredDiscoverySensorDefinition;
 
         [NonSerialized]
         private readonly HashSet<OccurrenceKey> _seenOccurrences = new HashSet<OccurrenceKey>();
+
+        [NonSerialized]
+        private readonly HashSet<Collider> _seenPhysicalColliders = new HashSet<Collider>();
 
         [NonSerialized]
         private readonly List<PEGAPlayerObjectEntryCandidate> _scanCandidates =
@@ -69,7 +72,16 @@ namespace PEGA.Player
         private ObjectEntryOccurrenceQueryBinding _recognitionQueryBinding;
 
         [NonSerialized]
-        private float _timeUntilNextScan;
+        private ActorOccurrenceReferenceBinding _playerActorReference;
+
+        [NonSerialized]
+        private ActorOccurrenceId _boundPlayerOccurrenceId;
+
+        [NonSerialized]
+        private ActorOccurrence _playerOccurrence;
+
+        [NonSerialized]
+        private bool _playerOccurrenceColliderExclusionReported;
 
         [NonSerialized]
         private string _diagnostic = string.Empty;
@@ -80,18 +92,64 @@ namespace PEGA.Player
         [NonSerialized]
         private ScopedLogger _log;
 
+        [NonSerialized]
+        private PerceptionAcquisitionStatus _acquisitionStatus;
+
+        [NonSerialized]
+        private PerceptionAcquisitionStatus _lastLoggedAcquisitionStatus;
+
+        [NonSerialized]
+        private string _lastAcquisitionDiagnostic = string.Empty;
+
         public IReadOnlyList<PEGAPlayerObjectEntryCandidate> Candidates => _candidateSnapshot;
 
         public string Diagnostic => _diagnostic;
 
-        public float DiscoveryRadiusMeters => discoveryRadiusMeters;
+        public PerceptionAcquisitionStatus AcquisitionStatus => _acquisitionStatus;
 
-        public Vector3 DiscoveryCenter => _characterController != null
-            ? _characterController.bounds.center
-            : transform.position;
+        public PerceptionSensorDefinition CandidateDiscoverySensor => candidateDiscoverySensorInstance != null
+            ? candidateDiscoverySensorInstance.Definition
+            : null;
+
+        public Vector3 DiscoveryCenter
+        {
+            get
+            {
+                CharacterController controller = _characterController != null
+                    ? _characterController
+                    : GetComponent<CharacterController>();
+                return controller != null ? controller.bounds.center : transform.position;
+            }
+        }
+
+        public bool TryGetDiscoveryVolume(
+            out PerceptionSpatialDiscoveryVolume volume,
+            out string diagnostic)
+        {
+            PerceptionSensorDefinition discoverySensor = CandidateDiscoverySensor;
+            if (discoverySensor == null)
+            {
+                volume = default;
+                diagnostic = "Player spatial discovery sensor instance or definition is not assigned.";
+                return false;
+            }
+
+            if (!discoverySensor.TryValidateConfiguration(out diagnostic))
+            {
+                volume = default;
+                return false;
+            }
+
+            return discoverySensor.TryGetSpatialDiscoveryVolume(
+                transform,
+                DiscoveryCenter,
+                out volume,
+                out diagnostic);
+        }
 
 #if UNITY_EDITOR
-        public bool DrawDiscoveryGizmos => drawDiscoveryGizmos;
+        public PEGADiagnosticVisualizationLevel DiscoveryVisualizationLevel =>
+            discoveryVisualizationLevel;
 
         public bool DrawGizmosWhenUnselected => drawGizmosWhenUnselected;
 #endif
@@ -99,26 +157,77 @@ namespace PEGA.Player
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();
+            _perceptionSensorSet = GetComponent<PerceptionSensorSet>();
             _log = PEGALogging.CreateScopedLogger<PEGAPlayerObjectEntryDiscoverySource>(
                 LogCategory,
                 gameObject.name);
+
+            ResolvePerceptionAuthority();
         }
 
         private void OnEnable()
         {
-            _timeUntilNextScan = 0f;
+            _lastLoggedAcquisitionStatus = PerceptionAcquisitionStatus.Unspecified;
+            _lastAcquisitionDiagnostic = string.Empty;
+            if (_perceptionSensorSet == null)
+            {
+                SetDiagnostic("A autoridade de Perception não está disponível no Actor do Player.");
+                _log.Error(
+                    "Player Object Entry discovery could not become the Actor's Perception sampling driver.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("diagnostic", _diagnostic));
+                enabled = false;
+                return;
+            }
+
+            if (!_perceptionSensorSet.TryRegisterSamplingDriver(this, out string driverDiagnostic))
+            {
+                SetDiagnostic(driverDiagnostic);
+                _log.Error(
+                    "Player Object Entry discovery could not become the Actor's Perception sampling driver.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("diagnostic", _diagnostic));
+                enabled = false;
+                return;
+            }
+
+            _perceptionSensorSet?.RequestImmediateSample(this, candidateDiscoverySensorInstance);
         }
 
         private void OnDisable()
         {
+            _perceptionSensorSet?.UnregisterSamplingDriver(this);
+            _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
             ClearCandidates("player-discovery-source-disabled");
+        }
+
+        private void OnDestroy()
+        {
+            _perceptionSensorSet?.UnregisterSamplingDriver(this);
         }
 
         private void Update()
         {
+            if (!object.ReferenceEquals(_configuredDiscoverySensorInstance, candidateDiscoverySensorInstance) ||
+                !object.ReferenceEquals(
+                    _configuredDiscoverySensorDefinition,
+                    CandidateDiscoverySensor))
+            {
+                ResolvePerceptionAuthority();
+                ClearCandidates("perception-sensor-asset-replaced");
+                _log.Info(
+                    "Player spatial discovery sensor instance or definition was replaced.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("sensorId", CandidateDiscoverySensor != null
+                        ? CandidateDiscoverySensor.SensorId
+                        : string.Empty),
+                    LogFields.Field("reason", "perception-sensor-asset-replaced"));
+            }
+
             if (!TryValidateConfiguration(out string configurationDiagnostic))
             {
                 SetDiagnostic(configurationDiagnostic);
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
                 ReportConfigurationDiagnostic(configurationDiagnostic);
                 ClearCandidates("invalid-discovery-configuration");
                 return;
@@ -134,25 +243,25 @@ namespace PEGA.Player
                 _lastLoggedConfigurationDiagnostic = string.Empty;
             }
 
-            if (_recognitionQueryBinding == null)
+            if (_recognitionQueryBinding == null || _playerActorReference == null)
             {
                 SetDiagnostic("A consulta de reconhecimento não está disponível para este Player.");
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
                 ClearCandidates("recognition-query-access-unavailable");
                 return;
             }
 
-            _timeUntilNextScan -= Time.deltaTime;
-            if (_timeUntilNextScan > 0f)
+            if (!_perceptionSensorSet.HasDueSensorInstances(this, Time.timeAsDouble))
             {
                 return;
             }
 
-            _timeUntilNextScan = scanIntervalSeconds;
             RefreshCandidates();
         }
 
         internal bool TryBindRecognitionQuery(
             ObjectEntryOccurrenceQueryBinding queryBinding,
+            ActorOccurrenceReferenceBinding playerActorReference,
             out string diagnostic)
         {
             if (queryBinding == null)
@@ -161,17 +270,61 @@ namespace PEGA.Player
                 return false;
             }
 
-            if (object.ReferenceEquals(_recognitionQueryBinding, queryBinding))
+            ActorOccurrenceResolution resolution = default;
+            if (playerActorReference == null ||
+                !playerActorReference.TryGetCurrent(out resolution) ||
+                !resolution.Succeeded ||
+                !object.ReferenceEquals(resolution.Occurrence.ActorRoot, gameObject))
             {
+                diagnostic = resolution.Diagnostic;
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "A referência oficial deve resolver uma ocorrência do Player enraizada neste Discovery Source.";
+                }
+
+                return false;
+            }
+
+            ActorOccurrence playerOccurrence = resolution.Occurrence;
+            if (!playerActorReference.TryGetCurrent(out ActorOccurrenceResolution currentResolution) ||
+                !currentResolution.Succeeded ||
+                !currentResolution.Occurrence.Id.Equals(playerOccurrence.Id) ||
+                !object.ReferenceEquals(currentResolution.Occurrence.ActorRoot, gameObject))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(currentResolution.Diagnostic)
+                    ? "A referência oficial do Player mudou durante a conexão da consulta."
+                    : currentResolution.Diagnostic;
+                return false;
+            }
+
+            playerOccurrence = currentResolution.Occurrence;
+
+            bool samePlayerOccurrence = object.ReferenceEquals(_playerActorReference, playerActorReference) &&
+                _boundPlayerOccurrenceId.Equals(playerOccurrence.Id);
+
+            if (object.ReferenceEquals(_recognitionQueryBinding, queryBinding) && samePlayerOccurrence)
+            {
+                _playerOccurrence = playerOccurrence;
                 diagnostic = string.Empty;
                 return true;
             }
 
-            ClearCandidates(_recognitionQueryBinding == null
+            string clearReason = _recognitionQueryBinding == null
                 ? "recognition-query-access-granted"
-                : "recognition-query-replaced");
+                : !samePlayerOccurrence
+                    ? "player-occurrence-replaced"
+                    : "recognition-query-replaced";
+            ClearCandidates(clearReason);
             _recognitionQueryBinding = queryBinding;
-            _timeUntilNextScan = 0f;
+            _playerActorReference = playerActorReference;
+            _boundPlayerOccurrenceId = playerOccurrence.Id;
+            _playerOccurrence = playerOccurrence;
+            if (!samePlayerOccurrence)
+            {
+                _playerOccurrenceColliderExclusionReported = false;
+            }
+
+            _perceptionSensorSet?.RequestImmediateSample(this, candidateDiscoverySensorInstance);
             SetDiagnostic(string.Empty);
             diagnostic = string.Empty;
             return true;
@@ -185,7 +338,11 @@ namespace PEGA.Player
             }
 
             _recognitionQueryBinding = null;
-            _timeUntilNextScan = 0f;
+            _playerActorReference = null;
+            _boundPlayerOccurrenceId = default;
+            _playerOccurrence = default;
+            _playerOccurrenceColliderExclusionReported = false;
+            _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
             SetDiagnostic("A consulta de reconhecimento foi liberada pelo lifecycle do conteúdo.");
             ClearCandidates("recognition-query-access-revoked");
         }
@@ -193,132 +350,471 @@ namespace PEGA.Player
         private void RefreshCandidates()
         {
             ObjectEntryOccurrenceQueryBinding queryBinding = _recognitionQueryBinding;
-            if (queryBinding == null)
+            ActorOccurrenceReferenceBinding actorReference = _playerActorReference;
+            if (queryBinding == null || actorReference == null || _perceptionSensorSet == null)
             {
                 SetDiagnostic("A consulta de reconhecimento não está disponível para este Player.");
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
                 ClearCandidates("recognition-query-access-unavailable");
                 return;
             }
 
-            SetDiagnostic(string.Empty);
+            if (!TryResolveBoundPlayerOccurrence(
+                    queryBinding,
+                    actorReference,
+                    out ActorOccurrenceResolution playerOccurrence,
+                    out string occurrenceDiagnostic))
+            {
+                if (!IsSameBoundAccess(queryBinding, actorReference))
+                {
+                    return;
+                }
+
+                SetDiagnostic(occurrenceDiagnostic);
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
+                ClearCandidates("player-actor-occurrence-unavailable");
+                return;
+            }
+
+            Vector3 center = DiscoveryCenter;
+            if (!_perceptionSensorSet.TrySample(
+                    this,
+                    playerOccurrence,
+                    null,
+                    Time.timeAsDouble,
+                    candidateDiscoverySensorInstance,
+                    center,
+                    false,
+                    out bool sampled,
+                    out IReadOnlyList<PerceptionSensorInstance> sampledSensorInstances,
+                    out PerceptionCandidateAcquisition acquisition,
+                    out _,
+                    out string acquisitionDiagnostic))
+            {
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
+                SetDiagnostic(acquisitionDiagnostic);
+                LogAcquisitionStatusTransition(
+                    _acquisitionStatus,
+                    acquisitionDiagnostic,
+                    0,
+                    playerOccurrence.Occurrence);
+                ClearCandidates("spatial-acquisition-unavailable");
+                return;
+            }
+
+            if (!sampled || acquisition == null ||
+                !ContainsSensorInstance(sampledSensorInstances, candidateDiscoverySensorInstance))
+            {
+                return;
+            }
+
+            if (!TryGetSensorAcquisitionSource(
+                    acquisition,
+                    candidateDiscoverySensorInstance,
+                    out PerceptionCandidateSourceResult discoverySource))
+            {
+                const string missingSourceDiagnostic = "The Player discovery sensor produced no physical acquisition source for its sample.";
+                _acquisitionStatus = PerceptionAcquisitionStatus.Unavailable;
+                SetDiagnostic(missingSourceDiagnostic);
+                LogAcquisitionStatusTransition(
+                    _acquisitionStatus,
+                    missingSourceDiagnostic,
+                    0,
+                    playerOccurrence.Occurrence);
+                ClearCandidates("discovery-source-unavailable");
+                return;
+            }
+
             _seenOccurrences.Clear();
+            _seenPhysicalColliders.Clear();
             _scanCandidates.Clear();
             _scanRecognitionIssues.Clear();
 
-            Vector3 center = DiscoveryCenter;
-            int colliderCount = QueryOverlappingColliders(center);
-            for (int index = 0; index < colliderCount; index++)
+            if (!IsSameBoundAccess(queryBinding, actorReference) ||
+                !playerOccurrence.Occurrence.Id.Equals(_boundPlayerOccurrenceId))
             {
-                Collider candidateCollider = _overlapBuffer[index];
-                if (candidateCollider == null || BelongsToThisPlayer(candidateCollider))
-                {
-                    continue;
-                }
-
-                ObjectEntryRecognitionResult recognition = queryBinding.Recognize(candidateCollider);
-                if (recognition.Status != ObjectEntryRecognitionStatus.Resolved)
-                {
-                    RecordRecognitionIssue(recognition.Status, recognition.Diagnostic, candidateCollider);
-                    continue;
-                }
-
-                if (!recognition.Succeeded)
-                {
-                    RecordRecognitionIssue(
-                        ObjectEntryRecognitionStatus.Unavailable,
-                        string.IsNullOrWhiteSpace(recognition.Diagnostic)
-                            ? "The resolved occurrence is no longer physically available."
-                            : recognition.Diagnostic,
-                        candidateCollider);
-                    continue;
-                }
-
-                EntityId occurrenceId = recognition.Occurrence.GetEntityId();
-                OccurrenceKey key = new OccurrenceKey(
-                    recognition.ObjectEntryId,
-                    occurrenceId);
-                if (!_seenOccurrences.Add(key))
-                {
-                    continue;
-                }
-
-                _scanCandidates.Add(new PEGAPlayerObjectEntryCandidate(
-                    recognition.ObjectEntryId,
-                    recognition.Occurrence,
-                    occurrenceId,
-                    recognition.Occurrence.name));
+                return;
             }
 
-            LogCandidateTransitions("no-longer-resolved-in-current-discovery-scan");
-            LogRecognitionIssueTransitions();
+            _playerOccurrence = playerOccurrence.Occurrence;
+
+            _acquisitionStatus = discoverySource.Status;
+            string statusDiagnostic = GetAcquisitionDiagnostic(discoverySource);
+            SetDiagnostic(statusDiagnostic);
+            LogAcquisitionStatusTransition(
+                discoverySource.Status,
+                statusDiagnostic,
+                discoverySource.ExcludedObserverColliderCount,
+                playerOccurrence.Occurrence);
+
+            if (discoverySource.Status == PerceptionAcquisitionStatus.Unavailable)
+            {
+                ClearCandidates("spatial-acquisition-unavailable");
+                return;
+            }
+
+            for (int candidateIndex = 0; candidateIndex < acquisition.Candidates.Count; candidateIndex++)
+            {
+                PerceptionCandidate candidate = acquisition.Candidates[candidateIndex];
+                for (int evidenceIndex = 0; evidenceIndex < candidate.Evidence.Count; evidenceIndex++)
+                {
+                    PerceptionCandidateEvidence evidence = candidate.Evidence[evidenceIndex];
+                    if (evidence.Kind != PerceptionCandidateEvidenceKind.PhysicalCollider ||
+                        (evidence.Origin & PerceptionCandidateOrigin.Physical) == 0 ||
+                        !ReferenceEquals(evidence.SourceReference, candidateDiscoverySensorInstance))
+                    {
+                        continue;
+                    }
+
+                    Collider candidateCollider = evidence.PhysicalCollider;
+                    if (candidateCollider == null || !_seenPhysicalColliders.Add(candidateCollider))
+                    {
+                        continue;
+                    }
+
+                    if (BelongsToPlayerOccurrence(
+                            playerOccurrence.Occurrence,
+                            candidateCollider.transform))
+                    {
+                        continue;
+                    }
+
+                    ObjectEntryRecognitionResult recognition = queryBinding.Recognize(candidateCollider);
+                    if (recognition.Status != ObjectEntryRecognitionStatus.Resolved)
+                    {
+                        RecordRecognitionIssue(recognition.Status, recognition.Diagnostic, candidateCollider);
+                        continue;
+                    }
+
+                    if (!recognition.Succeeded)
+                    {
+                        RecordRecognitionIssue(
+                            ObjectEntryRecognitionStatus.Unavailable,
+                            string.IsNullOrWhiteSpace(recognition.Diagnostic)
+                                ? "The resolved occurrence is no longer physically available."
+                                : recognition.Diagnostic,
+                            candidateCollider);
+                        continue;
+                    }
+
+                    if (BelongsToPlayerOccurrence(
+                            playerOccurrence.Occurrence,
+                            recognition.Occurrence.transform))
+                    {
+                        continue;
+                    }
+
+                    EntityId occurrenceId = recognition.Occurrence.GetEntityId();
+                    OccurrenceKey key = new OccurrenceKey(
+                        recognition.ObjectEntryId,
+                        occurrenceId);
+                    if (!_seenOccurrences.Add(key))
+                    {
+                        AddRecognitionColliderToCandidate(
+                            recognition.ObjectEntryId,
+                            occurrenceId,
+                            candidateCollider);
+                        continue;
+                    }
+
+                    _scanCandidates.Add(new PEGAPlayerObjectEntryCandidate(
+                        recognition.ObjectEntryId,
+                        recognition.Occurrence,
+                        candidateCollider,
+                        occurrenceId,
+                        recognition.Occurrence.name));
+                }
+            }
+
+            if (!IsSameBoundAccess(queryBinding, actorReference) ||
+                !playerOccurrence.Occurrence.Id.Equals(_boundPlayerOccurrenceId))
+            {
+                return;
+            }
+
+            bool isComplete = discoverySource.Status == PerceptionAcquisitionStatus.Complete;
+            if (!isComplete)
+            {
+                RetainPriorCandidatesForPartialAcquisition();
+            }
+
+            LogCandidateTransitions("no-longer-resolved-in-current-discovery-scan", isComplete);
+            LogRecognitionIssueTransitions(isComplete);
 
             _candidateSnapshot = _scanCandidates.Count == 0
                 ? Array.Empty<PEGAPlayerObjectEntryCandidate>()
                 : Array.AsReadOnly(_scanCandidates.ToArray());
         }
 
-        private int QueryOverlappingColliders(Vector3 center)
+        private bool TryResolveBoundPlayerOccurrence(
+            ObjectEntryOccurrenceQueryBinding queryBinding,
+            ActorOccurrenceReferenceBinding actorReference,
+            out ActorOccurrenceResolution resolution,
+            out string diagnostic)
         {
-            if (_overlapBuffer == null || _overlapBuffer.Length == 0)
+            resolution = default;
+            if (!IsSameBoundAccess(queryBinding, actorReference))
             {
-                _overlapBuffer = new Collider[InitialColliderBufferCapacity];
-            }
-
-            int colliderCount;
-            do
-            {
-                colliderCount = Physics.OverlapSphereNonAlloc(
-                    center,
-                    discoveryRadiusMeters,
-                    _overlapBuffer,
-                    candidateLayers,
-                    QueryTriggerInteraction.Collide);
-
-                if (colliderCount < _overlapBuffer.Length)
-                {
-                    return colliderCount;
-                }
-
-                Array.Resize(ref _overlapBuffer, _overlapBuffer.Length * 2);
-            }
-            while (true);
-        }
-
-        private bool BelongsToThisPlayer(Collider candidateCollider)
-        {
-            Transform candidateTransform = candidateCollider.transform;
-            return candidateTransform == transform || candidateTransform.IsChildOf(transform);
-        }
-
-        private bool TryValidateConfiguration(out string diagnostic)
-        {
-            if (_characterController == null)
-            {
-                diagnostic = "O root do Player requer um CharacterController ativo.";
+                diagnostic = "Player recognition access changed while resolving the current Actor occurrence.";
                 return false;
             }
 
-            if (!IsPositiveFinite(discoveryRadiusMeters))
+            bool resolved = actorReference.TryGetCurrent(out resolution);
+            if (!IsSameBoundAccess(queryBinding, actorReference))
             {
-                diagnostic = "O raio de descoberta 3D deve ser finito e maior que zero.";
+                diagnostic = "Player recognition access changed during current Actor occurrence resolution.";
                 return false;
             }
 
-            if (!IsPositiveFinite(scanIntervalSeconds) ||
-                scanIntervalSeconds < MinimumScanIntervalSeconds)
+            if (!resolved || !resolution.Succeeded)
             {
-                diagnostic = $"O intervalo de consulta deve ser de pelo menos {MinimumScanIntervalSeconds:0.00} s.";
+                diagnostic = string.IsNullOrWhiteSpace(resolution.Diagnostic)
+                    ? "The current Framework Actor occurrence is unavailable."
+                    : resolution.Diagnostic;
                 return false;
             }
 
-            if (candidateLayers.value == 0)
+            ActorOccurrence occurrence = resolution.Occurrence;
+            if (!occurrence.IsValid ||
+                !object.ReferenceEquals(occurrence.ActorRoot, gameObject) ||
+                !occurrence.Id.Equals(_boundPlayerOccurrenceId))
             {
-                diagnostic = "Selecione ao menos uma Layer para descobrir colliders.";
+                diagnostic = "The current Framework Actor occurrence no longer matches this Player discovery source.";
                 return false;
             }
 
             diagnostic = string.Empty;
             return true;
+        }
+
+        private bool IsSameBoundAccess(
+            ObjectEntryOccurrenceQueryBinding queryBinding,
+            ActorOccurrenceReferenceBinding actorReference) =>
+            isActiveAndEnabled &&
+            object.ReferenceEquals(_recognitionQueryBinding, queryBinding) &&
+            object.ReferenceEquals(_playerActorReference, actorReference);
+
+        private static bool BelongsToPlayerOccurrence(
+            ActorOccurrence playerOccurrence,
+            Transform physicalTransform)
+        {
+            GameObject actorRoot = playerOccurrence.ActorRoot;
+            if (!playerOccurrence.IsValid || actorRoot == null || physicalTransform == null)
+            {
+                return false;
+            }
+
+            Transform actorRootTransform = actorRoot.transform;
+            return physicalTransform == actorRootTransform || physicalTransform.IsChildOf(actorRootTransform);
+        }
+
+        internal bool IsCurrentCandidate(PEGAPlayerObjectEntryCandidate candidate)
+        {
+            ObjectEntryOccurrenceQueryBinding queryBinding = _recognitionQueryBinding;
+            ActorOccurrenceReferenceBinding actorReference = _playerActorReference;
+            ActorOccurrence playerOccurrence = _playerOccurrence;
+            GameObject occurrence = candidate.Occurrence;
+
+            if (queryBinding == null || actorReference == null ||
+                _perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled ||
+                candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled ||
+                occurrence == null || !occurrence.activeInHierarchy ||
+                !IsSameBoundAccess(queryBinding, actorReference) ||
+                !playerOccurrence.IsValid ||
+                !object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject) ||
+                !playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) ||
+                BelongsToPlayerOccurrence(playerOccurrence, occurrence.transform))
+            {
+                return false;
+            }
+
+            IReadOnlyList<Collider> recognitionColliders = candidate.RecognitionColliders;
+            for (int index = 0; recognitionColliders != null && index < recognitionColliders.Count; index++)
+            {
+                if (IsCurrentRecognitionCollider(candidate, recognitionColliders[index]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal bool IsCurrentRecognitionCollider(
+            PEGAPlayerObjectEntryCandidate candidate,
+            Collider recognitionCollider)
+        {
+            ObjectEntryOccurrenceQueryBinding queryBinding = _recognitionQueryBinding;
+            ActorOccurrenceReferenceBinding actorReference = _playerActorReference;
+            ActorOccurrence playerOccurrence = _playerOccurrence;
+            GameObject occurrence = candidate.Occurrence;
+            if (queryBinding == null || actorReference == null ||
+                _perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled ||
+                candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled ||
+                recognitionCollider == null || !recognitionCollider.enabled ||
+                !recognitionCollider.gameObject.activeInHierarchy ||
+                occurrence == null || !occurrence.activeInHierarchy ||
+                !IsSameBoundAccess(queryBinding, actorReference) ||
+                !playerOccurrence.IsValid ||
+                !object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject) ||
+                !playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) ||
+                BelongsToPlayerOccurrence(playerOccurrence, recognitionCollider.transform))
+            {
+                return false;
+            }
+
+            IReadOnlyList<Collider> candidateColliders = candidate.RecognitionColliders;
+            bool belongsToCandidateSnapshot = false;
+            for (int index = 0; candidateColliders != null && index < candidateColliders.Count; index++)
+            {
+                if (object.ReferenceEquals(candidateColliders[index], recognitionCollider))
+                {
+                    belongsToCandidateSnapshot = true;
+                    break;
+                }
+            }
+
+            if (!belongsToCandidateSnapshot)
+            {
+                return false;
+            }
+
+            ObjectEntryRecognitionResult recognition = queryBinding.Recognize(recognitionCollider);
+            return IsSameBoundAccess(queryBinding, actorReference) &&
+                   playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) &&
+                   recognition.Succeeded &&
+                   recognition.ObjectEntryId.Equals(candidate.ObjectEntryId) &&
+                   object.ReferenceEquals(recognition.Occurrence, occurrence);
+        }
+
+        private void AddRecognitionColliderToCandidate(
+            ObjectEntryId objectEntryId,
+            EntityId occurrenceId,
+            Collider recognitionCollider)
+        {
+            for (int index = 0; index < _scanCandidates.Count; index++)
+            {
+                PEGAPlayerObjectEntryCandidate candidate = _scanCandidates[index];
+                if (candidate.ObjectEntryId.Equals(objectEntryId) &&
+                    candidate.OccurrenceId.Equals(occurrenceId))
+                {
+                    candidate.AddRecognitionCollider(recognitionCollider);
+                    return;
+                }
+            }
+        }
+
+        private void ResolvePerceptionAuthority()
+        {
+            _configuredDiscoverySensorInstance = candidateDiscoverySensorInstance;
+            _configuredDiscoverySensorDefinition = CandidateDiscoverySensor;
+            _perceptionSensorSet = GetComponent<PerceptionSensorSet>();
+        }
+
+        private bool TryValidateConfiguration(out string diagnostic)
+        {
+            if (_characterController == null || !_characterController.enabled)
+            {
+                diagnostic = "O root do Player requer um CharacterController ativo.";
+                return false;
+            }
+
+            if (_perceptionSensorSet == null)
+            {
+                diagnostic = $"O componente {nameof(PerceptionSensorSet)} é obrigatório no Player.";
+                return false;
+            }
+
+            PerceptionSensorDefinition discoverySensor = CandidateDiscoverySensor;
+            if (candidateDiscoverySensorInstance == null || discoverySensor == null)
+            {
+                diagnostic = "A instância de sensor para aquisição espacial do Player é obrigatória.";
+                return false;
+            }
+
+            if (!_perceptionSensorSet.ContainsSensorInstance(candidateDiscoverySensorInstance))
+            {
+                diagnostic = "A instância de descoberta precisa estar composta no mesmo Actor que a autoridade de Perception.";
+                return false;
+            }
+
+            if (!candidateDiscoverySensorInstance.isActiveAndEnabled)
+            {
+                diagnostic = "A instância de descoberta do Player está desabilitada.";
+                return false;
+            }
+
+            if (!discoverySensor.TryValidateConfiguration(out diagnostic))
+            {
+                return false;
+            }
+
+            if (!discoverySensor.TryGetSpatialDiscoveryVolume(
+                    transform,
+                    DiscoveryCenter,
+                    out PerceptionSpatialDiscoveryVolume volume,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            if (volume.Shape != PerceptionSpatialVolumeShape.Sphere)
+            {
+                diagnostic = "O asset do Player deve fornecer um volume esférico 3D.";
+                return false;
+            }
+
+            if ((volume.Center - DiscoveryCenter).sqrMagnitude > 0.000001f)
+            {
+                diagnostic = "O centro do volume do Player deve permanecer no centro físico atual do CharacterController.";
+                return false;
+            }
+
+            if (volume.CandidateLayerMask == ~0)
+            {
+                diagnostic = "Configure layers de candidatos específicas no asset, sem consultar todas as layers.";
+                return false;
+            }
+
+            if (volume.TriggerInteraction != QueryTriggerInteraction.Collide)
+            {
+                diagnostic = "O asset do Player deve manter QueryTriggerInteraction.Collide.";
+                return false;
+            }
+
+            if (_perceptionSensorSet == null ||
+                !_perceptionSensorSet.TryValidateComposition(out diagnostic))
+            {
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "A composição de sensores de Perception do Player está indisponível.";
+                }
+
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private static bool ContainsSensorInstance(
+            IReadOnlyList<PerceptionSensorInstance> sensorInstances,
+            PerceptionSensorInstance target)
+        {
+            if (sensorInstances == null || target == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < sensorInstances.Count; index++)
+            {
+                if (ReferenceEquals(sensorInstances[index], target))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ClearCandidates(string reason)
@@ -331,11 +827,52 @@ namespace PEGA.Player
             _candidateSnapshot = Array.Empty<PEGAPlayerObjectEntryCandidate>();
             _scanCandidates.Clear();
             _seenOccurrences.Clear();
+            _seenPhysicalColliders.Clear();
             _scanRecognitionIssues.Clear();
             _activeRecognitionIssues.Clear();
         }
 
-        private void LogCandidateTransitions(string removalReason)
+        private void RetainPriorCandidatesForPartialAcquisition()
+        {
+            for (int index = 0; index < _candidateSnapshot.Count; index++)
+            {
+                PEGAPlayerObjectEntryCandidate candidate = _candidateSnapshot[index];
+                OccurrenceKey key = new OccurrenceKey(candidate.ObjectEntryId, candidate.OccurrenceId);
+                if (_seenOccurrences.Add(key))
+                {
+                    _scanCandidates.Add(candidate);
+                    continue;
+                }
+
+                MergePriorRecognitionColliders(candidate, key);
+            }
+        }
+
+        private void MergePriorRecognitionColliders(
+            PEGAPlayerObjectEntryCandidate previousCandidate,
+            OccurrenceKey key)
+        {
+            for (int candidateIndex = 0; candidateIndex < _scanCandidates.Count; candidateIndex++)
+            {
+                PEGAPlayerObjectEntryCandidate currentCandidate = _scanCandidates[candidateIndex];
+                if (!key.Equals(new OccurrenceKey(
+                        currentCandidate.ObjectEntryId,
+                        currentCandidate.OccurrenceId)))
+                {
+                    continue;
+                }
+
+                IReadOnlyList<Collider> previousColliders = previousCandidate.RecognitionColliders;
+                for (int colliderIndex = 0; previousColliders != null && colliderIndex < previousColliders.Count; colliderIndex++)
+                {
+                    currentCandidate.AddRecognitionCollider(previousColliders[colliderIndex]);
+                }
+
+                return;
+            }
+        }
+
+        private void LogCandidateTransitions(string removalReason, bool mayRemoveAbsentCandidates)
         {
             for (int index = 0; index < _scanCandidates.Count; index++)
             {
@@ -345,6 +882,11 @@ namespace PEGA.Player
                 {
                     LogCandidateAdded(candidate);
                 }
+            }
+
+            if (!mayRemoveAbsentCandidates)
+            {
+                return;
             }
 
             for (int index = 0; index < _candidateSnapshot.Count; index++)
@@ -385,6 +927,123 @@ namespace PEGA.Player
                 LogFields.Field("reason", "recognized-within-discovery-volume"));
         }
 
+        private static bool TryGetSensorAcquisitionSource(
+            PerceptionCandidateAcquisition acquisition,
+            PerceptionSensorInstance sensorInstance,
+            out PerceptionCandidateSourceResult source)
+        {
+            for (int index = 0; index < acquisition.Sources.Count; index++)
+            {
+                PerceptionCandidateSourceResult candidateSource = acquisition.Sources[index];
+                if (ReferenceEquals(candidateSource.SourceReference, sensorInstance) &&
+                    (candidateSource.Origin & PerceptionCandidateOrigin.Physical) != 0)
+                {
+                    source = candidateSource;
+                    return true;
+                }
+            }
+
+            source = default;
+            return false;
+        }
+
+        private static string GetAcquisitionDiagnostic(PerceptionCandidateSourceResult source)
+        {
+            return !string.IsNullOrWhiteSpace(source.Diagnostic)
+                ? source.Diagnostic
+                : source.Status == PerceptionAcquisitionStatus.Partial
+                    ? "Player discovery sensor acquisition coverage is partial."
+                    : source.Status == PerceptionAcquisitionStatus.Unavailable
+                        ? "Player discovery sensor acquisition is unavailable."
+                        : string.Empty;
+        }
+
+        private void LogAcquisitionStatusTransition(
+            PerceptionAcquisitionStatus status,
+            string diagnostic,
+            int excludedObserverColliderCount,
+            ActorOccurrence playerOccurrence)
+        {
+            if (excludedObserverColliderCount > 0 && playerOccurrence.IsValid)
+            {
+                LogPlayerOccurrenceCollidersExcluded(
+                    excludedObserverColliderCount,
+                    playerOccurrence);
+            }
+
+            if (status == _lastLoggedAcquisitionStatus &&
+                string.Equals(diagnostic, _lastAcquisitionDiagnostic, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (status == PerceptionAcquisitionStatus.Partial)
+            {
+                _log.Warning(
+                    "Player spatial candidate acquisition is partial; prior candidates remain until a complete scan.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("diagnostic", diagnostic),
+                    LogFields.Field("reason", "partial-perception-acquisition"));
+            }
+            else if (status == PerceptionAcquisitionStatus.Unavailable)
+            {
+                _log.Warning(
+                    "Player spatial candidate acquisition is unavailable.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("diagnostic", diagnostic),
+                    LogFields.Field("reason", "perception-acquisition-unavailable"));
+            }
+            else if (_lastLoggedAcquisitionStatus != PerceptionAcquisitionStatus.Unspecified &&
+                     _lastLoggedAcquisitionStatus != PerceptionAcquisitionStatus.Complete)
+            {
+                _log.Info(
+                    "Player spatial candidate acquisition returned to complete coverage.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("reason", "complete-perception-acquisition-restored"));
+            }
+            else if (_lastLoggedAcquisitionStatus == PerceptionAcquisitionStatus.Unspecified)
+            {
+                _log.Info(
+                    "Player spatial candidate acquisition started with complete coverage.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("reason", "initial-complete-perception-acquisition"));
+            }
+            else
+            {
+                _log.Debug(
+                    "Player spatial candidate acquisition is complete.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("reason", "complete-perception-acquisition"));
+            }
+
+            _lastLoggedAcquisitionStatus = status;
+            _lastAcquisitionDiagnostic = diagnostic ?? string.Empty;
+        }
+
+        private void LogPlayerOccurrenceCollidersExcluded(
+            int colliderCount,
+            ActorOccurrence playerOccurrence)
+        {
+            if (colliderCount <= 0 || _playerOccurrenceColliderExclusionReported)
+            {
+                return;
+            }
+
+            GameObject actorRoot = playerOccurrence.ActorRoot;
+            if (actorRoot == null)
+            {
+                return;
+            }
+
+            _playerOccurrenceColliderExclusionReported = true;
+            _log.Debug(
+                "Colliders belonging to the current Player Actor occurrence were excluded from Object Entry discovery.",
+                LogFields.Field("actorOccurrenceId", playerOccurrence.Id.ToString()),
+                LogFields.Field("playerRootEntityId", actorRoot.GetEntityId().ToString()),
+                LogFields.Field("excludedColliderCount", colliderCount),
+                LogFields.Field("reason", "belongs-to-current-player-occurrence"));
+        }
+
         private void LogCandidateRemoved(PEGAPlayerObjectEntryCandidate candidate, string reason)
         {
             _log.Info(
@@ -420,7 +1079,7 @@ namespace PEGA.Player
                     candidateCollider.GetEntityId().ToString()));
         }
 
-        private void LogRecognitionIssueTransitions()
+        private void LogRecognitionIssueTransitions(bool acquisitionComplete)
         {
             foreach (KeyValuePair<RecognitionIssueKey, RecognitionIssueSummary> issue in _scanRecognitionIssues)
             {
@@ -430,22 +1089,26 @@ namespace PEGA.Player
                 }
             }
 
-            foreach (RecognitionIssueKey previousIssue in _activeRecognitionIssues)
+            if (acquisitionComplete)
             {
-                if (_scanRecognitionIssues.ContainsKey(previousIssue) ||
-                    previousIssue.Status == ObjectEntryRecognitionStatus.Unrecognized)
+                foreach (RecognitionIssueKey previousIssue in _activeRecognitionIssues)
                 {
-                    continue;
+                    if (_scanRecognitionIssues.ContainsKey(previousIssue) ||
+                        previousIssue.Status == ObjectEntryRecognitionStatus.Unrecognized)
+                    {
+                        continue;
+                    }
+
+                    _log.Debug(
+                        "Object Entry recognition diagnostic is no longer observed in the discovery volume.",
+                        LogFields.Field("recognitionStatus", previousIssue.Status),
+                        LogFields.Field("diagnostic", previousIssue.Diagnostic),
+                        LogFields.Field("reason", "no-collider-returned-this-recognition-status"));
                 }
 
-                _log.Debug(
-                    "Object Entry recognition diagnostic is no longer observed in the discovery volume.",
-                    LogFields.Field("recognitionStatus", previousIssue.Status),
-                    LogFields.Field("diagnostic", previousIssue.Diagnostic),
-                    LogFields.Field("reason", "no-collider-returned-this-recognition-status"));
+                _activeRecognitionIssues.Clear();
             }
 
-            _activeRecognitionIssues.Clear();
             foreach (RecognitionIssueKey currentIssue in _scanRecognitionIssues.Keys)
             {
                 _activeRecognitionIssues.Add(currentIssue);
@@ -539,23 +1202,6 @@ namespace PEGA.Player
                 LogFields.Field("reason", "invalid-discovery-configuration"));
         }
 
-        private void OnValidate()
-        {
-            if (!IsPositiveFinite(discoveryRadiusMeters))
-            {
-                discoveryRadiusMeters = 0.1f;
-            }
-
-            if (!IsPositiveFinite(scanIntervalSeconds) ||
-                scanIntervalSeconds < MinimumScanIntervalSeconds)
-            {
-                scanIntervalSeconds = MinimumScanIntervalSeconds;
-            }
-        }
-
-        private static bool IsPositiveFinite(float value) =>
-            value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
-
         private readonly struct OccurrenceKey : IEquatable<OccurrenceKey>
         {
             private readonly ObjectEntryId _objectEntryId;
@@ -632,14 +1278,18 @@ namespace PEGA.Player
     /// <summary>Identidade e raiz física reconhecidas pelo Framework para um candidato do Player.</summary>
     public readonly struct PEGAPlayerObjectEntryCandidate
     {
+        private readonly List<Collider> _recognitionColliders;
+
         internal PEGAPlayerObjectEntryCandidate(
             ObjectEntryId objectEntryId,
             GameObject occurrence,
+            Collider recognitionCollider,
             EntityId occurrenceId,
             string physicalRootName)
         {
             ObjectEntryId = objectEntryId;
             Occurrence = occurrence;
+            _recognitionColliders = new List<Collider> { recognitionCollider };
             OccurrenceId = occurrenceId;
             PhysicalRootName = physicalRootName;
         }
@@ -647,6 +1297,21 @@ namespace PEGA.Player
         public ObjectEntryId ObjectEntryId { get; }
 
         public GameObject Occurrence { get; }
+
+        internal IReadOnlyList<Collider> RecognitionColliders => _recognitionColliders;
+
+        internal void AddRecognitionCollider(Collider recognitionCollider)
+        {
+            for (int index = 0; index < _recognitionColliders.Count; index++)
+            {
+                if (_recognitionColliders[index] == recognitionCollider)
+                {
+                    return;
+                }
+            }
+
+            _recognitionColliders.Add(recognitionCollider);
+        }
 
         internal EntityId OccurrenceId { get; }
 

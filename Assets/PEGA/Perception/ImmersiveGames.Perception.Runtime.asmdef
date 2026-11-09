@@ -1,7 +1,9 @@
 {
   "name": "ImmersiveGames.Perception.Runtime",
   "rootNamespace": "ImmersiveGames.Perception",
-  "references": [],
+  "references": [
+    "Immersive.Framework.Runtime"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

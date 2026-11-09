@@ -1,10 +1,12 @@
 # IF-ADR-014 Amendment 001 — Physical Recognition of Object Entry Occurrences
 
-Status: **Proposed for acceptance** (architecture direction agreed; API review and implementation pending)  
+Status: **Historical PEGA proposal copy**; the canonical Framework amendment was accepted on **2026-11-03**.<br>
 Proposed: **2026-11-03**  
 Amends: [IF-ADR-014 — Authored Definition and Stable Identity Authority](https://github.com/ImmersiveGames/com.immersive.framework/blob/master/Documentation~/Architecture/ADRs/IF-ADR-014-Authored-Definition-and-Stable-Identity-Authority.md), specifically the Stable Object Binding and public read-only Object Entry occurrence query boundaries  
 Related: IF-ADR-001 (lifecycle authority); IF-ADR-049 and IF-ADR-050 (Actor occurrence, precedent only); [IF-GOV-001](https://github.com/ImmersiveGames/com.immersive.framework/blob/master/Documentation~/Architecture/Governance/IF-GOV-001-API-MATURITY-AND-VALIDATION-GOVERNANCE.md)  
 Consumer motivation: PEGA Trello [#37 — Target selection and contextual interaction](https://trello.com/c/wWbleLBj)
+
+> **Status note (2026-11-09):** This file preserves the proposal as it was prepared in PEGA. The [canonical Framework amendment](https://github.com/ImmersiveGames/com.immersive.framework/blob/master/Documentation~/Architecture/ADRs/IF-ADR-014-AMENDMENT-001-PHYSICAL-OBJECT-ENTRY-RECOGNITION.md) records the accepted decision. This copy is not the current implementation report; see [PEGA Object Entry discovery, contextual selection and feedback](../Trabalho/reports/2026-11-09-player-object-entry-discovery-selection-feedback.md). The Framework API remains Experimental under IF-GOV-001.
 
 > **Decision boundary:** This amendment records the intended architecture and invariants. It does **not** approve an exact public API signature, implement any code, certify Unity behavior, or promote Experimental contracts to Stable. Its acceptance and implementation follow the Framework's existing governance. This document must not be interpreted as authorization to implement object profiles, object composition, or gameplay interactions within the scope below.
 
@@ -111,6 +113,6 @@ The accepted direction for future advanced objects is **optional extensibility**
 
 ## 7. Acceptance and current status
 
-This amendment is a **proposed normative architectural record**, derived from the reviewed Framework/PEGA investigation and the approved direction for recognition. The detailed API and implementation have **not** been approved by this document. No source changes, tests, Unity run, version promotion or release are claimed.
+This text records the **proposal snapshot prepared in PEGA**. It does not replace the canonical Framework amendment, whose acceptance is recorded there. Implementation and validation performed in PEGA after this proposal are summarized in the linked report; they do not promote the Framework API or change the decision boundary above.
 
 Acceptance should be recorded through the Framework's existing ADR practice. Once accepted, any implementation plan or change that conflicts with §§2–4 must explicitly revise this amendment rather than silently narrowing the intended behavior to what is easiest to implement.
