@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-namespace ImmersiveGames.Goap
+namespace PEGA.GOAP
 {
     /// <summary>
     /// Read-only view of Effects confirmed by an observed successful Action. It keeps the Actor's Knowledge

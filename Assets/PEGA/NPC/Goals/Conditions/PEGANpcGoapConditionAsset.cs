@@ -1,13 +1,12 @@
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
     /// <summary>
     /// Unity authoring surface for a PEGA GOAP condition. Implementations remain ordinary GOAP conditions;
     /// the planner and Desire policy consume only the open <see cref="IGoapCondition"/> contract.
     /// </summary>
-    public abstract class PEGANpcGoapConditionAsset : ScriptableObject, IGoapCondition
+    public abstract class PegaNpcGoapConditionAsset : ScriptableObject, IGoapCondition
     {
         public abstract GoapTruthValue Evaluate(IGoapStateView state);
 

@@ -43,7 +43,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be5711bc157742eeb3b4ff5a6f082af1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorAnimationSetPresenter
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorAnimationSetPresenter
   animationSet: {fileID: 9100000, guid: 29e26c9557c74eb58e791ed59c6365fe, type: 2}
   walkSpeedMetersPerSecond: 1.2
   runSpeedMetersPerSecond: 2.25

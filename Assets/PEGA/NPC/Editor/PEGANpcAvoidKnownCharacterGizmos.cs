@@ -1,17 +1,21 @@
 using Immersive.Framework.Actors;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEditor;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
 {
     /// <summary>Development-only visualization for the configured safe-separation Action.</summary>
-    internal static class PEGANpcAvoidKnownCharacterGizmos
+    internal static class PegaNpcAvoidKnownCharacterGizmos
     {
         [DrawGizmo(GizmoType.Selected)]
-        private static void Draw(PEGANpcAutonomy autonomy, GizmoType gizmoType)
+        private static void Draw(PegaNpcAutonomy autonomy, GizmoType gizmoType)
         {
             if (autonomy == null ||
-                !TryFindDefinition(autonomy, out PEGANpcAvoidKnownCharacterAction action) ||
+                !TryFindDefinition(autonomy, out PegaNpcAvoidKnownCharacterAction action) ||
                 !TryGetKnownCharacterPosition(autonomy, out Vector3 knownPosition))
             {
                 return;
@@ -30,12 +34,12 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryFindDefinition(
-            PEGANpcAutonomy autonomy,
-            out PEGANpcAvoidKnownCharacterAction action)
+            PegaNpcAutonomy autonomy,
+            out PegaNpcAvoidKnownCharacterAction action)
         {
             for (int index = 0; index < autonomy.ActionDefinitionCount; index++)
             {
-                if (autonomy.GetActionDefinitionAt(index) is PEGANpcAvoidKnownCharacterAction definition)
+                if (autonomy.GetActionDefinitionAt(index) is PegaNpcAvoidKnownCharacterAction definition)
                 {
                     action = definition;
                     return true;
@@ -46,10 +50,10 @@ namespace PEGA.NPC.Editor
             return false;
         }
 
-        private static bool TryGetKnownCharacterPosition(PEGANpcAutonomy autonomy, out Vector3 position)
+        private static bool TryGetKnownCharacterPosition(PegaNpcAutonomy autonomy, out Vector3 position)
         {
             position = default;
-            PEGANpcKnowledgeState knowledge = autonomy.GetComponent<PEGANpcKnowledgeState>();
+            PegaNpcKnowledgeState knowledge = autonomy.GetComponent<PegaNpcKnowledgeState>();
             ActorOccurrenceReferenceBinding reference = autonomy.GetComponent<ActorOccurrenceReferenceBinding>();
             if (knowledge == null || reference == null ||
                 !reference.TryGetCurrent(out ActorOccurrenceResolution resolution) ||
@@ -59,10 +63,10 @@ namespace PEGA.NPC.Editor
             }
 
             ActorId targetActorId = resolution.Occurrence.ActorId;
-            PEGAKnowledgeFact<Vector3> lastPosition = knowledge.GetLastObservedCharacterPosition(targetActorId);
+            PegaKnowledgeFact<Vector3> lastPosition = knowledge.GetLastObservedCharacterPosition(targetActorId);
             return lastPosition.TryGetValue(out position) &&
                    lastPosition.HasObservationTime &&
-                   lastPosition.HasOrigin(PEGANpcEvidenceOrigin.Perception);
+                   lastPosition.HasOrigin(PegaNpcEvidenceOrigin.Perception);
         }
     }
 }

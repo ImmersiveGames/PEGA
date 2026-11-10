@@ -1,44 +1,46 @@
 using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
-using ImmersiveGames.Goap;
-using PEGA.Actors;
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Autonomy.Planning
 {
     /// <summary>
     /// Read-only Individual Knowledge view supplied to PEGA GOAP consumers.
     /// It exposes stored facts and does not resolve Actors or physical manifestations.
     /// </summary>
-    public sealed class PEGANpcKnowledgeReadView
+    public sealed class PegaNpcKnowledgeReadView
     {
-        private readonly PEGANpcKnowledgeState _individualKnowledge;
+        private readonly PegaNpcKnowledgeState _individualKnowledge;
 
-        internal PEGANpcKnowledgeReadView(PEGANpcKnowledgeState individualKnowledge)
+        internal PegaNpcKnowledgeReadView(PegaNpcKnowledgeState individualKnowledge)
         {
             _individualKnowledge = individualKnowledge ??
                 throw new ArgumentNullException(nameof(individualKnowledge));
         }
 
-        public PEGAKnowledgeFact<Vector3> GetKnownCharacterPosition(ActorId subjectActorId) =>
+        public PegaKnowledgeFact<Vector3> GetKnownCharacterPosition(ActorId subjectActorId) =>
             _individualKnowledge.GetLastObservedCharacterPosition(subjectActorId);
 
-        public PEGAKnowledgeFact<bool> GetIsPlayer(ActorId subjectActorId) =>
+        public PegaKnowledgeFact<bool> GetIsPlayer(ActorId subjectActorId) =>
             _individualKnowledge.GetFact(
-                PEGANpcKnowledgeFacts.IsPlayer.For(subjectActorId));
+                PegaNpcKnowledgeFacts.IsPlayer.For(subjectActorId));
     }
     /// <summary>
     /// Read-only GOAP view over one NPC's existing Knowledge State. Facts retain their status and evidence
     /// metadata so conditions can distinguish unknown, invalidated, and known values.
     /// </summary>
-    public sealed class PEGANpcGoapKnowledgeStateView : IGoapKnowledgeStateView
+    public sealed class PegaNpcGoapKnowledgeStateView : IGoapKnowledgeStateView
     {
-        private readonly PEGANpcKnowledgeState _knowledgeState;
+        private readonly PegaNpcKnowledgeState _knowledgeState;
         private readonly IReadOnlyList<IGoapKnowledgeCapability> _capabilities;
 
-        internal PEGANpcGoapKnowledgeStateView(
-            PEGANpcKnowledgeState knowledgeState,
+        internal PegaNpcGoapKnowledgeStateView(
+            PegaNpcKnowledgeState knowledgeState,
             IReadOnlyList<IGoapKnowledgeCapability> capabilities)
         {
             _knowledgeState = knowledgeState ?? throw new ArgumentNullException(nameof(knowledgeState));
@@ -73,50 +75,50 @@ namespace PEGA.NPC
 
         public IReadOnlyList<IGoapKnowledgeCapability> Capabilities => _capabilities;
 
-        public PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
+        public PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
             _knowledgeState.GetPerceivedAreaPresence();
 
-        public PEGAKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId) =>
+        public PegaKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId) =>
             _knowledgeState.GetCharacterVisualContact(subjectActorId);
 
-        public PEGAKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId) =>
+        public PegaKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId) =>
             _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
     }
 
     /// <summary>A GOAP Target handle backed by an immutable, already-known PEGA planning Target.</summary>
-    public sealed class PEGANpcGoapKnownTarget : IGoapKnownTarget
+    public sealed class PegaNpcGoapKnownTarget : IGoapKnownTarget
     {
-        internal PEGANpcGoapKnownTarget(PEGANpcPlanningTarget target)
+        internal PegaNpcGoapKnownTarget(PegaNpcPlanningTarget target)
         {
             Target = target;
         }
 
-        public PEGANpcPlanningTarget Target { get; }
+        public PegaNpcPlanningTarget Target { get; }
     }
 
     /// <summary>Generic predicted arrival at a known planning Target, independent of any Desire or Goal.</summary>
-    public sealed class PEGANpcTargetReachedEffect : IGoapEffect
+    public sealed class PegaNpcTargetReachedEffect : IGoapEffect
     {
-        public PEGANpcTargetReachedEffect(
-            PEGANpcPlanningTargetId targetId,
-            PEGANpcPlanningTargetKind targetKind,
+        public PegaNpcTargetReachedEffect(
+            PegaNpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetKind targetKind,
             double evidenceTimeSeconds)
             : this(targetId, targetKind, evidenceTimeSeconds, default, false)
         {
         }
 
-        public PEGANpcTargetReachedEffect(
-            PEGANpcPlanningTargetId targetId,
-            PEGANpcPlanningTargetKind targetKind,
+        public PegaNpcTargetReachedEffect(
+            PegaNpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetKind targetKind,
             double evidenceTimeSeconds,
             Vector3 targetPosition)
             : this(targetId, targetKind, evidenceTimeSeconds, targetPosition, true)
         {
         }
 
-        private PEGANpcTargetReachedEffect(
-            PEGANpcPlanningTargetId targetId,
-            PEGANpcPlanningTargetKind targetKind,
+        private PegaNpcTargetReachedEffect(
+            PegaNpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetKind targetKind,
             double evidenceTimeSeconds,
             Vector3 targetPosition,
             bool hasTargetPosition)
@@ -137,9 +139,9 @@ namespace PEGA.NPC
             HasTargetPosition = hasTargetPosition;
         }
 
-        public PEGANpcPlanningTargetId TargetId { get; }
+        public PegaNpcPlanningTargetId TargetId { get; }
 
-        public PEGANpcPlanningTargetKind TargetKind { get; }
+        public PegaNpcPlanningTargetKind TargetKind { get; }
 
         public double EvidenceTimeSeconds { get; }
 
@@ -159,14 +161,14 @@ namespace PEGA.NPC
     }
 
     /// <summary>Temporary progress condition owned by the established last-known-target continuation.</summary>
-    internal sealed class PEGANpcLastKnownTargetProgressCondition : IGoapCondition
+    internal sealed class PegaNpcLastKnownTargetProgressCondition : IGoapCondition
     {
         private readonly ActorId _subjectActorId;
         private readonly double _contactLossObservationTimeSeconds;
         private readonly double _positionEvidenceTimeSeconds;
         private readonly bool _lastKnownPositionReached;
 
-        public PEGANpcLastKnownTargetProgressCondition(
+        public PegaNpcLastKnownTargetProgressCondition(
             ActorId subjectActorId,
             double contactLossObservationTimeSeconds,
             double positionEvidenceTimeSeconds,
@@ -192,18 +194,18 @@ namespace PEGA.NPC
 
             for (int index = 0; index < effectState.Effects.Count; index++)
             {
-                if (!(effectState.Effects[index] is PEGANpcTargetReachedEffect effect) ||
+                if (!(effectState.Effects[index] is PegaNpcTargetReachedEffect effect) ||
                     Math.Abs(effect.EvidenceTimeSeconds - _positionEvidenceTimeSeconds) > 0.000001d)
                 {
                     continue;
                 }
 
                 bool reachedLastKnownPosition =
-                    effect.TargetKind == PEGANpcPlanningTargetKind.CharacterPosition &&
-                    effect.TargetId == PEGANpcPlanningTargetId.ForActor(_subjectActorId);
+                    effect.TargetKind == PegaNpcPlanningTargetKind.CharacterPosition &&
+                    effect.TargetId == PegaNpcPlanningTargetId.ForActor(_subjectActorId);
                 bool reachedInvestigationPosition =
-                    effect.TargetKind == PEGANpcPlanningTargetKind.LocalObservationPosition &&
-                    effect.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample &&
+                    effect.TargetKind == PegaNpcPlanningTargetKind.LocalObservationPosition &&
+                    effect.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.InvestigationSample &&
                     effect.TargetId.InvestigationSubjectActorId == _subjectActorId &&
                     Math.Abs(effect.TargetId.InvestigationLossTimeSeconds -
                              _contactLossObservationTimeSeconds) <= 0.000001d;
@@ -222,13 +224,13 @@ namespace PEGA.NPC
     /// Causal-planning inputs adapted from a validated live NPC input. It references the NPC's existing
     /// Knowledge State and wraps its known Targets; it does not copy or discover world facts.
     /// </summary>
-    public sealed class PEGANpcCausalPlanningKnowledge
+    public sealed class PegaNpcCausalPlanningKnowledge
     {
-        private readonly IReadOnlyList<PEGANpcGoapKnownTarget> _knownTargets;
+        private readonly IReadOnlyList<PegaNpcGoapKnownTarget> _knownTargets;
 
-        internal PEGANpcCausalPlanningKnowledge(
+        internal PegaNpcCausalPlanningKnowledge(
             IGoapKnowledgeStateView knowledgeState,
-            IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
+            IReadOnlyList<PegaNpcPlanningTarget> knownTargets,
             IReadOnlyList<IGoapEffect> observedCheckpoints = null)
         {
             if (knowledgeState == null || knowledgeState.Source != GoapStateSource.KnowledgeState)
@@ -248,20 +250,20 @@ namespace PEGA.NPC
                 KnowledgeState,
                 observedCheckpoints ?? Array.Empty<IGoapEffect>());
 
-            PEGANpcGoapKnownTarget[] targets = new PEGANpcGoapKnownTarget[knownTargets.Count];
+            PegaNpcGoapKnownTarget[] targets = new PegaNpcGoapKnownTarget[knownTargets.Count];
             for (int index = 0; index < knownTargets.Count; index++)
             {
-                PEGANpcPlanningTarget target = knownTargets[index];
+                PegaNpcPlanningTarget target = knownTargets[index];
                 if (!target.IsValid || !target.HasEvidenceTime ||
-                    (target.Provenance != PEGANpcPlanningTargetProvenance.KnowledgeState &&
-                     target.Provenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge))
+                    (target.Provenance != PegaNpcPlanningTargetProvenance.KnowledgeState &&
+                     target.Provenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge))
                 {
                     throw new ArgumentException(
                         $"Live causal Target at index {index} is invalid or lacks legitimate knowledge evidence.",
                         nameof(knownTargets));
                 }
 
-                targets[index] = new PEGANpcGoapKnownTarget(target);
+                targets[index] = new PegaNpcGoapKnownTarget(target);
             }
 
             _knownTargets = Array.AsReadOnly(targets);
@@ -271,15 +273,15 @@ namespace PEGA.NPC
 
         public GoapHypotheticalState InitialState { get; }
 
-        public IReadOnlyList<PEGANpcGoapKnownTarget> KnownTargets => _knownTargets;
+        public IReadOnlyList<PegaNpcGoapKnownTarget> KnownTargets => _knownTargets;
 
         public bool TryGetKnownTarget(
-            PEGANpcPlanningTargetId targetId,
-            out PEGANpcGoapKnownTarget knownTarget)
+            PegaNpcPlanningTargetId targetId,
+            out PegaNpcGoapKnownTarget knownTarget)
         {
             for (int index = 0; index < _knownTargets.Count; index++)
             {
-                PEGANpcGoapKnownTarget candidate = _knownTargets[index];
+                PegaNpcGoapKnownTarget candidate = _knownTargets[index];
                 if (candidate.Target.TargetId == targetId)
                 {
                     knownTarget = candidate;
@@ -295,18 +297,18 @@ namespace PEGA.NPC
         /// Returns only known Targets whose declared kind matches the requested Action Target kind.
         /// Action-specific conditions remain the responsibility of that Action's planning contract.
         /// </summary>
-        public IReadOnlyList<PEGANpcGoapKnownTarget> GetCompatibleTargets(
-            PEGANpcPlanningTargetKind requiredTargetKind)
+        public IReadOnlyList<PegaNpcGoapKnownTarget> GetCompatibleTargets(
+            PegaNpcPlanningTargetKind requiredTargetKind)
         {
             if (!requiredTargetKind.IsValid)
             {
                 throw new ArgumentException("A valid Target kind is required.", nameof(requiredTargetKind));
             }
 
-            List<PEGANpcGoapKnownTarget> compatibleTargets = new List<PEGANpcGoapKnownTarget>();
+            List<PegaNpcGoapKnownTarget> compatibleTargets = new List<PegaNpcGoapKnownTarget>();
             for (int index = 0; index < _knownTargets.Count; index++)
             {
-                PEGANpcGoapKnownTarget target = _knownTargets[index];
+                PegaNpcGoapKnownTarget target = _knownTargets[index];
                 if (target.Target.Kind == requiredTargetKind)
                 {
                     compatibleTargets.Add(target);

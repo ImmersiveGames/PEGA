@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-
-namespace PEGA.NPC
+using PEGA.NPC.Knowledge.Authoring;
+using PEGA.NPC.Knowledge.Core;
+namespace PEGA.NPC.Knowledge.Definitions
 {
     /// <summary>Metadados sem apagamento de tipo para uma definição tipada canônica de fato.</summary>
-    public interface IPEGAKnowledgeFactDefinition
+    public interface IPegaKnowledgeFactDefinition
     {
         string Id { get; }
 
@@ -22,16 +23,16 @@ namespace PEGA.NPC
     /// Definição estável de um fato e sua política. Reutilize a mesma instância em todos os produtores,
     /// leitores e escritores desse fato; o owner do domínio fornece seu endereço tipado.
     /// </summary>
-    public sealed class PEGAKnowledgeFactDefinition<TAddress, TValue> :
-        IPEGAKnowledgeFactDefinition,
-        IPEGAKnowledgeFactInitialAuthoringDefinition
+    public sealed class PegaKnowledgeFactDefinition<TAddress, TValue> :
+        IPegaKnowledgeFactDefinition,
+        IPegaKnowledgeFactInitialAuthoringDefinition
     {
         private readonly Func<TAddress, bool> _isValidAddress;
 
-        public PEGAKnowledgeFactDefinition(
+        public PegaKnowledgeFactDefinition(
             string id,
             string name,
-            IPEGAKnowledgeFactPolicy<TValue> policy,
+            IPegaKnowledgeFactPolicy<TValue> policy,
             Func<TAddress, bool> isValidAddress,
             bool allowsDesignerAuthoredInitialFact = true)
         {
@@ -62,22 +63,22 @@ namespace PEGA.NPC
 
         public bool AllowsDesignerAuthoredInitialFact { get; }
 
-        public IPEGAKnowledgeFactPolicy<TValue> Policy { get; }
+        public IPegaKnowledgeFactPolicy<TValue> Policy { get; }
 
-        public PEGAKnowledgeFactKey<TAddress, TValue> For(TAddress address) =>
-            new PEGAKnowledgeFactKey<TAddress, TValue>(this, address);
+        public PegaKnowledgeFactKey<TAddress, TValue> For(TAddress address) =>
+            new PegaKnowledgeFactKey<TAddress, TValue>(this, address);
 
         internal bool IsValidAddress(TAddress address) => _isValidAddress(address);
 
         public bool TryWriteInitialFact(
             object address,
             object value,
-            IPEGAKnowledgeFactWriter writer,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
+            IPegaKnowledgeFactWriter writer,
+            PegaKnowledgeEvidence evidence,
+            out PegaKnowledgeWriteResult result,
             out string diagnostic)
         {
-            result = PEGAKnowledgeWriteResult.RejectedInvalid;
+            result = PegaKnowledgeWriteResult.RejectedInvalid;
             if (!AllowsDesignerAuthoredInitialFact)
             {
                 diagnostic = $"Fact definition '{Id}' does not allow designer-authored initial facts.";
@@ -102,7 +103,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFactKey<TAddress, TValue> key = For(typedAddress);
+            PegaKnowledgeFactKey<TAddress, TValue> key = For(typedAddress);
             if (!key.IsValid)
             {
                 diagnostic = "The typed fact address is invalid.";
@@ -115,7 +116,7 @@ namespace PEGA.NPC
         }
     }
 
-    public interface IPEGAKnowledgeFactKey : IEquatable<IPEGAKnowledgeFactKey>
+    public interface IPegaKnowledgeFactKey : IEquatable<IPegaKnowledgeFactKey>
     {
         object DefinitionIdentity { get; }
 
@@ -131,23 +132,23 @@ namespace PEGA.NPC
     }
 
     /// <summary>Endereço tipado de um valor; igualdade combina a instância da definição e a identidade do domínio.</summary>
-    public readonly struct PEGAKnowledgeFactKey<TAddress, TValue> :
-        IPEGAKnowledgeFactKey,
-        IEquatable<PEGAKnowledgeFactKey<TAddress, TValue>>
+    public readonly struct PegaKnowledgeFactKey<TAddress, TValue> :
+        IPegaKnowledgeFactKey,
+        IEquatable<PegaKnowledgeFactKey<TAddress, TValue>>
     {
-        internal PEGAKnowledgeFactKey(PEGAKnowledgeFactDefinition<TAddress, TValue> definition, TAddress address)
+        internal PegaKnowledgeFactKey(PegaKnowledgeFactDefinition<TAddress, TValue> definition, TAddress address)
         {
             Definition = definition;
             AddressValue = address;
         }
 
-        public PEGAKnowledgeFactDefinition<TAddress, TValue> Definition { get; }
+        public PegaKnowledgeFactDefinition<TAddress, TValue> Definition { get; }
 
         public TAddress AddressValue { get; }
 
-        object IPEGAKnowledgeFactKey.DefinitionIdentity => Definition;
+        object IPegaKnowledgeFactKey.DefinitionIdentity => Definition;
 
-        object IPEGAKnowledgeFactKey.Address => AddressValue;
+        object IPegaKnowledgeFactKey.Address => AddressValue;
 
         public string Name => Definition != null ? Definition.Name : string.Empty;
 
@@ -157,15 +158,15 @@ namespace PEGA.NPC
 
         public bool IsValid => Definition != null && Definition.IsValidAddress(AddressValue);
 
-        public bool Equals(PEGAKnowledgeFactKey<TAddress, TValue> other) =>
+        public bool Equals(PegaKnowledgeFactKey<TAddress, TValue> other) =>
             ReferenceEquals(Definition, other.Definition) &&
             EqualityComparer<TAddress>.Default.Equals(AddressValue, other.AddressValue);
 
-        public bool Equals(IPEGAKnowledgeFactKey other) =>
-            other is PEGAKnowledgeFactKey<TAddress, TValue> typed && Equals(typed);
+        public bool Equals(IPegaKnowledgeFactKey other) =>
+            other is PegaKnowledgeFactKey<TAddress, TValue> typed && Equals(typed);
 
         public override bool Equals(object obj) =>
-            obj is PEGAKnowledgeFactKey<TAddress, TValue> typed && Equals(typed);
+            obj is PegaKnowledgeFactKey<TAddress, TValue> typed && Equals(typed);
 
         public override int GetHashCode()
         {

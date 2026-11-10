@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
-using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
     [CreateAssetMenu(
         fileName = "PoiActivityExitReachedGoalCondition",
         menuName = "PEGA/NPC/GOAP/POI Activity Exit Reached Goal Condition")]
-    public sealed class PEGAPoiActivityExitReachedGoalConditionAsset : PEGANpcGoapConditionAsset
+    public sealed class PegaPoiActivityExitReachedGoalConditionAsset : PegaNpcGoapConditionAsset
     {
         [SerializeField]
         [Tooltip("Group Profile whose authorized Activity Exit fact and position define this Goal.")]
@@ -19,8 +21,8 @@ namespace PEGA.NPC
         public override GoapTruthValue Evaluate(IGoapStateView state)
         {
             if (!(state is IGoapEffectStateView) ||
-                !PEGAPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
-                !PEGAPoiGroupKnowledge.TryGetReader(knowledgeState, out PEGAActorGroupKnowledgeReader reader) ||
+                !PegaPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
+                !PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader) ||
                 !TryGetGroupId(out GroupId groupId))
             {
                 return GoapTruthValue.Unknown;
@@ -42,24 +44,24 @@ namespace PEGA.NPC
 
             for (int index = 0; index < effects.Count; index++)
             {
-                if (!(effects[index] is PEGANpcTargetReachedEffect reached) ||
-                    reached.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+                if (!(effects[index] is PegaNpcTargetReachedEffect reached) ||
+                    reached.TargetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                     reached.KnowledgeGroupId != groupId || !reached.HasTargetPosition)
                 {
                     continue;
                 }
 
-                PEGAActorGroupKnowledgeReadResult<bool> isExit = reader.ReadGroupFact(
+                PegaActorGroupKnowledgeReadResult<bool> isExit = reader.ReadGroupFact(
                     groupId,
-                    PEGAObjectEntryKnowledgeFacts.ActivityExit.For(reached.ObjectEntryId),
+                    PegaObjectEntryKnowledgeFacts.ActivityExit.For(reached.ObjectEntryId),
                     Time.timeAsDouble);
-                PEGAActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
+                PegaActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
                     groupId,
-                    PEGAObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
+                    PegaObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
                     Time.timeAsDouble);
-                if (isExit.IsAuthorized && isExit.Fact.Scope == PEGAKnowledgeScope.Group &&
+                if (isExit.IsAuthorized && isExit.Fact.Scope == PegaKnowledgeScope.Group &&
                     isExit.Fact.TryGetValue(out bool exit) && exit &&
-                    position.IsAuthorized && position.Fact.Scope == PEGAKnowledgeScope.Group &&
+                    position.IsAuthorized && position.Fact.Scope == PegaKnowledgeScope.Group &&
                     position.Fact.TryGetValue(out Vector3 knownPosition) &&
                     knownPosition.Equals(reached.TargetPosition) &&
                     position.Fact.HasObservationTime &&

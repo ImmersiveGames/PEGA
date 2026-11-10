@@ -1,10 +1,15 @@
 using System;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
     /// <summary>
     /// Goal condition for arriving at a Target selected by its open, stable Target kind and identity domain.
@@ -13,7 +18,7 @@ namespace PEGA.NPC
     [CreateAssetMenu(
         fileName = "PEGANpcTargetReachedGoalCondition",
         menuName = "PEGA/NPC/GOAP/Target Reached Goal Condition")]
-    public sealed class PEGANpcTargetReachedGoalConditionAsset : PEGANpcGoapConditionAsset
+    public sealed class PegaNpcTargetReachedGoalConditionAsset : PegaNpcGoapConditionAsset
     {
         [SerializeField]
         [Tooltip("Categoria estável e aberta do Target que satisfaz esta condição, por exemplo character-position.")]
@@ -21,7 +26,7 @@ namespace PEGA.NPC
 
         [SerializeField]
         [Tooltip("Domínio de identidade do Target que satisfaz esta condição.")]
-        private PEGANpcPlanningTargetIdentityKind targetIdentityKind;
+        private PegaNpcPlanningTargetIdentityKind targetIdentityKind;
 
         [SerializeField]
         [Tooltip("Em resultados observados, exige contato visual atual do Actor associado ao Target; projeções causais continuam avaliando somente a chegada prevista.")]
@@ -47,19 +52,19 @@ namespace PEGA.NPC
                 return GoapTruthValue.Unknown;
             }
 
-            string requiredKind = PEGANpcPlanningTargetKind.FromStableText(targetKind).StableText;
-            if (string.IsNullOrWhiteSpace(requiredKind) || !Enum.IsDefined(typeof(PEGANpcPlanningTargetIdentityKind), targetIdentityKind))
+            string requiredKind = PegaNpcPlanningTargetKind.FromStableText(targetKind).StableText;
+            if (string.IsNullOrWhiteSpace(requiredKind) || !Enum.IsDefined(typeof(PegaNpcPlanningTargetIdentityKind), targetIdentityKind))
             {
                 return GoapTruthValue.Unknown;
             }
 
             for (int index = 0; index < effectState.Effects.Count; index++)
             {
-                if (effectState.Effects[index] is PEGANpcTargetReachedEffect reachedEffect &&
+                if (effectState.Effects[index] is PegaNpcTargetReachedEffect reachedEffect &&
                     reachedEffect.TargetKind.StableText == requiredKind &&
                     reachedEffect.TargetId.IdentityKind == targetIdentityKind)
                 {
-                    if (targetIdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+                    if (targetIdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
                     {
                         if (!TryGetRequiredGroupAndObjectEntry(
                                 out ObjectEntryId requiredEntryId,
@@ -97,12 +102,12 @@ namespace PEGA.NPC
 
             for (int index = 0; index < observedState.KnowledgeState.Capabilities.Count; index++)
             {
-                if (!(observedState.KnowledgeState.Capabilities[index] is PEGANpcKnowledgeState knowledgeState))
+                if (!(observedState.KnowledgeState.Capabilities[index] is PegaNpcKnowledgeState knowledgeState))
                 {
                     continue;
                 }
 
-                PEGAKnowledgeFact<bool> visualContact = knowledgeState.GetCharacterVisualContact(subjectActorId);
+                PegaKnowledgeFact<bool> visualContact = knowledgeState.GetCharacterVisualContact(subjectActorId);
                 if (visualContact.TryGetValue(out bool hasVisualContact))
                 {
                     return hasVisualContact
@@ -119,9 +124,9 @@ namespace PEGA.NPC
         public override bool TryValidate(out string diagnostic)
         {
             bool valid = !string.IsNullOrWhiteSpace(targetKind) &&
-                         PEGANpcPlanningTargetKind.FromStableText(targetKind).IsValid &&
-                         Enum.IsDefined(typeof(PEGANpcPlanningTargetIdentityKind), targetIdentityKind);
-            if (valid && targetIdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+                         PegaNpcPlanningTargetKind.FromStableText(targetKind).IsValid &&
+                         Enum.IsDefined(typeof(PegaNpcPlanningTargetIdentityKind), targetIdentityKind);
+            if (valid && targetIdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
             {
                 valid = TryGetRequiredGroupAndObjectEntry(out _, out _);
             }
@@ -145,7 +150,7 @@ namespace PEGA.NPC
 
         private bool IsEffectBackedByCurrentGroupKnowledge(
             IGoapStateView state,
-            PEGANpcTargetReachedEffect effect)
+            PegaNpcTargetReachedEffect effect)
         {
             IGoapKnowledgeStateView knowledgeState = state as IGoapKnowledgeStateView;
             if (knowledgeState == null && state is IGoapHypotheticalStateView hypothetical)
@@ -168,20 +173,20 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFactKey<ObjectEntryId, Vector3> key = PEGAObjectEntryKnowledgeFacts.Position.For(objectEntryId);
+            PegaKnowledgeFactKey<ObjectEntryId, Vector3> key = PegaObjectEntryKnowledgeFacts.Position.For(objectEntryId);
             for (int index = 0; index < knowledgeState.Capabilities.Count; index++)
             {
-                if (!(knowledgeState.Capabilities[index] is PEGAActorGroupKnowledgeReader reader))
+                if (!(knowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader reader))
                 {
                     continue;
                 }
 
-                PEGAActorGroupKnowledgeReadResult<Vector3> result = reader.ReadGroupFact(
+                PegaActorGroupKnowledgeReadResult<Vector3> result = reader.ReadGroupFact(
                     groupId,
                     key,
                     Time.timeAsDouble);
                 if (!result.IsAuthorized ||
-                    result.Fact.Scope != PEGAKnowledgeScope.Group ||
+                    result.Fact.Scope != PegaKnowledgeScope.Group ||
                     !result.Fact.TryGetValue(out Vector3 currentPosition) ||
                     !result.Fact.HasObservationTime ||
                     Math.Abs(result.Fact.ObservationTimeSeconds - effect.EvidenceTimeSeconds) > 0.000001d ||

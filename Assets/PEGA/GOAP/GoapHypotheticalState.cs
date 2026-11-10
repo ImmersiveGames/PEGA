@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-namespace ImmersiveGames.Goap
+namespace PEGA.GOAP
 {
     /// <summary>
     /// Vista somente para leitura que separa o conhecimento factual da camada de Effects projetados.

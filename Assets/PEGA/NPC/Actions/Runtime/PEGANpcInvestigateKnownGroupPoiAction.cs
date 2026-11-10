@@ -2,16 +2,20 @@ using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
-using PEGA.Actors;
+using PEGA.GOAP;
+using PEGA.Movement.Actor;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Goals.Conditions;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Actions.Runtime
 {
     [CreateAssetMenu(
         fileName = "InvestigateKnownGroupPoi",
         menuName = "PEGA/NPC/Investigation/Investigate Known Group POI")]
-    public sealed class PEGANpcInvestigateKnownGroupPoiAction : PEGANpcActionProviderAsset
+    public sealed class PegaNpcInvestigateKnownGroupPoiAction : PegaNpcActionProviderAsset
     {
         [SerializeField]
         [Tooltip("Group Profile whose membership-authorized manifest identifies the POIs for this Action.")]
@@ -21,22 +25,22 @@ namespace PEGA.NPC
         [Tooltip("Continuous time in seconds the Actor must remain at the POI while all investigation conditions remain valid.")]
         private float investigationDurationSeconds = 2f;
 
-        private PEGAActorGroupKnowledgeReader _groupKnowledgeReader;
-        private PEGANpcPlanSnapshot _executionPlan;
-        private PEGAPoiInvestigationCompletedEffect _executionEffect;
-        private PEGANpcPoiInvestigationEvidence _completionEvidence;
+        private PegaActorGroupKnowledgeReader _groupKnowledgeReader;
+        private PegaNpcPlanSnapshot _executionPlan;
+        private PegaPoiInvestigationCompletedEffect _executionEffect;
+        private PegaNpcPoiInvestigationEvidence _completionEvidence;
         private double _startedAtTimeSeconds;
         private double _completionEvidenceTimeSeconds;
         private bool _hasExecutionPlan;
         private bool _hasCompletionEvidence;
 
-        protected override PEGANpcActionEffectKind ActionEffectKind =>
-            PEGANpcActionEffectKind.CompleteGroupPoiInvestigation;
+        protected override PegaNpcActionEffectKind ActionEffectKind =>
+            PegaNpcActionEffectKind.CompleteGroupPoiInvestigation;
 
-        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
-            PEGANpcPlanningActionId.InvestigateKnownGroupPoi,
+        public override PegaNpcActionContract Contract => new PegaNpcActionContract(
+            PegaNpcPlanningActionId.InvestigateKnownGroupPoi,
             ActionEffectKind,
-            PEGANpcPlanningTargetKind.GroupObjectEntryPosition,
+            PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
             false,
             "NPC began investigating a pending POI from its authorized Group manifest.");
 
@@ -51,7 +55,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            _groupKnowledgeReader = ActorRoot.GetComponent<PEGAActorGroupKnowledgeReader>();
+            _groupKnowledgeReader = ActorRoot.GetComponent<PegaActorGroupKnowledgeReader>();
             if (_groupKnowledgeReader == null || _groupKnowledgeReader.gameObject != ActorRoot ||
                 !TryGetActivityGroupId(out _) || !IsPositiveFinite(investigationDurationSeconds))
             {
@@ -64,13 +68,13 @@ namespace PEGA.NPC
         }
 
         public override bool TryCreatePlanningCandidates(
-            PEGANpcActionPlanningContext context,
-            out IReadOnlyList<PEGANpcPlanningTarget> targets,
-            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            PegaNpcActionPlanningContext context,
+            out IReadOnlyList<PegaNpcPlanningTarget> targets,
+            out IReadOnlyList<PegaNpcPlanningActionCandidate> candidates,
             out string diagnostic)
         {
-            List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
-            List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
+            List<PegaNpcPlanningTarget> targetList = new List<PegaNpcPlanningTarget>();
+            List<PegaNpcPlanningActionCandidate> candidateList = new List<PegaNpcPlanningActionCandidate>();
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
             diagnostic = string.Empty;
@@ -81,7 +85,7 @@ namespace PEGA.NPC
 
             if (!IsPositiveFinite(investigationDurationSeconds) ||
                 !TryGetActivityGroupId(out GroupId groupId) ||
-                !TryGetComposedReader(context.ComposedKnowledgeState, out PEGAActorGroupKnowledgeReader reader, out diagnostic))
+                !TryGetComposedReader(context.ComposedKnowledgeState, out PegaActorGroupKnowledgeReader reader, out diagnostic))
             {
                 if (string.IsNullOrWhiteSpace(diagnostic))
                 {
@@ -91,8 +95,8 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> manifest = reader.ReadGroupFacts(
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired,
+            PegaActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> manifest = reader.ReadGroupFacts(
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired,
                 Time.timeAsDouble);
             if (!manifest.IsAuthorized)
             {
@@ -104,7 +108,7 @@ namespace PEGA.NPC
 
             for (int groupIndex = 0; groupIndex < manifest.Groups.Count; groupIndex++)
             {
-                PEGAActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = manifest.Groups[groupIndex];
+                PegaActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = manifest.Groups[groupIndex];
                 if (group.GroupId != groupId)
                 {
                     continue;
@@ -112,8 +116,8 @@ namespace PEGA.NPC
 
                 for (int factIndex = 0; factIndex < group.Facts.Count; factIndex++)
                 {
-                    PEGAKnowledgeFactSnapshot<ObjectEntryId, bool> requiredFact = group.Facts[factIndex];
-                    if (!requiredFact.Key.IsValid || requiredFact.Fact.Scope != PEGAKnowledgeScope.Group ||
+                    PegaKnowledgeFactSnapshot<ObjectEntryId, bool> requiredFact = group.Facts[factIndex];
+                    if (!requiredFact.Key.IsValid || requiredFact.Fact.Scope != PegaKnowledgeScope.Group ||
                         !requiredFact.Fact.TryGetValue(out bool isRequired) || !isRequired)
                     {
                         continue;
@@ -126,7 +130,7 @@ namespace PEGA.NPC
                         continue;
                     }
 
-                    PEGANpcPlanningTarget target = PEGANpcPlanningTarget.FromKnownGroupObjectEntryPosition(
+                    PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromKnownGroupObjectEntryPosition(
                         objectEntryId,
                         groupId,
                         knownPosition,
@@ -138,11 +142,11 @@ namespace PEGA.NPC
                     }
 
                     targetList.Add(target);
-                    candidateList.Add(new PEGANpcPlanningActionCandidate(
+                    candidateList.Add(new PegaNpcPlanningActionCandidate(
                         Contract,
                         this,
                         target.TargetId,
-                        PEGAActorMovementSpeedRegime.Movement,
+                        PegaActorMovementSpeedRegime.Movement,
                         IntrinsicDurationSeconds));
                 }
             }
@@ -153,17 +157,17 @@ namespace PEGA.NPC
         }
 
         public override bool CanOfferCandidate(
-            PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPlanContinuation? continuation) =>
+            PegaNpcPlanningActionCandidate candidate,
+            PegaNpcPlanContinuation? continuation) =>
             !continuation.HasValue && CandidateMatchesContract(candidate) &&
-            candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
+            candidate.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
             candidate.TargetId.ObjectEntryId.IsValid &&
             TryGetActivityGroupId(out GroupId groupId) &&
             candidate.TargetId.KnowledgeGroupId == groupId;
 
         public override bool IsCurrentPlanValid(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -171,9 +175,9 @@ namespace PEGA.NPC
             currentKnownPosition = default;
             evidenceTimeSeconds = 0d;
             diagnostic = string.Empty;
-            if (continuation.HasValue || plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+            if (continuation.HasValue || plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId || plan.TargetKind != Contract.TargetKind ||
-                plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 !TryReadPendingTarget(plan.TargetId, out currentKnownPosition, out evidenceTimeSeconds, out diagnostic) ||
                 !currentKnownPosition.Equals(plan.TargetPosition) ||
                 Math.Abs(evidenceTimeSeconds - plan.EvidenceTimeSeconds) > 0.000001d)
@@ -188,8 +192,8 @@ namespace PEGA.NPC
         }
 
         public override bool TryStart(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out string diagnostic)
         {
             _hasExecutionPlan = false;
@@ -222,8 +226,8 @@ namespace PEGA.NPC
         }
 
         public override bool TryCreateCausalActionDefinition(
-            PEGANpcPlanningActionCandidate candidate,
-            PEGANpcGoapKnownTarget target,
+            PegaNpcPlanningActionCandidate candidate,
+            PegaNpcGoapKnownTarget target,
             out GoapActionDefinition actionDefinition,
             out string diagnostic)
         {
@@ -245,7 +249,7 @@ namespace PEGA.NPC
             actionDefinition = new GoapActionDefinition(
                 new IGoapCondition[]
                 {
-                    new PEGAPoiInvestigationCanStartCondition(
+                    new PegaPoiInvestigationCanStartCondition(
                         candidate.TargetId.ObjectEntryId,
                         candidate.TargetId.KnowledgeGroupId,
                         position,
@@ -253,7 +257,7 @@ namespace PEGA.NPC
                 },
                 new IGoapEffect[]
                 {
-                    new PEGAPoiInvestigationCompletedEffect(
+                    new PegaPoiInvestigationCompletedEffect(
                         candidate.TargetId.ObjectEntryId,
                         candidate.TargetId.KnowledgeGroupId)
                 });
@@ -261,25 +265,25 @@ namespace PEGA.NPC
             return true;
         }
 
-        public override PEGANpcCausalStepEvaluationStatus EvaluateCausalStep(
-            PEGANpcPlanningActionCandidate candidate,
+        public override PegaNpcCausalStepEvaluationStatus EvaluateCausalStep(
+            PegaNpcPlanningActionCandidate candidate,
             IGoapHypotheticalStateView stateBeforeStep,
-            PEGANpcCausalPlanningKnowledge knowledge,
-            out PEGANpcNavigationRouteEstimate routeEstimate,
+            PegaNpcCausalPlanningKnowledge knowledge,
+            out PegaNpcNavigationRouteEstimate routeEstimate,
             out float estimatedSeconds,
             out string diagnostic)
         {
-            routeEstimate = PEGANpcNavigationRouteEstimate.NotRequired;
+            routeEstimate = PegaNpcNavigationRouteEstimate.NotRequired;
             estimatedSeconds = 0f;
             diagnostic = string.Empty;
             if (stateBeforeStep == null || stateBeforeStep.Source != GoapStateSource.HypotheticalState ||
                 knowledge == null || !CanOfferCandidate(candidate, null) ||
                 !TryCreateCausalActionDefinition(candidate,
-                    knowledge.TryGetKnownTarget(candidate.TargetId, out PEGANpcGoapKnownTarget target) ? target : null,
+                    knowledge.TryGetKnownTarget(candidate.TargetId, out PegaNpcGoapKnownTarget target) ? target : null,
                     out GoapActionDefinition definition,
                     out diagnostic))
             {
-                return PEGANpcCausalStepEvaluationStatus.Unavailable;
+                return PegaNpcCausalStepEvaluationStatus.Unavailable;
             }
 
             for (int index = 0; index < definition.SuccessPreconditions.Count; index++)
@@ -289,30 +293,30 @@ namespace PEGA.NPC
                 {
                     diagnostic = "The hypothetical state does not currently prove arrival at this pending POI.";
                     return result == GoapTruthValue.Unknown
-                        ? PEGANpcCausalStepEvaluationStatus.Unknown
-                        : PEGANpcCausalStepEvaluationStatus.Unavailable;
+                        ? PegaNpcCausalStepEvaluationStatus.Unknown
+                        : PegaNpcCausalStepEvaluationStatus.Unavailable;
                 }
             }
 
             if (!IsPositiveFinite(investigationDurationSeconds))
             {
                 diagnostic = "The configured investigation dwell duration is invalid.";
-                return PEGANpcCausalStepEvaluationStatus.Unknown;
+                return PegaNpcCausalStepEvaluationStatus.Unknown;
             }
 
             estimatedSeconds = investigationDurationSeconds;
-            return PEGANpcCausalStepEvaluationStatus.Available;
+            return PegaNpcCausalStepEvaluationStatus.Available;
         }
 
         public override bool TryGetObservedCausalEffects(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcObservedActionEffect observedEffect,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcObservedActionEffect observedEffect,
             out IReadOnlyList<IGoapEffect> observedEffects,
             out string diagnostic)
         {
             observedEffects = Array.Empty<IGoapEffect>();
             diagnostic = string.Empty;
-            PEGAPoiInvestigationCompletedEffect declared = FindDeclaredEffect(plan);
+            PegaPoiInvestigationCompletedEffect declared = FindDeclaredEffect(plan);
             if (!_hasCompletionEvidence || declared == null ||
                 plan.ActionId != Contract.ActionId || observedEffect.Kind != Contract.EffectKind ||
                 observedEffect.RequestId != CurrentExecutionId ||
@@ -367,7 +371,7 @@ namespace PEGA.NPC
             if (!ArePreconditionsStillValid(out string diagnostic) || !TryCommitGroupCompletion(out diagnostic))
             {
                 CompleteAction(
-                    PEGANpcActionOutcome.Invalid,
+                    PegaNpcActionOutcome.Invalid,
                     string.IsNullOrWhiteSpace(diagnostic)
                         ? "The investigation could not publish an accepted, readable Group completion fact."
                         : diagnostic);
@@ -375,7 +379,7 @@ namespace PEGA.NPC
             }
 
             CompleteAction(
-                PEGANpcActionOutcome.Success,
+                PegaNpcActionOutcome.Success,
                 "The Actor completed the configured dwell and read back its accepted Group investigation fact.");
         }
 
@@ -411,7 +415,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGANpcPoiInvestigationEvidence evidenceOrigin = new PEGANpcPoiInvestigationEvidence(
+            PegaNpcPoiInvestigationEvidence evidenceOrigin = new PegaNpcPoiInvestigationEvidence(
                 actorId,
                 groupId,
                 _executionPlan.TargetId.ObjectEntryId,
@@ -423,18 +427,18 @@ namespace PEGA.NPC
             }
 
             double evidenceTimeSeconds = Time.timeAsDouble;
-            PEGAKnowledgeEvidence evidence = new PEGAKnowledgeEvidence(
-                PEGAKnowledgeEvidenceOrigin.From(evidenceOrigin),
+            PegaKnowledgeEvidence evidence = new PegaKnowledgeEvidence(
+                PegaKnowledgeEvidenceOrigin.From(evidenceOrigin),
                 evidenceTimeSeconds,
                 evidenceOrigin,
                 "poi-investigation-completed");
-            PEGAActorGroupKnowledgeAccessStatus access = _groupKnowledgeReader.SubmitGroupFact(
+            PegaActorGroupKnowledgeAccessStatus access = _groupKnowledgeReader.SubmitGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(evidenceOrigin.ObjectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(evidenceOrigin.ObjectEntryId),
                 true,
                 evidence,
-                out PEGAKnowledgeWriteResult writeResult);
-            if (access != PEGAActorGroupKnowledgeAccessStatus.Authorized || !IsAcceptedWrite(writeResult) ||
+                out PegaKnowledgeWriteResult writeResult);
+            if (access != PegaActorGroupKnowledgeAccessStatus.Authorized || !IsAcceptedWrite(writeResult) ||
                 !TryReadCommittedCompletion(evidenceOrigin, evidenceTimeSeconds))
             {
                 diagnostic = $"Group completion write was not accepted and read back for this execution (access={access}, write={writeResult}).";
@@ -448,7 +452,7 @@ namespace PEGA.NPC
         }
 
         private bool TryReadCommittedCompletion(
-            PEGANpcPoiInvestigationEvidence expectedEvidence,
+            PegaNpcPoiInvestigationEvidence expectedEvidence,
             double expectedEvidenceTimeSeconds)
         {
             if (_groupKnowledgeReader == null || !expectedEvidence.IsValid)
@@ -456,19 +460,19 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAActorGroupKnowledgeReadResult<bool> result = _groupKnowledgeReader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> result = _groupKnowledgeReader.ReadGroupFact(
                 expectedEvidence.GroupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(expectedEvidence.ObjectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(expectedEvidence.ObjectEntryId),
                 Time.timeAsDouble);
-            PEGAActorGroupKnowledgeReadResult<bool> required = _groupKnowledgeReader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> required = _groupKnowledgeReader.ReadGroupFact(
                 expectedEvidence.GroupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired.For(expectedEvidence.ObjectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired.For(expectedEvidence.ObjectEntryId),
                 Time.timeAsDouble);
-            if (!result.IsAuthorized || result.Fact.Scope != PEGAKnowledgeScope.Group ||
+            if (!result.IsAuthorized || result.Fact.Scope != PegaKnowledgeScope.Group ||
                 !result.Fact.TryGetValue(out bool completed) || !completed ||
                 !result.Fact.HasObservationTime ||
                 Math.Abs(result.Fact.ObservationTimeSeconds - expectedEvidenceTimeSeconds) > 0.000001d ||
-                !required.IsAuthorized || required.Fact.Scope != PEGAKnowledgeScope.Group ||
+                !required.IsAuthorized || required.Fact.Scope != PegaKnowledgeScope.Group ||
                 !required.Fact.TryGetValue(out bool isRequired) || !isRequired)
             {
                 return false;
@@ -476,9 +480,9 @@ namespace PEGA.NPC
 
             for (int index = 0; index < result.Fact.Evidence.Count; index++)
             {
-                PEGAKnowledgeEvidence evidence = result.Fact.Evidence[index];
+                PegaKnowledgeEvidence evidence = result.Fact.Evidence[index];
                 if (Math.Abs(evidence.ObservationTimeSeconds - expectedEvidenceTimeSeconds) <= 0.000001d &&
-                    evidence.Source is PEGANpcPoiInvestigationEvidence observed &&
+                    evidence.Source is PegaNpcPoiInvestigationEvidence observed &&
                     observed.Equals(expectedEvidence))
                 {
                     return true;
@@ -489,7 +493,7 @@ namespace PEGA.NPC
         }
 
         private bool TryReadPendingTarget(
-            PEGANpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetId targetId,
             out Vector3 position,
             out double positionEvidenceTimeSeconds,
             out string diagnostic)
@@ -497,7 +501,7 @@ namespace PEGA.NPC
             position = default;
             positionEvidenceTimeSeconds = 0d;
             if (!TryGetActivityGroupId(out GroupId groupId) ||
-                targetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+                targetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                 targetId.KnowledgeGroupId != groupId || !targetId.ObjectEntryId.IsValid)
             {
                 diagnostic = "The Action requires the selected logical POI to belong to its configured activity Group.";
@@ -514,7 +518,7 @@ namespace PEGA.NPC
         }
 
         private static bool TryReadPendingTarget(
-            PEGAActorGroupKnowledgeReader reader,
+            PegaActorGroupKnowledgeReader reader,
             GroupId groupId,
             ObjectEntryId objectEntryId,
             out Vector3 position,
@@ -524,23 +528,23 @@ namespace PEGA.NPC
             position = default;
             positionEvidenceTimeSeconds = 0d;
             diagnostic = string.Empty;
-            PEGAActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
                 Time.timeAsDouble);
-            PEGAActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
                 Time.timeAsDouble);
-            PEGAActorGroupKnowledgeReadResult<Vector3> positionRead = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<Vector3> positionRead = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.Position.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.Position.For(objectEntryId),
                 Time.timeAsDouble);
-            if (!required.IsAuthorized || required.Fact.Scope != PEGAKnowledgeScope.Group ||
+            if (!required.IsAuthorized || required.Fact.Scope != PegaKnowledgeScope.Group ||
                 !required.Fact.TryGetValue(out bool isRequired) || !isRequired ||
-                !completed.IsAuthorized || completed.Fact.Scope != PEGAKnowledgeScope.Group ||
+                !completed.IsAuthorized || completed.Fact.Scope != PegaKnowledgeScope.Group ||
                 !completed.Fact.TryGetValue(out bool isCompleted) || isCompleted ||
-                !positionRead.IsAuthorized || positionRead.Fact.Scope != PEGAKnowledgeScope.Group ||
+                !positionRead.IsAuthorized || positionRead.Fact.Scope != PegaKnowledgeScope.Group ||
                 !positionRead.Fact.TryGetValue(out position) || !positionRead.Fact.HasObservationTime)
             {
                 diagnostic = "The POI must be known as required, explicitly pending and positioned in the same authorized Group Knowledge.";
@@ -552,25 +556,25 @@ namespace PEGA.NPC
         }
 
         private bool TryReadCurrentPosition(
-            PEGANpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetId targetId,
             out Vector3 position,
             out double evidenceTimeSeconds,
             out string diagnostic)
         {
             position = default;
             evidenceTimeSeconds = 0d;
-            if (targetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+            if (targetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                 !targetId.KnowledgeGroupId.IsValid || !targetId.ObjectEntryId.IsValid)
             {
                 diagnostic = "The completion Effect has no valid Group Object Entry identity.";
                 return false;
             }
 
-            PEGAActorGroupKnowledgeReadResult<Vector3> result = _groupKnowledgeReader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<Vector3> result = _groupKnowledgeReader.ReadGroupFact(
                 targetId.KnowledgeGroupId,
-                PEGAObjectEntryKnowledgeFacts.Position.For(targetId.ObjectEntryId),
+                PegaObjectEntryKnowledgeFacts.Position.For(targetId.ObjectEntryId),
                 Time.timeAsDouble);
-            if (!result.IsAuthorized || result.Fact.Scope != PEGAKnowledgeScope.Group ||
+            if (!result.IsAuthorized || result.Fact.Scope != PegaKnowledgeScope.Group ||
                 !result.Fact.TryGetValue(out position) || !result.Fact.HasObservationTime)
             {
                 diagnostic = "The Actor no longer has membership-authorized access to the POI position fact.";
@@ -584,7 +588,7 @@ namespace PEGA.NPC
 
         private bool TryGetComposedReader(
             IGoapKnowledgeStateView composedKnowledgeState,
-            out PEGAActorGroupKnowledgeReader reader,
+            out PegaActorGroupKnowledgeReader reader,
             out string diagnostic)
         {
             reader = null;
@@ -596,7 +600,7 @@ namespace PEGA.NPC
 
             for (int index = 0; index < composedKnowledgeState.Capabilities.Count; index++)
             {
-                if (!(composedKnowledgeState.Capabilities[index] is PEGAActorGroupKnowledgeReader candidate))
+                if (!(composedKnowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader candidate))
                 {
                     continue;
                 }
@@ -623,11 +627,11 @@ namespace PEGA.NPC
                    groupId.IsValid;
         }
 
-        private static PEGAPoiInvestigationCompletedEffect FindDeclaredEffect(PEGANpcPlanSnapshot plan)
+        private static PegaPoiInvestigationCompletedEffect FindDeclaredEffect(PegaNpcPlanSnapshot plan)
         {
             for (int index = 0; index < plan.CausalEffects.Count; index++)
             {
-                if (plan.CausalEffects[index] is PEGAPoiInvestigationCompletedEffect effect)
+                if (plan.CausalEffects[index] is PegaPoiInvestigationCompletedEffect effect)
                 {
                     return effect;
                 }
@@ -661,11 +665,11 @@ namespace PEGA.NPC
             }
         }
 
-        private static bool IsAcceptedWrite(PEGAKnowledgeWriteResult result) =>
-            result == PEGAKnowledgeWriteResult.Recorded ||
-            result == PEGAKnowledgeWriteResult.Replaced ||
-            result == PEGAKnowledgeWriteResult.Merged ||
-            result == PEGAKnowledgeWriteResult.NoChange;
+        private static bool IsAcceptedWrite(PegaKnowledgeWriteResult result) =>
+            result == PegaKnowledgeWriteResult.Recorded ||
+            result == PegaKnowledgeWriteResult.Replaced ||
+            result == PegaKnowledgeWriteResult.Merged ||
+            result == PegaKnowledgeWriteResult.NoChange;
 
         private static float PlanarDistance(Vector3 left, Vector3 right)
         {

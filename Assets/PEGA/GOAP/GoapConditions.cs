@@ -1,6 +1,5 @@
 using System;
-
-namespace ImmersiveGames.Goap
+namespace PEGA.GOAP
 {
     public enum GoapTruthValue
     {

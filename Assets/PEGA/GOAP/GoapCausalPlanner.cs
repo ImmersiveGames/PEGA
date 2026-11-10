@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-namespace ImmersiveGames.Goap
+namespace PEGA.GOAP
 {
     /// <summary>
     /// Identidade opaca de um Target que já foi reconhecido como conhecido pela autoridade de conhecimento do jogo.

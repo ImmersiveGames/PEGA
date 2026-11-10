@@ -1,15 +1,17 @@
 using System;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
     [CreateAssetMenu(
         fileName = "PoiInvestigationCompletedGoalCondition",
         menuName = "PEGA/NPC/GOAP/POI Investigation Completed Goal Condition")]
-    public sealed class PEGAPoiInvestigationCompletedGoalConditionAsset : PEGANpcGoapConditionAsset
+    public sealed class PegaPoiInvestigationCompletedGoalConditionAsset : PegaNpcGoapConditionAsset
     {
         [SerializeField]
         [Tooltip("Group Profile that owns the investigation manifest and completion facts.")]
@@ -19,8 +21,8 @@ namespace PEGA.NPC
         {
             if (!(state is IGoapEffectStateView) ||
                 !TryGetGroupId(out GroupId groupId) ||
-                !PEGAPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
-                !PEGAPoiGroupKnowledge.TryGetReader(knowledgeState, out PEGAActorGroupKnowledgeReader reader))
+                !PegaPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
+                !PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader))
             {
                 return GoapTruthValue.Unknown;
             }
@@ -29,7 +31,7 @@ namespace PEGA.NPC
             {
                 for (int index = 0; index < hypothetical.ProjectedEffects.Count; index++)
                 {
-                    if (hypothetical.ProjectedEffects[index] is PEGAPoiInvestigationCompletedEffect effect &&
+                    if (hypothetical.ProjectedEffects[index] is PegaPoiInvestigationCompletedEffect effect &&
                         effect.GroupId == groupId &&
                         IsCurrentlyPending(reader, groupId, effect.ObjectEntryId))
                     {
@@ -47,7 +49,7 @@ namespace PEGA.NPC
 
             for (int index = 0; index < observed.ObservedEffects.Count; index++)
             {
-                if (observed.ObservedEffects[index] is PEGAPoiInvestigationCompletedEffect effect &&
+                if (observed.ObservedEffects[index] is PegaPoiInvestigationCompletedEffect effect &&
                     effect.GroupId == groupId &&
                     IsCompletedByInvestigationEvidence(reader, groupId, effect.ObjectEntryId))
                 {
@@ -76,40 +78,40 @@ namespace PEGA.NPC
         }
 
         private static bool IsCurrentlyPending(
-            PEGAActorGroupKnowledgeReader reader,
+            PegaActorGroupKnowledgeReader reader,
             GroupId groupId,
             ObjectEntryId objectEntryId)
         {
-            PEGAActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
                 Time.timeAsDouble);
-            PEGAActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
                 Time.timeAsDouble);
-            return required.IsAuthorized && required.Fact.Scope == PEGAKnowledgeScope.Group &&
+            return required.IsAuthorized && required.Fact.Scope == PegaKnowledgeScope.Group &&
                    required.Fact.TryGetValue(out bool isRequired) && isRequired &&
-                   completed.IsAuthorized && completed.Fact.Scope == PEGAKnowledgeScope.Group &&
+                   completed.IsAuthorized && completed.Fact.Scope == PegaKnowledgeScope.Group &&
                    completed.Fact.TryGetValue(out bool isCompleted) && !isCompleted;
         }
 
         private static bool IsCompletedByInvestigationEvidence(
-            PEGAActorGroupKnowledgeReader reader,
+            PegaActorGroupKnowledgeReader reader,
             GroupId groupId,
             ObjectEntryId objectEntryId)
         {
-            PEGAActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired.For(objectEntryId),
                 Time.timeAsDouble);
-            PEGAActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
                 groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(objectEntryId),
                 Time.timeAsDouble);
-            if (!required.IsAuthorized || required.Fact.Scope != PEGAKnowledgeScope.Group ||
+            if (!required.IsAuthorized || required.Fact.Scope != PegaKnowledgeScope.Group ||
                 !required.Fact.TryGetValue(out bool isRequired) || !isRequired ||
-                !completed.IsAuthorized || completed.Fact.Scope != PEGAKnowledgeScope.Group ||
+                !completed.IsAuthorized || completed.Fact.Scope != PegaKnowledgeScope.Group ||
                 !completed.Fact.TryGetValue(out bool isCompleted) || !isCompleted ||
                 !completed.Fact.HasObservationTime)
             {
@@ -118,9 +120,9 @@ namespace PEGA.NPC
 
             for (int evidenceIndex = 0; evidenceIndex < completed.Fact.Evidence.Count; evidenceIndex++)
             {
-                PEGAKnowledgeEvidence evidence = completed.Fact.Evidence[evidenceIndex];
+                PegaKnowledgeEvidence evidence = completed.Fact.Evidence[evidenceIndex];
                 if (Math.Abs(evidence.ObservationTimeSeconds - completed.Fact.ObservationTimeSeconds) <= 0.000001d &&
-                    evidence.Source is PEGANpcPoiInvestigationEvidence source &&
+                    evidence.Source is PegaNpcPoiInvestigationEvidence source &&
                     source.ObjectEntryId == objectEntryId && source.GroupId == groupId)
                 {
                     return true;

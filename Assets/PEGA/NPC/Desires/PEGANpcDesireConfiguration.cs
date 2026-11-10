@@ -1,22 +1,22 @@
+using PEGA.GOAP;
+using PEGA.NPC.Goals.Conditions;
 using UnityEngine;
 using UnityEngine.Serialization;
-using ImmersiveGames.Goap;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Desires
 {
     [CreateAssetMenu(
         fileName = "New Desire Setting",
         menuName = "PEGA/NPC/Desire Settings")]
-    public sealed class PEGANpcDesireConfiguration : ScriptableObject
+    public sealed class PegaNpcDesireConfiguration : ScriptableObject
     {
         [SerializeField]
         [FormerlySerializedAs("definition")]
         [Tooltip("Shared Desire Definition that names the motivation and describes when its Goal is fulfilled. Editing the definition affects every Setting that references it.")]
-        private PEGANpcDesireDefinition desireDefinition;
+        private PegaNpcDesireDefinition desireDefinition;
 
         [SerializeField]
         [Tooltip("Optional condition over this Actor's authorized Knowledge State. Unknown or false makes the Desire inapplicable; Goal satisfaction remains independent.")]
-        private PEGANpcGoapConditionAsset applicabilityCondition;
+        private PegaNpcGoapConditionAsset applicabilityCondition;
 
         [SerializeField]
         [Tooltip("Turn this off to exclude this Desire from the Profile context that uses this Setting.")]
@@ -44,9 +44,9 @@ namespace PEGA.NPC
         [Tooltip("Maximum number of confirmed completions for this Desire; -1 means unlimited. This limit is tracked separately for each NPC.")]
         private int completionLimit = -1;
 
-        public PEGANpcDesireDefinition Definition => desireDefinition;
+        public PegaNpcDesireDefinition Definition => desireDefinition;
 
-        public PEGANpcGoapConditionAsset ApplicabilityCondition => applicabilityCondition;
+        public PegaNpcGoapConditionAsset ApplicabilityCondition => applicabilityCondition;
 
         public bool EnabledForContext => enabledForContext;
 
@@ -60,11 +60,11 @@ namespace PEGA.NPC
 
         public int MaximumCompletedExecutions => completionLimit;
 
-        public bool IsApplicable(PEGANpcDesireSatisfactionSnapshot satisfaction) =>
+        public bool IsApplicable(PegaNpcDesireSatisfactionSnapshot satisfaction) =>
             IsApplicable(satisfaction, null);
 
         public bool IsApplicable(
-            PEGANpcDesireSatisfactionSnapshot satisfaction,
+            PegaNpcDesireSatisfactionSnapshot satisfaction,
             IGoapStateView knownState)
         {
             if (!enabledForContext)
@@ -87,7 +87,7 @@ namespace PEGA.NPC
                    applicabilityCondition.Evaluate(knownState) == GoapTruthValue.True;
         }
 
-        public float EvaluateEffectiveWeight(PEGANpcDesireSatisfactionSnapshot satisfaction)
+        public float EvaluateEffectiveWeight(PegaNpcDesireSatisfactionSnapshot satisfaction)
         {
             float normalizedSatisfaction = maximumSatisfaction > 0f
                 ? Mathf.Clamp01(satisfaction.Satisfaction / maximumSatisfaction)
@@ -96,7 +96,7 @@ namespace PEGA.NPC
             return baseWeight * Mathf.Max(0f, satisfactionFactor);
         }
 
-        internal bool CanRecordSatisfaction(PEGANpcDesireSatisfactionSnapshot satisfaction) =>
+        internal bool CanRecordSatisfaction(PegaNpcDesireSatisfactionSnapshot satisfaction) =>
             enabledForContext &&
             (completionLimit < 0 ||
              satisfaction.CompletedExecutions < completionLimit);

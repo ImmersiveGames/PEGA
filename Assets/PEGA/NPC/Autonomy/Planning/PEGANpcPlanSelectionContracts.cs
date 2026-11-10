@@ -4,26 +4,27 @@ using System.Globalization;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
-using PEGA.Actors;
+using PEGA.GOAP;
+using PEGA.Movement.Actor;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Desires;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Autonomy.Planning
 {
-    public enum PEGANpcPlanningValidationMode
+    public enum PegaNpcPlanningValidationMode
     {
         LiveKnowledge = 0,
         IsolatedFixture = 10
     }
 
-    public enum PEGANpcPlanningTargetProvenance
+    public enum PegaNpcPlanningTargetProvenance
     {
         KnowledgeState = 0,
         DetachedFixture = 10,
         DerivedFromKnowledge = 20
     }
 
-    public enum PEGANpcPlanningTargetIdentityKind
+    public enum PegaNpcPlanningTargetIdentityKind
     {
         Actor = 0,
         StableDataId = 10,
@@ -33,13 +34,13 @@ namespace PEGA.NPC
         GroupObjectEntryPosition = 50
     }
 
-    public enum PEGANpcPlanPurpose
+    public enum PegaNpcPlanPurpose
     {
         DesireGoal = 0,
         PlanContinuationStep = 10
     }
 
-    public enum PEGANpcPlanningRouteStatus
+    public enum PegaNpcPlanningRouteStatus
     {
         Complete = 0,
         Partial = 10,
@@ -50,8 +51,8 @@ namespace PEGA.NPC
         Unreachable = 60
     }
 
-    public readonly struct PEGANpcPlanningTargetId : IEquatable<PEGANpcPlanningTargetId>,
-        IComparable<PEGANpcPlanningTargetId>
+    public readonly struct PegaNpcPlanningTargetId : IEquatable<PegaNpcPlanningTargetId>,
+        IComparable<PegaNpcPlanningTargetId>
     {
         private readonly ActorId _actorId;
         private readonly string _stableDataId;
@@ -61,8 +62,8 @@ namespace PEGA.NPC
         private readonly ObjectEntryId _objectEntryId;
         private readonly GroupId _knowledgeGroupId;
 
-        private PEGANpcPlanningTargetId(
-            PEGANpcPlanningTargetIdentityKind identityKind,
+        private PegaNpcPlanningTargetId(
+            PegaNpcPlanningTargetIdentityKind identityKind,
             ActorId actorId,
             string stableDataId,
             double contactLossObservationTimeSeconds = 0d,
@@ -81,41 +82,41 @@ namespace PEGA.NPC
             _knowledgeGroupId = knowledgeGroupId;
         }
 
-        public PEGANpcPlanningTargetIdentityKind IdentityKind { get; }
+        public PegaNpcPlanningTargetIdentityKind IdentityKind { get; }
 
         public bool IsValid => IdentityKind switch
         {
-            PEGANpcPlanningTargetIdentityKind.Actor => _actorId.IsValid,
-            PEGANpcPlanningTargetIdentityKind.StableDataId => !string.IsNullOrWhiteSpace(_stableDataId),
-            PEGANpcPlanningTargetIdentityKind.InvestigationSample =>
+            PegaNpcPlanningTargetIdentityKind.Actor => _actorId.IsValid,
+            PegaNpcPlanningTargetIdentityKind.StableDataId => !string.IsNullOrWhiteSpace(_stableDataId),
+            PegaNpcPlanningTargetIdentityKind.InvestigationSample =>
                 _actorId.IsValid &&
                 IsNonNegativeFinite(_contactLossObservationTimeSeconds) &&
                 _sampleOrdinal >= 0,
-            PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.IsValid,
-            PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
+            PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.IsValid,
+            PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
                 IsNonNegativeFinite(_presenceObservationTimeSeconds) &&
                 _sampleOrdinal >= 0,
-            PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
+            PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
                 _objectEntryId.IsValid && _knowledgeGroupId.IsValid,
             _ => false
         };
 
         internal string StableOrderValue => IdentityKind switch
         {
-            PEGANpcPlanningTargetIdentityKind.Actor => _actorId.StableText ?? string.Empty,
-            PEGANpcPlanningTargetIdentityKind.StableDataId => _stableDataId ?? string.Empty,
-            PEGANpcPlanningTargetIdentityKind.InvestigationSample => string.Concat(
+            PegaNpcPlanningTargetIdentityKind.Actor => _actorId.StableText ?? string.Empty,
+            PegaNpcPlanningTargetIdentityKind.StableDataId => _stableDataId ?? string.Empty,
+            PegaNpcPlanningTargetIdentityKind.InvestigationSample => string.Concat(
                 _actorId.StableText ?? string.Empty,
                 "|",
                 _contactLossObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
                 "|",
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
-            PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.StableText ?? string.Empty,
-            PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample => string.Concat(
+            PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.StableText ?? string.Empty,
+            PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample => string.Concat(
                 _presenceObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
                 "|",
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
-            PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition => string.Concat(
+            PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition => string.Concat(
                 _objectEntryId.StableText ?? string.Empty,
                 "|",
                 _knowledgeGroupId.StableText ?? string.Empty),
@@ -140,65 +141,65 @@ namespace PEGA.NPC
 
         public GroupId KnowledgeGroupId => _knowledgeGroupId;
 
-        internal static PEGANpcPlanningTargetId ForActor(ActorId actorId) =>
+        internal static PegaNpcPlanningTargetId ForActor(ActorId actorId) =>
             actorId.IsValid
-                ? new PEGANpcPlanningTargetId(PEGANpcPlanningTargetIdentityKind.Actor, actorId, string.Empty)
+                ? new PegaNpcPlanningTargetId(PegaNpcPlanningTargetIdentityKind.Actor, actorId, string.Empty)
                 : default;
 
-        internal static PEGANpcPlanningTargetId ForStableDataId(string stableDataId) =>
+        internal static PegaNpcPlanningTargetId ForStableDataId(string stableDataId) =>
             !string.IsNullOrWhiteSpace(stableDataId)
-                ? new PEGANpcPlanningTargetId(PEGANpcPlanningTargetIdentityKind.StableDataId, default, stableDataId)
+                ? new PegaNpcPlanningTargetId(PegaNpcPlanningTargetIdentityKind.StableDataId, default, stableDataId)
                 : default;
 
-        internal static PEGANpcPlanningTargetId ForInvestigationSample(
+        internal static PegaNpcPlanningTargetId ForInvestigationSample(
             ActorId subjectActorId,
             double contactLossObservationTimeSeconds,
             int sampleOrdinal) =>
             subjectActorId.IsValid &&
             IsNonNegativeFinite(contactLossObservationTimeSeconds) &&
             sampleOrdinal >= 0
-                ? new PEGANpcPlanningTargetId(
-                    PEGANpcPlanningTargetIdentityKind.InvestigationSample,
+                ? new PegaNpcPlanningTargetId(
+                    PegaNpcPlanningTargetIdentityKind.InvestigationSample,
                     subjectActorId,
                     string.Empty,
                     contactLossObservationTimeSeconds,
                     sampleOrdinal)
                 : default;
 
-        internal static PEGANpcPlanningTargetId ForPerceivedAreaInvestigationSample(
+        internal static PegaNpcPlanningTargetId ForPerceivedAreaInvestigationSample(
             double presenceObservationTimeSeconds,
             int sampleOrdinal) =>
             IsNonNegativeFinite(presenceObservationTimeSeconds) &&
             sampleOrdinal >= 0
-                ? new PEGANpcPlanningTargetId(
-                    PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample,
+                ? new PegaNpcPlanningTargetId(
+                    PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample,
                     default,
                     string.Empty,
                     sampleOrdinal: sampleOrdinal,
                     presenceObservationTimeSeconds: presenceObservationTimeSeconds)
                 : default;
 
-        internal static PEGANpcPlanningTargetId ForCharacterSeparationDestination(ActorId subjectActorId) =>
+        internal static PegaNpcPlanningTargetId ForCharacterSeparationDestination(ActorId subjectActorId) =>
             subjectActorId.IsValid
-                ? new PEGANpcPlanningTargetId(
-                    PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination,
+                ? new PegaNpcPlanningTargetId(
+                    PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination,
                     subjectActorId,
                     string.Empty)
                 : default;
 
-        internal static PEGANpcPlanningTargetId ForGroupObjectEntryPosition(
+        internal static PegaNpcPlanningTargetId ForGroupObjectEntryPosition(
             ObjectEntryId objectEntryId,
             GroupId knowledgeGroupId) =>
             objectEntryId.IsValid && knowledgeGroupId.IsValid
-                ? new PEGANpcPlanningTargetId(
-                    PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition,
+                ? new PegaNpcPlanningTargetId(
+                    PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition,
                     default,
                     string.Empty,
                     objectEntryId: objectEntryId,
                     knowledgeGroupId: knowledgeGroupId)
                 : default;
 
-        public bool Equals(PEGANpcPlanningTargetId other)
+        public bool Equals(PegaNpcPlanningTargetId other)
         {
             if (IdentityKind != other.IdentityKind)
             {
@@ -207,18 +208,18 @@ namespace PEGA.NPC
 
             return IdentityKind switch
             {
-                PEGANpcPlanningTargetIdentityKind.Actor => _actorId == other._actorId,
-                PEGANpcPlanningTargetIdentityKind.StableDataId =>
+                PegaNpcPlanningTargetIdentityKind.Actor => _actorId == other._actorId,
+                PegaNpcPlanningTargetIdentityKind.StableDataId =>
                     string.Equals(_stableDataId, other._stableDataId, StringComparison.Ordinal),
-                PEGANpcPlanningTargetIdentityKind.InvestigationSample =>
+                PegaNpcPlanningTargetIdentityKind.InvestigationSample =>
                     _actorId == other._actorId &&
                     _contactLossObservationTimeSeconds.Equals(other._contactLossObservationTimeSeconds) &&
                     _sampleOrdinal == other._sampleOrdinal,
-                PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId == other._actorId,
-                PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
+                PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId == other._actorId,
+                PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
                     _presenceObservationTimeSeconds.Equals(other._presenceObservationTimeSeconds) &&
                     _sampleOrdinal == other._sampleOrdinal,
-                PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
+                PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
                     _objectEntryId == other._objectEntryId &&
                     _knowledgeGroupId == other._knowledgeGroupId,
                 _ => false
@@ -226,18 +227,18 @@ namespace PEGA.NPC
         }
 
         public override bool Equals(object obj) =>
-            obj is PEGANpcPlanningTargetId other && Equals(other);
+            obj is PegaNpcPlanningTargetId other && Equals(other);
 
         public override int GetHashCode()
         {
             unchecked
             {
                 int hash = (int)IdentityKind * 397;
-                if (IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample ||
-                    IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
+                if (IdentityKind == PegaNpcPlanningTargetIdentityKind.InvestigationSample ||
+                    IdentityKind == PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
                 {
                     bool isPerceivedAreaSample =
-                        IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
+                        IdentityKind == PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
                     double evidenceTime = isPerceivedAreaSample
                         ? _presenceObservationTimeSeconds
                         : _contactLossObservationTimeSeconds;
@@ -252,7 +253,7 @@ namespace PEGA.NPC
                     return (hash * 397) ^ _sampleOrdinal;
                 }
 
-                if (IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+                if (IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
                 {
                     hash = (hash * 397) ^ _objectEntryId.GetHashCode();
                     return (hash * 397) ^ _knowledgeGroupId.GetHashCode();
@@ -262,7 +263,7 @@ namespace PEGA.NPC
             }
         }
 
-        public int CompareTo(PEGANpcPlanningTargetId other)
+        public int CompareTo(PegaNpcPlanningTargetId other)
         {
             int kindOrder = ((int)IdentityKind).CompareTo((int)other.IdentityKind);
             if (kindOrder != 0)
@@ -270,7 +271,7 @@ namespace PEGA.NPC
                 return kindOrder;
             }
 
-            if (IdentityKind == PEGANpcPlanningTargetIdentityKind.InvestigationSample)
+            if (IdentityKind == PegaNpcPlanningTargetIdentityKind.InvestigationSample)
             {
                 int actorOrder = string.CompareOrdinal(_actorId.StableText, other._actorId.StableText);
                 if (actorOrder != 0)
@@ -283,14 +284,14 @@ namespace PEGA.NPC
                 return lossTimeOrder != 0 ? lossTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
             }
 
-            if (IdentityKind == PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
+            if (IdentityKind == PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
             {
                 int evidenceTimeOrder = _presenceObservationTimeSeconds.CompareTo(
                     other._presenceObservationTimeSeconds);
                 return evidenceTimeOrder != 0 ? evidenceTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
             }
 
-            if (IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+            if (IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
             {
                 int objectEntryOrder = string.CompareOrdinal(
                     _objectEntryId.StableText,
@@ -310,19 +311,19 @@ namespace PEGA.NPC
         private static bool IsNonNegativeFinite(double value) =>
             value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
 
-        public static bool operator ==(PEGANpcPlanningTargetId left, PEGANpcPlanningTargetId right) =>
+        public static bool operator ==(PegaNpcPlanningTargetId left, PegaNpcPlanningTargetId right) =>
             left.Equals(right);
 
-        public static bool operator !=(PEGANpcPlanningTargetId left, PEGANpcPlanningTargetId right) =>
+        public static bool operator !=(PegaNpcPlanningTargetId left, PegaNpcPlanningTargetId right) =>
             !left.Equals(right);
     }
 
-    public readonly struct PEGANpcPlanningTarget
+    public readonly struct PegaNpcPlanningTarget
     {
-        internal PEGANpcPlanningTarget(
-            PEGANpcPlanningTargetId targetId,
-            PEGANpcPlanningTargetKind kind,
-            PEGANpcPlanningTargetProvenance provenance,
+        internal PegaNpcPlanningTarget(
+            PegaNpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetKind kind,
+            PegaNpcPlanningTargetProvenance provenance,
             Vector3 knownPosition,
             bool hasEvidenceTime,
             double evidenceTimeSeconds,
@@ -337,11 +338,11 @@ namespace PEGA.NPC
             MaximumRouteDistanceFromAnchorMeters = maximumRouteDistanceFromAnchorMeters;
         }
 
-        public PEGANpcPlanningTargetId TargetId { get; }
+        public PegaNpcPlanningTargetId TargetId { get; }
 
-        public PEGANpcPlanningTargetKind Kind { get; }
+        public PegaNpcPlanningTargetKind Kind { get; }
 
-        public PEGANpcPlanningTargetProvenance Provenance { get; }
+        public PegaNpcPlanningTargetProvenance Provenance { get; }
 
         public ObjectEntryId ObjectEntryId => TargetId.ObjectEntryId;
 
@@ -358,66 +359,66 @@ namespace PEGA.NPC
         internal bool IsValid =>
             TargetId.IsValid &&
             Kind.IsValid &&
-            Enum.IsDefined(typeof(PEGANpcPlanningTargetProvenance), Provenance) &&
+            Enum.IsDefined(typeof(PegaNpcPlanningTargetProvenance), Provenance) &&
             IsFinite(KnownPosition) &&
             IsNonNegativeFinite(MaximumRouteDistanceFromAnchorMeters) &&
             (!HasEvidenceTime || IsNonNegativeFinite(EvidenceTimeSeconds));
 
-        internal static PEGANpcPlanningTarget FromKnownActorPosition(
+        internal static PegaNpcPlanningTarget FromKnownActorPosition(
             ActorId actorId,
             Vector3 knownPosition,
-            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
-                PEGANpcPlanningTargetId.ForActor(actorId),
-                PEGANpcPlanningTargetKind.CharacterPosition,
-                PEGANpcPlanningTargetProvenance.KnowledgeState,
+            double evidenceTimeSeconds) => new PegaNpcPlanningTarget(
+                PegaNpcPlanningTargetId.ForActor(actorId),
+                PegaNpcPlanningTargetKind.CharacterPosition,
+                PegaNpcPlanningTargetProvenance.KnowledgeState,
                 knownPosition,
                 true,
                 evidenceTimeSeconds);
 
-        internal static PEGANpcPlanningTarget FromCharacterSeparationPosition(
+        internal static PegaNpcPlanningTarget FromCharacterSeparationPosition(
             ActorId subjectActorId,
             Vector3 derivedPosition,
-            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
-                PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId),
-                PEGANpcPlanningTargetKind.SafeSeparationPosition,
-                PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
+            double evidenceTimeSeconds) => new PegaNpcPlanningTarget(
+                PegaNpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId),
+                PegaNpcPlanningTargetKind.SafeSeparationPosition,
+                PegaNpcPlanningTargetProvenance.DerivedFromKnowledge,
                 derivedPosition,
                 true,
                 evidenceTimeSeconds);
 
-        internal static PEGANpcPlanningTarget FromKnownGroupObjectEntryPosition(
+        internal static PegaNpcPlanningTarget FromKnownGroupObjectEntryPosition(
             ObjectEntryId objectEntryId,
             GroupId knowledgeGroupId,
             Vector3 knownPosition,
-            double evidenceTimeSeconds) => new PEGANpcPlanningTarget(
-                PEGANpcPlanningTargetId.ForGroupObjectEntryPosition(objectEntryId, knowledgeGroupId),
-                PEGANpcPlanningTargetKind.GroupObjectEntryPosition,
-                PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
+            double evidenceTimeSeconds) => new PegaNpcPlanningTarget(
+                PegaNpcPlanningTargetId.ForGroupObjectEntryPosition(objectEntryId, knowledgeGroupId),
+                PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
+                PegaNpcPlanningTargetProvenance.DerivedFromKnowledge,
                 knownPosition,
                 true,
                 evidenceTimeSeconds);
 
-        internal static PEGANpcPlanningTarget FromLocalObservationPosition(
-            PEGANpcPlanningTargetId targetId,
+        internal static PegaNpcPlanningTarget FromLocalObservationPosition(
+            PegaNpcPlanningTargetId targetId,
             Vector3 knownPosition,
             double sourcePositionEvidenceTimeSeconds,
-            float maximumRouteDistanceFromAnchorMeters) => new PEGANpcPlanningTarget(
+            float maximumRouteDistanceFromAnchorMeters) => new PegaNpcPlanningTarget(
                 targetId,
-                PEGANpcPlanningTargetKind.LocalObservationPosition,
-                PEGANpcPlanningTargetProvenance.DerivedFromKnowledge,
+                PegaNpcPlanningTargetKind.LocalObservationPosition,
+                PegaNpcPlanningTargetProvenance.DerivedFromKnowledge,
                 knownPosition,
                 true,
                 sourcePositionEvidenceTimeSeconds,
                 maximumRouteDistanceFromAnchorMeters);
 
-        internal static PEGANpcPlanningTarget DetachedFixture(
+        internal static PegaNpcPlanningTarget DetachedFixture(
             string stableId,
-            PEGANpcPlanningTargetKind kind,
+            PegaNpcPlanningTargetKind kind,
             Vector3 knownPosition,
-            double evidenceTimeSeconds = 0d) => new PEGANpcPlanningTarget(
-                PEGANpcPlanningTargetId.ForStableDataId(stableId),
+            double evidenceTimeSeconds = 0d) => new PegaNpcPlanningTarget(
+                PegaNpcPlanningTargetId.ForStableDataId(stableId),
                 kind,
-                PEGANpcPlanningTargetProvenance.DetachedFixture,
+                PegaNpcPlanningTargetProvenance.DetachedFixture,
                 knownPosition,
                 true,
                 evidenceTimeSeconds);
@@ -432,10 +433,10 @@ namespace PEGA.NPC
             value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
     }
 
-    public readonly struct PEGANpcNavigationRouteEstimate
+    public readonly struct PegaNpcNavigationRouteEstimate
     {
-        internal PEGANpcNavigationRouteEstimate(
-            PEGANpcPlanningRouteStatus status,
+        internal PegaNpcNavigationRouteEstimate(
+            PegaNpcPlanningRouteStatus status,
             float routeLengthMeters,
             float effectiveSpeedMetersPerSecond,
             int agentTypeId,
@@ -450,7 +451,7 @@ namespace PEGA.NPC
             Diagnostic = diagnostic ?? string.Empty;
         }
 
-        public PEGANpcPlanningRouteStatus Status { get; }
+        public PegaNpcPlanningRouteStatus Status { get; }
 
         public float RouteLengthMeters { get; }
 
@@ -462,8 +463,8 @@ namespace PEGA.NPC
 
         public string Diagnostic { get; }
 
-        public static PEGANpcNavigationRouteEstimate NotRequired => new PEGANpcNavigationRouteEstimate(
-            PEGANpcPlanningRouteStatus.NotRequired,
+        public static PegaNpcNavigationRouteEstimate NotRequired => new PegaNpcNavigationRouteEstimate(
+            PegaNpcPlanningRouteStatus.NotRequired,
             0f,
             0f,
             -1,
@@ -471,31 +472,34 @@ namespace PEGA.NPC
             "This Action does not require a navigation route.");
     }
 
-    public readonly struct PEGANpcPlanningActionCandidate
+    public readonly struct PegaNpcPlanningActionCandidate
     {
-        internal PEGANpcPlanningActionCandidate(
-            PEGANpcActionContract contract,
-            IPEGANpcActionProvider action,
-            PEGANpcPlanningTargetId targetId,
-            PEGAActorMovementSpeedRegime speedRegime,
-            float intrinsicDurationSeconds)
+        internal PegaNpcPlanningActionCandidate(
+            PegaNpcActionContract contract,
+            IPegaNpcActionProvider action,
+            PegaNpcPlanningTargetId targetId,
+            PegaActorMovementSpeedRegime speedRegime,
+            float intrinsicDurationSeconds,
+            float? targetRadiusOverrideMeters = null)
             : this(
                 contract,
                 action,
                 targetId,
                 speedRegime,
-                PEGANpcNavigationRouteEstimate.NotRequired,
-                intrinsicDurationSeconds)
+                PegaNpcNavigationRouteEstimate.NotRequired,
+                intrinsicDurationSeconds,
+                targetRadiusOverrideMeters)
         {
         }
 
-        internal PEGANpcPlanningActionCandidate(
-            PEGANpcActionContract contract,
-            IPEGANpcActionProvider action,
-            PEGANpcPlanningTargetId targetId,
-            PEGAActorMovementSpeedRegime speedRegime,
-            PEGANpcNavigationRouteEstimate routeEstimate,
-            float intrinsicDurationSeconds)
+        internal PegaNpcPlanningActionCandidate(
+            PegaNpcActionContract contract,
+            IPegaNpcActionProvider action,
+            PegaNpcPlanningTargetId targetId,
+            PegaActorMovementSpeedRegime speedRegime,
+            PegaNpcNavigationRouteEstimate routeEstimate,
+            float intrinsicDurationSeconds,
+            float? targetRadiusOverrideMeters = null)
         {
             Contract = contract;
             Action = action;
@@ -503,56 +507,62 @@ namespace PEGA.NPC
             SpeedRegime = speedRegime;
             RouteEstimate = routeEstimate;
             IntrinsicDurationSeconds = intrinsicDurationSeconds;
+            TargetRadiusOverrideMeters = targetRadiusOverrideMeters;
         }
 
-        public PEGANpcActionContract Contract { get; }
+        public PegaNpcActionContract Contract { get; }
 
-        internal IPEGANpcActionProvider Action { get; }
+        internal IPegaNpcActionProvider Action { get; }
 
-        public PEGANpcPlanningActionId ActionId => Contract.ActionId;
+        public PegaNpcPlanningActionId ActionId => Contract.ActionId;
 
-        public PEGANpcActionEffectKind PredictedEffect => Contract.EffectKind;
+        public PegaNpcActionEffectKind PredictedEffect => Contract.EffectKind;
 
-        public PEGANpcPlanningTargetId TargetId { get; }
+        public PegaNpcPlanningTargetId TargetId { get; }
 
-        public PEGANpcPlanningTargetKind RequiredTargetKind => Contract.TargetKind;
+        public PegaNpcPlanningTargetKind RequiredTargetKind => Contract.TargetKind;
 
-        public PEGAActorMovementSpeedRegime SpeedRegime { get; }
+        public PegaActorMovementSpeedRegime SpeedRegime { get; }
 
-        public PEGANpcNavigationRouteEstimate RouteEstimate { get; }
+        public PegaNpcNavigationRouteEstimate RouteEstimate { get; }
 
         public float IntrinsicDurationSeconds { get; }
 
-        internal bool IsBoundToActionContract => Action == null ||
-            (Action.Contract.IsValid &&
-             Action.Contract.ActionId == Contract.ActionId &&
-             Action.Contract.EffectKind == Contract.EffectKind &&
-             Action.Contract.TargetKind == Contract.TargetKind &&
-             Action.Contract.RequiresNavigation == Contract.RequiresNavigation);
+        /// <summary>Optional per-target radius for stationary actions, supplied by authorized planning inputs.</summary>
+        public float? TargetRadiusOverrideMeters { get; }
 
-        internal static PEGANpcPlanningActionCandidate DetachedFixture(
-            PEGANpcPlanningActionId actionId,
-            PEGANpcActionEffectKind predictedEffect,
-            PEGANpcPlanningTarget target,
-            PEGAActorMovementSpeedRegime speedRegime,
-            PEGANpcPlanningRouteStatus routeStatus,
+        internal bool IsBoundToActionContract =>
+            (!TargetRadiusOverrideMeters.HasValue || !Contract.RequiresNavigation) &&
+            (Action == null ||
+             (Action.Contract.IsValid &&
+              Action.Contract.ActionId == Contract.ActionId &&
+              Action.Contract.EffectKind == Contract.EffectKind &&
+              Action.Contract.TargetKind == Contract.TargetKind &&
+              Action.Contract.RequiresNavigation == Contract.RequiresNavigation));
+
+        internal static PegaNpcPlanningActionCandidate DetachedFixture(
+            PegaNpcPlanningActionId actionId,
+            PegaNpcActionEffectKind predictedEffect,
+            PegaNpcPlanningTarget target,
+            PegaActorMovementSpeedRegime speedRegime,
+            PegaNpcPlanningRouteStatus routeStatus,
             float routeLengthMeters,
             float effectiveSpeedMetersPerSecond,
             float intrinsicDurationSeconds)
         {
-            PEGANpcNavigationRouteEstimate estimate = new PEGANpcNavigationRouteEstimate(
+            PegaNpcNavigationRouteEstimate estimate = new PegaNpcNavigationRouteEstimate(
                 routeStatus,
                 routeLengthMeters,
                 effectiveSpeedMetersPerSecond,
                 -1,
                 0,
                 "Detached validation fixture.");
-            return new PEGANpcPlanningActionCandidate(
-                new PEGANpcActionContract(
+            return new PegaNpcPlanningActionCandidate(
+                new PegaNpcActionContract(
                     actionId,
                     predictedEffect,
                     target.Kind,
-                    routeStatus != PEGANpcPlanningRouteStatus.NotRequired,
+                    routeStatus != PegaNpcPlanningRouteStatus.NotRequired,
                     "Detached fixture Action."),
                 null,
                 target.TargetId,
@@ -561,24 +571,25 @@ namespace PEGA.NPC
                 intrinsicDurationSeconds);
         }
 
-        internal PEGANpcPlanningActionCandidate WithRouteEstimate(
-            PEGANpcNavigationRouteEstimate routeEstimate) =>
-            new PEGANpcPlanningActionCandidate(
+        internal PegaNpcPlanningActionCandidate WithRouteEstimate(
+            PegaNpcNavigationRouteEstimate routeEstimate) =>
+            new PegaNpcPlanningActionCandidate(
                 Contract,
                 Action,
                 TargetId,
                 SpeedRegime,
                 routeEstimate,
-                IntrinsicDurationSeconds);
+                IntrinsicDurationSeconds,
+                TargetRadiusOverrideMeters);
     }
 
     /// <summary>
     /// A bounded continuation of an already selected pursuit, derived from this NPC's preserved perception evidence.
     /// The existing Perception source remains the authority for the evasion timeout.
     /// </summary>
-    public readonly struct PEGANpcPlanContinuation
+    public readonly struct PegaNpcPlanContinuation
     {
-        internal PEGANpcPlanContinuation(
+        internal PegaNpcPlanContinuation(
             string desireId,
             ActorId subjectActorId,
             double contactLossObservationTimeSeconds,
@@ -594,7 +605,7 @@ namespace PEGA.NPC
             PositionEvidenceTimeSeconds = positionEvidenceTimeSeconds;
             LastKnownApproachAttempted = lastKnownApproachAttempted || lastKnownPositionReached;
             LastKnownPositionReached = lastKnownPositionReached;
-            ProgressCondition = new PEGANpcLastKnownTargetProgressCondition(
+            ProgressCondition = new PegaNpcLastKnownTargetProgressCondition(
                 subjectActorId,
                 contactLossObservationTimeSeconds,
                 positionEvidenceTimeSeconds,
@@ -626,10 +637,10 @@ namespace PEGA.NPC
             IsNonNegativeFinite(PositionEvidenceTimeSeconds) &&
             PositionEvidenceTimeSeconds <= ContactLossObservationTimeSeconds;
 
-        public PEGANpcPlanContinuation WithLastKnownApproachAttempted() =>
+        public PegaNpcPlanContinuation WithLastKnownApproachAttempted() =>
             LastKnownApproachAttempted
                 ? this
-                : new PEGANpcPlanContinuation(
+                : new PegaNpcPlanContinuation(
                     DesireId,
                     SubjectActorId,
                     ContactLossObservationTimeSeconds,
@@ -638,10 +649,10 @@ namespace PEGA.NPC
                     true,
                     LastKnownPositionReached);
 
-        public PEGANpcPlanContinuation WithLastKnownPositionReached() =>
+        public PegaNpcPlanContinuation WithLastKnownPositionReached() =>
             LastKnownPositionReached
                 ? this
-                : new PEGANpcPlanContinuation(
+                : new PegaNpcPlanContinuation(
                     DesireId,
                     SubjectActorId,
                     ContactLossObservationTimeSeconds,
@@ -650,8 +661,8 @@ namespace PEGA.NPC
                     true,
                     true);
 
-        internal PEGANpcLastKnownTargetContinuationIntent ToIntent() =>
-            new PEGANpcLastKnownTargetContinuationIntent(
+        internal PegaNpcLastKnownTargetContinuationIntent ToIntent() =>
+            new PegaNpcLastKnownTargetContinuationIntent(
                 SubjectActorId,
                 LastKnownPosition,
                 PositionEvidenceTimeSeconds,
@@ -667,22 +678,22 @@ namespace PEGA.NPC
             value >= 0d && !double.IsNaN(value) && !double.IsInfinity(value);
     }
 
-    public sealed class PEGANpcPlanningInput
+    public sealed class PegaNpcPlanningInput
     {
-        private static readonly IReadOnlyList<PEGANpcPlanningTarget> EmptyTargets =
-            Array.AsReadOnly(Array.Empty<PEGANpcPlanningTarget>());
-        private static readonly IReadOnlyList<PEGANpcPlanningActionCandidate> EmptyCandidates =
-            Array.AsReadOnly(Array.Empty<PEGANpcPlanningActionCandidate>());
+        private static readonly IReadOnlyList<PegaNpcPlanningTarget> EmptyTargets =
+            Array.AsReadOnly(Array.Empty<PegaNpcPlanningTarget>());
+        private static readonly IReadOnlyList<PegaNpcPlanningActionCandidate> EmptyCandidates =
+            Array.AsReadOnly(Array.Empty<PegaNpcPlanningActionCandidate>());
 
-        private readonly IReadOnlyList<PEGANpcPlanningTarget> _knownTargets;
-        private readonly IReadOnlyList<PEGANpcPlanningActionCandidate> _actionCandidates;
+        private readonly IReadOnlyList<PegaNpcPlanningTarget> _knownTargets;
+        private readonly IReadOnlyList<PegaNpcPlanningActionCandidate> _actionCandidates;
 
-        internal PEGANpcPlanningInput(
-            PEGANpcPlanningValidationMode validationMode,
-            PEGANpcDesireContext context,
-            IReadOnlyList<PEGANpcPlanningTarget> knownTargets,
-            IReadOnlyList<PEGANpcPlanningActionCandidate> actionCandidates,
-            PEGANpcPlanContinuation? planContinuation = null,
+        internal PegaNpcPlanningInput(
+            PegaNpcPlanningValidationMode validationMode,
+            PegaNpcDesireContext context,
+            IReadOnlyList<PegaNpcPlanningTarget> knownTargets,
+            IReadOnlyList<PegaNpcPlanningActionCandidate> actionCandidates,
+            PegaNpcPlanContinuation? planContinuation = null,
             IGoapKnowledgeStateView knowledgeState = null,
             int causalSearchCandidateEvaluationBudget = 128,
             IReadOnlyList<IGoapEffect> observedCheckpoints = null)
@@ -693,64 +704,64 @@ namespace PEGA.NPC
             _actionCandidates = Copy(actionCandidates);
             PlanContinuation = planContinuation;
             CausalSearchCandidateEvaluationBudget = causalSearchCandidateEvaluationBudget;
-            if (validationMode == PEGANpcPlanningValidationMode.LiveKnowledge &&
+            if (validationMode == PegaNpcPlanningValidationMode.LiveKnowledge &&
                 knowledgeState != null &&
                 knowledgeState.Source == GoapStateSource.KnowledgeState &&
                 TryValidate(out _))
             {
-                CausalKnowledge = new PEGANpcCausalPlanningKnowledge(
+                CausalKnowledge = new PegaNpcCausalPlanningKnowledge(
                     knowledgeState,
                     KnownTargets,
                     observedCheckpoints);
             }
         }
 
-        public PEGANpcPlanningValidationMode ValidationMode { get; }
+        public PegaNpcPlanningValidationMode ValidationMode { get; }
 
-        public PEGANpcPlanContinuation? PlanContinuation { get; }
+        public PegaNpcPlanContinuation? PlanContinuation { get; }
 
-        public PEGANpcDesireContext Context { get; }
+        public PegaNpcDesireContext Context { get; }
 
         /// <summary>
         /// Read-only causal-planning view for valid live inputs. Isolated validation fixtures intentionally
         /// have no runtime Knowledge State and therefore expose no causal live input.
         /// </summary>
-        public PEGANpcCausalPlanningKnowledge CausalKnowledge { get; }
+        public PegaNpcCausalPlanningKnowledge CausalKnowledge { get; }
 
         public int CausalSearchCandidateEvaluationBudget { get; }
 
-        public IReadOnlyList<PEGANpcPlanningTarget> KnownTargets => _knownTargets ?? EmptyTargets;
+        public IReadOnlyList<PegaNpcPlanningTarget> KnownTargets => _knownTargets ?? EmptyTargets;
 
-        public IReadOnlyList<PEGANpcPlanningActionCandidate> ActionCandidates =>
+        public IReadOnlyList<PegaNpcPlanningActionCandidate> ActionCandidates =>
             _actionCandidates ?? EmptyCandidates;
 
         internal bool TryValidate(out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (!Enum.IsDefined(typeof(PEGANpcPlanningValidationMode), ValidationMode) ||
-                !Enum.IsDefined(typeof(PEGANpcDesireContext), Context))
+            if (!Enum.IsDefined(typeof(PegaNpcPlanningValidationMode), ValidationMode) ||
+                !Enum.IsDefined(typeof(PegaNpcDesireContext), Context))
             {
                 diagnostic = "Planning mode or context has an unsupported value.";
                 return false;
             }
 
             if (PlanContinuation.HasValue &&
-                (ValidationMode != PEGANpcPlanningValidationMode.LiveKnowledge ||
+                (ValidationMode != PegaNpcPlanningValidationMode.LiveKnowledge ||
                  !PlanContinuation.Value.IsValid))
             {
                 diagnostic = "A pursuit continuation requires a valid live Perception-backed planning input.";
                 return false;
             }
 
-            HashSet<PEGANpcPlanningTargetId> targetIds = new HashSet<PEGANpcPlanningTargetId>();
-            PEGANpcPlanningTargetProvenance requiredProvenance =
-                ValidationMode == PEGANpcPlanningValidationMode.LiveKnowledge
-                    ? PEGANpcPlanningTargetProvenance.KnowledgeState
-                    : PEGANpcPlanningTargetProvenance.DetachedFixture;
+            HashSet<PegaNpcPlanningTargetId> targetIds = new HashSet<PegaNpcPlanningTargetId>();
+            PegaNpcPlanningTargetProvenance requiredProvenance =
+                ValidationMode == PegaNpcPlanningValidationMode.LiveKnowledge
+                    ? PegaNpcPlanningTargetProvenance.KnowledgeState
+                    : PegaNpcPlanningTargetProvenance.DetachedFixture;
             for (int index = 0; index < KnownTargets.Count; index++)
             {
-                PEGANpcPlanningTarget target = KnownTargets[index];
-                bool provenanceCompatible = ValidationMode == PEGANpcPlanningValidationMode.LiveKnowledge
+                PegaNpcPlanningTarget target = KnownTargets[index];
+                bool provenanceCompatible = ValidationMode == PegaNpcPlanningValidationMode.LiveKnowledge
                     ? HasLegitimateLiveTargetProvenance(target)
                     : target.Provenance == requiredProvenance;
                 if (!target.IsValid || !provenanceCompatible)
@@ -768,14 +779,14 @@ namespace PEGA.NPC
 
             for (int index = 0; index < ActionCandidates.Count; index++)
             {
-                PEGANpcPlanningActionCandidate candidate = ActionCandidates[index];
+                PegaNpcPlanningActionCandidate candidate = ActionCandidates[index];
                 if (!candidate.Contract.IsValid ||
                     !candidate.RequiredTargetKind.IsValid ||
                     (candidate.Contract.RequiresNavigation &&
-                     !Enum.IsDefined(typeof(PEGAActorMovementSpeedRegime), candidate.SpeedRegime)) ||
+                     !Enum.IsDefined(typeof(PegaActorMovementSpeedRegime), candidate.SpeedRegime)) ||
                     !candidate.TargetId.IsValid ||
                     !candidate.IsBoundToActionContract ||
-                    (ValidationMode == PEGANpcPlanningValidationMode.LiveKnowledge && candidate.Action == null))
+                    (ValidationMode == PegaNpcPlanningValidationMode.LiveKnowledge && candidate.Action == null))
                 {
                     diagnostic = $"Action candidate at index {index} has an invalid or incompatible Action/Effect/Target contract.";
                     return false;
@@ -783,7 +794,7 @@ namespace PEGA.NPC
 
                 for (int previousIndex = 0; previousIndex < index; previousIndex++)
                 {
-                    PEGANpcPlanningActionCandidate previous = ActionCandidates[previousIndex];
+                    PegaNpcPlanningActionCandidate previous = ActionCandidates[previousIndex];
                     if (previous.ActionId == candidate.ActionId && previous.TargetId == candidate.TargetId)
                     {
                         diagnostic = $"Duplicate Action/Target candidate '{candidate.ActionId}/{candidate.TargetId}'.";
@@ -796,8 +807,8 @@ namespace PEGA.NPC
         }
 
         internal bool TryGetTarget(
-            PEGANpcPlanningTargetId targetId,
-            out PEGANpcPlanningTarget target)
+            PegaNpcPlanningTargetId targetId,
+            out PegaNpcPlanningTarget target)
         {
             for (int index = 0; index < KnownTargets.Count; index++)
             {
@@ -828,27 +839,27 @@ namespace PEGA.NPC
             return Array.AsReadOnly(copy);
         }
 
-        private static bool HasLegitimateLiveTargetProvenance(PEGANpcPlanningTarget target)
+        private static bool HasLegitimateLiveTargetProvenance(PegaNpcPlanningTarget target)
         {
             return target.HasEvidenceTime &&
-                   (target.Provenance == PEGANpcPlanningTargetProvenance.KnowledgeState ||
-                    target.Provenance == PEGANpcPlanningTargetProvenance.DerivedFromKnowledge);
+                   (target.Provenance == PegaNpcPlanningTargetProvenance.KnowledgeState ||
+                    target.Provenance == PegaNpcPlanningTargetProvenance.DerivedFromKnowledge);
         }
     }
 
-    public readonly struct PEGANpcPlanSnapshot
+    public readonly struct PegaNpcPlanSnapshot
     {
-        internal PEGANpcPlanSnapshot(
+        internal PegaNpcPlanSnapshot(
             string desireId,
             string desireName,
-            PEGANpcPlanningActionCandidate action,
-            PEGANpcPlanningTarget target,
+            PegaNpcPlanningActionCandidate action,
+            PegaNpcPlanningTarget target,
             IReadOnlyList<IGoapEffect> causalEffects,
             float estimatedSeconds,
             float effectiveDesireWeight,
             float costPreference,
             float score,
-            PEGANpcPlanPurpose purpose)
+            PegaNpcPlanPurpose purpose)
         {
             DesireId = desireId ?? string.Empty;
             DesireName = desireName ?? string.Empty;
@@ -864,6 +875,7 @@ namespace PEGA.NPC
             RouteLengthMeters = action.RouteEstimate.RouteLengthMeters;
             EffectiveSpeedMetersPerSecond = action.RouteEstimate.EffectiveSpeedMetersPerSecond;
             IntrinsicDurationSeconds = action.IntrinsicDurationSeconds;
+            TargetRadiusOverrideMeters = action.TargetRadiusOverrideMeters;
             EstimatedSeconds = estimatedSeconds;
             EffectiveDesireWeight = effectiveDesireWeight;
             CostPreference = costPreference;
@@ -876,18 +888,18 @@ namespace PEGA.NPC
 
         public string DesireName { get; }
 
-        public PEGANpcPlanningActionId ActionId { get; }
+        public PegaNpcPlanningActionId ActionId { get; }
 
-        public PEGANpcActionEffectKind PredictedEffect { get; }
+        public PegaNpcActionEffectKind PredictedEffect { get; }
 
         /// <summary>Declared GOAP Effects for this Action step; execution may confirm a subset only.</summary>
         public IReadOnlyList<IGoapEffect> CausalEffects { get; }
 
-        public PEGANpcPlanningTargetId TargetId { get; }
+        public PegaNpcPlanningTargetId TargetId { get; }
 
-        public PEGANpcPlanningTargetKind TargetKind { get; }
+        public PegaNpcPlanningTargetKind TargetKind { get; }
 
-        public PEGANpcPlanningTargetProvenance TargetProvenance { get; }
+        public PegaNpcPlanningTargetProvenance TargetProvenance { get; }
 
         public Vector3 TargetPosition { get; }
 
@@ -899,6 +911,8 @@ namespace PEGA.NPC
 
         public float IntrinsicDurationSeconds { get; }
 
+        public float? TargetRadiusOverrideMeters { get; }
+
         public float EstimatedSeconds { get; }
 
         public float EffectiveDesireWeight { get; }
@@ -907,9 +921,9 @@ namespace PEGA.NPC
 
         public float Score { get; }
 
-        public PEGAActorMovementSpeedRegime SpeedRegime { get; }
+        public PegaActorMovementSpeedRegime SpeedRegime { get; }
 
-        public PEGANpcPlanPurpose Purpose { get; }
+        public PegaNpcPlanPurpose Purpose { get; }
 
         public float MaximumRouteDistanceFromAnchorMeters { get; }
 
@@ -933,23 +947,23 @@ namespace PEGA.NPC
         }
     }
 
-    public sealed class PEGANpcDesirePlanEvaluation
+    public sealed class PegaNpcDesirePlanEvaluation
     {
-        private readonly IReadOnlyList<PEGANpcPlanSnapshot> _plans;
+        private readonly IReadOnlyList<PegaNpcPlanSnapshot> _plans;
 
-        internal PEGANpcDesirePlanEvaluation(
+        internal PegaNpcDesirePlanEvaluation(
             string desireId,
             string desireName,
             bool applicable,
             float effectiveWeight,
-            IReadOnlyList<PEGANpcPlanSnapshot> plans,
+            IReadOnlyList<PegaNpcPlanSnapshot> plans,
             string diagnostic)
         {
             DesireId = desireId ?? string.Empty;
             DesireName = desireName ?? string.Empty;
             IsApplicable = applicable;
             EffectiveWeight = effectiveWeight;
-            PEGANpcPlanSnapshot[] copy = new PEGANpcPlanSnapshot[plans.Count];
+            PegaNpcPlanSnapshot[] copy = new PegaNpcPlanSnapshot[plans.Count];
             for (int index = 0; index < plans.Count; index++)
             {
                 copy[index] = plans[index];
@@ -967,28 +981,28 @@ namespace PEGA.NPC
 
         public float EffectiveWeight { get; }
 
-        public IReadOnlyList<PEGANpcPlanSnapshot> Plans => _plans;
+        public IReadOnlyList<PegaNpcPlanSnapshot> Plans => _plans;
 
         public bool HasPlan => _plans.Count > 0;
 
         public string Diagnostic { get; }
     }
 
-    public sealed class PEGANpcPlanSelectionResult
+    public sealed class PegaNpcPlanSelectionResult
     {
-        private readonly IReadOnlyList<PEGANpcDesirePlanEvaluation> _desireEvaluations;
-        private readonly IReadOnlyList<PEGANpcPlanSnapshot> _candidatePlans;
+        private readonly IReadOnlyList<PegaNpcDesirePlanEvaluation> _desireEvaluations;
+        private readonly IReadOnlyList<PegaNpcPlanSnapshot> _candidatePlans;
 
-        internal PEGANpcPlanSelectionResult(
+        internal PegaNpcPlanSelectionResult(
             bool isValid,
-            PEGANpcPlanningValidationMode validationMode,
-            PEGANpcDesireContext context,
-            IReadOnlyList<PEGANpcDesirePlanEvaluation> desireEvaluations,
-            IReadOnlyList<PEGANpcPlanSnapshot> candidatePlans,
+            PegaNpcPlanningValidationMode validationMode,
+            PegaNpcDesireContext context,
+            IReadOnlyList<PegaNpcDesirePlanEvaluation> desireEvaluations,
+            IReadOnlyList<PegaNpcPlanSnapshot> candidatePlans,
             bool hasSelectedPlan,
-            PEGANpcPlanSnapshot selectedPlan,
+            PegaNpcPlanSnapshot selectedPlan,
             string diagnostic,
-            PEGANpcCausalPlanEvaluation causalEvaluation = null)
+            PegaNpcCausalPlanEvaluation causalEvaluation = null)
         {
             IsValid = isValid;
             ValidationMode = validationMode;
@@ -1003,17 +1017,17 @@ namespace PEGA.NPC
 
         public bool IsValid { get; }
 
-        public PEGANpcPlanningValidationMode ValidationMode { get; }
+        public PegaNpcPlanningValidationMode ValidationMode { get; }
 
-        public PEGANpcDesireContext Context { get; }
+        public PegaNpcDesireContext Context { get; }
 
-        public IReadOnlyList<PEGANpcDesirePlanEvaluation> DesireEvaluations => _desireEvaluations;
+        public IReadOnlyList<PegaNpcDesirePlanEvaluation> DesireEvaluations => _desireEvaluations;
 
-        public IReadOnlyList<PEGANpcPlanSnapshot> CandidatePlans => _candidatePlans;
+        public IReadOnlyList<PegaNpcPlanSnapshot> CandidatePlans => _candidatePlans;
 
         public bool HasSelectedPlan { get; }
 
-        public PEGANpcPlanSnapshot SelectedPlan { get; }
+        public PegaNpcPlanSnapshot SelectedPlan { get; }
 
         public string Diagnostic { get; }
 
@@ -1021,7 +1035,7 @@ namespace PEGA.NPC
         /// Causal alternatives considered by PEGA policy. Live plan formation is owned by the causal planner;
         /// this result retains the alternatives and search statuses used by the selection decision.
         /// </summary>
-        public PEGANpcCausalPlanEvaluation CausalEvaluation { get; }
+        public PegaNpcCausalPlanEvaluation CausalEvaluation { get; }
 
         private static IReadOnlyList<T> Copy<T>(IReadOnlyList<T> values)
         {
@@ -1039,9 +1053,9 @@ namespace PEGA.NPC
     /// A request to continue the Target pursuit at the last position confirmed by Perception.
     /// It is data for a planner/consumer; it does not select, start, cancel, or execute an Action.
     /// </summary>
-    public readonly struct PEGANpcLastKnownTargetContinuationIntent
+    public readonly struct PegaNpcLastKnownTargetContinuationIntent
     {
-        internal PEGANpcLastKnownTargetContinuationIntent(
+        internal PegaNpcLastKnownTargetContinuationIntent(
             ActorId subjectActorId,
             Vector3 lastKnownPosition,
             double lastKnownObservationTimeSeconds,
@@ -1062,9 +1076,9 @@ namespace PEGA.NPC
 
         public ActorId SubjectActorId { get; }
 
-        public PEGANpcPlanningActionId ActionId => PEGANpcPlanningActionId.ApproachKnownCharacter;
+        public PegaNpcPlanningActionId ActionId => PegaNpcPlanningActionId.ApproachKnownCharacter;
 
-        public PEGANpcPlanningTargetKind TargetKind => PEGANpcPlanningTargetKind.CharacterPosition;
+        public PegaNpcPlanningTargetKind TargetKind => PegaNpcPlanningTargetKind.CharacterPosition;
 
         public Vector3 LastKnownPosition { get; }
 
@@ -1083,18 +1097,18 @@ namespace PEGA.NPC
     }
 
     /// <summary>Published when real Perception confirms loss of Target and a legitimate last position exists.</summary>
-    public sealed class PEGANpcLastKnownTargetContinuationIntentRequestedEvent : IEvent
+    public sealed class PegaNpcLastKnownTargetContinuationIntentRequestedEvent : IEvent
     {
-        internal PEGANpcLastKnownTargetContinuationIntentRequestedEvent(
-            PEGANpcLastKnownTargetContinuationIntent intent)
+        internal PegaNpcLastKnownTargetContinuationIntentRequestedEvent(
+            PegaNpcLastKnownTargetContinuationIntent intent)
         {
             Intent = intent;
         }
 
-        public PEGANpcLastKnownTargetContinuationIntent Intent { get; }
+        public PegaNpcLastKnownTargetContinuationIntent Intent { get; }
     }
 
-    public enum PEGANpcPlanReevaluationTrigger
+    public enum PegaNpcPlanReevaluationTrigger
     {
         TargetReacquired = 10,
         TargetContactLostBeyondWindow = 20
@@ -1108,10 +1122,10 @@ namespace PEGA.NPC
     /// TargetReacquired identifica planos dependentes do alvo; TargetContactLostBeyondWindow solicita avaliação do conjunto
     /// normal de Desejos. O consumidor autônomo é responsável por interpretar o gatilho.
     /// </remarks>
-    public sealed class PEGANpcPlanReevaluationRequestedEvent : IEvent
+    public sealed class PegaNpcPlanReevaluationRequestedEvent : IEvent
     {
-        internal PEGANpcPlanReevaluationRequestedEvent(
-            PEGANpcPlanReevaluationTrigger trigger,
+        internal PegaNpcPlanReevaluationRequestedEvent(
+            PegaNpcPlanReevaluationTrigger trigger,
             ActorId targetActorId,
             double observationTimeSeconds,
             double requestedAtTimeSeconds)
@@ -1122,7 +1136,7 @@ namespace PEGA.NPC
             RequestedAtTimeSeconds = requestedAtTimeSeconds;
         }
 
-        public PEGANpcPlanReevaluationTrigger Trigger { get; }
+        public PegaNpcPlanReevaluationTrigger Trigger { get; }
 
         public ActorId TargetActorId { get; }
 

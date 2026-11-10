@@ -1,19 +1,20 @@
 using Immersive.Framework.ObjectEntry;
+using PEGA.Interactions.Runtime;
+using PEGA.NPC.Knowledge.Core;
 using UnityEngine;
 using UnityEngine.Scripting;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Knowledge.Definitions
 {
     /// <summary>Canonical properties addressed by the Framework's logical ObjectEntry identity.</summary>
     [Preserve]
-    public static class PEGAObjectEntryKnowledgeFacts
+    public static class PegaObjectEntryKnowledgeFacts
     {
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, Vector3> Position =
-            new PEGAKnowledgeFactDefinition<ObjectEntryId, Vector3>(
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, Vector3> Position =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, Vector3>(
                 "pega.object-entry.position",
                 "Object Entry position",
-                new PEGALatestEvidenceKnowledgePolicy<Vector3>(
+                new PegaLatestEvidenceKnowledgePolicy<Vector3>(
                     areEqual: AreExactlyEqual,
                     validateValue: value => IsFinite(value)
                         ? string.Empty
@@ -22,29 +23,51 @@ namespace PEGA.NPC
                 allowsDesignerAuthoredInitialFact: true);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationRequired =
-            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> Robbable =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, bool>(
+                "pega.object-entry.robbable",
+                "Object Entry can be robbed",
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: true);
+
+        [Preserve]
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, PegaRobObjectEntryConfigurationSnapshot> RobPlanningParameters =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, PegaRobObjectEntryConfigurationSnapshot>(
+                "pega.object-entry.rob-planning-parameters",
+                "Object Entry Rob planning parameters",
+                new PegaLatestEvidenceKnowledgePolicy<PegaRobObjectEntryConfigurationSnapshot>(
+                    areEqual: (left, right) => left.Equals(right),
+                    validateValue: value => value.IsValid
+                        ? string.Empty
+                        : "Rob planning parameters require a valid ObjectEntryId and finite, non-negative range and duration."),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: true);
+
+        [Preserve]
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationRequired =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, bool>(
                 "pega.poi.investigation-required",
                 "POI investigation required",
-                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationCompleted =
-            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> InvestigationCompleted =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, bool>(
                 "pega.poi.investigation-completed",
                 "POI investigation completed",
-                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ObjectEntryId, bool> ActivityExit =
-            new PEGAKnowledgeFactDefinition<ObjectEntryId, bool>(
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> ActivityExit =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, bool>(
                 "pega.poi.activity-exit",
                 "Activity exit POI",
-                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 

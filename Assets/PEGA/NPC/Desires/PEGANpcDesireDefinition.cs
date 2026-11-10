@@ -1,13 +1,13 @@
 using System;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Goals.Conditions;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Desires
 {
     [CreateAssetMenu(
         fileName = "New Desire Definition",
         menuName = "PEGA/NPC/Desire Definition")]
-    public sealed class PEGANpcDesireDefinition : ScriptableObject
+    public sealed class PegaNpcDesireDefinition : ScriptableObject
     {
         [SerializeField]
         [Tooltip("Stable internal ID used to track this Desire. Keep it unchanged when editing an existing definition.")]
@@ -19,13 +19,13 @@ namespace PEGA.NPC
 
         [SerializeField]
         [Tooltip("Existing success condition that defines when this Desire is fulfilled, independently of the available behaviors.")]
-        private PEGANpcGoapConditionAsset desiredGoalCondition;
+        private PegaNpcGoapConditionAsset desiredGoalCondition;
 
         public string DesireId => desireId;
 
         public string DisplayName => displayName;
 
-        public PEGANpcGoapConditionAsset DesiredGoalCondition => desiredGoalCondition;
+        public PegaNpcGoapConditionAsset DesiredGoalCondition => desiredGoalCondition;
 
         public GoapGoal CreateGoal() => desiredGoalCondition != null
             ? new GoapGoal(desiredGoalCondition)

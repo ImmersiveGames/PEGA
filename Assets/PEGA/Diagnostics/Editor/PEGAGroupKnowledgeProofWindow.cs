@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
-using ImmersiveGames.Goap;
-using PEGA.NPC;
+using PEGA.GOAP;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Global;
+using PEGA.NPC.Knowledge.Group;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,7 +15,7 @@ using UnityEngine.SceneManagement;
 namespace PEGA.Diagnostics
 {
     /// <summary>Verifies Group Knowledge sharing and isolation without Actions or GOAP planning.</summary>
-    public sealed class PEGAGroupKnowledgeProofWindow : EditorWindow
+    public sealed class PegaGroupKnowledgeProofWindow : EditorWindow
     {
         private const string MissionContentScenePath = "Assets/PEGA/Scenes/MissionActivityContent.unity";
         private const string ProofSource = "PEGA Group Knowledge proof";
@@ -20,10 +25,10 @@ namespace PEGA.Diagnostics
             Verification = 1
         }
 
-        [SerializeField] private PEGAActorGroupKnowledgeState _groupKnowledge;
-        [SerializeField] private PEGAGlobalKnowledgeState _globalKnowledge;
-        [SerializeField] private ActorGroupAccessBinding _groupAccess;
-        [SerializeField] private PEGAActorGroupKnowledgeReader[] _readers = Array.Empty<PEGAActorGroupKnowledgeReader>();
+        [SerializeField] private PegaActorGroupKnowledgeState groupKnowledge;
+        [SerializeField] private PegaGlobalKnowledgeState globalKnowledge;
+        [SerializeField] private ActorGroupAccessBinding groupAccess;
+        [SerializeField] private PegaActorGroupKnowledgeReader[] readers = Array.Empty<PegaActorGroupKnowledgeReader>();
 
         private string _result;
         private MessageType _resultType = MessageType.Info;
@@ -31,7 +36,7 @@ namespace PEGA.Diagnostics
         [MenuItem("PEGA/Diagnostics/Group Knowledge Proof")]
         private static void Open()
         {
-            GetWindow<PEGAGroupKnowledgeProofWindow>("Group Knowledge Proof");
+            GetWindow<PegaGroupKnowledgeProofWindow>("Group Knowledge Proof");
         }
 
         private void OnGUI()
@@ -41,12 +46,12 @@ namespace PEGA.Diagnostics
                 "Inicie um novo Play Mode com a Mission carregada. A prova usa os três larápios e os dois Actor Groups confirmados pelo Framework. Ela não executa Actions nem consulta o planner.",
                 MessageType.Info);
 
-            _groupKnowledge = (PEGAActorGroupKnowledgeState)EditorGUILayout.ObjectField(
-                "Authority Group", _groupKnowledge, typeof(PEGAActorGroupKnowledgeState), true);
-            _globalKnowledge = (PEGAGlobalKnowledgeState)EditorGUILayout.ObjectField(
-                "Global Knowledge preservado", _globalKnowledge, typeof(PEGAGlobalKnowledgeState), true);
-            _groupAccess = (ActorGroupAccessBinding)EditorGUILayout.ObjectField(
-                "Acesso oficial a Groups", _groupAccess, typeof(ActorGroupAccessBinding), true);
+            groupKnowledge = (PegaActorGroupKnowledgeState)EditorGUILayout.ObjectField(
+                "Authority Group", groupKnowledge, typeof(PegaActorGroupKnowledgeState), true);
+            globalKnowledge = (PegaGlobalKnowledgeState)EditorGUILayout.ObjectField(
+                "Global Knowledge preservado", globalKnowledge, typeof(PegaGlobalKnowledgeState), true);
+            groupAccess = (ActorGroupAccessBinding)EditorGUILayout.ObjectField(
+                "Acesso oficial a Groups", groupAccess, typeof(ActorGroupAccessBinding), true);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -86,36 +91,36 @@ namespace PEGA.Diagnostics
                 return;
             }
 
-            PEGAActorGroupKnowledgeState[] groupAuthorities = FindInScene<PEGAActorGroupKnowledgeState>(missionScene);
-            PEGAGlobalKnowledgeState[] globalAuthorities = FindInScene<PEGAGlobalKnowledgeState>(missionScene);
+            PegaActorGroupKnowledgeState[] groupAuthorities = FindInScene<PegaActorGroupKnowledgeState>(missionScene);
+            PegaGlobalKnowledgeState[] globalAuthorities = FindInScene<PegaGlobalKnowledgeState>(missionScene);
             ActorGroupAccessBinding[] groupBindings = FindInScene<ActorGroupAccessBinding>(missionScene);
-            _readers = FindInScene<PEGAActorGroupKnowledgeReader>(missionScene);
+            readers = FindInScene<PegaActorGroupKnowledgeReader>(missionScene);
 
             if (groupAuthorities.Length != 1 || globalAuthorities.Length != 1 ||
-                groupBindings.Length != 1 || _readers.Length != 3)
+                groupBindings.Length != 1 || readers.Length != 3)
             {
                 SetResult(
-                    $"Esperados 1 owner Group, 1 autoridade Global, 1 binding oficial e 3 leitores; encontrados {groupAuthorities.Length}, {globalAuthorities.Length}, {groupBindings.Length} e {_readers.Length}.",
+                    $"Esperados 1 owner Group, 1 autoridade Global, 1 binding oficial e 3 leitores; encontrados {groupAuthorities.Length}, {globalAuthorities.Length}, {groupBindings.Length} e {readers.Length}.",
                     MessageType.Error);
                 return;
             }
 
-            _groupKnowledge = groupAuthorities[0];
-            _globalKnowledge = globalAuthorities[0];
-            _groupAccess = groupBindings[0];
+            groupKnowledge = groupAuthorities[0];
+            globalKnowledge = globalAuthorities[0];
+            groupAccess = groupBindings[0];
             SetResult("Componentes encontrados. Execute a prova uma vez neste Play Mode recém-iniciado.", MessageType.Info);
         }
 
         private void RunProof()
         {
-            if (!EditorApplication.isPlaying || _groupKnowledge == null || _globalKnowledge == null ||
-                _groupAccess == null || _readers == null || _readers.Length != 3)
+            if (!EditorApplication.isPlaying || groupKnowledge == null || globalKnowledge == null ||
+                groupAccess == null || readers == null || readers.Length != 3)
             {
                 SetResult("Detecte a Mission enquanto ela está em Play Mode antes de executar a prova.", MessageType.Error);
                 return;
             }
 
-            if (!_groupKnowledge.IsAvailable || !_globalKnowledge.IsAvailable || !_groupAccess.IsAccessAvailable)
+            if (!groupKnowledge.IsAvailable || !globalKnowledge.IsAvailable || !groupAccess.IsAccessAvailable)
             {
                 SetResult("A Activity ainda não disponibilizou as authorities e o binding oficial da Mission.", MessageType.Error);
                 return;
@@ -128,7 +133,7 @@ namespace PEGA.Diagnostics
                 return;
             }
 
-            var key = PEGAGlobalKnowledgeFacts.MainObjectiveIdentified.For((byte)0);
+            var key = PegaGlobalKnowledgeFacts.MainObjectiveIdentified.For((byte)0);
             double observationTime = Time.timeAsDouble + 0.01d;
 
             if (!AreAuthorizedUnknown(firstGroup[0].Reader.ReadGroupFact(firstGroupId, key, observationTime)) ||
@@ -141,57 +146,57 @@ namespace PEGA.Diagnostics
 
             if (!IsDeniedAndRedacted(
                     secondGroupMember.Reader.ReadGroupFact(firstGroupId, key, observationTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember) ||
+                    PegaActorGroupKnowledgeAccessStatus.NotMember) ||
                 !IsDeniedAndRedacted(
                     firstGroup[0].Reader.ReadGroupFact(secondGroupId, key, observationTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember) ||
+                    PegaActorGroupKnowledgeAccessStatus.NotMember) ||
                 !IsDeniedAndRedacted(
                     firstGroup[1].Reader.ReadGroupFact(secondGroupId, key, observationTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember))
+                    PegaActorGroupKnowledgeAccessStatus.NotMember))
             {
                 SetResult("A consulta anterior à gravação não distinguiu corretamente ausência de conhecimento e falta de autorização.", MessageType.Error);
                 return;
             }
 
-            PEGAKnowledgeEvidence firstInitialEvidence = CreateEvidence(observationTime, "first-group:false");
-            PEGAActorGroupKnowledgeAccessStatus firstWriteAccess = _groupKnowledge.ObserveFact(
+            PegaKnowledgeEvidence firstInitialEvidence = CreateEvidence(observationTime, "first-group:false");
+            PegaActorGroupKnowledgeAccessStatus firstWriteAccess = groupKnowledge.ObserveFact(
                 firstGroupId,
                 key,
                 false,
                 firstInitialEvidence,
-                out PEGAKnowledgeWriteResult firstWrite);
-            if (firstWriteAccess != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                firstWrite != PEGAKnowledgeWriteResult.Recorded)
+                out PegaKnowledgeWriteResult firstWrite);
+            if (firstWriteAccess != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                firstWrite != PegaKnowledgeWriteResult.Recorded)
             {
                 SetResult("A autoridade PEGA não registrou o fato inicial do primeiro Group.", MessageType.Error);
                 return;
             }
 
             double secondGroupTime = observationTime + 0.001d;
-            PEGAKnowledgeEvidence secondGroupEvidence = CreateEvidence(secondGroupTime, "second-group:true");
-            PEGAActorGroupKnowledgeAccessStatus secondWriteAccess = _groupKnowledge.ObserveFact(
+            PegaKnowledgeEvidence secondGroupEvidence = CreateEvidence(secondGroupTime, "second-group:true");
+            PegaActorGroupKnowledgeAccessStatus secondWriteAccess = groupKnowledge.ObserveFact(
                 secondGroupId,
                 key,
                 true,
                 secondGroupEvidence,
-                out PEGAKnowledgeWriteResult secondWrite);
-            if (secondWriteAccess != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                secondWrite != PEGAKnowledgeWriteResult.Recorded)
+                out PegaKnowledgeWriteResult secondWrite);
+            if (secondWriteAccess != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                secondWrite != PegaKnowledgeWriteResult.Recorded)
             {
                 SetResult("A autoridade PEGA não registrou o fato do segundo Group.", MessageType.Error);
                 return;
             }
 
             double groupQueryTime = secondGroupTime;
-            PEGAActorGroupKnowledgeReadResult<bool> firstMemberRead =
+            PegaActorGroupKnowledgeReadResult<bool> firstMemberRead =
                 firstGroup[0].Reader.ReadGroupFact(firstGroupId, key, groupQueryTime);
-            PEGAActorGroupKnowledgeReadResult<bool> secondMemberRead =
+            PegaActorGroupKnowledgeReadResult<bool> secondMemberRead =
                 firstGroup[1].Reader.ReadGroupFact(firstGroupId, key, groupQueryTime);
-            PEGAActorGroupKnowledgeReadResult<bool> otherGroupRead =
+            PegaActorGroupKnowledgeReadResult<bool> otherGroupRead =
                 secondGroupMember.Reader.ReadGroupFact(secondGroupId, key, groupQueryTime);
-            if (firstMemberRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                secondMemberRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                otherGroupRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
+            if (firstMemberRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                secondMemberRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                otherGroupRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
                 !AreEquivalentKnownFacts(firstMemberRead.Fact, secondMemberRead.Fact, false) ||
                 !HasExpectedEvidence(firstMemberRead.Fact, firstInitialEvidence) ||
                 !IsExpectedKnownFact(otherGroupRead.Fact, true, secondGroupEvidence))
@@ -202,13 +207,13 @@ namespace PEGA.Diagnostics
 
             if (!IsDeniedAndRedacted(
                     secondGroupMember.Reader.ReadGroupFact(firstGroupId, key, groupQueryTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember) ||
+                    PegaActorGroupKnowledgeAccessStatus.NotMember) ||
                 !IsDeniedAndRedacted(
                     firstGroup[0].Reader.ReadGroupFact(secondGroupId, key, groupQueryTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember) ||
+                    PegaActorGroupKnowledgeAccessStatus.NotMember) ||
                 !IsDeniedAndRedacted(
                     firstGroup[1].Reader.ReadGroupFact(secondGroupId, key, groupQueryTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember))
+                    PegaActorGroupKnowledgeAccessStatus.NotMember))
             {
                 SetResult("Uma consulta cruzada não membro deixou de ser negada e redigida.", MessageType.Error);
                 return;
@@ -220,21 +225,21 @@ namespace PEGA.Diagnostics
                 return;
             }
 
-            if (!VerifyGlobalRemainsReadable(key, out PEGAKnowledgeFact<bool> globalFact, out string globalIssue))
+            if (!VerifyGlobalRemainsReadable(key, out PegaKnowledgeFact<bool> globalFact, out string globalIssue))
             {
                 SetResult(globalIssue, MessageType.Error);
                 return;
             }
 
-            PEGAActorGroupKnowledgeReadResult<bool> finalFirstMemberRead =
+            PegaActorGroupKnowledgeReadResult<bool> finalFirstMemberRead =
                 firstGroup[0].Reader.ReadGroupFact(firstGroupId, key, groupQueryTime);
-            PEGAActorGroupKnowledgeReadResult<bool> finalSecondMemberRead =
+            PegaActorGroupKnowledgeReadResult<bool> finalSecondMemberRead =
                 firstGroup[1].Reader.ReadGroupFact(firstGroupId, key, groupQueryTime);
-            PEGAActorGroupKnowledgeReadResult<bool> finalOtherGroupRead =
+            PegaActorGroupKnowledgeReadResult<bool> finalOtherGroupRead =
                 secondGroupMember.Reader.ReadGroupFact(secondGroupId, key, groupQueryTime);
-            if (finalFirstMemberRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                finalSecondMemberRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
-                finalOtherGroupRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
+            if (finalFirstMemberRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                finalSecondMemberRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
+                finalOtherGroupRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
                 !AreEquivalentKnownFacts(finalFirstMemberRead.Fact, finalSecondMemberRead.Fact, false) ||
                 !HasExpectedEvidence(finalFirstMemberRead.Fact, firstInitialEvidence) ||
                 !IsExpectedKnownFact(finalOtherGroupRead.Fact, true, secondGroupEvidence))
@@ -243,30 +248,30 @@ namespace PEGA.Diagnostics
                 return;
             }
 
-            if (!IndividualKnowledgeRemainsIndependent(_readers, key, groupQueryTime))
+            if (!IndividualKnowledgeRemainsIndependent(readers, key, groupQueryTime))
             {
                 SetResult("A prova encontrou uma cópia de Group Knowledge no armazenamento Individual.", MessageType.Error);
                 return;
             }
 
             SetResult(
-                $"PASS: {_readers.Length} Actors; Group {firstGroupId.StableText} compartilhado: {DescribeAuthorizedFact(finalFirstMemberRead.Fact)}; Group {secondGroupId.StableText}: {DescribeAuthorizedFact(finalOtherGroupRead.Fact)}. Consultas cruzadas retornaram NotMember com Unknown vazio; Leave revogou o acesso e Join o restaurou. Global compartilhado pelos três consumidores GOAP: {DescribeAuthorizedFact(globalFact)}. Stores Individuais permaneceram independentes; nenhuma Action ou decisão GOAP foi executada.",
+                $"PASS: {readers.Length} Actors; Group {firstGroupId.StableText} compartilhado: {DescribeAuthorizedFact(finalFirstMemberRead.Fact)}; Group {secondGroupId.StableText}: {DescribeAuthorizedFact(finalOtherGroupRead.Fact)}. Consultas cruzadas retornaram NotMember com Unknown vazio; Leave revogou o acesso e Join o restaurou. Global compartilhado pelos três consumidores GOAP: {DescribeAuthorizedFact(globalFact)}. Stores Individuais permaneceram independentes; nenhuma Action ou decisão GOAP foi executada.",
                 MessageType.Info);
         }
 
         private bool VerifyGlobalRemainsReadable(
-            PEGAKnowledgeFactKey<byte, bool> key,
-            out PEGAKnowledgeFact<bool> globalFact,
+            PegaKnowledgeFactKey<byte, bool> key,
+            out PegaKnowledgeFact<bool> globalFact,
             out string issue)
         {
             globalFact = default;
-            var globalReaders = new IPEGAKnowledgeFactReader[_readers.Length];
-            for (int index = 0; index < _readers.Length; index++)
+            var globalReaders = new IPegaKnowledgeFactReader[readers.Length];
+            for (int index = 0; index < readers.Length; index++)
             {
-                PEGANpcAutonomy autonomy = _readers[index].GetComponent<PEGANpcAutonomy>();
+                PegaNpcAutonomy autonomy = readers[index].GetComponent<PegaNpcAutonomy>();
                 if (autonomy == null ||
-                    !TryGetGlobalReader(autonomy.GoapKnowledgeState, out IPEGAKnowledgeFactReader reader) ||
-                    !ReferenceEquals(reader, _globalKnowledge))
+                    !TryGetGlobalReader(autonomy.GoapKnowledgeState, out IPegaKnowledgeFactReader reader) ||
+                    !ReferenceEquals(reader, globalKnowledge))
                 {
                     issue = "Um dos consumidores GOAP não compõe a autoridade Global compartilhada existente.";
                     return false;
@@ -275,15 +280,15 @@ namespace PEGA.Diagnostics
                 globalReaders[index] = reader;
             }
 
-            PEGAKnowledgeFact<bool> existing = _globalKnowledge.ReadFact(key, Time.timeAsDouble);
+            PegaKnowledgeFact<bool> existing = globalKnowledge.ReadFact(key, Time.timeAsDouble);
             double initialTime = existing.HasObservationTime
                 ? Math.Max(Time.timeAsDouble, existing.ObservationTimeSeconds + 0.001d)
                 : Time.timeAsDouble;
             double updateTime = initialTime + 0.001d;
-            PEGAKnowledgeEvidence initialEvidence = CreateEvidence(initialTime, "global:false");
-            PEGAKnowledgeWriteResult initialWrite = _globalKnowledge.ObserveFact(key, false, initialEvidence);
-            PEGAKnowledgeFact<bool>[] initialFacts = ReadGlobalFacts(globalReaders, key, initialTime);
-            if ((initialWrite != PEGAKnowledgeWriteResult.Recorded && initialWrite != PEGAKnowledgeWriteResult.Replaced) ||
+            PegaKnowledgeEvidence initialEvidence = CreateEvidence(initialTime, "global:false");
+            PegaKnowledgeWriteResult initialWrite = globalKnowledge.ObserveFact(key, false, initialEvidence);
+            PegaKnowledgeFact<bool>[] initialFacts = ReadGlobalFacts(globalReaders, key, initialTime);
+            if ((initialWrite != PegaKnowledgeWriteResult.Recorded && initialWrite != PegaKnowledgeWriteResult.Replaced) ||
                 !AllEquivalentGlobalFacts(initialFacts, false) ||
                 !HasExpectedEvidence(initialFacts[0], initialEvidence))
             {
@@ -291,10 +296,10 @@ namespace PEGA.Diagnostics
                 return false;
             }
 
-            PEGAKnowledgeEvidence updatedEvidence = CreateEvidence(updateTime, "global:true");
-            PEGAKnowledgeWriteResult updateWrite = _globalKnowledge.ObserveFact(key, true, updatedEvidence);
-            PEGAKnowledgeFact<bool>[] updatedFacts = ReadGlobalFacts(globalReaders, key, updateTime);
-            if (updateWrite != PEGAKnowledgeWriteResult.Replaced ||
+            PegaKnowledgeEvidence updatedEvidence = CreateEvidence(updateTime, "global:true");
+            PegaKnowledgeWriteResult updateWrite = globalKnowledge.ObserveFact(key, true, updatedEvidence);
+            PegaKnowledgeFact<bool>[] updatedFacts = ReadGlobalFacts(globalReaders, key, updateTime);
+            if (updateWrite != PegaKnowledgeWriteResult.Replaced ||
                 !AllEquivalentGlobalFacts(updatedFacts, true) ||
                 !HasExpectedEvidence(updatedFacts[0], updatedEvidence))
             {
@@ -307,12 +312,12 @@ namespace PEGA.Diagnostics
             return true;
         }
 
-        private static PEGAKnowledgeFact<bool>[] ReadGlobalFacts(
-            IReadOnlyList<IPEGAKnowledgeFactReader> readers,
-            PEGAKnowledgeFactKey<byte, bool> key,
+        private static PegaKnowledgeFact<bool>[] ReadGlobalFacts(
+            IReadOnlyList<IPegaKnowledgeFactReader> readers,
+            PegaKnowledgeFactKey<byte, bool> key,
             double queryTime)
         {
-            var facts = new PEGAKnowledgeFact<bool>[readers.Count];
+            var facts = new PegaKnowledgeFact<bool>[readers.Count];
             for (int index = 0; index < readers.Count; index++)
             {
                 facts[index] = readers[index].ReadFact(key, queryTime);
@@ -321,7 +326,7 @@ namespace PEGA.Diagnostics
             return facts;
         }
 
-        private static bool AllEquivalentGlobalFacts(PEGAKnowledgeFact<bool>[] facts, bool expectedValue)
+        private static bool AllEquivalentGlobalFacts(PegaKnowledgeFact<bool>[] facts, bool expectedValue)
         {
             if (facts == null || facts.Length == 0 || !IsExpectedGlobalFact(facts[0], expectedValue))
             {
@@ -341,19 +346,19 @@ namespace PEGA.Diagnostics
             return true;
         }
 
-        private static bool IsExpectedGlobalFact(PEGAKnowledgeFact<bool> fact, bool expectedValue) =>
-            fact.Status == PEGAKnowledgeStatus.Known &&
-            fact.Scope == PEGAKnowledgeScope.Global &&
+        private static bool IsExpectedGlobalFact(PegaKnowledgeFact<bool> fact, bool expectedValue) =>
+            fact.Status == PegaKnowledgeStatus.Known &&
+            fact.Scope == PegaKnowledgeScope.Global &&
             fact.HasObservationTime &&
             fact.TryGetValue(out bool value) && value == expectedValue;
 
-        private static string DescribeAuthorizedFact(PEGAKnowledgeFact<bool> fact)
+        private static string DescribeAuthorizedFact(PegaKnowledgeFact<bool> fact)
         {
             fact.TryGetValue(out bool value);
             var evidence = new List<string>(fact.Evidence.Count);
             for (int index = 0; index < fact.Evidence.Count; index++)
             {
-                PEGAKnowledgeEvidence item = fact.Evidence[index];
+                PegaKnowledgeEvidence item = fact.Evidence[index];
                 evidence.Add(
                     $"origin={item.Origin}, time={item.ObservationTimeSeconds:0.000}, source={item.Source}, payload={item.Payload}");
             }
@@ -363,15 +368,15 @@ namespace PEGA.Diagnostics
 
         private static bool TryGetGlobalReader(
             IGoapKnowledgeStateView view,
-            out IPEGAKnowledgeFactReader reader)
+            out IPegaKnowledgeFactReader reader)
         {
             if (view != null && view.Source == GoapStateSource.KnowledgeState)
             {
                 IReadOnlyList<IGoapKnowledgeCapability> capabilities = view.Capabilities;
                 for (int index = 0; index < capabilities.Count; index++)
                 {
-                    if (capabilities[index] is IPEGAKnowledgeFactReader candidate &&
-                        candidate.Scope == PEGAKnowledgeScope.Global && candidate.IsAvailable)
+                    if (capabilities[index] is IPegaKnowledgeFactReader candidate &&
+                        candidate.Scope == PegaKnowledgeScope.Global && candidate.IsAvailable)
                     {
                         reader = candidate;
                         return true;
@@ -396,12 +401,12 @@ namespace PEGA.Diagnostics
             secondGroupId = default;
             var membersByGroup = new Dictionary<GroupId, List<GroupMember>>();
 
-            for (int index = 0; index < _readers.Length; index++)
+            for (int index = 0; index < readers.Length; index++)
             {
-                PEGAActorGroupKnowledgeReader reader = _readers[index];
+                PegaActorGroupKnowledgeReader reader = readers[index];
                 ActorDeclaration actor = reader != null ? reader.GetComponent<ActorDeclaration>() : null;
                 if (!TryReadActorId(actor, out ActorId actorId) ||
-                    !_groupAccess.TryGetGroupsForActor(actorId, 16, out IReadOnlyList<GroupId> groups, out issue) ||
+                    !groupAccess.TryGetGroupsForActor(actorId, 16, out IReadOnlyList<GroupId> groups, out issue) ||
                     groups.Count != 1)
                 {
                     issue = "Cada larápio deve ter um ActorId válido e uma membership vigente no contrato oficial.";
@@ -409,9 +414,9 @@ namespace PEGA.Diagnostics
                 }
 
                 GroupId groupId = groups[0];
-                if (!_groupAccess.TryGetGroup(groupId, out ActorGroupSnapshot group, out issue) ||
+                if (!groupAccess.TryGetGroup(groupId, out ActorGroupSnapshot group, out issue) ||
                     !group.IsValid ||
-                    !_groupAccess.TryIsMember(groupId, actorId, out bool isMember, out issue) || !isMember)
+                    !groupAccess.TryIsMember(groupId, actorId, out bool isMember, out issue) || !isMember)
                 {
                     issue = "O Framework não confirmou um Group vivo e a membership do Actor.";
                     return false;
@@ -459,11 +464,11 @@ namespace PEGA.Diagnostics
         private bool VerifyLeaveRevokesAccess(
             GroupMember member,
             GroupId groupId,
-            PEGAKnowledgeFactKey<byte, bool> key,
+            PegaKnowledgeFactKey<byte, bool> key,
             double queryTime,
             out string issue)
         {
-            if (!_groupAccess.TryLeaveGroup(groupId, member.ActorId, out issue))
+            if (!groupAccess.TryLeaveGroup(groupId, member.ActorId, out issue))
             {
                 issue = "O Framework não aceitou o Leave temporário usado na prova: " + issue;
                 return false;
@@ -475,11 +480,11 @@ namespace PEGA.Diagnostics
             {
                 deniedAndRedacted = IsDeniedAndRedacted(
                     member.Reader.ReadGroupFact(groupId, key, queryTime),
-                    PEGAActorGroupKnowledgeAccessStatus.NotMember);
+                    PegaActorGroupKnowledgeAccessStatus.NotMember);
             }
             finally
             {
-                rejoined = _groupAccess.TryJoinGroup(groupId, member.ActorId, out issue);
+                rejoined = groupAccess.TryJoinGroup(groupId, member.ActorId, out issue);
             }
 
             if (!rejoined)
@@ -488,9 +493,9 @@ namespace PEGA.Diagnostics
                 return false;
             }
 
-            PEGAActorGroupKnowledgeReadResult<bool> restoredRead = member.Reader.ReadGroupFact(groupId, key, queryTime);
+            PegaActorGroupKnowledgeReadResult<bool> restoredRead = member.Reader.ReadGroupFact(groupId, key, queryTime);
             if (!deniedAndRedacted ||
-                restoredRead.AccessStatus != PEGAActorGroupKnowledgeAccessStatus.Authorized ||
+                restoredRead.AccessStatus != PegaActorGroupKnowledgeAccessStatus.Authorized ||
                 !IsExpectedKnownFact(restoredRead.Fact, false, null))
             {
                 issue = "Leave não revogou o acesso ou Join não o restaurou corretamente.";
@@ -501,31 +506,31 @@ namespace PEGA.Diagnostics
             return true;
         }
 
-        private static PEGAKnowledgeEvidence CreateEvidence(double time, string payload) =>
-            PEGAKnowledgeEvidence.From(ProofEvidenceOrigin.Verification, time, ProofSource, payload);
+        private static PegaKnowledgeEvidence CreateEvidence(double time, string payload) =>
+            PegaKnowledgeEvidence.From(ProofEvidenceOrigin.Verification, time, ProofSource, payload);
 
-        private static bool AreAuthorizedUnknown(PEGAActorGroupKnowledgeReadResult<bool> result) =>
-            result.AccessStatus == PEGAActorGroupKnowledgeAccessStatus.Authorized &&
-            result.Fact.Status == PEGAKnowledgeStatus.Unknown &&
-            result.Fact.Scope == PEGAKnowledgeScope.Group &&
+        private static bool AreAuthorizedUnknown(PegaActorGroupKnowledgeReadResult<bool> result) =>
+            result.AccessStatus == PegaActorGroupKnowledgeAccessStatus.Authorized &&
+            result.Fact.Status == PegaKnowledgeStatus.Unknown &&
+            result.Fact.Scope == PegaKnowledgeScope.Group &&
             !result.Fact.HasObservationTime &&
             result.Fact.Evidence.Count == 0 &&
             !result.Fact.TryGetValue(out _);
 
         private static bool IsDeniedAndRedacted(
-            PEGAActorGroupKnowledgeReadResult<bool> result,
-            PEGAActorGroupKnowledgeAccessStatus expectedStatus) =>
+            PegaActorGroupKnowledgeReadResult<bool> result,
+            PegaActorGroupKnowledgeAccessStatus expectedStatus) =>
             !result.IsAuthorized &&
             result.AccessStatus == expectedStatus &&
-            result.Fact.Status == PEGAKnowledgeStatus.Unknown &&
-            result.Fact.Scope == PEGAKnowledgeScope.Group &&
+            result.Fact.Status == PegaKnowledgeStatus.Unknown &&
+            result.Fact.Scope == PegaKnowledgeScope.Group &&
             !result.Fact.HasObservationTime &&
             result.Fact.Evidence.Count == 0 &&
             !result.Fact.TryGetValue(out _);
 
         private static bool AreEquivalentKnownFacts(
-            PEGAKnowledgeFact<bool> first,
-            PEGAKnowledgeFact<bool> second,
+            PegaKnowledgeFact<bool> first,
+            PegaKnowledgeFact<bool> second,
             bool expectedValue) =>
             IsExpectedKnownFact(first, expectedValue, null) &&
             IsExpectedKnownFact(second, expectedValue, null) &&
@@ -534,28 +539,28 @@ namespace PEGA.Diagnostics
             HasSameProvenance(first, second);
 
         private static bool IsExpectedKnownFact(
-            PEGAKnowledgeFact<bool> fact,
+            PegaKnowledgeFact<bool> fact,
             bool expectedValue,
-            PEGAKnowledgeEvidence? expectedEvidence) =>
-            fact.Status == PEGAKnowledgeStatus.Known &&
-            fact.Scope == PEGAKnowledgeScope.Group &&
+            PegaKnowledgeEvidence? expectedEvidence) =>
+            fact.Status == PegaKnowledgeStatus.Known &&
+            fact.Scope == PegaKnowledgeScope.Group &&
             fact.TryGetValue(out bool value) && value == expectedValue &&
             (!expectedEvidence.HasValue || HasExpectedEvidence(fact, expectedEvidence.Value));
 
-        private static bool HasExpectedEvidence(PEGAKnowledgeFact<bool> fact, PEGAKnowledgeEvidence expected)
+        private static bool HasExpectedEvidence(PegaKnowledgeFact<bool> fact, PegaKnowledgeEvidence expected)
         {
             if (fact.Evidence.Count != 1)
             {
                 return false;
             }
 
-            PEGAKnowledgeEvidence actual = fact.Evidence[0];
+            PegaKnowledgeEvidence actual = fact.Evidence[0];
             return actual.Origin.Equals(expected.Origin) &&
                 actual.ObservationTimeSeconds == expected.ObservationTimeSeconds &&
                 Equals(actual.Source, expected.Source) && Equals(actual.Payload, expected.Payload);
         }
 
-        private static bool HasSameProvenance(PEGAKnowledgeFact<bool> first, PEGAKnowledgeFact<bool> second)
+        private static bool HasSameProvenance(PegaKnowledgeFact<bool> first, PegaKnowledgeFact<bool> second)
         {
             if (first.Evidence.Count != second.Evidence.Count)
             {
@@ -564,8 +569,8 @@ namespace PEGA.Diagnostics
 
             for (int index = 0; index < first.Evidence.Count; index++)
             {
-                PEGAKnowledgeEvidence left = first.Evidence[index];
-                PEGAKnowledgeEvidence right = second.Evidence[index];
+                PegaKnowledgeEvidence left = first.Evidence[index];
+                PegaKnowledgeEvidence right = second.Evidence[index];
                 if (!left.Origin.Equals(right.Origin) ||
                     left.ObservationTimeSeconds != right.ObservationTimeSeconds ||
                     !Equals(left.Source, right.Source) || !Equals(left.Payload, right.Payload))
@@ -578,20 +583,20 @@ namespace PEGA.Diagnostics
         }
 
         private static bool IndividualKnowledgeRemainsIndependent(
-            IReadOnlyList<PEGAActorGroupKnowledgeReader> readers,
-            PEGAKnowledgeFactKey<byte, bool> key,
+            IReadOnlyList<PegaActorGroupKnowledgeReader> readers,
+            PegaKnowledgeFactKey<byte, bool> key,
             double queryTime)
         {
             for (int index = 0; index < readers.Count; index++)
             {
-                PEGANpcKnowledgeState individual = readers[index].GetComponent<PEGANpcKnowledgeState>();
+                PegaNpcKnowledgeState individual = readers[index].GetComponent<PegaNpcKnowledgeState>();
                 if (individual == null)
                 {
                     return false;
                 }
 
-                PEGAKnowledgeFact<bool> fact = individual.ReadFact(key, queryTime);
-                if (fact.Status != PEGAKnowledgeStatus.Unknown || fact.Scope != PEGAKnowledgeScope.Individual)
+                PegaKnowledgeFact<bool> fact = individual.ReadFact(key, queryTime);
+                if (fact.Status != PegaKnowledgeStatus.Unknown || fact.Scope != PegaKnowledgeScope.Individual)
                 {
                     return false;
                 }
@@ -658,7 +663,7 @@ namespace PEGA.Diagnostics
         private readonly struct GroupMember
         {
             internal GroupMember(
-                PEGAActorGroupKnowledgeReader reader,
+                PegaActorGroupKnowledgeReader reader,
                 ActorId actorId,
                 GroupId groupId)
             {
@@ -667,7 +672,7 @@ namespace PEGA.Diagnostics
                 GroupId = groupId;
             }
 
-            internal PEGAActorGroupKnowledgeReader Reader { get; }
+            internal PegaActorGroupKnowledgeReader Reader { get; }
 
             internal ActorId ActorId { get; }
 

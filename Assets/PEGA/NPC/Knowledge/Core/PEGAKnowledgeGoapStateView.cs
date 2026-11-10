@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
-using ImmersiveGames.Goap;
-
-namespace PEGA.NPC
+using PEGA.GOAP;
+namespace PEGA.NPC.Knowledge.Core
 {
     /// <summary>Composes independently owned PEGA Knowledge capabilities into a generic GOAP Knowledge view.</summary>
-    public sealed class PEGAKnowledgeGoapStateView : IGoapKnowledgeStateView
+    public sealed class PegaKnowledgeGoapStateView : IGoapKnowledgeStateView
     {
         private readonly IReadOnlyList<IGoapKnowledgeCapability> _capabilities;
 
-        public PEGAKnowledgeGoapStateView(params IGoapKnowledgeCapability[] capabilities)
+        public PegaKnowledgeGoapStateView(params IGoapKnowledgeCapability[] capabilities)
         {
             if (capabilities == null)
             {

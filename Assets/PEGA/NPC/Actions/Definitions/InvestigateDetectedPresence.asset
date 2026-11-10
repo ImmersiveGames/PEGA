@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46bb1ee513b2467f896bb671c1899c96, type: 3}
   m_Name: InvestigateDetectedPresence
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigatePerceivedAreaPresenceAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcInvestigatePerceivedAreaPresenceAction
   arrivalToleranceMeters: 1.25
   presenceSearchRadiusMeters: 3
   maximumTravelDistanceMeters: 6

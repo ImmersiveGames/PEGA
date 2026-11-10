@@ -9,7 +9,7 @@ using UnityEngine;
 namespace PEGA.Player
 {
     [DisallowMultipleComponent]
-    public sealed class PEGAMissionJoinBootstrap : ActivityContentBehaviour
+    public sealed class PegaMissionJoinBootstrap : ActivityContentBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.PlayerJoin";
         private const string RequestSource = "PEGAMissionJoinBootstrap";
@@ -103,7 +103,7 @@ namespace PEGA.Player
 
         private void EnsureLoggerInitialized()
         {
-            _log ??= PEGALogging.CreateScopedLogger<PEGAMissionJoinBootstrap>(LogCategory, gameObject.name);
+            _log ??= PegaLogging.CreateScopedLogger<PegaMissionJoinBootstrap>(LogCategory, gameObject.name);
         }
     }
 }

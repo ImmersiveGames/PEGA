@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
-using PEGA.Actors;
+using PEGA.Movement.Actor;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Actions.Runtime
 {
     [CreateAssetMenu(fileName = "InvestigateDetectedPresence", menuName = "PEGA/NPC/Investigation/Investigate Detected Presence")]
-    public sealed class PEGANpcInvestigatePerceivedAreaPresenceAction : PEGANpcActionProviderAsset,
-        IPEGANpcKnowledgeChangeRelevanceProvider,
-        IPEGANpcAttemptedTargetProvider
+    public sealed class PegaNpcInvestigatePerceivedAreaPresenceAction : PegaNpcActionProviderAsset,
+        IPegaNpcKnowledgeChangeRelevanceProvider,
+        IPegaNpcAttemptedTargetProvider
     {
         private const float PositionComparisonEpsilonMeters = 0.001f;
         private static readonly Vector3[] SearchDirections =
@@ -47,59 +50,60 @@ namespace PEGA.NPC
         [Tooltip("Maximum height difference between the observer's known position and a search point (m).")]
         private float maximumHeightDifferenceMeters = 0.35f;
 
-        private PEGANpcKnowledgeState _knowledgeState;
+        private PegaNpcKnowledgeState _knowledgeState;
         private NavMeshAgent _agent;
         private ActorId _candidateTargetActorId;
         private ActorId _executionTargetActorId;
-        private PEGANpcPlanSnapshot _executionPlan;
+        private PegaNpcPlanSnapshot _executionPlan;
         private Vector3 _executionStartPosition;
         private bool _hasExecutionPlan;
+        private bool _preconditionInvalidatedByPlayerRecognition;
 
-        protected override PEGANpcActionEffectKind ActionEffectKind =>
-            PEGANpcActionEffectKind.ReachLocalObservationPosition;
+        protected override PegaNpcActionEffectKind ActionEffectKind =>
+            PegaNpcActionEffectKind.ReachLocalObservationPosition;
 
         public float SearchRadiusMeters => presenceSearchRadiusMeters;
         public float MaximumVerticalDifferenceMeters => maximumHeightDifferenceMeters;
         public float MinimumPhysicalRepositionMeters => minimumSearchMovementMeters;
 
-        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
-            PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence,
+        public override PegaNpcActionContract Contract => new PegaNpcActionContract(
+            PegaNpcPlanningActionId.InvestigatePerceivedAreaPresence,
             ActionEffectKind,
-            PEGANpcPlanningTargetKind.LocalObservationPosition,
+            PegaNpcPlanningTargetKind.LocalObservationPosition,
             true,
             "NPC began investigating an unidentified radial presence.");
 
-        protected override PEGANpcCausalStepEvaluationStatus EvaluateCausalNavigationConstraints(
-            PEGANpcGoapKnownTarget target,
+        protected override PegaNpcCausalStepEvaluationStatus EvaluateCausalNavigationConstraints(
+            PegaNpcGoapKnownTarget target,
             Vector3 sourcePosition,
-            PEGANpcNavigationRouteEstimate routeEstimate,
+            PegaNpcNavigationRouteEstimate routeEstimate,
             out string diagnostic)
         {
             if (!RequiresPhysicalReposition(target.Target.KnownPosition, sourcePosition))
             {
                 diagnostic = "The projected position is already within the investigation arrival and reposition thresholds.";
-                return PEGANpcCausalStepEvaluationStatus.Unavailable;
+                return PegaNpcCausalStepEvaluationStatus.Unavailable;
             }
 
             if (routeEstimate.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
                 diagnostic = "The route from the projected position exceeds the configured investigation route bound.";
-                return PEGANpcCausalStepEvaluationStatus.Unavailable;
+                return PegaNpcCausalStepEvaluationStatus.Unavailable;
             }
 
             diagnostic = string.Empty;
-            return PEGANpcCausalStepEvaluationStatus.Available;
+            return PegaNpcCausalStepEvaluationStatus.Available;
         }
 
         public override bool TryCreatePlanningCandidates(
-            PEGANpcActionPlanningContext context,
-            out IReadOnlyList<PEGANpcPlanningTarget> targets,
-            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            PegaNpcActionPlanningContext context,
+            out IReadOnlyList<PegaNpcPlanningTarget> targets,
+            out IReadOnlyList<PegaNpcPlanningActionCandidate> candidates,
             out string diagnostic)
         {
-            List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
-            List<PEGANpcPlanningActionCandidate> candidateList =
-                new List<PEGANpcPlanningActionCandidate>();
+            List<PegaNpcPlanningTarget> targetList = new List<PegaNpcPlanningTarget>();
+            List<PegaNpcPlanningActionCandidate> candidateList =
+                new List<PegaNpcPlanningActionCandidate>();
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
             diagnostic = string.Empty;
@@ -114,7 +118,7 @@ namespace PEGA.NPC
             ActorId targetActorId = context.TargetActorId;
             _candidateTargetActorId = targetActorId;
             if (!TryGetCurrentPresence(
-                    out PEGANpcPerceivedAreaPresence presence,
+                    out PegaNpcPerceivedAreaPresence presence,
                     out double evidenceTimeSeconds,
                     out diagnostic))
             {
@@ -138,38 +142,38 @@ namespace PEGA.NPC
             }
 
             if (!TryDeferNavigationRoute(
-                    PEGAActorMovementSpeedRegime.Movement,
-                    out PEGANpcNavigationRouteEstimate deferredRoute,
+                    PegaActorMovementSpeedRegime.Movement,
+                    out PegaNpcNavigationRouteEstimate deferredRoute,
                     out diagnostic))
             {
                 return false;
             }
 
             if (_hasExecutionPlan &&
-                Outcome == PEGANpcActionOutcome.Running &&
+                Outcome == PegaNpcActionOutcome.Running &&
                 _executionPlan.TargetId.IdentityKind ==
-                    PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample &&
+                    PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample &&
                 _executionPlan.TargetId.PerceivedAreaEvidenceTimeSeconds == evidenceTimeSeconds &&
                 IsCandidatePositionWithinBounds(presence, _executionPlan.TargetPosition) &&
                 TryEstimateNavigationRoute(
                     _executionPlan.TargetPosition,
-                    PEGAActorMovementSpeedRegime.Movement,
-                    out PEGANpcNavigationRouteEstimate activeRoute,
+                    PegaActorMovementSpeedRegime.Movement,
+                    out PegaNpcNavigationRouteEstimate activeRoute,
                     out _) &&
-                activeRoute.Status == PEGANpcPlanningRouteStatus.Complete &&
+                activeRoute.Status == PegaNpcPlanningRouteStatus.Complete &&
                 activeRoute.RouteLengthMeters <= maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
-                PEGANpcPlanningTarget activeTarget = PEGANpcPlanningTarget.FromLocalObservationPosition(
+                PegaNpcPlanningTarget activeTarget = PegaNpcPlanningTarget.FromLocalObservationPosition(
                     _executionPlan.TargetId,
                     _executionPlan.TargetPosition,
                     evidenceTimeSeconds,
                     presenceSearchRadiusMeters);
                 targetList.Add(activeTarget);
-                candidateList.Add(new PEGANpcPlanningActionCandidate(
+                candidateList.Add(new PegaNpcPlanningActionCandidate(
                     Contract,
                     this,
                     _executionPlan.TargetId,
-                    PEGAActorMovementSpeedRegime.Movement,
+                    PegaActorMovementSpeedRegime.Movement,
                     activeRoute,
                     IntrinsicDurationSeconds));
                 targets = Array.AsReadOnly(targetList.ToArray());
@@ -177,8 +181,8 @@ namespace PEGA.NPC
                 return true;
             }
 
-            HashSet<PEGANpcPlanningTargetId> attemptedTargets =
-                new HashSet<PEGANpcPlanningTargetId>(context.AttemptedInvestigationTargets);
+            HashSet<PegaNpcPlanningTargetId> attemptedTargets =
+                new HashSet<PegaNpcPlanningTargetId>(context.AttemptedInvestigationTargets);
             List<Vector3> projectedPositions = new List<Vector3>(SearchDirections.Length);
             NavMeshQueryFilter filter = CreateQueryFilter();
             int projectionRejected = 0;
@@ -188,8 +192,8 @@ namespace PEGA.NPC
 
             for (int sampleOrdinal = 0; sampleOrdinal < SearchDirections.Length; sampleOrdinal++)
             {
-                PEGANpcPlanningTargetId targetId =
-                    PEGANpcPlanningTargetId.ForPerceivedAreaInvestigationSample(
+                PegaNpcPlanningTargetId targetId =
+                    PegaNpcPlanningTargetId.ForPerceivedAreaInvestigationSample(
                         evidenceTimeSeconds,
                         sampleOrdinal);
                 if (attemptedTargets.Contains(targetId))
@@ -223,16 +227,16 @@ namespace PEGA.NPC
                 }
 
                 projectedPositions.Add(hit.position);
-                PEGANpcPlanningTarget target = PEGANpcPlanningTarget.FromLocalObservationPosition(
+                PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromLocalObservationPosition(
                     targetId,
                     hit.position,
                     evidenceTimeSeconds,
                     presenceSearchRadiusMeters);
-                PEGANpcPlanningActionCandidate candidate = new PEGANpcPlanningActionCandidate(
+                PegaNpcPlanningActionCandidate candidate = new PegaNpcPlanningActionCandidate(
                     Contract,
                     this,
                     targetId,
-                    PEGAActorMovementSpeedRegime.Movement,
+                    PegaActorMovementSpeedRegime.Movement,
                     deferredRoute,
                     IntrinsicDurationSeconds);
                 targetList.Add(target);
@@ -252,38 +256,38 @@ namespace PEGA.NPC
         }
 
         public override bool CanOfferCandidate(
-            PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPlanContinuation? continuation) =>
+            PegaNpcPlanningActionCandidate candidate,
+            PegaNpcPlanContinuation? continuation) =>
             !continuation.HasValue &&
             CandidateMatchesContract(candidate) &&
             candidate.TargetId.IdentityKind ==
-                PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
+                PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
 
-        public bool ShouldRecordAttemptedTarget(PEGANpcPlanningActionCandidate candidate) =>
+        public bool ShouldRecordAttemptedTarget(PegaNpcPlanningActionCandidate candidate) =>
             CandidateMatchesContract(candidate) &&
             candidate.TargetId.IdentityKind ==
-                PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
+                PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
 
-        public bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change)
+        public bool IsRelevantKnowledgeChange(PegaKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged)
             {
                 return false;
             }
 
-            if (change.IsFor(PEGANpcKnowledgeFacts.PerceivedAreaPresence.For(0)))
+            if (change.IsFor(PegaNpcKnowledgeFacts.PerceivedAreaPresence.For(0)))
             {
                 return true;
             }
 
-            return PEGANpcKnowledgeFacts.IsCharacterFactChangeFor(
+            return PegaNpcKnowledgeFacts.IsCharacterFactChangeFor(
                 change,
                 _executionTargetActorId);
         }
 
         public override bool IsCurrentPlanValid(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -310,8 +314,8 @@ namespace PEGA.NPC
         }
 
         public override bool TryStart(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out string diagnostic)
         {
             diagnostic = string.Empty;
@@ -332,9 +336,9 @@ namespace PEGA.NPC
             bool started = TryStartNavigation(
                 plan.TargetId,
                 plan.TargetPosition,
-                PEGAActorMovementSpeedRegime.Movement,
+                PegaActorMovementSpeedRegime.Movement,
                 out diagnostic);
-            if (!started && Outcome != PEGANpcActionOutcome.Running)
+            if (!started && Outcome != PegaNpcActionOutcome.Running)
             {
                 ClearExecutionEvidence();
             }
@@ -365,21 +369,39 @@ namespace PEGA.NPC
         {
             ClearExecutionEvidence();
             _candidateTargetActorId = default;
+            _preconditionInvalidatedByPlayerRecognition = false;
             base.OnRuntimeDisabled();
         }
 
         protected override bool ArePreconditionsStillValid(out string diagnostic)
         {
-            diagnostic = string.Empty;
-            return _hasExecutionPlan &&
-                   IsCurrentPresenceUsable(_executionPlan, _executionTargetActorId, out diagnostic);
+            _preconditionInvalidatedByPlayerRecognition = false;
+            if (!_hasExecutionPlan)
+            {
+                diagnostic = "The radial investigation has no active execution plan.";
+                return false;
+            }
+
+            bool isUsable = IsCurrentPresenceUsable(
+                _executionPlan,
+                _executionTargetActorId,
+                out diagnostic,
+                out _preconditionInvalidatedByPlayerRecognition);
+            return isUsable;
         }
+
+        protected override bool IsExpectedPreconditionInvalidation() =>
+            _preconditionInvalidatedByPlayerRecognition;
 
         protected override bool IsActionSpecificEffectObserved(out string diagnostic)
         {
             diagnostic = string.Empty;
             if (!_hasExecutionPlan ||
-                !IsCurrentPresenceUsable(_executionPlan, _executionTargetActorId, out diagnostic))
+                !IsCurrentPresenceUsable(
+                    _executionPlan,
+                    _executionTargetActorId,
+                    out diagnostic,
+                    out _))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
                     ? "The radial evidence stopped being current before the investigation point was reached."
@@ -398,7 +420,7 @@ namespace PEGA.NPC
         }
 
         private bool TryValidatePlan(
-            PEGANpcPlanSnapshot plan,
+            PegaNpcPlanSnapshot plan,
             ActorId subjectActorId,
             bool requirePhysicalReposition,
             out Vector3 currentKnownPosition,
@@ -408,7 +430,7 @@ namespace PEGA.NPC
             currentKnownPosition = default;
             evidenceTimeSeconds = 0d;
             if (!TryGetCurrentPresence(
-                    out PEGANpcPerceivedAreaPresence presence,
+                    out PegaNpcPerceivedAreaPresence presence,
                     out double currentEvidenceTimeSeconds,
                     out diagnostic))
             {
@@ -420,13 +442,13 @@ namespace PEGA.NPC
                 !plan.ActionId.IsValid ||
                 !IsFinite(plan.TargetPosition) ||
                 !IsNonNegativeFinite(plan.EvidenceTimeSeconds) ||
-                plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+                plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
                 plan.PredictedEffect != ActionEffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
-                plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
                 plan.TargetId.IdentityKind !=
-                    PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample ||
+                    PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample ||
                 plan.TargetId.PerceivedAreaEvidenceTimeSeconds != currentEvidenceTimeSeconds ||
                 Math.Abs(plan.EvidenceTimeSeconds - currentEvidenceTimeSeconds) > 0.000001d ||
                 plan.TargetId.PerceivedAreaSampleOrdinal < 0 ||
@@ -458,10 +480,10 @@ namespace PEGA.NPC
 
             if (!TryEstimateNavigationRoute(
                     plan.TargetPosition,
-                    PEGAActorMovementSpeedRegime.Movement,
-                    out PEGANpcNavigationRouteEstimate route,
+                    PegaActorMovementSpeedRegime.Movement,
+                    out PegaNpcNavigationRouteEstimate route,
                     out diagnostic) ||
-                route.Status != PEGANpcPlanningRouteStatus.Complete ||
+                route.Status != PegaNpcPlanningRouteStatus.Complete ||
                 route.RouteLengthMeters > maximumTravelDistanceMeters + PositionComparisonEpsilonMeters)
             {
                 if (string.IsNullOrWhiteSpace(diagnostic))
@@ -479,13 +501,15 @@ namespace PEGA.NPC
         }
 
         private bool IsCurrentPresenceUsable(
-            PEGANpcPlanSnapshot plan,
+            PegaNpcPlanSnapshot plan,
             ActorId subjectActorId,
-            out string diagnostic)
+            out string diagnostic,
+            out bool invalidatedByPlayerRecognition)
         {
             diagnostic = string.Empty;
+            invalidatedByPlayerRecognition = false;
             if (!TryGetCurrentPresence(
-                    out PEGANpcPerceivedAreaPresence presence,
+                    out PegaNpcPerceivedAreaPresence presence,
                     out double currentEvidenceTimeSeconds,
                     out diagnostic))
             {
@@ -493,14 +517,20 @@ namespace PEGA.NPC
             }
 
             if (plan.TargetId.IdentityKind !=
-                    PEGANpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample ||
+                    PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample ||
                 plan.TargetId.PerceivedAreaEvidenceTimeSeconds != currentEvidenceTimeSeconds ||
                 Math.Abs(plan.EvidenceTimeSeconds - currentEvidenceTimeSeconds) > 0.000001d ||
                 !IsCandidatePositionWithinBounds(presence, plan.TargetPosition) ||
-                !subjectActorId.IsValid ||
-                HasPerceptionBackedPlayerFact(subjectActorId))
+                !subjectActorId.IsValid)
+            {
+                diagnostic = "Current radial evidence no longer matches the active investigation target.";
+                return false;
+            }
+
+            if (HasPerceptionBackedPlayerFact(subjectActorId))
             {
                 diagnostic = "Current radial evidence no longer supports investigation of a target whose Player status is visually known.";
+                invalidatedByPlayerRecognition = true;
                 return false;
             }
 
@@ -508,7 +538,7 @@ namespace PEGA.NPC
         }
 
         private bool TryGetCurrentPresence(
-            out PEGANpcPerceivedAreaPresence presence,
+            out PegaNpcPerceivedAreaPresence presence,
             out double evidenceTimeSeconds,
             out string diagnostic)
         {
@@ -520,12 +550,12 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> fact =
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> fact =
                 _knowledgeState.GetPerceivedAreaPresence();
             if (!fact.TryGetValue(out presence) ||
                 !presence.IsPresent ||
                 !fact.HasObservationTime ||
-                !fact.HasOrigin(PEGANpcEvidenceOrigin.Perception))
+                !fact.HasOrigin(PegaNpcEvidenceOrigin.Perception))
             {
                 diagnostic = string.Empty;
                 return false;
@@ -543,13 +573,13 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(
-                PEGANpcKnowledgeFacts.IsPlayer.For(subjectActorId));
-            return PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact);
+            PegaKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(
+                PegaNpcKnowledgeFacts.IsPlayer.For(subjectActorId));
+            return PegaNpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact);
         }
 
         private bool ValidateConfiguration(
-            PEGANpcPerceivedAreaPresence presence,
+            PegaNpcPerceivedAreaPresence presence,
             out string diagnostic)
         {
             if (!IsPositiveFinite(presenceSearchRadiusMeters) ||
@@ -576,7 +606,7 @@ namespace PEGA.NPC
         }
 
         private bool IsCandidatePositionWithinBounds(
-            PEGANpcPerceivedAreaPresence presence,
+            PegaNpcPerceivedAreaPresence presence,
             Vector3 targetPosition)
         {
             if (!IsFinite(targetPosition) ||

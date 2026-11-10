@@ -2,15 +2,18 @@ using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
     /// <summary>Effect published only after the investigation fact was accepted and read back from Group Knowledge.</summary>
-    public sealed class PEGAPoiInvestigationCompletedEffect : IGoapEffect
+    public sealed class PegaPoiInvestigationCompletedEffect : IGoapEffect
     {
-        public PEGAPoiInvestigationCompletedEffect(ObjectEntryId objectEntryId, GroupId groupId)
+        public PegaPoiInvestigationCompletedEffect(ObjectEntryId objectEntryId, GroupId groupId)
         {
             if (!objectEntryId.IsValid || !groupId.IsValid)
             {
@@ -26,14 +29,14 @@ namespace PEGA.NPC
         public GroupId GroupId { get; }
     }
 
-    internal sealed class PEGAPoiInvestigationCanStartCondition : IGoapCondition
+    internal sealed class PegaPoiInvestigationCanStartCondition : IGoapCondition
     {
         private readonly ObjectEntryId _objectEntryId;
         private readonly GroupId _groupId;
         private readonly Vector3 _knownPosition;
         private readonly double _positionEvidenceTimeSeconds;
 
-        public PEGAPoiInvestigationCanStartCondition(
+        public PegaPoiInvestigationCanStartCondition(
             ObjectEntryId objectEntryId,
             GroupId groupId,
             Vector3 knownPosition,
@@ -47,15 +50,15 @@ namespace PEGA.NPC
 
         public GoapTruthValue Evaluate(IGoapStateView state)
         {
-            if (!PEGAPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
-                !PEGAPoiGroupKnowledge.TryGetReader(knowledgeState, out PEGAActorGroupKnowledgeReader reader) ||
+            if (!PegaPoiGroupKnowledge.TryGetStateView(state, out IGoapKnowledgeStateView knowledgeState) ||
+                !PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader) ||
                 !IsCurrentlyPending(reader, Time.timeAsDouble) ||
                 !(state is IGoapEffectStateView))
             {
                 return GoapTruthValue.Unknown;
             }
 
-            PEGANpcTargetReachedEffect latestArrival = null;
+            PegaNpcTargetReachedEffect latestArrival = null;
             if (state is IGoapHypotheticalStateView hypothetical)
             {
                 latestArrival = FindLatestArrival(hypothetical.ProjectedEffects);
@@ -71,7 +74,7 @@ namespace PEGA.NPC
 
             // A checkpoint proves arrival only until a later projected arrival establishes a different position.
             return latestArrival != null &&
-                   latestArrival.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
+                   latestArrival.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
                    latestArrival.TargetId.ObjectEntryId == _objectEntryId &&
                    latestArrival.KnowledgeGroupId == _groupId &&
                    latestArrival.TargetPosition.Equals(_knownPosition) &&
@@ -80,11 +83,11 @@ namespace PEGA.NPC
                 : GoapTruthValue.Unknown;
         }
 
-        private static PEGANpcTargetReachedEffect FindLatestArrival(IReadOnlyList<IGoapEffect> effects)
+        private static PegaNpcTargetReachedEffect FindLatestArrival(IReadOnlyList<IGoapEffect> effects)
         {
             for (int index = effects.Count - 1; index >= 0; index--)
             {
-                if (effects[index] is PEGANpcTargetReachedEffect reached)
+                if (effects[index] is PegaNpcTargetReachedEffect reached)
                 {
                     return reached;
                 }
@@ -93,36 +96,36 @@ namespace PEGA.NPC
             return null;
         }
 
-        private bool IsCurrentlyPending(PEGAActorGroupKnowledgeReader reader, double queryTimeSeconds)
+        private bool IsCurrentlyPending(PegaActorGroupKnowledgeReader reader, double queryTimeSeconds)
         {
-            PEGAActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> required = reader.ReadGroupFact(
                 _groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationRequired.For(_objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationRequired.For(_objectEntryId),
                 queryTimeSeconds);
-            PEGAActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> completed = reader.ReadGroupFact(
                 _groupId,
-                PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(_objectEntryId),
+                PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(_objectEntryId),
                 queryTimeSeconds);
-            PEGAActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
                 _groupId,
-                PEGAObjectEntryKnowledgeFacts.Position.For(_objectEntryId),
+                PegaObjectEntryKnowledgeFacts.Position.For(_objectEntryId),
                 queryTimeSeconds);
-            return required.IsAuthorized && required.Fact.Scope == PEGAKnowledgeScope.Group &&
+            return required.IsAuthorized && required.Fact.Scope == PegaKnowledgeScope.Group &&
                    required.Fact.TryGetValue(out bool isRequired) && isRequired &&
-                   completed.IsAuthorized && completed.Fact.Scope == PEGAKnowledgeScope.Group &&
+                   completed.IsAuthorized && completed.Fact.Scope == PegaKnowledgeScope.Group &&
                    completed.Fact.TryGetValue(out bool isCompleted) && !isCompleted &&
-                   position.IsAuthorized && position.Fact.Scope == PEGAKnowledgeScope.Group &&
+                   position.IsAuthorized && position.Fact.Scope == PegaKnowledgeScope.Group &&
                    position.Fact.TryGetValue(out Vector3 currentPosition) && currentPosition.Equals(_knownPosition) &&
                    position.Fact.HasObservationTime &&
                    Math.Abs(position.Fact.ObservationTimeSeconds - _positionEvidenceTimeSeconds) <= 0.000001d;
         }
     }
 
-    internal static class PEGAPoiGroupKnowledge
+    internal static class PegaPoiGroupKnowledge
     {
         public static bool TryGetReader(
             IGoapKnowledgeStateView knowledgeState,
-            out PEGAActorGroupKnowledgeReader reader)
+            out PegaActorGroupKnowledgeReader reader)
         {
             reader = null;
             if (knowledgeState == null || knowledgeState.Source != GoapStateSource.KnowledgeState)
@@ -132,7 +135,7 @@ namespace PEGA.NPC
 
             for (int index = 0; index < knowledgeState.Capabilities.Count; index++)
             {
-                if (!(knowledgeState.Capabilities[index] is PEGAActorGroupKnowledgeReader candidate))
+                if (!(knowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader candidate))
                 {
                     continue;
                 }
@@ -166,9 +169,9 @@ namespace PEGA.NPC
         }
     }
 
-    public readonly struct PEGANpcPoiInvestigationEvidence : IEquatable<PEGANpcPoiInvestigationEvidence>
+    public readonly struct PegaNpcPoiInvestigationEvidence : IEquatable<PegaNpcPoiInvestigationEvidence>
     {
-        public PEGANpcPoiInvestigationEvidence(
+        public PegaNpcPoiInvestigationEvidence(
             ActorId actorId,
             GroupId groupId,
             ObjectEntryId objectEntryId,
@@ -187,11 +190,11 @@ namespace PEGA.NPC
 
         public bool IsValid => ActorId.IsValid && GroupId.IsValid && ObjectEntryId.IsValid && ExecutionId > 0;
 
-        public bool Equals(PEGANpcPoiInvestigationEvidence other) =>
+        public bool Equals(PegaNpcPoiInvestigationEvidence other) =>
             ActorId == other.ActorId && GroupId == other.GroupId &&
             ObjectEntryId == other.ObjectEntryId && ExecutionId == other.ExecutionId;
 
-        public override bool Equals(object obj) => obj is PEGANpcPoiInvestigationEvidence other && Equals(other);
+        public override bool Equals(object obj) => obj is PegaNpcPoiInvestigationEvidence other && Equals(other);
 
         public override int GetHashCode()
         {

@@ -1,30 +1,31 @@
 using Immersive.Framework.Actors;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Knowledge.Authoring
 {
     /// <summary>Writer route implemented by a Knowledge authority or authority-bound writer.</summary>
-    public interface IPEGAKnowledgeFactWriter
+    public interface IPegaKnowledgeFactWriter
     {
-        PEGAKnowledgeWriteResult ObserveFact<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        PegaKnowledgeWriteResult ObserveFact<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             TValue value,
-            PEGAKnowledgeEvidence evidence);
+            PegaKnowledgeEvidence evidence);
     }
 
     /// <summary>Optional typed authoring capability kept separate from definition metadata.</summary>
-    public interface IPEGAKnowledgeFactInitialAuthoringDefinition : IPEGAKnowledgeFactDefinition
+    public interface IPegaKnowledgeFactInitialAuthoringDefinition : IPegaKnowledgeFactDefinition
     {
         bool TryWriteInitialFact(
             object address,
             object value,
-            IPEGAKnowledgeFactWriter writer,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
+            IPegaKnowledgeFactWriter writer,
+            PegaKnowledgeEvidence evidence,
+            out PegaKnowledgeWriteResult result,
             out string diagnostic);
     }
 
-    internal enum PEGAKnowledgeFactInitialAuthoringStatus
+    internal enum PegaKnowledgeFactInitialAuthoringStatus
     {
         Applied,
         Pending,
@@ -33,69 +34,69 @@ namespace PEGA.NPC
 
     /// <summary>One serialized Identity → Property → Value row shared by Knowledge scopes.</summary>
     [System.Serializable]
-    public struct PEGAKnowledgeFactAuthoringEntry
+    public struct PegaKnowledgeFactAuthoringEntry
     {
         [SerializeField, HideInInspector]
         private string definitionId;
 
         [SerializeField, HideInInspector]
-        private PEGAKnowledgeFactAuthoringPayload address;
+        private PegaKnowledgeFactAuthoringPayload address;
 
         [SerializeField, HideInInspector]
-        private PEGAKnowledgeFactAuthoringPayload value;
+        private PegaKnowledgeFactAuthoringPayload value;
 
         public string DefinitionId => definitionId;
 
-        internal PEGAKnowledgeFactInitialAuthoringStatus TryApply(
+        internal PegaKnowledgeFactInitialAuthoringStatus TryApply(
             ActorOccurrenceReferenceBinding actorBinding,
-            IPEGAKnowledgeFactWriter writer,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult result,
+            IPegaKnowledgeFactWriter writer,
+            PegaKnowledgeEvidence evidence,
+            out PegaKnowledgeWriteResult result,
             out string diagnostic)
         {
-            result = PEGAKnowledgeWriteResult.RejectedInvalid;
-            if (!PEGAKnowledgeFactDefinitionCatalog.TryGet(definitionId, out IPEGAKnowledgeFactDefinition definition))
+            result = PegaKnowledgeWriteResult.RejectedInvalid;
+            if (!PegaKnowledgeFactDefinitionCatalog.TryGet(definitionId, out IPegaKnowledgeFactDefinition definition))
             {
                 diagnostic = $"Fact definition '{definitionId}' is not in the canonical catalog.";
-                return PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                return PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
             if (!definition.AllowsDesignerAuthoredInitialFact)
             {
                 diagnostic = $"Fact definition '{definition.Id}' does not allow designer-authored initial facts.";
-                return PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                return PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            if (!PEGAKnowledgeFactAuthoringPayload.Supports(definition.AddressType) ||
-                !PEGAKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
+            if (!PegaKnowledgeFactAuthoringPayload.Supports(definition.AddressType) ||
+                !PegaKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
             {
                 diagnostic = $"Fact definition '{definition.Id}' uses a type without an Inspector payload.";
-                return PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                return PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            if (!address.TryGetValue(definition.AddressType, actorBinding, out object resolvedAddress,
+            if (!address.TryGetValue(definition.AddressType, actorBinding, null, out object resolvedAddress,
                     out bool addressPending, out diagnostic))
             {
                 return addressPending
-                    ? PEGAKnowledgeFactInitialAuthoringStatus.Pending
-                    : PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                    ? PegaKnowledgeFactInitialAuthoringStatus.Pending
+                    : PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            if (!value.TryGetValue(definition.ValueType, actorBinding, out object resolvedValue,
+            if (!value.TryGetValue(definition.ValueType, actorBinding, resolvedAddress, out object resolvedValue,
                     out bool valuePending, out diagnostic))
             {
                 return valuePending
-                    ? PEGAKnowledgeFactInitialAuthoringStatus.Pending
-                    : PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                    ? PegaKnowledgeFactInitialAuthoringStatus.Pending
+                    : PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            if (!(definition is IPEGAKnowledgeFactInitialAuthoringDefinition authoringDefinition))
+            if (!(definition is IPegaKnowledgeFactInitialAuthoringDefinition authoringDefinition))
             {
                 diagnostic = $"Fact definition '{definition.Id}' has no typed initial-authoring adapter.";
-                return PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                return PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            PEGAKnowledgeEvidence definitionEvidence = new PEGAKnowledgeEvidence(
+            PegaKnowledgeEvidence definitionEvidence = new PegaKnowledgeEvidence(
                 evidence.Origin,
                 evidence.ObservationTimeSeconds,
                 evidence.Source,
@@ -108,10 +109,10 @@ namespace PEGA.NPC
                     out result,
                     out diagnostic))
             {
-                return PEGAKnowledgeFactInitialAuthoringStatus.Rejected;
+                return PegaKnowledgeFactInitialAuthoringStatus.Rejected;
             }
 
-            return PEGAKnowledgeFactInitialAuthoringStatus.Applied;
+            return PegaKnowledgeFactInitialAuthoringStatus.Applied;
         }
     }
 }

@@ -105,7 +105,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a4b2a9bf9444c90a17f456a18e386b9, type: 3}
   m_Name: PEGASelectionOutlineRendererFeature
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.PEGASelectionOutlineRendererFeature
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.PegaSelectionOutlineRendererFeature
   m_Active: 1
   maskMaterial: {fileID: 2100000, guid: 8f8e5933381242be9f18af4fa83a8188, type: 2}
   compositeMaterial: {fileID: 2100000, guid: 5308a3de76e8453dabcb4ccbd9d768b8, type: 2}

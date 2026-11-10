@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 namespace PEGA.Presentation
 {
     /// <summary>Desenha a máscara dos renderers selecionados e compõe o contorno screen-space.</summary>
-    public sealed class PEGASelectionOutlineRendererFeature : ScriptableRendererFeature
+    public sealed class PegaSelectionOutlineRendererFeature : ScriptableRendererFeature
     {
         private const string LogCategory = "PEGA.Presentation.SelectionOutlineRenderer";
         private const int MaximumOutlineThicknessPixels = 8;
@@ -60,7 +60,7 @@ namespace PEGA.Presentation
             ScriptableRenderer renderer,
             ref RenderingData renderingData)
         {
-            if (PEGASelectionOutlineMaskRegistry.ActiveRendererCount == 0 ||
+            if (PegaSelectionOutlineMaskRegistry.ActiveRendererCount == 0 ||
                 renderingData.cameraData.cameraType == CameraType.Preview ||
                 renderingData.cameraData.cameraType == CameraType.Reflection)
             {
@@ -128,7 +128,7 @@ namespace PEGA.Presentation
 
         private ScopedLogger GetLogger()
         {
-            _log ??= PEGALogging.CreateScopedLogger<PEGASelectionOutlineRendererFeature>(
+            _log ??= PegaLogging.CreateScopedLogger<PegaSelectionOutlineRendererFeature>(
                 LogCategory,
                 name);
             return _log;
@@ -255,7 +255,7 @@ namespace PEGA.Presentation
                 var filteringSettings = new FilteringSettings(
                     RenderQueueRange.all,
                     ~0,
-                    PEGASelectionOutlineMaskRegistry.SelectionRenderingLayerMask);
+                    PegaSelectionOutlineMaskRegistry.SelectionRenderingLayerMask);
                 var parameters = new RendererListParams(
                     renderingData.cullResults,
                     drawingSettings,
@@ -273,12 +273,12 @@ namespace PEGA.Presentation
                            "PEGA Selection Outline Mask",
                            out MaskPassData passData))
                 {
-                    passData.Renderers = selectedRenderers;
-                    builder.UseRendererList(passData.Renderers);
+                    passData.renderers = selectedRenderers;
+                    builder.UseRendererList(passData.renderers);
                     builder.SetRenderAttachment(mask, 0, AccessFlags.Write);
                     builder.SetRenderAttachmentDepth(resources.activeDepthTexture, AccessFlags.Read);
                     builder.SetRenderFunc(static (MaskPassData data, RasterGraphContext context) =>
-                        context.cmd.DrawRendererList(data.Renderers));
+                        context.cmd.DrawRendererList(data.renderers));
                 }
             }
 
@@ -294,15 +294,15 @@ namespace PEGA.Presentation
                            "PEGA Selection Outline Composite",
                            out CompositePassData passData))
                 {
-                    passData.Mask = mask;
-                    passData.Material = _compositeMaterial;
-                    passData.Color = _outlineColor;
-                    passData.ThicknessPixels = _outlineThicknessPixels;
-                    passData.OutputScale = new Vector2(
+                    passData.mask = mask;
+                    passData.material = _compositeMaterial;
+                    passData.color = _outlineColor;
+                    passData.thicknessPixels = _outlineThicknessPixels;
+                    passData.outputScale = new Vector2(
                         maskWidth / (float)Mathf.Max(1, cameraData.camera.pixelWidth),
                         maskHeight / (float)Mathf.Max(1, cameraData.camera.pixelHeight));
 
-                    builder.UseTexture(passData.Mask, AccessFlags.Read);
+                    builder.UseTexture(passData.mask, AccessFlags.Read);
                     builder.SetRenderAttachment(
                         resources.activeColorTexture,
                         0,
@@ -314,7 +314,7 @@ namespace PEGA.Presentation
 
             private static void DrawComposite(CompositePassData data, RasterGraphContext context)
             {
-                Texture mask = data.Mask;
+                Texture mask = data.mask;
                 if (mask == null)
                 {
                     return;
@@ -327,14 +327,14 @@ namespace PEGA.Presentation
                     new Vector4(1f / mask.width, 1f / mask.height, mask.width, mask.height));
                 Properties.SetVector(
                     MaskToOutputScaleId,
-                    new Vector4(data.OutputScale.x, data.OutputScale.y, 0f, 0f));
-                Properties.SetColor(OutlineColorId, data.Color);
-                Properties.SetFloat(OutlineThicknessPixelsId, data.ThicknessPixels);
+                    new Vector4(data.outputScale.x, data.outputScale.y, 0f, 0f));
+                Properties.SetColor(OutlineColorId, data.color);
+                Properties.SetFloat(OutlineThicknessPixelsId, data.thicknessPixels);
                 Properties.SetVector(BlitScaleBiasId, new Vector4(1f, 1f, 0f, 0f));
 
                 context.cmd.DrawProcedural(
                     Matrix4x4.identity,
-                    data.Material,
+                    data.material,
                     0,
                     MeshTopology.Triangles,
                     3,
@@ -344,16 +344,16 @@ namespace PEGA.Presentation
 
             private sealed class MaskPassData
             {
-                internal RendererListHandle Renderers;
+                internal RendererListHandle renderers;
             }
 
             private sealed class CompositePassData
             {
-                internal TextureHandle Mask;
-                internal Material Material;
-                internal Color Color;
-                internal float ThicknessPixels;
-                internal Vector2 OutputScale;
+                internal TextureHandle mask;
+                internal Material material;
+                internal Color color;
+                internal float thicknessPixels;
+                internal Vector2 outputScale;
             }
         }
     }

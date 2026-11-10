@@ -6,7 +6,7 @@ namespace PEGA.Diagnostics
 {
     /// <summary>Diagnóstico para validar a autoria e a consulta de Object Entry no Inspector.</summary>
     [AddComponentMenu("PEGA/Diagnostics/Object Entry Authoring Probe")]
-    public sealed class PEGAObjectEntryAuthoringProbe : MonoBehaviour
+    public sealed class PegaObjectEntryAuthoringProbe : MonoBehaviour
     {
         [SerializeField, Tooltip("Referência identity-only para um ObjectEntryId indexado.")]
         private ObjectEntryIdReference identityOnly;

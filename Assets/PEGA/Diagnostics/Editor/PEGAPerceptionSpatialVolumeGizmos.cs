@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PEGA.Diagnostics.Editor
 {
     /// <summary>Desenha a geometria espacial exata publicada pelo sistema de Perception.</summary>
-    internal static class PEGAPerceptionSpatialVolumeGizmos
+    internal static class PegaPerceptionSpatialVolumeGizmos
     {
         internal static void Draw(
             PerceptionSpatialDiscoveryVolume volume,

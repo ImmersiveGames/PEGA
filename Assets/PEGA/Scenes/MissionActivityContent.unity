@@ -175,7 +175,7 @@ GameObject:
   - component: {fileID: 651366913}
   - component: {fileID: 651366915}
   m_Layer: 0
-  m_Name: Caixa - Teste Object Entry A
+  m_Name: Object Entry - Box A (Interaction Test)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -658,7 +658,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dce2a13ff4344d4bb1cb5fbf14fbd42e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAMissionPlayerObjectEntryRecognitionAccess
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PegaMissionPlayerObjectEntryRecognitionAccess
   recognitionQuery: {fileID: 442300475}
   playerActorReference: {fileID: 2500000206}
 --- !u!1001 &2500000300
@@ -773,6 +773,7 @@ Transform:
   - {fileID: 2500000422}
   - {fileID: 2500000423}
   - {fileID: 2500000425}
+  - {fileID: 2500000427}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2500000402
@@ -823,7 +824,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f577d439e2014fc8b58b8649f8829790, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupComposition
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.ActorGroups.Runtime.PegaActorGroupComposition
   groupsToCreate:
   - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
   - {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
@@ -843,7 +844,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8a54d837fd8471e91cbb2b895884211, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeState
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeState
   initialKnowledge:
   - groupProfile: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     facts:
@@ -864,6 +865,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -880,6 +882,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -897,6 +900,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -913,6 +917,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -930,6 +935,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -946,6 +952,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -963,6 +970,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -979,6 +987,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -996,6 +1005,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1012,6 +1022,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -1029,6 +1040,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1045,6 +1057,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -1062,6 +1075,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1078,6 +1092,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -1095,6 +1110,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1111,6 +1127,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -1128,6 +1145,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1144,6 +1162,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -1161,6 +1180,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1177,6 +1197,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
     - definitionId: pega.poi.activity-exit
       address:
         actorIdentitySource: 0
@@ -1194,6 +1215,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1210,6 +1232,117 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+    - definitionId: pega.object-entry.position
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.mission.second-group.rob-item
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: 
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 27, y: 0.2, z: 16.2}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+    - definitionId: pega.object-entry.robbable
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.mission.second-group.rob-item
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: 
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 1
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+    - definitionId: pega.object-entry.rob-planning-parameters
+      address:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: pega.mission.second-group.rob-item
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 0}
+      value:
+        actorIdentitySource: 0
+        actorDeclaration: {fileID: 0}
+        objectEntryId:
+          objectEntryIdText: 
+        stringValue: 
+        integerValue: 0
+        longValue: 0
+        floatValue: 0
+        doubleValue: 0
+        boolValue: 0
+        vector3Value: {x: 0, y: 0, z: 0}
+        perceivedAreaPresenceValue:
+          isPresent: 0
+          observerPosition: {x: 0, y: 0, z: 0}
+          perceivedAreaRadiusMeters: 0
+        objectEntryRobActionValue: {fileID: 950000000000000010}
+--- !u!4 &2500000427 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 2500000600}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2500000500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1254,13 +1387,17 @@ PrefabInstance:
       propertyPath: 'availableBehaviors.Array.data[5]'
       value: 
       objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: objectEntryOccurrenceQueryBinding
+      value: 
+      objectReference: {fileID: 442300475}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'groupProfiles.Array.data[0]'
       value: 
       objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 24.5
+      value: 15.8
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1309,6 +1446,114 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6100000103}
+  m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!1001 &2500000600
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2500000401}
+    m_Modifications:
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_Name
+      value: Larapio NPC - Rob Demo
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: actorId
+      value: pega.mission.larapio.rob-demo
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: displayName
+      value: Larapio demonstrador - Roubo
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value: 
+      objectReference: {fileID: 11400000, guid: 0ed8547a0d8f4738915a749be49b0367, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: globalKnowledgeState
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[4]'
+      value: 
+      objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[5]'
+      value: 
+      objectReference: {fileID: 11400000, guid: e4dbed8869b74e549745506b7703ab51, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: objectEntryOccurrenceQueryBinding
+      value: 
+      objectReference: {fileID: 442300475}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 25.97
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.82
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6100000104}
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
 --- !u!1 &3500000000
 GameObject:
@@ -1369,7 +1614,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a4a22e4638a47989df495b5b65fed12, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAGlobalKnowledgeState
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Global.PegaGlobalKnowledgeState
   initialKnowledge:
   - definitionId: pega.object-entry.position
     address:
@@ -1388,6 +1633,7 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
+      objectEntryRobActionValue: {fileID: 0}
     value:
       actorIdentitySource: 0
       actorDeclaration: {fileID: 0}
@@ -1404,6 +1650,7 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
+      objectEntryRobActionValue: {fileID: 0}
 --- !u!1 &6100000001 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
@@ -1419,6 +1666,11 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
   m_PrefabInstance: {fileID: 2500000500}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &6100000004 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 2500000600}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &6100000101
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1430,7 +1682,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
 --- !u!114 &6100000102
@@ -1444,7 +1696,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
 --- !u!114 &6100000103
@@ -1458,7 +1710,21 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupKnowledgeReader
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
+  authorityStates:
+  - {fileID: 2500000426}
+--- !u!114 &6100000104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6100000004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
 --- !u!1 &900000000000000001
@@ -1473,7 +1739,7 @@ GameObject:
   - component: {fileID: 900000000000000002}
   - component: {fileID: 900000000000000014}
   m_Layer: 0
-  m_Name: Caixa - Teste Object Entry B
+  m_Name: Object Entry - Box B (Interaction Test)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1748,6 +2014,378 @@ MonoBehaviour:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryCompositionAuthoring
   profile: {fileID: 11400000, guid: d2443f0e1a3b4554bcff65d3b64821dd, type: 2}
   allowDynamicContributions: 0
+--- !u!1 &940000000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 940000000000000002}
+  - component: {fileID: 940000000000000003}
+  - component: {fileID: 940000000000000004}
+  - component: {fileID: 940000000000000005}
+  - component: {fileID: 940000000000000006}
+  - component: {fileID: 940000000000000007}
+  - component: {fileID: 940000000000000008}
+  - component: {fileID: 940000000000000009}
+  - component: {fileID: 940000000000000010}
+  m_Layer: 0
+  m_Name: Object Entry - Rob (Player Proof)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &940000000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.2, z: 1.2}
+  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &940000000000000003
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &940000000000000004
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!65 &940000000000000005
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &940000000000000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.mission.player.rob-item
+  requiredness: 10
+--- !u!114 &940000000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 748fa036d522db5ce18d2ceddf49fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryCompositionAuthoring
+  profile: {fileID: 11400000, guid: d2443f0e1a3b4554bcff65d3b64821dd, type: 2}
+  allowDynamicContributions: 0
+--- !u!114 &940000000000000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ed4a8a99e4b41b5a67f40518712ebce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPhysicalItem
+--- !u!114 &940000000000000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 666950db791b4f5dac747365a8b98d02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryInteractionAggregator
+  offers:
+  - action: {fileID: 940000000000000010}
+    participants: 3
+--- !u!114 &940000000000000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6952e6645554bf08e4f393820f1a6f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryRobAction
+  interactionRangeMeters: 1.35
+  executionDurationSeconds: 1
+--- !u!1 &950000000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 950000000000000002}
+  - component: {fileID: 950000000000000003}
+  - component: {fileID: 950000000000000004}
+  - component: {fileID: 950000000000000005}
+  - component: {fileID: 950000000000000006}
+  - component: {fileID: 950000000000000007}
+  - component: {fileID: 950000000000000008}
+  - component: {fileID: 950000000000000009}
+  - component: {fileID: 950000000000000010}
+  m_Layer: 0
+  m_Name: Object Entry - Rob (NPC Proof)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &950000000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 27, y: 0.2, z: 16.2}
+  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &950000000000000003
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &950000000000000004
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!65 &950000000000000005
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &950000000000000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
+  objectEntryId: pega.mission.second-group.rob-item
+  requiredness: 10
+--- !u!114 &950000000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 748fa036d522db5ce18d2ceddf49fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryCompositionAuthoring
+  profile: {fileID: 11400000, guid: d2443f0e1a3b4554bcff65d3b64821dd, type: 2}
+  allowDynamicContributions: 0
+--- !u!114 &950000000000000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ed4a8a99e4b41b5a67f40518712ebce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPhysicalItem
+--- !u!114 &950000000000000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 666950db791b4f5dac747365a8b98d02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryInteractionAggregator
+  offers:
+  - action: {fileID: 950000000000000010}
+    participants: 3
+--- !u!114 &950000000000000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6952e6645554bf08e4f393820f1a6f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryRobAction
+  interactionRangeMeters: 1.5
+  executionDurationSeconds: 1.25
 --- !u!1 &9100000000000001000
 GameObject:
   m_ObjectHideFlags: 0
@@ -1760,7 +2398,7 @@ GameObject:
   - component: {fileID: 9100000000000001002}
   - component: {fileID: 9100000000000001003}
   m_Layer: 0
-  m_Name: U Shape - Outline Comparison
+  m_Name: Object Entry - U Shape (Outline Comparison)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2159,3 +2797,5 @@ SceneRoots:
   - {fileID: 651366914}
   - {fileID: 900000000000000003}
   - {fileID: 9100000000000001001}
+  - {fileID: 940000000000000002}
+  - {fileID: 950000000000000002}

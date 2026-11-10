@@ -1,11 +1,16 @@
 using UnityEditor;
 using Immersive.Framework.Actors;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Individual;
+using PEGA.NPC.Perception;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
 {
     /// <summary>Development-only visualization for the bounded local investigation area.</summary>
-    internal static class PEGANpcInvestigateLastKnownCharacterPositionGizmos
+    internal static class PegaNpcInvestigateLastKnownCharacterPositionGizmos
     {
         private static readonly Color BoundColor = new Color(0.35f, 0.85f, 1f, 0.85f);
         private static readonly Color ActiveTargetColor = new Color(0.3f, 1f, 0.45f, 1f);
@@ -13,10 +18,10 @@ namespace PEGA.NPC.Editor
 
         [DrawGizmo(GizmoType.Selected)]
         private static void Draw(
-            PEGANpcAutonomy autonomy,
+            PegaNpcAutonomy autonomy,
             GizmoType gizmoType)
         {
-            PEGANpcInvestigateLastKnownCharacterPositionAction action = FindDefinition(autonomy);
+            PegaNpcInvestigateLastKnownCharacterPositionAction action = FindDefinition(autonomy);
             if (autonomy == null || action == null)
             {
                 return;
@@ -64,7 +69,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryGetLastKnownAnchor(
-            PEGANpcAutonomy autonomy,
+            PegaNpcAutonomy autonomy,
             out Vector3 anchor)
         {
             anchor = default;
@@ -73,10 +78,10 @@ namespace PEGA.NPC.Editor
                 return false;
             }
 
-            PEGANpcPerceptionSource perception = autonomy.GetComponent<PEGANpcPerceptionSource>();
-            PEGANpcKnowledgeState knowledge = autonomy.GetComponent<PEGANpcKnowledgeState>();
+            PegaNpcPerceptionSource perception = autonomy.GetComponent<PegaNpcPerceptionSource>();
+            PegaNpcKnowledgeState knowledge = autonomy.GetComponent<PegaNpcKnowledgeState>();
             ActorOccurrenceReferenceBinding reference = autonomy.GetComponent<ActorOccurrenceReferenceBinding>();
-            PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState sample =
+            PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState sample =
                 perception != null ? perception.LatestGizmoState : default;
             if (!sample.HasSample || !sample.HasTarget || sample.HasVisualContact ||
                 knowledge == null || reference == null ||
@@ -87,10 +92,10 @@ namespace PEGA.NPC.Editor
             }
 
             ActorId targetActorId = resolution.Occurrence.ActorId;
-            PEGAKnowledgeFact<Vector3> position = knowledge.GetLastObservedCharacterPosition(targetActorId);
+            PegaKnowledgeFact<Vector3> position = knowledge.GetLastObservedCharacterPosition(targetActorId);
             if (!position.TryGetValue(out anchor) ||
                 !position.HasObservationTime ||
-                !position.HasOrigin(PEGANpcEvidenceOrigin.Perception))
+                !position.HasOrigin(PegaNpcEvidenceOrigin.Perception))
             {
                 anchor = default;
                 return false;
@@ -115,16 +120,16 @@ namespace PEGA.NPC.Editor
             Handles.DrawLine(lower - Vector3.right * radius, upper - Vector3.right * radius);
         }
 
-        private static void DrawActiveTarget(PEGANpcAutonomy autonomy)
+        private static void DrawActiveTarget(PegaNpcAutonomy autonomy)
         {
             if (!autonomy.TryGetActionExecution(
-                    PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition,
-                    out PEGANpcActionExecutionSnapshot execution))
+                    PegaNpcPlanningActionId.InvestigateLastKnownCharacterPosition,
+                    out PegaNpcActionExecutionSnapshot execution))
             {
                 return;
             }
 
-            if (execution.Outcome != PEGANpcActionOutcome.Running || !execution.DeclaredEffect.IsTargetResolved)
+            if (execution.Outcome != PegaNpcActionOutcome.Running || !execution.DeclaredEffect.IsTargetResolved)
             {
                 return;
             }
@@ -134,8 +139,8 @@ namespace PEGA.NPC.Editor
             Handles.Label(execution.TargetPosition, "Destino local selecionado pelo GOAP");
         }
 
-        private static PEGANpcInvestigateLastKnownCharacterPositionAction FindDefinition(
-            PEGANpcAutonomy autonomy)
+        private static PegaNpcInvestigateLastKnownCharacterPositionAction FindDefinition(
+            PegaNpcAutonomy autonomy)
         {
             if (autonomy == null)
             {
@@ -144,7 +149,7 @@ namespace PEGA.NPC.Editor
 
             for (int index = 0; index < autonomy.ActionDefinitionCount; index++)
             {
-                if (autonomy.GetActionDefinitionAt(index) is PEGANpcInvestigateLastKnownCharacterPositionAction action)
+                if (autonomy.GetActionDefinitionAt(index) is PegaNpcInvestigateLastKnownCharacterPositionAction action)
                 {
                     return action;
                 }

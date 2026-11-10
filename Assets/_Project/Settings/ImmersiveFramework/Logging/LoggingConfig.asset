@@ -20,7 +20,7 @@ MonoBehaviour:
   includeExceptionDetails: 1
   suppressStandardLogStackTrace: 1
   suppressWarningStackTrace: 0
-  deduplicateSameFrame: 0
+  deduplicateSameFrame: 1
   warnRepeatedSameFrame: 0
   namespaceRules:
   - ruleId: pega_gameplay_observation

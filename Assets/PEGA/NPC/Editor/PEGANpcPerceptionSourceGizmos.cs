@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
 using PEGA.Diagnostics.Editor;
+using PEGA.NPC.Perception;
 using UnityEditor;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
 {
     /// <summary>Visualização DevelopmentOnly das geometrias e do último lote sensorial do NPC.</summary>
-    internal static class PEGANpcPerceptionSourceGizmos
+    internal static class PegaNpcPerceptionSourceGizmos
     {
         private const float MinimumDirectionMagnitude = 0.0001f;
         private const float CandidateMarkerSizeMeters = 0.24f;
@@ -22,10 +23,10 @@ namespace PEGA.NPC.Editor
         private static readonly Color UnknownColor = new Color(0.8f, 0.8f, 0.8f, 0.95f);
 
         [DrawGizmo(GizmoType.InSelectionHierarchy | GizmoType.NotInSelectionHierarchy)]
-        private static void Draw(PEGANpcPerceptionSource source, GizmoType gizmoType)
+        private static void Draw(PegaNpcPerceptionSource source, GizmoType gizmoType)
         {
             if (source == null ||
-                source.PerceptionVisualizationLevel == PEGADiagnosticVisualizationLevel.Off)
+                source.PerceptionVisualizationLevel == PegaDiagnosticVisualizationLevel.Off)
             {
                 return;
             }
@@ -47,7 +48,7 @@ namespace PEGA.NPC.Editor
             try
             {
                 bool isDetailed = source.PerceptionVisualizationLevel ==
-                    PEGADiagnosticVisualizationLevel.Detailed;
+                    PegaDiagnosticVisualizationLevel.Detailed;
                 DrawConfiguredEvaluationGeometry(source, isDetailed);
                 if (Application.isPlaying)
                 {
@@ -74,7 +75,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawConfiguredEvaluationGeometry(
-            PEGANpcPerceptionSource source,
+            PegaNpcPerceptionSource source,
             bool isDetailed)
         {
             Vector3 radialOrigin = source.PerceivedAreaOrigin;
@@ -126,7 +127,7 @@ namespace PEGA.NPC.Editor
                     : $"Visão {source.VisionRangeMeters:0.##} m / {source.VisionFieldOfViewDegrees:0.#}°");
         }
 
-        private static void DrawConfiguredAcquisitionVolumes(PEGANpcPerceptionSource source)
+        private static void DrawConfiguredAcquisitionVolumes(PegaNpcPerceptionSource source)
         {
             bool hasRadialVolume = source.TryGetPerceivedAreaDiscoveryVolume(out PerceptionSpatialDiscoveryVolume radialVolume);
             bool hasVisualVolume = source.TryGetVisionDiscoveryVolume(out PerceptionSpatialDiscoveryVolume visualVolume);
@@ -151,8 +152,8 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawLatestSample(
-            PEGANpcPerceptionSource source,
-            PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
+            PegaNpcPerceptionSource source,
+            PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState state)
         {
             if (!state.HasSample)
             {
@@ -171,7 +172,7 @@ namespace PEGA.NPC.Editor
 
             for (int index = 0; index < state.Candidates.Count; index++)
             {
-                PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState candidate = state.Candidates[index];
+                PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState candidate = state.Candidates[index];
                 if (!candidate.HasPosition || labelAssigned[index])
                 {
                     continue;
@@ -186,8 +187,8 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawLatestSampleSummary(
-            PEGANpcPerceptionSource source,
-            PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
+            PegaNpcPerceptionSource source,
+            PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState state)
         {
             if (!state.HasSample)
             {
@@ -201,7 +202,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawSampleStatusSummary(
-            PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
+            PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState state)
         {
             string radial = state.RadialSensorSampled
                 ? state.IsAreaPresencePerceived ? "R+" : "R−"
@@ -216,11 +217,11 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawCandidateSummary(
-            System.Collections.Generic.IReadOnlyList<PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState> candidates)
+            System.Collections.Generic.IReadOnlyList<PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState> candidates)
         {
             for (int index = 0; index < candidates.Count; index++)
             {
-                PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState candidate = candidates[index];
+                PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState candidate = candidates[index];
                 DrawCandidateMarker(candidate);
             }
         }
@@ -237,14 +238,14 @@ namespace PEGA.NPC.Editor
         }
 
         private static List<int> ClaimCoincidentCandidateGroup(
-            System.Collections.Generic.IReadOnlyList<PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState> candidates,
+            System.Collections.Generic.IReadOnlyList<PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState> candidates,
             int currentIndex,
             bool[] labelAssigned)
         {
             var group = new List<int> { currentIndex };
             labelAssigned[currentIndex] = true;
-            const float CoincidentPositionToleranceMeters = 0.02f;
-            float toleranceSquared = CoincidentPositionToleranceMeters * CoincidentPositionToleranceMeters;
+            const float coincidentPositionToleranceMeters = 0.02f;
+            float toleranceSquared = coincidentPositionToleranceMeters * coincidentPositionToleranceMeters;
             for (int groupIndex = 0; groupIndex < group.Count; groupIndex++)
             {
                 Vector3 groupPosition = candidates[group[groupIndex]].Position;
@@ -265,7 +266,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static string BuildCoincidentCandidateLabel(
-            System.Collections.Generic.IReadOnlyList<PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState> candidates,
+            System.Collections.Generic.IReadOnlyList<PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState> candidates,
             System.Collections.Generic.IReadOnlyList<int> group)
         {
             var labels = new System.Collections.Generic.List<string>();
@@ -277,11 +278,11 @@ namespace PEGA.NPC.Editor
             return string.Join("\n\n", labels);
         }
 
-        private static void DrawAcquisitionVolumes(PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
+        private static void DrawAcquisitionVolumes(PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState state)
         {
             for (int index = 0; index < state.AcquisitionVolumes.Count; index++)
             {
-                PEGANpcPerceptionSource.PEGANpcPerceptionAcquisitionGizmoState volume =
+                PegaNpcPerceptionSource.PegaNpcPerceptionAcquisitionGizmoState volume =
                     state.AcquisitionVolumes[index];
                 Color color = volume.Status == PerceptionAcquisitionStatus.Complete
                     ? AcquisitionColor
@@ -310,7 +311,7 @@ namespace PEGA.NPC.Editor
             }
         }
 
-        private static void DrawSampleStatus(PEGANpcPerceptionSource.PEGANpcPerceptionGizmoState state)
+        private static void DrawSampleStatus(PegaNpcPerceptionSource.PegaNpcPerceptionGizmoState state)
         {
             Handles.color = UnknownColor;
             string radial = state.RadialSensorSampled ? "amostrado" : "não amostrado";
@@ -325,7 +326,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawCandidate(
-            PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState candidate)
+            PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState candidate)
         {
             if (!candidate.HasPosition)
             {
@@ -376,7 +377,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static void DrawCandidateMarker(
-            PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState candidate)
+            PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState candidate)
         {
             if (!candidate.HasPosition)
             {
@@ -418,7 +419,7 @@ namespace PEGA.NPC.Editor
                         : UnknownColor;
 
         private static string FormatCandidateLabel(
-            PEGANpcPerceptionSource.PEGANpcPerceptionCandidateGizmoState candidate)
+            PegaNpcPerceptionSource.PegaNpcPerceptionCandidateGizmoState candidate)
         {
             bool isPhysical = (candidate.Origins & PerceptionCandidateOrigin.Physical) != 0;
             bool isExternal = (candidate.Origins & PerceptionCandidateOrigin.External) != 0;
@@ -444,7 +445,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static string FormatSensorResult(
-            PEGANpcPerceptionSource.PEGANpcPerceptionSensorGizmoResult result,
+            PegaNpcPerceptionSource.PegaNpcPerceptionSensorGizmoResult result,
             bool isRadial)
         {
             if (!result.WasSampled)
@@ -501,7 +502,7 @@ namespace PEGA.NPC.Editor
             Color color,
             string label)
         {
-            PEGAPerceptionSpatialVolumeGizmos.Draw(volume, color, label);
+            PegaPerceptionSpatialVolumeGizmos.Draw(volume, color, label);
         }
 
         private static bool HasSameGeometry(

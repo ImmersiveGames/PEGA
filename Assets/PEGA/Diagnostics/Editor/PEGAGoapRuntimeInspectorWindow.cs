@@ -2,15 +2,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using ImmersiveGames.Goap;
-using PEGA.NPC;
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Desires;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Group;
+using PEGA.NPC.Knowledge.Individual;
+using EditorSelection = UnityEditor.Selection;
 using UnityEditor;
 using UnityEngine;
 
 namespace PEGA.Diagnostics.Editor
 {
     /// <summary>Editor-only, read-only view of the GOAP snapshots retained by a selected NPC.</summary>
-    public sealed class PEGAGoapRuntimeInspectorWindow : EditorWindow
+    public sealed class PegaGoapRuntimeInspectorWindow : EditorWindow
     {
         private const double SampleIntervalSeconds = 0.25d;
         private const int MaximumHistoryEntries = 40;
@@ -20,7 +27,7 @@ namespace PEGA.Diagnostics.Editor
         };
 
         private readonly List<string> _history = new List<string>();
-        private PEGANpcAutonomy _observedAutonomy;
+        private PegaNpcAutonomy _observedAutonomy;
         private double _nextSampleAt;
         private string _previousActivePlan;
         private string _previousSelection;
@@ -38,12 +45,12 @@ namespace PEGA.Diagnostics.Editor
         [MenuItem("PEGA/Diagnostics/GOAP Runtime Inspector")]
         private static void OpenWindow()
         {
-            GetWindow<PEGAGoapRuntimeInspectorWindow>("GOAP Runtime Inspector");
+            GetWindow<PegaGoapRuntimeInspectorWindow>("GOAP Runtime Inspector");
         }
 
         private void OnEnable()
         {
-            Selection.selectionChanged += OnSelectionChanged;
+            EditorSelection.selectionChanged += OnSelectionChanged;
             EditorApplication.update += OnEditorUpdate;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             OnSelectionChanged();
@@ -51,14 +58,14 @@ namespace PEGA.Diagnostics.Editor
 
         private void OnDisable()
         {
-            Selection.selectionChanged -= OnSelectionChanged;
+            EditorSelection.selectionChanged -= OnSelectionChanged;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         }
 
         private void OnSelectionChanged()
         {
-            PEGANpcAutonomy selected = ResolveSelectedAutonomy();
+            PegaNpcAutonomy selected = ResolveSelectedAutonomy();
             if (selected == _observedAutonomy)
             {
                 Repaint();
@@ -74,7 +81,7 @@ namespace PEGA.Diagnostics.Editor
 
         private void OnEditorUpdate()
         {
-            PEGANpcAutonomy selected = ResolveSelectedAutonomy();
+            PegaNpcAutonomy selected = ResolveSelectedAutonomy();
             if (selected != _observedAutonomy)
             {
                 _observedAutonomy = selected;
@@ -110,7 +117,7 @@ namespace PEGA.Diagnostics.Editor
 
         private void OnGUI()
         {
-            PEGANpcAutonomy autonomy = ResolveSelectedAutonomy();
+            PegaNpcAutonomy autonomy = ResolveSelectedAutonomy();
             DrawSelection(autonomy);
 
             if (!EditorApplication.isPlaying)
@@ -129,7 +136,7 @@ namespace PEGA.Diagnostics.Editor
                 return;
             }
 
-            RuntimeView view = PEGAGoapRuntimeInspectorReader.Read(autonomy);
+            RuntimeView view = PegaGoapRuntimeInspectorReader.Read(autonomy);
             int selectedTab = GUILayout.Toolbar(_selectedTab, TabNames);
             if (selectedTab != _selectedTab)
             {
@@ -162,7 +169,7 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.EndScrollView();
         }
 
-        private static void DrawSelection(PEGANpcAutonomy autonomy)
+        private static void DrawSelection(PegaNpcAutonomy autonomy)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
@@ -171,7 +178,7 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField(EditorApplication.isPlaying ? "PLAY MODE" : "EDIT MODE", EditorStyles.miniBoldLabel, GUILayout.Width(75f));
             EditorGUILayout.EndHorizontal();
 
-            GameObject selected = Selection.activeGameObject;
+            GameObject selected = EditorSelection.activeGameObject;
             EditorGUILayout.LabelField("NPC observado", autonomy != null ? autonomy.gameObject.name : "<não encontrado>", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Objeto selecionado no Hierarchy", selected != null ? selected.name : "<nenhum>", EditorStyles.miniLabel);
             if (autonomy != null && !autonomy.isActiveAndEnabled)
@@ -186,39 +193,39 @@ namespace PEGA.Diagnostics.Editor
 
         private static void DrawReadStatus(RuntimeView view)
         {
-            if (view.Issues.Count == 0)
+            if (view.issues.Count == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < view.Issues.Count; i++)
+            for (int i = 0; i < view.issues.Count; i++)
             {
-                EditorGUILayout.HelpBox(view.Issues[i], MessageType.Warning);
+                EditorGUILayout.HelpBox(view.issues[i], MessageType.Warning);
             }
         }
 
         private void DrawOverview(RuntimeView view)
         {
             EditorGUILayout.LabelField("Visão geral · agora", EditorStyles.largeLabel);
-            if (view.HasActivePlan)
+            if (view.hasActivePlan)
             {
-                PEGANpcPlanSnapshot plan = view.ActivePlan;
+                PegaNpcPlanSnapshot plan = view.activePlan;
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField("Desejo selecionado no plano ativo", EditorStyles.miniBoldLabel);
                 EditorGUILayout.LabelField(string.IsNullOrWhiteSpace(plan.DesireName) ? "Nome não exposto" : plan.DesireName, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField("Goal configurado", FindConfiguredGoalName(view.Profile, plan.DesireId, view.LatestSelection));
+                EditorGUILayout.LabelField("Goal configurado", FindConfiguredGoalName(view.profile, plan.DesireId, view.latestSelection));
                 EditorGUILayout.LabelField("Verdade atual do Goal", "Não exposta pelo runtime", EditorStyles.miniLabel);
                 EditorGUILayout.LabelField("Action ativa", FormatActionName(plan.ActionId));
                 EditorGUILayout.LabelField("Target / posição conhecida", plan.TargetId.IsValid ? $"{FormatTargetKind(plan.TargetKind)} · {plan.TargetPosition:F2}" : "<Target indisponível>");
 
-                IPEGANpcActionProvider provider = FindProvider(view.ActionProviders, plan.ActionId);
+                IPegaNpcActionProvider provider = FindProvider(view.actionProviders, plan.ActionId);
                 if (provider == null)
                 {
                     EditorGUILayout.HelpBox("O snapshot contém um plano ativo, mas seu provider de execução não está disponível para leitura.", MessageType.Warning);
                 }
                 else
                 {
-                    PEGANpcActionExecutionSnapshot execution = provider.CurrentExecution;
+                    PegaNpcActionExecutionSnapshot execution = provider.CurrentExecution;
                     DrawExecutionState(provider.Outcome, execution.Outcome, provider.Contract.ActionId);
                 }
 
@@ -233,18 +240,18 @@ namespace PEGA.Diagnostics.Editor
             else
             {
                 EditorGUILayout.HelpBox("O snapshot atual do Autonomy não contém um plano ativo.", MessageType.Info);
-                DrawRunningProvidersWithoutPlan(view.ActionProviders);
+                DrawRunningProvidersWithoutPlan(view.actionProviders);
             }
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Último resultado do planejador", EditorStyles.boldLabel);
-            if (view.LatestSelection == null)
+            if (view.latestSelection == null)
             {
                 EditorGUILayout.LabelField("Nenhum resultado armazenado.");
                 return;
             }
 
-            PEGANpcPlanSelectionResult selection = view.LatestSelection;
+            PegaNpcPlanSelectionResult selection = view.latestSelection;
             EditorGUILayout.HelpBox(
                 selection.HasSelectedPlan
                     ? $"Avaliação armazenada: selecionou {selection.SelectedPlan.DesireName} / {FormatActionName(selection.SelectedPlan.ActionId)}. Isso não confirma que a Action continua ativa agora."
@@ -268,14 +275,14 @@ namespace PEGA.Diagnostics.Editor
         }
 
         private static void DrawExecutionState(
-            PEGANpcActionOutcome providerOutcome,
-            PEGANpcActionOutcome snapshotOutcome,
-            PEGANpcPlanningActionId actionId)
+            PegaNpcActionOutcome providerOutcome,
+            PegaNpcActionOutcome snapshotOutcome,
+            PegaNpcPlanningActionId actionId)
         {
-            MessageType messageType = providerOutcome == PEGANpcActionOutcome.Invalid ||
-                                     providerOutcome == PEGANpcActionOutcome.Interrupted
+            MessageType messageType = providerOutcome == PegaNpcActionOutcome.Invalid ||
+                                     providerOutcome == PegaNpcActionOutcome.Interrupted
                 ? MessageType.Warning
-                : providerOutcome == PEGANpcActionOutcome.Running
+                : providerOutcome == PegaNpcActionOutcome.Running
                     ? MessageType.Info
                     : MessageType.None;
             EditorGUILayout.HelpBox(
@@ -283,13 +290,13 @@ namespace PEGA.Diagnostics.Editor
                 messageType);
         }
 
-        private static void DrawRunningProvidersWithoutPlan(IReadOnlyList<IPEGANpcActionProvider> providers)
+        private static void DrawRunningProvidersWithoutPlan(IReadOnlyList<IPegaNpcActionProvider> providers)
         {
             bool foundRunningProvider = false;
             for (int i = 0; i < providers.Count; i++)
             {
-                IPEGANpcActionProvider provider = providers[i];
-                if (provider.Outcome == PEGANpcActionOutcome.Running)
+                IPegaNpcActionProvider provider = providers[i];
+                if (provider.Outcome == PegaNpcActionOutcome.Running)
                 {
                     foundRunningProvider = true;
                     EditorGUILayout.HelpBox(
@@ -307,32 +314,32 @@ namespace PEGA.Diagnostics.Editor
         private void DrawDesires(RuntimeView view)
         {
             EditorGUILayout.LabelField("Desejos configurados", EditorStyles.largeLabel);
-            if (view.Profile == null)
+            if (view.profile == null)
             {
                 EditorGUILayout.HelpBox("Desire Profile indisponível no componente selecionado.", MessageType.Info);
                 return;
             }
 
-            PEGANpcDesireContext context = view.LatestSelection != null
-                ? view.LatestSelection.Context
-                : PEGANpcDesireContext.Normal;
-            EditorGUILayout.LabelField("Profile / contexto", $"{view.Profile.name} / {context}", EditorStyles.miniLabel);
-            if (!view.Profile.TryGetContext(context, out PEGANpcDesireContextDefinition definition, out string diagnostic))
+            PegaNpcDesireContext context = view.latestSelection != null
+                ? view.latestSelection.Context
+                : PegaNpcDesireContext.Normal;
+            EditorGUILayout.LabelField("Profile / contexto", $"{view.profile.name} / {context}", EditorStyles.miniLabel);
+            if (!view.profile.TryGetContext(context, out PegaNpcDesireContextDefinition definition, out string diagnostic))
             {
                 EditorGUILayout.HelpBox($"Configuração de Desejos indisponível: {diagnostic}", MessageType.Warning);
                 return;
             }
 
-            PEGANpcDesireStateSnapshot satisfaction = view.DesireState;
-            IReadOnlyList<PEGANpcDesirePlanEvaluation> evaluations = view.LatestSelection != null
-                ? view.LatestSelection.DesireEvaluations
-                : Array.Empty<PEGANpcDesirePlanEvaluation>();
+            PegaNpcDesireStateSnapshot satisfaction = view.desireState;
+            IReadOnlyList<PegaNpcDesirePlanEvaluation> evaluations = view.latestSelection != null
+                ? view.latestSelection.DesireEvaluations
+                : Array.Empty<PegaNpcDesirePlanEvaluation>();
             EditorGUILayout.HelpBox(
                 "Aplicabilidade e peso efetivo vêm da última avaliação armazenada. A verdade lógica atual do Goal não é exposta pelo runtime.",
                 MessageType.None);
             _showDesireDetails = EditorGUILayout.ToggleLeft("Exibir IDs, configuração e diagnósticos", _showDesireDetails);
 
-            IReadOnlyList<PEGANpcDesireConfiguration> desires = definition.Desires;
+            IReadOnlyList<PegaNpcDesireConfiguration> desires = definition.Desires;
             if (desires.Count == 0)
             {
                 EditorGUILayout.LabelField("Nenhum Desejo configurado para este contexto.");
@@ -341,17 +348,17 @@ namespace PEGA.Diagnostics.Editor
 
             for (int i = 0; i < desires.Count; i++)
             {
-                PEGANpcDesireConfiguration configuration = desires[i];
+                PegaNpcDesireConfiguration configuration = desires[i];
                 if (configuration == null || configuration.Definition == null)
                 {
                     EditorGUILayout.HelpBox($"Desire Setting {i}: definição indisponível.", MessageType.Warning);
                     continue;
                 }
 
-                PEGANpcDesireDefinition desire = configuration.Definition;
-                PEGANpcDesireSatisfactionSnapshot current = default;
+                PegaNpcDesireDefinition desire = configuration.Definition;
+                PegaNpcDesireSatisfactionSnapshot current = default;
                 bool hasSatisfaction = satisfaction != null && satisfaction.TryGet(desire.DesireId, out current);
-                PEGANpcDesirePlanEvaluation evaluation = FindDesireEvaluation(evaluations, desire.DesireId);
+                PegaNpcDesirePlanEvaluation evaluation = FindDesireEvaluation(evaluations, desire.DesireId);
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(string.IsNullOrWhiteSpace(desire.DisplayName) ? desire.DesireId : desire.DisplayName, EditorStyles.boldLabel);
                 EditorGUILayout.LabelField("Goal configurado", desire.DesiredGoalCondition != null ? desire.DesiredGoalCondition.name : "<condição indisponível>");
@@ -383,20 +390,20 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField("Plano e Actions", EditorStyles.largeLabel);
             _showPlanDetails = EditorGUILayout.ToggleLeft("Detalhes técnicos dos planos", _showPlanDetails);
             EditorGUILayout.LabelField("Plano ativo agora", EditorStyles.boldLabel);
-            if (!view.HasActivePlan)
+            if (!view.hasActivePlan)
             {
                 EditorGUILayout.HelpBox("Nenhum plano ativo consta no snapshot atual do Autonomy.", MessageType.Info);
             }
             else
             {
-                DrawPlanSummary(view.ActivePlan, "Ativo agora");
+                DrawPlanSummary(view.activePlan, "Ativo agora");
                 if (_showPlanDetails)
                 {
-                    DrawPlanDetails(view.ActivePlan);
+                    DrawPlanDetails(view.activePlan);
                 }
             }
 
-            PEGANpcPlanSelectionResult selection = view.LatestSelection;
+            PegaNpcPlanSelectionResult selection = view.latestSelection;
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Último resultado armazenado do planejador", EditorStyles.boldLabel);
             if (selection == null)
@@ -426,11 +433,11 @@ namespace PEGA.Diagnostics.Editor
                     EditorGUILayout.EndVertical();
                 }
 
-                IReadOnlyList<PEGANpcPlanSnapshot> candidates = selection.CandidatePlans;
+                IReadOnlyList<PegaNpcPlanSnapshot> candidates = selection.CandidatePlans;
                 EditorGUILayout.LabelField($"Candidatos da última avaliação ({candidates.Count})", EditorStyles.boldLabel);
                 for (int i = 0; i < candidates.Count; i++)
                 {
-                    PEGANpcPlanSnapshot candidate = candidates[i];
+                    PegaNpcPlanSnapshot candidate = candidates[i];
                     bool isSelected = selection.HasSelectedPlan && AreSamePlan(candidate, selection.SelectedPlan);
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.LabelField(isSelected ? "Escolhido" : $"Candidato {i + 1}", EditorStyles.boldLabel);
@@ -447,12 +454,12 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private static void DrawPlanSummary(PEGANpcPlanSnapshot plan, string heading)
+        private static void DrawPlanSummary(PegaNpcPlanSnapshot plan, string heading)
         {
             EditorGUILayout.LabelField(heading, $"{plan.DesireName} · {FormatActionName(plan.ActionId)} · {FormatTargetKind(plan.TargetKind)}");
         }
 
-        private static void DrawPlanDetails(PEGANpcPlanSnapshot plan)
+        private static void DrawPlanDetails(PegaNpcPlanSnapshot plan)
         {
             EditorGUILayout.LabelField("Desire ID", plan.DesireId);
             EditorGUILayout.LabelField("Action ID", plan.ActionId.IsValid ? plan.ActionId.StableText : "<indisponível>");
@@ -471,7 +478,7 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private static void DrawCausalEvaluation(PEGANpcCausalPlanEvaluation causal, bool showDetails)
+        private static void DrawCausalEvaluation(PegaNpcCausalPlanEvaluation causal, bool showDetails)
         {
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Busca causal e alternativas", EditorStyles.boldLabel);
@@ -484,7 +491,7 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField($"Goals pesquisados: {causal.GoalSearches.Count} · busca incompleta: {causal.HasIncompleteSearch}");
             for (int i = 0; i < causal.GoalSearches.Count; i++)
             {
-                PEGANpcCausalGoalSearchEvaluation search = causal.GoalSearches[i];
+                PegaNpcCausalGoalSearchEvaluation search = causal.GoalSearches[i];
                 GoapSearchAlternativesResult result = search.Search;
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField($"{search.DesireId} · {result.Status} · {search.Alternatives.Count} alternativa(s)", EditorStyles.boldLabel);
@@ -512,7 +519,7 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private static void DrawCausalPlan(PEGANpcCausalPlanAlternative alternative, int index, bool showDetails)
+        private static void DrawCausalPlan(PegaNpcCausalPlanAlternative alternative, int index, bool showDetails)
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
             EditorGUILayout.LabelField($"{index}. {alternative.DesireName}", EditorStyles.boldLabel, GUILayout.Width(130f));
@@ -536,28 +543,28 @@ namespace PEGA.Diagnostics.Editor
         {
             EditorGUILayout.Space(8f);
             EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"Definitions configuradas: {view.Autonomy.ActionDefinitionCount}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Definitions configuradas: {view.autonomy.ActionDefinitionCount}", EditorStyles.miniLabel);
             EditorGUILayout.HelpBox(
                 "Os assets abaixo são configuração. O estado de execução vem dos providers runtime.",
                 MessageType.None);
-            for (int i = 0; i < view.Autonomy.ActionDefinitionCount; i++)
+            for (int i = 0; i < view.autonomy.ActionDefinitionCount; i++)
             {
-                PEGANpcActionDefinitionAsset definition = view.Autonomy.GetActionDefinitionAt(i);
+                PegaNpcActionDefinitionAsset definition = view.autonomy.GetActionDefinitionAt(i);
                 EditorGUILayout.LabelField($"{i + 1}. {(definition != null ? definition.name : "<asset nulo>")}");
             }
 
-            EditorGUILayout.LabelField($"Providers runtime: {view.ActionProviders.Count}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Providers runtime: {view.actionProviders.Count}", EditorStyles.miniLabel);
             _showActionDetails = EditorGUILayout.ToggleLeft("Exibir contratos, Targets e diagnósticos", _showActionDetails);
-            if (view.ActionProviders.Count == 0)
+            if (view.actionProviders.Count == 0)
             {
                 EditorGUILayout.LabelField("<nenhum provider runtime disponível>");
             }
 
-            for (int i = 0; i < view.ActionProviders.Count; i++)
+            for (int i = 0; i < view.actionProviders.Count; i++)
             {
-                IPEGANpcActionProvider provider = view.ActionProviders[i];
-                PEGANpcActionExecutionSnapshot execution = provider.CurrentExecution;
-                PEGANpcActionContract contract = provider.Contract;
+                IPegaNpcActionProvider provider = view.actionProviders[i];
+                PegaNpcActionExecutionSnapshot execution = provider.CurrentExecution;
+                PegaNpcActionContract contract = provider.Contract;
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 string actionId = contract.ActionId.IsValid ? contract.ActionId.StableText : "Action ID indisponível";
                 EditorGUILayout.LabelField(FormatActionName(contract.ActionId), EditorStyles.boldLabel);
@@ -569,7 +576,7 @@ namespace PEGA.Diagnostics.Editor
                     EditorGUILayout.LabelField("Request", execution.RequestId.ToString());
                     EditorGUILayout.LabelField("Efeito / tipo de Target", $"{contract.EffectKind.StableText} / {contract.TargetKind.StableText}");
                     EditorGUILayout.LabelField("Requer navegação", contract.RequiresNavigation.ToString());
-                    PEGANpcActionEffectDeclaration effect = execution.DeclaredEffect;
+                    PegaNpcActionEffectDeclaration effect = execution.DeclaredEffect;
                     EditorGUILayout.LabelField("Target do efeito", effect.IsTargetResolved ? effect.TargetId.ToString() : "<não resolvido>");
                     EditorGUILayout.LabelField("Posição / raio", effect.IsTargetResolved ? $"{effect.TargetPosition:F2} / {effect.TargetRadiusMeters:0.##} m" : "<indisponível>");
                     EditorGUILayout.LabelField("Mensagem de início", contract.StartMessage);
@@ -586,22 +593,22 @@ namespace PEGA.Diagnostics.Editor
         private void DrawKnowledge(RuntimeView view)
         {
             EditorGUILayout.LabelField("Conhecimento disponível ao NPC", EditorStyles.largeLabel);
-            if (view.KnowledgeState == null)
+            if (view.knowledgeState == null)
             {
                 EditorGUILayout.HelpBox("PEGANpcKnowledgeState indisponível no NPC resolvido.", MessageType.Warning);
                 return;
             }
 
-            PEGAKnowledgeRuntimeInspectorSnapshot snapshot =
-                PEGAKnowledgeRuntimeInspectorSnapshotReader.Read(view.Autonomy, view.KnowledgeState);
+            PegaKnowledgeRuntimeInspectorSnapshot snapshot =
+                PegaKnowledgeRuntimeInspectorSnapshotReader.Read(view.autonomy, view.knowledgeState);
             EditorGUILayout.LabelField(
-                $"Consulta em t={snapshot.QueryTimeSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)} s",
+                $"Consulta em t={snapshot.queryTimeSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)} s",
                 EditorStyles.miniLabel);
             _showKnowledgeEvidenceDetails = EditorGUILayout.ToggleLeft(
                 "Exibir fonte e payload de cada evidência",
                 _showKnowledgeEvidenceDetails);
 
-            if (snapshot.HasReadableAuthority && !snapshot.HasRegisteredFacts && !snapshot.HasEnumerationIssues)
+            if (snapshot.hasReadableAuthority && !snapshot.hasRegisteredFacts && !snapshot.hasEnumerationIssues)
             {
                 EditorGUILayout.HelpBox(
                     "Nenhuma chave de fato está registrada nas authorities legíveis neste momento. O Inspector não consulta World State nem cria fatos para completar a lista.",
@@ -610,49 +617,49 @@ namespace PEGA.Diagnostics.Editor
 
             DrawKnowledgeFactSection(
                 "Individual · authority do NPC",
-                snapshot.IndividualAvailable,
-                snapshot.IndividualAuthorityStatus,
-                snapshot.IndividualFacts);
+                snapshot.individualAvailable,
+                snapshot.individualAuthorityStatus,
+                snapshot.individualFacts);
 
             EditorGUILayout.LabelField("Group · authorities coletivas", EditorStyles.largeLabel);
-            EditorGUILayout.LabelField(snapshot.GroupReaderStatus, EditorStyles.miniLabel);
-            if (snapshot.Groups.Count == 0)
+            EditorGUILayout.LabelField(snapshot.groupReaderStatus, EditorStyles.miniLabel);
+            if (snapshot.groups.Count == 0)
             {
                 EditorGUILayout.HelpBox(
                     "Nenhum Group com store de Knowledge foi encontrado nas authorities configuradas para este NPC.",
                     MessageType.Info);
             }
 
-            for (int index = 0; index < snapshot.Groups.Count; index++)
+            for (int index = 0; index < snapshot.groups.Count; index++)
             {
-                PEGAKnowledgeRuntimeInspectorGroup group = snapshot.Groups[index];
+                PegaKnowledgeRuntimeInspectorGroup group = snapshot.groups[index];
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(
-                    string.IsNullOrWhiteSpace(group.DisplayName) ? group.GroupId.StableText : group.DisplayName,
+                    string.IsNullOrWhiteSpace(group.displayName) ? group.groupId.StableText : group.displayName,
                     EditorStyles.boldLabel);
-                EditorGUILayout.LabelField("GroupId", group.GroupId.StableText);
-                EditorGUILayout.LabelField("Acesso", FormatGroupAccess(group.AccessStatus));
-                if (group.IsCurrentMember.HasValue)
+                EditorGUILayout.LabelField("GroupId", group.groupId.StableText);
+                EditorGUILayout.LabelField("Acesso", FormatGroupAccess(group.accessStatus));
+                if (group.isCurrentMember.HasValue)
                 {
                     EditorGUILayout.LabelField(
                         "Membership vigente",
-                        group.IsCurrentMember.Value ? "confirmada · leitura autorizada" : "não confirmada · leitura negada");
+                        group.isCurrentMember.Value ? "confirmada · leitura autorizada" : "não confirmada · leitura negada");
                 }
 
-                if (!group.CanRead)
+                if (!group.canRead)
                 {
                     EditorGUILayout.HelpBox(
-                        string.IsNullOrWhiteSpace(group.Diagnostic)
+                        string.IsNullOrWhiteSpace(group.diagnostic)
                             ? "Acesso negado ou authority indisponível; os fatos deste Group foram ocultados."
-                            : group.Diagnostic,
-                        group.AccessStatus == PEGAActorGroupKnowledgeAccessStatus.NotMember
+                            : group.diagnostic,
+                        group.accessStatus == PegaActorGroupKnowledgeAccessStatus.NotMember
                             ? MessageType.Info
                             : MessageType.Warning);
                 }
                 else
                 {
-                    EditorGUILayout.LabelField(group.Diagnostic, EditorStyles.miniLabel);
-                    DrawKnowledgeFacts(group.Facts);
+                    EditorGUILayout.LabelField(group.diagnostic, EditorStyles.miniLabel);
+                    DrawKnowledgeFacts(group.facts);
                 }
 
                 EditorGUILayout.EndVertical();
@@ -660,16 +667,16 @@ namespace PEGA.Diagnostics.Editor
 
             DrawKnowledgeFactSection(
                 "Global · authority da Activity",
-                snapshot.GlobalAvailable,
-                snapshot.GlobalAuthorityStatus,
-                snapshot.GlobalFacts);
+                snapshot.globalAvailable,
+                snapshot.globalAuthorityStatus,
+                snapshot.globalFacts);
         }
 
         private void DrawKnowledgeFactSection(
             string title,
             bool available,
             string authorityStatus,
-            IReadOnlyList<PEGAKnowledgeRuntimeInspectorFact> facts)
+            IReadOnlyList<PegaKnowledgeRuntimeInspectorFact> facts)
         {
             EditorGUILayout.LabelField(title, EditorStyles.largeLabel);
             EditorGUILayout.LabelField(authorityStatus, EditorStyles.miniLabel);
@@ -684,7 +691,7 @@ namespace PEGA.Diagnostics.Editor
             DrawKnowledgeFacts(facts);
         }
 
-        private void DrawKnowledgeFacts(IReadOnlyList<PEGAKnowledgeRuntimeInspectorFact> facts)
+        private void DrawKnowledgeFacts(IReadOnlyList<PegaKnowledgeRuntimeInspectorFact> facts)
         {
             if (facts == null || facts.Count == 0)
             {
@@ -697,68 +704,68 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private void DrawKnowledgeFact(PEGAKnowledgeRuntimeInspectorFact fact)
+        private void DrawKnowledgeFact(PegaKnowledgeRuntimeInspectorFact fact)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField("Identidade tipada", EditorStyles.boldLabel);
             EditorGUILayout.LabelField(
-                $"{fact.AddressTypeName} · {fact.AddressText}",
+                $"{fact.addressTypeName} · {fact.addressText}",
                 EditorStyles.wordWrappedLabel);
-            EditorGUILayout.LabelField("Escopo", fact.Scope.ToString());
-            EditorGUILayout.LabelField("Propriedade", fact.DefinitionName);
-            EditorGUILayout.LabelField("ID canônico", fact.DefinitionId);
-            EditorGUILayout.LabelField("Tipo do valor", fact.ValueTypeName);
-            EditorGUILayout.LabelField("Registro", fact.HasStoredRecord ? "presente nesta authority" : "inexistente neste escopo");
-            EditorGUILayout.LabelField("Integridade da definição/endereço", fact.IsValid ? "válidos" : "inválidos");
-            EditorGUILayout.LabelField("Estado", FormatKnowledgeStatus(fact.Status));
+            EditorGUILayout.LabelField("Escopo", fact.scope.ToString());
+            EditorGUILayout.LabelField("Propriedade", fact.definitionName);
+            EditorGUILayout.LabelField("ID canônico", fact.definitionId);
+            EditorGUILayout.LabelField("Tipo do valor", fact.valueTypeName);
+            EditorGUILayout.LabelField("Registro", fact.hasStoredRecord ? "presente nesta authority" : "inexistente neste escopo");
+            EditorGUILayout.LabelField("Integridade da definição/endereço", fact.isValid ? "válidos" : "inválidos");
+            EditorGUILayout.LabelField("Estado", FormatKnowledgeStatus(fact.status));
             EditorGUILayout.LabelField(
                 "Valor",
-                fact.HasValue ? fact.ValueText : "<sem valor conhecido>",
+                fact.hasValue ? fact.valueText : "<sem valor conhecido>",
                 EditorStyles.wordWrappedLabel);
             EditorGUILayout.LabelField(
                 "Validade",
-                !fact.IsValid
+                !fact.isValid
                     ? "inválido · chave ou definição rejeitada"
-                    : fact.Status == PEGAKnowledgeStatus.Known
+                    : fact.status == PegaKnowledgeStatus.Known
                         ? "válido no instante da consulta"
-                        : fact.Status == PEGAKnowledgeStatus.Invalidated
+                        : fact.status == PegaKnowledgeStatus.Invalidated
                             ? "invalidado pela política/evidência registrada"
-                            : fact.HasStoredRecord
+                            : fact.hasStoredRecord
                                 ? "desconhecido · registro sem valor atualmente conhecido"
                                 : "desconhecido · fato não registrado neste escopo");
-            EditorGUILayout.LabelField("Origens", FormatKnowledgeOrigins(fact.Origins));
+            EditorGUILayout.LabelField("Origens", FormatKnowledgeOrigins(fact.origins));
             EditorGUILayout.LabelField(
                 "Timestamp da observação",
-                fact.HasObservationTime
-                    ? $"t={fact.ObservationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s"
+                fact.hasObservationTime
+                    ? $"t={fact.observationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s"
                     : "<não fornecido>");
-            if (fact.InvalidationCauses != PEGAKnowledgeInvalidationCause.None)
+            if (fact.invalidationCauses != PegaKnowledgeInvalidationCause.None)
             {
-                EditorGUILayout.LabelField("Causas de invalidação", fact.InvalidationCauses.ToString());
+                EditorGUILayout.LabelField("Causas de invalidação", fact.invalidationCauses.ToString());
             }
 
-            if (!string.IsNullOrWhiteSpace(fact.Diagnostic))
+            if (!string.IsNullOrWhiteSpace(fact.diagnostic))
             {
-                EditorGUILayout.HelpBox(fact.Diagnostic, MessageType.Warning);
+                EditorGUILayout.HelpBox(fact.diagnostic, MessageType.Warning);
             }
 
             if (_showKnowledgeEvidenceDetails)
             {
-                if (fact.Evidence.Count == 0)
+                if (fact.evidence.Count == 0)
                 {
                     EditorGUILayout.LabelField("Evidências", "<nenhuma>", EditorStyles.miniLabel);
                 }
                 else
                 {
-                    for (int index = 0; index < fact.Evidence.Count; index++)
+                    for (int index = 0; index < fact.evidence.Count; index++)
                     {
-                        PEGAKnowledgeRuntimeInspectorEvidence evidence = fact.Evidence[index];
+                        PegaKnowledgeRuntimeInspectorEvidence evidence = fact.evidence[index];
                         EditorGUILayout.LabelField(
                             $"Evidência {index + 1}",
-                            $"origem={evidence.Origin}; t={evidence.ObservationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s",
+                            $"origem={evidence.origin}; t={evidence.observationTimeSeconds.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)} s",
                             EditorStyles.miniLabel);
-                        EditorGUILayout.LabelField("  Fonte", evidence.Source, EditorStyles.wordWrappedLabel);
-                        EditorGUILayout.LabelField("  Payload", evidence.Payload, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.LabelField("  Fonte", evidence.source, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.LabelField("  Payload", evidence.payload, EditorStyles.wordWrappedLabel);
                     }
                 }
             }
@@ -766,21 +773,21 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.EndVertical();
         }
 
-        private static string FormatKnowledgeStatus(PEGAKnowledgeStatus status) => status switch
+        private static string FormatKnowledgeStatus(PegaKnowledgeStatus status) => status switch
         {
-            PEGAKnowledgeStatus.Known => "Conhecido",
-            PEGAKnowledgeStatus.Invalidated => "Invalidado",
+            PegaKnowledgeStatus.Known => "Conhecido",
+            PegaKnowledgeStatus.Invalidated => "Invalidado",
             _ => "Desconhecido"
         };
 
-        private static string FormatGroupAccess(PEGAActorGroupKnowledgeAccessStatus status) => status switch
+        private static string FormatGroupAccess(PegaActorGroupKnowledgeAccessStatus status) => status switch
         {
-            PEGAActorGroupKnowledgeAccessStatus.Authorized => "autorizado",
-            PEGAActorGroupKnowledgeAccessStatus.NotMember => "negado · NPC não é membro vigente",
-            PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable => "Group inexistente ou não confirmado como vivo",
-            PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable => "authority/binding indisponível",
-            PEGAActorGroupKnowledgeAccessStatus.InvalidActor => "ActorId do NPC inválido ou indisponível",
-            PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority => "múltiplas authorities declaram o Group",
+            PegaActorGroupKnowledgeAccessStatus.Authorized => "autorizado",
+            PegaActorGroupKnowledgeAccessStatus.NotMember => "negado · NPC não é membro vigente",
+            PegaActorGroupKnowledgeAccessStatus.GroupUnavailable => "Group inexistente ou não confirmado como vivo",
+            PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable => "authority/binding indisponível",
+            PegaActorGroupKnowledgeAccessStatus.InvalidActor => "ActorId do NPC inválido ou indisponível",
+            PegaActorGroupKnowledgeAccessStatus.AmbiguousAuthority => "múltiplas authorities declaram o Group",
             _ => status.ToString()
         };
 
@@ -801,15 +808,15 @@ namespace PEGA.Diagnostics.Editor
             }
         }
 
-        private void Observe(PEGANpcAutonomy autonomy)
+        private void Observe(PegaNpcAutonomy autonomy)
         {
-            RuntimeView view = PEGAGoapRuntimeInspectorReader.Read(autonomy);
-            string activePlan = view.HasActivePlan ? FormatPlanIdentity(view.ActivePlan) : "<sem plano ativo>";
-            string selection = view.LatestSelection == null
+            RuntimeView view = PegaGoapRuntimeInspectorReader.Read(autonomy);
+            string activePlan = view.hasActivePlan ? FormatPlanIdentity(view.activePlan) : "<sem plano ativo>";
+            string selection = view.latestSelection == null
                 ? "<sem seleção armazenada>"
-                : view.LatestSelection.HasSelectedPlan
-                    ? FormatPlanIdentity(view.LatestSelection.SelectedPlan)
-                    : $"<sem plano selecionado; válido={view.LatestSelection.IsValid}; {view.LatestSelection.Diagnostic}>";
+                : view.latestSelection.HasSelectedPlan
+                    ? FormatPlanIdentity(view.latestSelection.SelectedPlan)
+                    : $"<sem plano selecionado; válido={view.latestSelection.IsValid}; {view.latestSelection.Diagnostic}>";
 
             if (_previousActivePlan == null)
             {
@@ -832,9 +839,9 @@ namespace PEGA.Diagnostics.Editor
             _previousSelection = selection;
 
             HashSet<string> currentActionIds = new HashSet<string>(StringComparer.Ordinal);
-            for (int i = 0; i < view.ActionProviders.Count; i++)
+            for (int i = 0; i < view.actionProviders.Count; i++)
             {
-                IPEGANpcActionProvider provider = view.ActionProviders[i];
+                IPegaNpcActionProvider provider = view.actionProviders[i];
                 string id = provider.Contract.ActionId.StableText;
                 string state = $"{provider.CurrentExecution.Outcome} / request {provider.CurrentExecution.RequestId}";
                 currentActionIds.Add(id);
@@ -879,14 +886,14 @@ namespace PEGA.Diagnostics.Editor
             _nextSampleAt = 0d;
         }
 
-        private static PEGANpcAutonomy ResolveSelectedAutonomy()
+        private static PegaNpcAutonomy ResolveSelectedAutonomy()
         {
-            GameObject selected = Selection.activeGameObject;
-            return selected != null ? selected.GetComponentInParent<PEGANpcAutonomy>(true) : null;
+            GameObject selected = EditorSelection.activeGameObject;
+            return selected != null ? selected.GetComponentInParent<PegaNpcAutonomy>(true) : null;
         }
 
-        private static PEGANpcDesirePlanEvaluation FindDesireEvaluation(
-            IReadOnlyList<PEGANpcDesirePlanEvaluation> evaluations,
+        private static PegaNpcDesirePlanEvaluation FindDesireEvaluation(
+            IReadOnlyList<PegaNpcDesirePlanEvaluation> evaluations,
             string desireId)
         {
             for (int i = 0; i < evaluations.Count; i++)
@@ -900,33 +907,33 @@ namespace PEGA.Diagnostics.Editor
             return null;
         }
 
-        private static bool AreSamePlan(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right) =>
+        private static bool AreSamePlan(PegaNpcPlanSnapshot left, PegaNpcPlanSnapshot right) =>
             string.Equals(left.DesireId, right.DesireId, StringComparison.Ordinal) &&
             left.ActionId == right.ActionId &&
             left.TargetId == right.TargetId;
 
         private static string FindConfiguredGoalName(
-            PEGANpcDesireProfile profile,
+            PegaNpcDesireProfile profile,
             string desireId,
-            PEGANpcPlanSelectionResult latestSelection)
+            PegaNpcPlanSelectionResult latestSelection)
         {
             if (profile == null)
             {
                 return "<Profile indisponível>";
             }
 
-            PEGANpcDesireContext context = latestSelection != null
+            PegaNpcDesireContext context = latestSelection != null
                 ? latestSelection.Context
-                : PEGANpcDesireContext.Normal;
-            if (!profile.TryGetContext(context, out PEGANpcDesireContextDefinition definition, out _))
+                : PegaNpcDesireContext.Normal;
+            if (!profile.TryGetContext(context, out PegaNpcDesireContextDefinition definition, out _))
             {
                 return "<Goal configurado indisponível>";
             }
 
-            IReadOnlyList<PEGANpcDesireConfiguration> desires = definition.Desires;
+            IReadOnlyList<PegaNpcDesireConfiguration> desires = definition.Desires;
             for (int i = 0; i < desires.Count; i++)
             {
-                PEGANpcDesireDefinition desire = desires[i] != null ? desires[i].Definition : null;
+                PegaNpcDesireDefinition desire = desires[i] != null ? desires[i].Definition : null;
                 if (desire != null && string.Equals(desire.DesireId, desireId, StringComparison.Ordinal))
                 {
                     return desire.DesiredGoalCondition != null
@@ -938,9 +945,9 @@ namespace PEGA.Diagnostics.Editor
             return "<Goal não encontrado no Profile atual>";
         }
 
-        private static IPEGANpcActionProvider FindProvider(
-            IReadOnlyList<IPEGANpcActionProvider> providers,
-            PEGANpcPlanningActionId actionId)
+        private static IPegaNpcActionProvider FindProvider(
+            IReadOnlyList<IPegaNpcActionProvider> providers,
+            PegaNpcPlanningActionId actionId)
         {
             for (int i = 0; i < providers.Count; i++)
             {
@@ -953,24 +960,24 @@ namespace PEGA.Diagnostics.Editor
             return null;
         }
 
-        private static string FormatActionName(PEGANpcPlanningActionId actionId)
+        private static string FormatActionName(PegaNpcPlanningActionId actionId)
         {
-            if (actionId == PEGANpcPlanningActionId.ApproachKnownCharacter)
+            if (actionId == PegaNpcPlanningActionId.ApproachKnownCharacter)
             {
                 return "Aproximar personagem conhecido";
             }
 
-            if (actionId == PEGANpcPlanningActionId.InvestigateLastKnownCharacterPosition)
+            if (actionId == PegaNpcPlanningActionId.InvestigateLastKnownCharacterPosition)
             {
                 return "Investigar última posição conhecida";
             }
 
-            if (actionId == PEGANpcPlanningActionId.MaintainSafeSeparationFromKnownCharacter)
+            if (actionId == PegaNpcPlanningActionId.MaintainSafeSeparationFromKnownCharacter)
             {
                 return "Manter distância segura";
             }
 
-            if (actionId == PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence)
+            if (actionId == PegaNpcPlanningActionId.InvestigatePerceivedAreaPresence)
             {
                 return "Investigar presença percebida";
             }
@@ -978,19 +985,19 @@ namespace PEGA.Diagnostics.Editor
             return actionId.IsValid ? actionId.StableText : "Action indisponível";
         }
 
-        private static string FormatTargetKind(PEGANpcPlanningTargetKind targetKind)
+        private static string FormatTargetKind(PegaNpcPlanningTargetKind targetKind)
         {
-            if (targetKind == PEGANpcPlanningTargetKind.CharacterPosition)
+            if (targetKind == PegaNpcPlanningTargetKind.CharacterPosition)
             {
                 return "posição de personagem";
             }
 
-            if (targetKind == PEGANpcPlanningTargetKind.LocalObservationPosition)
+            if (targetKind == PegaNpcPlanningTargetKind.LocalObservationPosition)
             {
                 return "ponto de investigação";
             }
 
-            if (targetKind == PEGANpcPlanningTargetKind.SafeSeparationPosition)
+            if (targetKind == PegaNpcPlanningTargetKind.SafeSeparationPosition)
             {
                 return "posição de afastamento";
             }
@@ -998,25 +1005,25 @@ namespace PEGA.Diagnostics.Editor
             return targetKind.IsValid ? targetKind.StableText : "Target indisponível";
         }
 
-        private static string FormatOutcome(PEGANpcActionOutcome outcome)
+        private static string FormatOutcome(PegaNpcActionOutcome outcome)
         {
             string label = outcome switch
             {
-                PEGANpcActionOutcome.NotStarted => "Não iniciada",
-                PEGANpcActionOutcome.Running => "Em execução",
-                PEGANpcActionOutcome.Success => "Concluída",
-                PEGANpcActionOutcome.Invalid => "Inválida",
-                PEGANpcActionOutcome.Interrupted => "Interrompida",
-                PEGANpcActionOutcome.Cancelled => "Cancelada",
+                PegaNpcActionOutcome.NotStarted => "Não iniciada",
+                PegaNpcActionOutcome.Running => "Em execução",
+                PegaNpcActionOutcome.Success => "Concluída",
+                PegaNpcActionOutcome.Invalid => "Inválida",
+                PegaNpcActionOutcome.Interrupted => "Interrompida",
+                PegaNpcActionOutcome.Cancelled => "Cancelada",
                 _ => "Desconhecida"
             };
             return $"{label} ({outcome})";
         }
 
-        private static string FormatPlanIdentity(PEGANpcPlanSnapshot plan) =>
+        private static string FormatPlanIdentity(PegaNpcPlanSnapshot plan) =>
             $"Goal={plan.DesireId}; Action={plan.ActionId.StableText}; Target={plan.TargetId}";
 
-        private static void DrawTarget(PEGANpcPlanningTarget target)
+        private static void DrawTarget(PegaNpcPlanningTarget target)
         {
             EditorGUILayout.LabelField("Identidade", target.TargetId.IsValid ? target.TargetId.ToString() : "<indisponível>");
             EditorGUILayout.LabelField("Tipo / proveniência", $"{target.Kind.StableText} / {target.Provenance}");
@@ -1024,7 +1031,7 @@ namespace PEGA.Diagnostics.Editor
             EditorGUILayout.LabelField("Tempo da evidência", target.HasEvidenceTime ? $"{target.EvidenceTimeSeconds:0.###} s" : "<não fornecido>");
         }
 
-        private static string FormatKnowledgeOrigins(IReadOnlyList<PEGAKnowledgeEvidenceOrigin> origins)
+        private static string FormatKnowledgeOrigins(IReadOnlyList<PegaKnowledgeEvidenceOrigin> origins)
         {
             if (origins == null || origins.Count == 0)
             {
@@ -1043,61 +1050,61 @@ namespace PEGA.Diagnostics.Editor
 
     internal sealed class RuntimeView
     {
-        public PEGANpcAutonomy Autonomy;
-        public PEGANpcDesireProfile Profile;
-        public PEGANpcDesireStateSnapshot DesireState;
-        public bool HasActivePlan;
-        public PEGANpcPlanSnapshot ActivePlan;
-        public PEGANpcPlanSelectionResult LatestSelection;
-        public readonly List<IPEGANpcActionProvider> ActionProviders = new List<IPEGANpcActionProvider>();
-        public PEGANpcKnowledgeState KnowledgeState;
-        public readonly List<string> Issues = new List<string>();
+        public PegaNpcAutonomy autonomy;
+        public PegaNpcDesireProfile profile;
+        public PegaNpcDesireStateSnapshot desireState;
+        public bool hasActivePlan;
+        public PegaNpcPlanSnapshot activePlan;
+        public PegaNpcPlanSelectionResult latestSelection;
+        public readonly List<IPegaNpcActionProvider> actionProviders = new List<IPegaNpcActionProvider>();
+        public PegaNpcKnowledgeState knowledgeState;
+        public readonly List<string> issues = new List<string>();
     }
 
     /// <summary>Reads existing PEGA snapshots; reflection is confined to this Editor assembly for private retained state.</summary>
-    internal static class PEGAGoapRuntimeInspectorReader
+    internal static class PegaGoapRuntimeInspectorReader
     {
         private const BindingFlags InstancePrivate = BindingFlags.Instance | BindingFlags.NonPublic;
-        private static readonly FieldInfo DesireProfileField = typeof(PEGANpcAutonomy).GetField("desireProfile", InstancePrivate);
-        private static readonly FieldInfo DesireStateField = typeof(PEGANpcAutonomy).GetField("_desireState", InstancePrivate);
-        private static readonly FieldInfo HasActivePlanField = typeof(PEGANpcAutonomy).GetField("_hasActivePlan", InstancePrivate);
-        private static readonly FieldInfo ActivePlanField = typeof(PEGANpcAutonomy).GetField("_activePlan", InstancePrivate);
-        private static readonly FieldInfo LatestSelectionField = typeof(PEGANpcAutonomy).GetField("_latestSelection", InstancePrivate);
-        private static readonly FieldInfo ActionProvidersField = typeof(PEGANpcAutonomy).GetField("_actionProviders", InstancePrivate);
-        public static RuntimeView Read(PEGANpcAutonomy autonomy)
+        private static readonly FieldInfo DesireProfileField = typeof(PegaNpcAutonomy).GetField("desireProfile", InstancePrivate);
+        private static readonly FieldInfo DesireStateField = typeof(PegaNpcAutonomy).GetField("_desireState", InstancePrivate);
+        private static readonly FieldInfo HasActivePlanField = typeof(PegaNpcAutonomy).GetField("_hasActivePlan", InstancePrivate);
+        private static readonly FieldInfo ActivePlanField = typeof(PegaNpcAutonomy).GetField("_activePlan", InstancePrivate);
+        private static readonly FieldInfo LatestSelectionField = typeof(PegaNpcAutonomy).GetField("_latestSelection", InstancePrivate);
+        private static readonly FieldInfo ActionProvidersField = typeof(PegaNpcAutonomy).GetField("_actionProviders", InstancePrivate);
+        public static RuntimeView Read(PegaNpcAutonomy autonomy)
         {
-            RuntimeView view = new RuntimeView { Autonomy = autonomy };
-            view.Profile = ReadField<PEGANpcDesireProfile>(DesireProfileField, autonomy, "Desire Profile", view.Issues);
-            PEGANpcDesireState desireState = ReadField<PEGANpcDesireState>(DesireStateField, autonomy, "estado runtime dos Desejos", view.Issues);
+            RuntimeView view = new RuntimeView { autonomy = autonomy };
+            view.profile = ReadField<PegaNpcDesireProfile>(DesireProfileField, autonomy, "Desire Profile", view.issues);
+            PegaNpcDesireState desireState = ReadField<PegaNpcDesireState>(DesireStateField, autonomy, "estado runtime dos Desejos", view.issues);
             if (desireState != null)
             {
-                view.DesireState = desireState.GetSnapshot();
+                view.desireState = desireState.GetSnapshot();
             }
 
-            view.HasActivePlan = ReadField<bool>(HasActivePlanField, autonomy, "flag do plano ativo", view.Issues);
-            view.ActivePlan = ReadField<PEGANpcPlanSnapshot>(ActivePlanField, autonomy, "snapshot do plano ativo", view.Issues);
-            view.LatestSelection = ReadField<PEGANpcPlanSelectionResult>(LatestSelectionField, autonomy, "último resultado de seleção", view.Issues);
+            view.hasActivePlan = ReadField<bool>(HasActivePlanField, autonomy, "flag do plano ativo", view.issues);
+            view.activePlan = ReadField<PegaNpcPlanSnapshot>(ActivePlanField, autonomy, "snapshot do plano ativo", view.issues);
+            view.latestSelection = ReadField<PegaNpcPlanSelectionResult>(LatestSelectionField, autonomy, "último resultado de seleção", view.issues);
             ReadActionProviders(autonomy, view);
 
-            view.KnowledgeState = autonomy.GetComponent<PEGANpcKnowledgeState>();
-            if (view.KnowledgeState == null)
+            view.knowledgeState = autonomy.GetComponent<PegaNpcKnowledgeState>();
+            if (view.knowledgeState == null)
             {
-                view.Issues.Add("Componente PEGANpcKnowledgeState não encontrado no NPC resolvido.");
+                view.issues.Add("Componente PEGANpcKnowledgeState não encontrado no NPC resolvido.");
             }
 
             return view;
         }
 
-        private static void ReadActionProviders(PEGANpcAutonomy autonomy, RuntimeView view)
+        private static void ReadActionProviders(PegaNpcAutonomy autonomy, RuntimeView view)
         {
-            object raw = ReadRawField(ActionProvidersField, autonomy, "lista de Action providers", view.Issues);
+            object raw = ReadRawField(ActionProvidersField, autonomy, "lista de Action providers", view.issues);
             if (raw is IEnumerable providers)
             {
                 foreach (object item in providers)
                 {
-                    if (item is IPEGANpcActionProvider provider)
+                    if (item is IPegaNpcActionProvider provider)
                     {
-                        view.ActionProviders.Add(provider);
+                        view.actionProviders.Add(provider);
                     }
                 }
             }

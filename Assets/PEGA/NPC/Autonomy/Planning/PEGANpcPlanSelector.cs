@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
-
-namespace PEGA.NPC
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Desires;
+namespace PEGA.NPC.Autonomy.Planning
 {
-    public static class PEGANpcPlanSelector
+    public static class PegaNpcPlanSelector
     {
-        public static PEGANpcPlanSelectionResult Select(
-            PEGANpcPlanningInput input,
-            PEGANpcDesireContextDefinition activeContext,
-            PEGANpcDesireStateSnapshot satisfaction)
+        public static PegaNpcPlanSelectionResult Select(
+            PegaNpcPlanningInput input,
+            PegaNpcDesireContextDefinition activeContext,
+            PegaNpcDesireStateSnapshot satisfaction)
         {
-            PEGANpcPlanningValidationMode mode = input != null
+            PegaNpcPlanningValidationMode mode = input != null
                 ? input.ValidationMode
                 : default;
-            PEGANpcDesireContext context = activeContext != null
+            PegaNpcDesireContext context = activeContext != null
                 ? activeContext.Context
                 : default;
 
@@ -50,7 +52,7 @@ namespace PEGA.NPC
                 return InvalidResult(mode, context, inputDiagnostic);
             }
 
-            if (mode != PEGANpcPlanningValidationMode.LiveKnowledge || input.CausalKnowledge == null)
+            if (mode != PegaNpcPlanningValidationMode.LiveKnowledge || input.CausalKnowledge == null)
             {
                 return InvalidResult(
                     mode,
@@ -58,27 +60,27 @@ namespace PEGA.NPC
                     "Live plan selection requires a validated causal Knowledge State and known Targets.");
             }
 
-            PEGANpcCausalPlanEvaluation causalEvaluation = PEGANpcCausalPlanEvaluator.Evaluate(
+            PegaNpcCausalPlanEvaluation causalEvaluation = PegaNpcCausalPlanEvaluator.Evaluate(
                 input,
                 activeContext,
                 satisfaction,
                 input.CausalSearchCandidateEvaluationBudget);
-            List<PEGANpcPlanSnapshot> allPlans = new List<PEGANpcPlanSnapshot>(causalEvaluation.Alternatives.Count);
-            Dictionary<string, List<PEGANpcPlanSnapshot>> plansByDesire =
-                new Dictionary<string, List<PEGANpcPlanSnapshot>>(StringComparer.Ordinal);
-            PEGANpcPlanSnapshot selectedPlan = default;
+            List<PegaNpcPlanSnapshot> allPlans = new List<PegaNpcPlanSnapshot>(causalEvaluation.Alternatives.Count);
+            Dictionary<string, List<PegaNpcPlanSnapshot>> plansByDesire =
+                new Dictionary<string, List<PegaNpcPlanSnapshot>>(StringComparer.Ordinal);
+            PegaNpcPlanSnapshot selectedPlan = default;
             bool hasSelectedPlan = false;
 
             for (int alternativeIndex = 0; alternativeIndex < causalEvaluation.Alternatives.Count; alternativeIndex++)
             {
-                PEGANpcCausalPlanAlternative alternative = causalEvaluation.Alternatives[alternativeIndex];
+                PegaNpcCausalPlanAlternative alternative = causalEvaluation.Alternatives[alternativeIndex];
                 if (alternative.ActionSteps.Count != alternative.Plan.Steps.Count ||
                     alternative.ActionSteps.Count == 0)
                 {
                     continue;
                 }
 
-                PEGANpcPlanningActionCandidate firstAction = alternative.ActionSteps[0];
+                PegaNpcPlanningActionCandidate firstAction = alternative.ActionSteps[0];
                 if (firstAction.Action == null ||
                     firstAction.TargetId != alternative.Target.TargetId ||
                     firstAction.RequiredTargetKind != alternative.Target.Kind)
@@ -86,7 +88,7 @@ namespace PEGA.NPC
                     continue;
                 }
 
-                PEGANpcPlanSnapshot plan = new PEGANpcPlanSnapshot(
+                PegaNpcPlanSnapshot plan = new PegaNpcPlanSnapshot(
                     alternative.DesireId,
                     alternative.DesireName,
                     firstAction,
@@ -97,12 +99,12 @@ namespace PEGA.NPC
                     alternative.CostPreference,
                     alternative.Score,
                     input.PlanContinuation.HasValue
-                        ? PEGANpcPlanPurpose.PlanContinuationStep
-                        : PEGANpcPlanPurpose.DesireGoal);
+                        ? PegaNpcPlanPurpose.PlanContinuationStep
+                        : PegaNpcPlanPurpose.DesireGoal);
                 allPlans.Add(plan);
-                if (!plansByDesire.TryGetValue(plan.DesireId, out List<PEGANpcPlanSnapshot> desirePlans))
+                if (!plansByDesire.TryGetValue(plan.DesireId, out List<PegaNpcPlanSnapshot> desirePlans))
                 {
-                    desirePlans = new List<PEGANpcPlanSnapshot>();
+                    desirePlans = new List<PegaNpcPlanSnapshot>();
                     plansByDesire.Add(plan.DesireId, desirePlans);
                 }
 
@@ -114,29 +116,29 @@ namespace PEGA.NPC
                 }
             }
 
-            List<PEGANpcDesirePlanEvaluation> evaluations =
-                new List<PEGANpcDesirePlanEvaluation>(activeContext.Configurations.Length);
+            List<PegaNpcDesirePlanEvaluation> evaluations =
+                new List<PegaNpcDesirePlanEvaluation>(activeContext.Configurations.Length);
             for (int desireIndex = 0; desireIndex < activeContext.Configurations.Length; desireIndex++)
             {
-                PEGANpcDesireConfiguration configuration = activeContext.Configurations[desireIndex];
+                PegaNpcDesireConfiguration configuration = activeContext.Configurations[desireIndex];
                 if (configuration == null || configuration.Definition == null)
                 {
                     return InvalidResult(mode, context, $"Desire configuration or definition at index {desireIndex} is null.");
                 }
 
-                PEGANpcDesireDefinition desire = configuration.Definition;
-                satisfaction.TryGet(desire.DesireId, out PEGANpcDesireSatisfactionSnapshot currentSatisfaction);
+                PegaNpcDesireDefinition desire = configuration.Definition;
+                satisfaction.TryGet(desire.DesireId, out PegaNpcDesireSatisfactionSnapshot currentSatisfaction);
                 bool applicable = configuration.IsApplicable(
                     currentSatisfaction,
                     input.CausalKnowledge != null ? input.CausalKnowledge.KnowledgeState : null);
                 float effectiveWeight = applicable
                     ? configuration.EvaluateEffectiveWeight(currentSatisfaction)
                     : 0f;
-                List<PEGANpcPlanSnapshot> desirePlans = plansByDesire.TryGetValue(
+                List<PegaNpcPlanSnapshot> desirePlans = plansByDesire.TryGetValue(
                     desire.DesireId,
-                    out List<PEGANpcPlanSnapshot> plans)
+                    out List<PegaNpcPlanSnapshot> plans)
                     ? plans
-                    : new List<PEGANpcPlanSnapshot>();
+                    : new List<PegaNpcPlanSnapshot>();
                 desirePlans.Sort(ComparePlans);
 
                 string evaluationDiagnostic = !applicable
@@ -144,7 +146,7 @@ namespace PEGA.NPC
                     : desirePlans.Count == 0
                         ? GetNoPlanDiagnostic(causalEvaluation, input, desire.DesireId)
                         : string.Empty;
-                evaluations.Add(new PEGANpcDesirePlanEvaluation(
+                evaluations.Add(new PegaNpcDesirePlanEvaluation(
                     desire.DesireId,
                     desire.DisplayName,
                     applicable,
@@ -161,7 +163,7 @@ namespace PEGA.NPC
                 : causalEvaluation.HasIncompleteSearch
                     ? "Causal search budget or a hypothetical Action-step evaluation remained inconclusive before a selectable plan could be established."
                     : "No known causal solution exists for the applicable Desires and known Action/Target candidates.";
-            return new PEGANpcPlanSelectionResult(
+            return new PegaNpcPlanSelectionResult(
                 true,
                 mode,
                 context,
@@ -173,7 +175,7 @@ namespace PEGA.NPC
                 causalEvaluation);
         }
 
-        internal static int ComparePlans(PEGANpcPlanSnapshot left, PEGANpcPlanSnapshot right)
+        internal static int ComparePlans(PegaNpcPlanSnapshot left, PegaNpcPlanSnapshot right)
         {
             int scoreOrder = right.Score.CompareTo(left.Score);
             if (scoreOrder != 0)
@@ -193,11 +195,11 @@ namespace PEGA.NPC
                 : left.TargetId.CompareTo(right.TargetId);
         }
 
-        internal static string GetStableActionId(PEGANpcPlanningActionId actionId) => actionId.StableText;
+        internal static string GetStableActionId(PegaNpcPlanningActionId actionId) => actionId.StableText;
 
         private static string GetNoPlanDiagnostic(
-            PEGANpcCausalPlanEvaluation causalEvaluation,
-            PEGANpcPlanningInput input,
+            PegaNpcCausalPlanEvaluation causalEvaluation,
+            PegaNpcPlanningInput input,
             string desireId)
         {
             if (input.PlanContinuation.HasValue &&
@@ -212,14 +214,14 @@ namespace PEGA.NPC
             bool hasSearch = false;
             for (int index = 0; index < causalEvaluation.GoalSearches.Count; index++)
             {
-                PEGANpcCausalGoalSearchEvaluation search = causalEvaluation.GoalSearches[index];
+                PegaNpcCausalGoalSearchEvaluation search = causalEvaluation.GoalSearches[index];
                 if (!string.Equals(search.DesireId, desireId, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
                 hasSearch = true;
-                if (search.Search.Status == ImmersiveGames.Goap.GoapSearchStatus.BudgetExhausted)
+                if (search.Search.Status == GoapSearchStatus.BudgetExhausted)
                 {
                     return "The applicable Goal search exhausted its configured evaluation budget.";
                 }
@@ -237,35 +239,39 @@ namespace PEGA.NPC
                 : "No known Action/Target candidates were available for this Desire.";
         }
 
-        private static PEGANpcPlanSelectionResult InvalidResult(
-            PEGANpcPlanningValidationMode mode,
-            PEGANpcDesireContext context,
-            string diagnostic) => new PEGANpcPlanSelectionResult(
+        private static PegaNpcPlanSelectionResult InvalidResult(
+            PegaNpcPlanningValidationMode mode,
+            PegaNpcDesireContext context,
+            string diagnostic) => new PegaNpcPlanSelectionResult(
             false,
             mode,
             context,
-            Array.Empty<PEGANpcDesirePlanEvaluation>(),
-            Array.Empty<PEGANpcPlanSnapshot>(),
+            Array.Empty<PegaNpcDesirePlanEvaluation>(),
+            Array.Empty<PegaNpcPlanSnapshot>(),
             false,
             default,
             diagnostic);
 
-        internal static bool IsUsableCandidate(PEGANpcPlanningActionCandidate candidate)
+        internal static bool IsUsableCandidate(PegaNpcPlanningActionCandidate candidate)
         {
-            PEGANpcNavigationRouteEstimate route = candidate.RouteEstimate;
-            bool deferredRoute = route.Status == PEGANpcPlanningRouteStatus.Deferred &&
-                candidate.Action is IPEGANpcCausalActionStepEvaluator &&
+            PegaNpcNavigationRouteEstimate route = candidate.RouteEstimate;
+            bool deferredRoute = route.Status == PegaNpcPlanningRouteStatus.Deferred &&
+                candidate.Action is IPegaNpcCausalActionStepEvaluator &&
                 IsNonNegativeFinite(route.RouteLengthMeters) &&
                 IsPositiveFinite(route.EffectiveSpeedMetersPerSecond);
             bool usableRoute = candidate.Contract.RequiresNavigation
                 ? deferredRoute ||
-                  (route.Status == PEGANpcPlanningRouteStatus.Complete &&
+                  (route.Status == PegaNpcPlanningRouteStatus.Complete &&
                    IsNonNegativeFinite(route.RouteLengthMeters) &&
                    IsPositiveFinite(route.EffectiveSpeedMetersPerSecond))
-                : route.Status == PEGANpcPlanningRouteStatus.NotRequired &&
+                : route.Status == PegaNpcPlanningRouteStatus.NotRequired &&
                   route.RouteLengthMeters == 0f && route.EffectiveSpeedMetersPerSecond == 0f;
+            bool usableTargetRadius = !candidate.TargetRadiusOverrideMeters.HasValue ||
+                (!candidate.Contract.RequiresNavigation &&
+                 IsNonNegativeFinite(candidate.TargetRadiusOverrideMeters.Value));
             return usableRoute &&
-                   IsNonNegativeFinite(candidate.IntrinsicDurationSeconds);
+                   IsNonNegativeFinite(candidate.IntrinsicDurationSeconds) &&
+                   usableTargetRadius;
         }
 
         private static bool IsPositiveFinite(float value) =>

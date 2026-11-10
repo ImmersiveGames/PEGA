@@ -1,27 +1,30 @@
 using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
-using PEGA.Actors;
+using PEGA.Movement.Actor;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 using UnityEngine.Serialization;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Actions.Runtime
 {
     [CreateAssetMenu(fileName = "MoveAwayFromCharacter", menuName = "PEGA/NPC/Movement/Move Away from Character")]
-    public sealed class PEGANpcAvoidKnownCharacterAction : PEGANpcActionProviderAsset,
-        IPEGANpcKnowledgeChangeRelevanceProvider
+    public sealed class PegaNpcAvoidKnownCharacterAction : PegaNpcActionProviderAsset,
+        IPegaNpcKnowledgeChangeRelevanceProvider
     {
         private const float MinimumSeparationMeters = 0.1f;
         private const float SeparationTargetPrecisionMarginMeters = 0.001f;
 
         [System.NonSerialized]
-        private PEGANpcKnowledgeState knowledgeState;
+        private PegaNpcKnowledgeState _knowledgeState;
 
         [System.NonSerialized]
-        private PEGANpcKnowledgeReadView knowledgeReadView;
+        private PegaNpcKnowledgeReadView _knowledgeReadView;
 
         [System.NonSerialized]
-        private ActorOccurrenceReferenceBinding characterReference;
+        private ActorOccurrenceReferenceBinding _characterReference;
 
         [Header("Movement")]
         [SerializeField, Min(MinimumSeparationMeters)]
@@ -34,13 +37,13 @@ namespace PEGA.NPC
         [Tooltip("Additional distance the NPC attempts to gain on each move (m).")]
         private float additionalDistancePerMoveMeters = 1f;
 
-        protected override PEGANpcActionEffectKind ActionEffectKind =>
-            PEGANpcActionEffectKind.ReachSafeSeparationPosition;
+        protected override PegaNpcActionEffectKind ActionEffectKind =>
+            PegaNpcActionEffectKind.ReachSafeSeparationPosition;
 
-        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
-            PEGANpcPlanningActionId.MaintainSafeSeparationFromKnownCharacter,
+        public override PegaNpcActionContract Contract => new PegaNpcActionContract(
+            PegaNpcPlanningActionId.MaintainSafeSeparationFromKnownCharacter,
             ActionEffectKind,
-            PEGANpcPlanningTargetKind.SafeSeparationPosition,
+            PegaNpcPlanningTargetKind.SafeSeparationPosition,
             true,
             "NPC began moving to maintain safe separation from a known character.");
 
@@ -53,12 +56,12 @@ namespace PEGA.NPC
                 return false;
             }
 
-            knowledgeState = RuntimeContext.KnowledgeState;
-            knowledgeReadView = RuntimeContext.KnowledgeReadView;
-            characterReference = RuntimeContext.ActorReference;
-            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot ||
-                knowledgeReadView == null ||
-                characterReference == null || characterReference.gameObject != ActorRoot)
+            _knowledgeState = RuntimeContext.KnowledgeState;
+            _knowledgeReadView = RuntimeContext.KnowledgeReadView;
+            _characterReference = RuntimeContext.ActorReference;
+            if (_knowledgeState == null || _knowledgeState.gameObject != ActorRoot ||
+                _knowledgeReadView == null ||
+                _characterReference == null || _characterReference.gameObject != ActorRoot)
             {
                 diagnostic = "Avoid Known Character requires the Actor's Knowledge State and occurrence reference.";
                 return false;
@@ -68,7 +71,7 @@ namespace PEGA.NPC
             return true;
         }
 
-        public bool IsRelevantKnowledgeChange(PEGAKnowledgeFactChangedEvent change)
+        public bool IsRelevantKnowledgeChange(PegaKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged ||
                 !TryResolveCharacterSubject(out ActorId subjectActorId, out _))
@@ -76,17 +79,17 @@ namespace PEGA.NPC
                 return false;
             }
 
-            return PEGANpcKnowledgeFacts.IsCharacterFactChangeFor(change, subjectActorId);
+            return PegaNpcKnowledgeFacts.IsCharacterFactChangeFor(change, subjectActorId);
         }
 
         public override bool TryCreatePlanningCandidates(
-            PEGANpcActionPlanningContext context,
-            out IReadOnlyList<PEGANpcPlanningTarget> targets,
-            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            PegaNpcActionPlanningContext context,
+            out IReadOnlyList<PegaNpcPlanningTarget> targets,
+            out IReadOnlyList<PegaNpcPlanningActionCandidate> candidates,
             out string diagnostic)
         {
-            List<PEGANpcPlanningTarget> targetList = new List<PEGANpcPlanningTarget>();
-            List<PEGANpcPlanningActionCandidate> candidateList = new List<PEGANpcPlanningActionCandidate>();
+            List<PegaNpcPlanningTarget> targetList = new List<PegaNpcPlanningTarget>();
+            List<PegaNpcPlanningActionCandidate> candidateList = new List<PegaNpcPlanningActionCandidate>();
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
 
@@ -116,8 +119,8 @@ namespace PEGA.NPC
                     out Vector3 destination,
                     out diagnostic) ||
                 !TryDeferNavigationRoute(
-                    PEGAActorMovementSpeedRegime.Pursuit,
-                    out PEGANpcNavigationRouteEstimate routeEstimate,
+                    PegaActorMovementSpeedRegime.Pursuit,
+                    out PegaNpcNavigationRouteEstimate routeEstimate,
                     out routeDiagnostic))
             {
                 if (string.IsNullOrWhiteSpace(diagnostic))
@@ -130,15 +133,15 @@ namespace PEGA.NPC
                 return true;
             }
 
-            PEGANpcPlanningTarget target = PEGANpcPlanningTarget.FromCharacterSeparationPosition(
+            PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromCharacterSeparationPosition(
                 subjectActorId,
                 destination,
                 evidenceTimeSeconds);
-            PEGANpcPlanningActionCandidate candidate = new PEGANpcPlanningActionCandidate(
+            PegaNpcPlanningActionCandidate candidate = new PegaNpcPlanningActionCandidate(
                 Contract,
                 this,
                 target.TargetId,
-                PEGAActorMovementSpeedRegime.Pursuit,
+                PegaActorMovementSpeedRegime.Pursuit,
                 routeEstimate,
                 IntrinsicDurationSeconds);
 
@@ -149,19 +152,19 @@ namespace PEGA.NPC
         }
 
         public override bool CanOfferCandidate(
-            PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPlanContinuation? continuation)
+            PegaNpcPlanningActionCandidate candidate,
+            PegaNpcPlanContinuation? continuation)
         {
             return !continuation.HasValue &&
                    CandidateMatchesContract(candidate) &&
-                   candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.CharacterSeparationDestination &&
+                   candidate.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination &&
                    TryResolveCharacterSubject(out ActorId subjectActorId, out _) &&
                    candidate.TargetId.CharacterSeparationSubjectActorId == subjectActorId;
         }
 
         public override bool IsCurrentPlanValid(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -175,12 +178,12 @@ namespace PEGA.NPC
                     out Vector3 knownCharacterPosition,
                     out evidenceTimeSeconds,
                     out diagnostic) ||
-                plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+                plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
                 plan.PredictedEffect != Contract.EffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
-                plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
-                plan.TargetId != PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
+                plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                plan.TargetId != PegaNpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
                 PlanarDistance(plan.TargetPosition, knownCharacterPosition) <
                 minimumSafeDistanceMeters + ArrivalRadiusMeters)
             {
@@ -196,8 +199,8 @@ namespace PEGA.NPC
         }
 
         public override bool TryStart(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out string diagnostic)
         {
             diagnostic = string.Empty;
@@ -207,12 +210,12 @@ namespace PEGA.NPC
                     out Vector3 knownCharacterPosition,
                     out _,
                     out diagnostic) ||
-                plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+                plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
                 plan.PredictedEffect != Contract.EffectKind ||
                 plan.TargetKind != Contract.TargetKind ||
-                plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
-                plan.TargetId != PEGANpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
+                plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                plan.TargetId != PegaNpcPlanningTargetId.ForCharacterSeparationDestination(subjectActorId) ||
                 !TryCreateSafeSeparationPosition(
                     ActorTransform.position,
                     knownCharacterPosition,
@@ -230,11 +233,11 @@ namespace PEGA.NPC
             return TryStartNavigation(
                 plan.TargetId,
                 plan.TargetPosition,
-                PEGAActorMovementSpeedRegime.Pursuit,
+                PegaActorMovementSpeedRegime.Pursuit,
                 out diagnostic);
         }
 
-        public override bool IsEffectAlreadySatisfiedAtPosition(PEGANpcPlanSnapshot plan, Vector3 actorPosition)
+        public override bool IsEffectAlreadySatisfiedAtPosition(PegaNpcPlanSnapshot plan, Vector3 actorPosition)
         {
             return base.IsEffectAlreadySatisfiedAtPosition(plan, actorPosition) &&
                    TryGetKnownCharacterEvidence(
@@ -275,13 +278,13 @@ namespace PEGA.NPC
         private bool TryValidateConfiguration(out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (knowledgeState == null || knowledgeState.gameObject != ActorRoot)
+            if (_knowledgeState == null || _knowledgeState.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires this NPC's Knowledge State on the same root.";
                 return false;
             }
 
-            if (characterReference == null || characterReference.gameObject != ActorRoot)
+            if (_characterReference == null || _characterReference.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires an explicit target Actor occurrence reference on the same root.";
                 return false;
@@ -305,7 +308,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            if (!characterReference.TryGetCurrent(out ActorOccurrenceResolution resolution))
+            if (!_characterReference.TryGetCurrent(out ActorOccurrenceResolution resolution))
             {
                 diagnostic = $"The configured target Actor occurrence is not currently resolved: {resolution.Status}. {resolution.Diagnostic}";
                 return false;
@@ -330,7 +333,7 @@ namespace PEGA.NPC
             out string diagnostic)
         {
             return TryGetKnownCharacterEvidence(
-                knowledgeReadView,
+                _knowledgeReadView,
                 out subjectActorId,
                 out knownPosition,
                 out evidenceTimeSeconds,
@@ -338,7 +341,7 @@ namespace PEGA.NPC
         }
 
         private bool TryGetKnownCharacterEvidence(
-            PEGANpcKnowledgeReadView knowledgeView,
+            PegaNpcKnowledgeReadView knowledgeView,
             out ActorId subjectActorId,
             out Vector3 knownPosition,
             out double evidenceTimeSeconds,
@@ -352,13 +355,13 @@ namespace PEGA.NPC
                 return false;
             }
 
-            PEGAKnowledgeFact<Vector3> lastObservedPosition =
+            PegaKnowledgeFact<Vector3> lastObservedPosition =
                 knowledgeView.GetKnownCharacterPosition(subjectActorId);
-            PEGAKnowledgeFact<bool> playerFact = knowledgeView.GetIsPlayer(subjectActorId);
-            if (!PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact) ||
+            PegaKnowledgeFact<bool> playerFact = knowledgeView.GetIsPlayer(subjectActorId);
+            if (!PegaNpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact) ||
                 !lastObservedPosition.TryGetValue(out knownPosition) ||
                 !lastObservedPosition.HasObservationTime ||
-                !lastObservedPosition.HasOrigin(PEGANpcEvidenceOrigin.Perception) ||
+                !lastObservedPosition.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
                 !IsFinite(knownPosition))
             {
                 diagnostic = "The target's Player status or location is unknown in this NPC's Perception-backed Individual knowledge.";

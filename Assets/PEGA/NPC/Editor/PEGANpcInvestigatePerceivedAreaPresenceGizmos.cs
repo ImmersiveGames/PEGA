@@ -1,10 +1,13 @@
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEditor;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
 {
     /// <summary>Prévia de desenvolvimento da busca radial configurada e do Target em execução.</summary>
-    internal static class PEGANpcInvestigatePerceivedAreaPresenceGizmos
+    internal static class PegaNpcInvestigatePerceivedAreaPresenceGizmos
     {
         private static readonly Color SearchBoundColor = new Color(0.95f, 0.72f, 0.25f, 0.85f);
         private static readonly Color SampleColor = new Color(1f, 0.88f, 0.35f, 0.95f);
@@ -12,10 +15,10 @@ namespace PEGA.NPC.Editor
 
         [DrawGizmo(GizmoType.Selected)]
         private static void Draw(
-            PEGANpcAutonomy autonomy,
+            PegaNpcAutonomy autonomy,
             GizmoType gizmoType)
         {
-            PEGANpcInvestigatePerceivedAreaPresenceAction action = FindDefinition(autonomy);
+            PegaNpcInvestigatePerceivedAreaPresenceAction action = FindDefinition(autonomy);
             if (autonomy == null || action == null)
             {
                 return;
@@ -70,7 +73,7 @@ namespace PEGA.NPC.Editor
         }
 
         private static bool TryGetPresenceAnchor(
-            PEGANpcAutonomy autonomy,
+            PegaNpcAutonomy autonomy,
             out Vector3 anchor)
         {
             anchor = autonomy.transform.position;
@@ -79,10 +82,10 @@ namespace PEGA.NPC.Editor
                 return false;
             }
 
-            PEGANpcKnowledgeState knowledgeState = autonomy.GetComponent<PEGANpcKnowledgeState>();
+            PegaNpcKnowledgeState knowledgeState = autonomy.GetComponent<PegaNpcKnowledgeState>();
             if (knowledgeState == null ||
                 !knowledgeState.GetPerceivedAreaPresence().TryGetValue(
-                    out PEGANpcPerceivedAreaPresence presence) ||
+                    out PegaNpcPerceivedAreaPresence presence) ||
                 !presence.IsPresent)
             {
                 return false;
@@ -108,16 +111,16 @@ namespace PEGA.NPC.Editor
             Handles.DrawLine(lower - Vector3.right * radius, upper - Vector3.right * radius);
         }
 
-        private static void DrawActiveTarget(PEGANpcAutonomy autonomy)
+        private static void DrawActiveTarget(PegaNpcAutonomy autonomy)
         {
             if (!autonomy.TryGetActionExecution(
-                    PEGANpcPlanningActionId.InvestigatePerceivedAreaPresence,
-                    out PEGANpcActionExecutionSnapshot execution))
+                    PegaNpcPlanningActionId.InvestigatePerceivedAreaPresence,
+                    out PegaNpcActionExecutionSnapshot execution))
             {
                 return;
             }
 
-            if (execution.Outcome != PEGANpcActionOutcome.Running ||
+            if (execution.Outcome != PegaNpcActionOutcome.Running ||
                 !execution.DeclaredEffect.IsTargetResolved)
             {
                 return;
@@ -128,8 +131,8 @@ namespace PEGA.NPC.Editor
             Handles.Label(execution.TargetPosition, "Ponto de busca selecionado pelo GOAP");
         }
 
-        private static PEGANpcInvestigatePerceivedAreaPresenceAction FindDefinition(
-            PEGANpcAutonomy autonomy)
+        private static PegaNpcInvestigatePerceivedAreaPresenceAction FindDefinition(
+            PegaNpcAutonomy autonomy)
         {
             if (autonomy == null)
             {
@@ -138,7 +141,7 @@ namespace PEGA.NPC.Editor
 
             for (int index = 0; index < autonomy.ActionDefinitionCount; index++)
             {
-                if (autonomy.GetActionDefinitionAt(index) is PEGANpcInvestigatePerceivedAreaPresenceAction action)
+                if (autonomy.GetActionDefinitionAt(index) is PegaNpcInvestigatePerceivedAreaPresenceAction action)
                 {
                     return action;
                 }

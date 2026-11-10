@@ -6,23 +6,23 @@ using UnityEngine.SceneManagement;
 
 namespace PEGA.Diagnostics
 {
-    public sealed class PEGANavMeshTopologyProbeWindow : EditorWindow
+    public sealed class PegaNavMeshTopologyProbeWindow : EditorWindow
     {
         private const string TargetScenePath = "Assets/PEGA/Scenes/MissionRoute.unity";
         private const int MaxDisplayedWalkableCells = 5000;
 
-        [SerializeField] private float _sampleSpacing = 0.5f;
-        [SerializeField] private bool _showRawSampling = true;
-        [SerializeField] private bool _showTopologyOverlay = true;
+        [SerializeField] private float sampleSpacing = 0.5f;
+        [SerializeField] private bool showRawSampling = true;
+        [SerializeField] private bool showTopologyOverlay = true;
 
-        private PEGANavMeshTopologyAnalyzer.Snapshot _snapshot;
+        private PegaNavMeshTopologyAnalyzer.Snapshot _snapshot;
         private string _diagnostic;
         private float _analyzedSpacing;
 
         [MenuItem("PEGA/Diagnostics/NavMesh Topology Probe")]
         private static void Open()
         {
-            GetWindow<PEGANavMeshTopologyProbeWindow>("NavMesh Topology");
+            GetWindow<PegaNavMeshTopologyProbeWindow>("NavMesh Topology");
         }
 
         private void OnEnable()
@@ -49,7 +49,7 @@ namespace PEGA.Diagnostics
                 EditorGUILayout.HelpBox("Abra e torne ativa a cena MissionRoute para analisar o blockout do armazém.", MessageType.Warning);
             }
 
-            _sampleSpacing = EditorGUILayout.Slider("Resolução da amostra (m)", _sampleSpacing, 0.25f, 2f);
+            sampleSpacing = EditorGUILayout.Slider("Resolução da amostra (m)", sampleSpacing, 0.25f, 2f);
             EditorGUILayout.HelpBox(
                 "Uma célula é coberta quando intercepta área dos triângulos da NavMesh, mesmo que seu centro caia fora da superfície. O grafo ainda é uma aproximação 2D: células maiores podem fundir passagens próximas ou apagar detalhes.",
                 MessageType.None);
@@ -68,17 +68,17 @@ namespace PEGA.Diagnostics
                 }
             }
 
-            bool showRawSampling = EditorGUILayout.Toggle("Visualizar células amostradas", _showRawSampling);
-            if (showRawSampling != _showRawSampling)
+            bool showRawSampling = EditorGUILayout.Toggle("Visualizar células amostradas", this.showRawSampling);
+            if (showRawSampling != this.showRawSampling)
             {
-                _showRawSampling = showRawSampling;
+                this.showRawSampling = showRawSampling;
                 SceneView.RepaintAll();
             }
 
-            bool showTopologyOverlay = EditorGUILayout.Toggle("Visualizar classificação topológica", _showTopologyOverlay);
-            if (showTopologyOverlay != _showTopologyOverlay)
+            bool showTopologyOverlay = EditorGUILayout.Toggle("Visualizar classificação topológica", this.showTopologyOverlay);
+            if (showTopologyOverlay != this.showTopologyOverlay)
             {
-                _showTopologyOverlay = showTopologyOverlay;
+                this.showTopologyOverlay = showTopologyOverlay;
                 SceneView.RepaintAll();
             }
 
@@ -164,12 +164,12 @@ namespace PEGA.Diagnostics
                 return;
             }
 
-            if (!PEGANavMeshTopologyAnalyzer.TryAnalyze(surface, _sampleSpacing, out _snapshot, out _diagnostic))
+            if (!PegaNavMeshTopologyAnalyzer.TryAnalyze(surface, sampleSpacing, out _snapshot, out _diagnostic))
             {
                 return;
             }
 
-            _analyzedSpacing = _sampleSpacing;
+            _analyzedSpacing = sampleSpacing;
             SceneView.RepaintAll();
         }
 
@@ -178,7 +178,7 @@ namespace PEGA.Diagnostics
             if (_snapshot == null || Event.current.type != EventType.Repaint) return;
 
             Color previousColor = Handles.color;
-            if (_showRawSampling)
+            if (showRawSampling)
             {
                 Handles.color = SamplingColor;
                 int stride = Mathf.Max(1, Mathf.CeilToInt((float)_snapshot.WalkableCellPositions.Count / MaxDisplayedWalkableCells));
@@ -190,7 +190,7 @@ namespace PEGA.Diagnostics
                 }
             }
 
-            if (!_showTopologyOverlay)
+            if (!showTopologyOverlay)
             {
                 Handles.color = previousColor;
                 return;
@@ -198,9 +198,9 @@ namespace PEGA.Diagnostics
 
             for (int index = 0; index < _snapshot.Edges.Count; index++)
             {
-                PEGANavMeshTopologyAnalyzer.Edge edge = _snapshot.Edges[index];
-                PEGANavMeshTopologyAnalyzer.Node from = _snapshot.Nodes[edge.From];
-                PEGANavMeshTopologyAnalyzer.Node to = _snapshot.Nodes[edge.To];
+                PegaNavMeshTopologyAnalyzer.Edge edge = _snapshot.Edges[index];
+                PegaNavMeshTopologyAnalyzer.Node from = _snapshot.Nodes[edge.From];
+                PegaNavMeshTopologyAnalyzer.Node to = _snapshot.Nodes[edge.To];
                 Handles.color = EdgeColor(edge, from, to);
                 Handles.DrawAAPolyLine(3f, from.Position + Vector3.up * 0.06f, to.Position + Vector3.up * 0.06f);
             }
@@ -226,9 +226,9 @@ namespace PEGA.Diagnostics
         }
 
         private static Color EdgeColor(
-            PEGANavMeshTopologyAnalyzer.Edge edge,
-            PEGANavMeshTopologyAnalyzer.Node from,
-            PEGANavMeshTopologyAnalyzer.Node to)
+            PegaNavMeshTopologyAnalyzer.Edge edge,
+            PegaNavMeshTopologyAnalyzer.Node from,
+            PegaNavMeshTopologyAnalyzer.Node to)
         {
             if (edge.IsAlternative) return AlternativePathColor;
             if (from.IsDeadEnd || to.IsDeadEnd) return DeadEndColor;

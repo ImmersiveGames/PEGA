@@ -1,11 +1,14 @@
 using System;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
+using PEGA.Interactions.Runtime;
+using PEGA.Interactions.Runtime.ObjectEntry;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+using UnityEngine.Serialization;
+namespace PEGA.NPC.Knowledge.Authoring
 {
-    public enum PEGAKnowledgeActorIdentitySource
+    public enum PegaKnowledgeActorIdentitySource
     {
         ActorDeclaration = 0,
         CurrentPlayerActorFromNpcBinding = 1
@@ -16,9 +19,9 @@ namespace PEGA.NPC
     /// which slot is read; ActorId is always resolved through a Framework identity contract.
     /// </summary>
     [Serializable]
-    public struct PEGAKnowledgeFactAuthoringPayload
+    public struct PegaKnowledgeFactAuthoringPayload
     {
-        [SerializeField, HideInInspector] private PEGAKnowledgeActorIdentitySource actorIdentitySource;
+        [SerializeField, HideInInspector] private PegaKnowledgeActorIdentitySource actorIdentitySource;
         [SerializeField, HideInInspector] private ActorDeclaration actorDeclaration;
         [SerializeField, HideInInspector] private ObjectEntryIdReference objectEntryId;
         [SerializeField, HideInInspector] private string stringValue;
@@ -28,7 +31,10 @@ namespace PEGA.NPC
         [SerializeField, HideInInspector] private double doubleValue;
         [SerializeField, HideInInspector] private bool boolValue;
         [SerializeField, HideInInspector] private Vector3 vector3Value;
-        [SerializeField, HideInInspector] private PEGANpcPerceivedAreaPresence perceivedAreaPresenceValue;
+        [SerializeField, HideInInspector] private PegaNpcPerceivedAreaPresence perceivedAreaPresenceValue;
+        [SerializeField, HideInInspector]
+        [FormerlySerializedAs("robObjectEntryActionValue")]
+        private PegaObjectEntryRobAction objectEntryRobActionValue;
 
         public static bool Supports(Type type) =>
             type == typeof(ActorId) ||
@@ -41,7 +47,8 @@ namespace PEGA.NPC
             type == typeof(double) ||
             type == typeof(bool) ||
             type == typeof(Vector3) ||
-            type == typeof(PEGANpcPerceivedAreaPresence) ||
+            type == typeof(PegaNpcPerceivedAreaPresence) ||
+            type == typeof(PegaRobObjectEntryConfigurationSnapshot) ||
             IsSupportedEnum(type);
 
         private static bool IsSupportedEnum(Type type) =>
@@ -50,6 +57,7 @@ namespace PEGA.NPC
         internal bool TryGetValue(
             Type type,
             ActorOccurrenceReferenceBinding actorBinding,
+            object expectedAddress,
             out object resolved,
             out bool pending,
             out string diagnostic)
@@ -66,6 +74,46 @@ namespace PEGA.NPC
             if (type == typeof(ActorId))
             {
                 return TryGetActorId(actorBinding, out resolved, out pending, out diagnostic);
+            }
+
+            if (type == typeof(PegaRobObjectEntryConfigurationSnapshot))
+            {
+                if (!(expectedAddress is ObjectEntryId expectedObjectEntryId) ||
+                    !expectedObjectEntryId.IsValid)
+                {
+                    diagnostic = "Rob planning parameters require a valid ObjectEntryId address.";
+                    return false;
+                }
+
+                if (objectEntryRobActionValue == null ||
+                    !objectEntryRobActionValue.TryGetConfiguration(
+                        out PegaRobObjectEntryConfigurationSnapshot parameters,
+                        out diagnostic))
+                {
+                    diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                        ? "Select a valid Rob action component offered to NPC participants."
+                        : diagnostic;
+                    return false;
+                }
+
+                PegaObjectEntryInteractionAggregator aggregator =
+                    objectEntryRobActionValue.GetComponent<PegaObjectEntryInteractionAggregator>();
+                if (aggregator == null || !aggregator.IsOfferedTo(
+                        objectEntryRobActionValue,
+                        PegaObjectInteractionParticipant.Npc))
+                {
+                    diagnostic = "The selected Rob action must be offered to NPC participants by its Object Entry aggregator before its configuration can enter Group Knowledge.";
+                    return false;
+                }
+
+                if (parameters.ObjectEntryId != expectedObjectEntryId)
+                {
+                    diagnostic = "The selected Rob action's ObjectEntryId does not match this fact address.";
+                    return false;
+                }
+
+                resolved = parameters;
+                return true;
             }
 
             try
@@ -97,7 +145,7 @@ namespace PEGA.NPC
                 else if (type == typeof(double)) resolved = doubleValue;
                 else if (type == typeof(bool)) resolved = boolValue;
                 else if (type == typeof(Vector3)) resolved = vector3Value;
-                else if (type == typeof(PEGANpcPerceivedAreaPresence)) resolved = perceivedAreaPresenceValue;
+                else if (type == typeof(PegaNpcPerceivedAreaPresence)) resolved = perceivedAreaPresenceValue;
                 else if (type.IsEnum) resolved = Enum.ToObject(type, integerValue);
                 return true;
             }
@@ -116,7 +164,7 @@ namespace PEGA.NPC
         {
             resolved = null;
             pending = false;
-            if (actorIdentitySource == PEGAKnowledgeActorIdentitySource.ActorDeclaration)
+            if (actorIdentitySource == PegaKnowledgeActorIdentitySource.ActorDeclaration)
             {
                 if (actorDeclaration == null)
                 {
@@ -144,7 +192,7 @@ namespace PEGA.NPC
                 }
             }
 
-            if (actorIdentitySource != PEGAKnowledgeActorIdentitySource.CurrentPlayerActorFromNpcBinding)
+            if (actorIdentitySource != PegaKnowledgeActorIdentitySource.CurrentPlayerActorFromNpcBinding)
             {
                 diagnostic = "Select a supported Framework Actor identity source.";
                 return false;

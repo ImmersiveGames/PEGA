@@ -2,33 +2,32 @@ using System;
 using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Knowledge.Authoring
 {
     /// <summary>Initial facts selected for one Group Profile that the owner must create through the Framework.</summary>
     [Serializable]
-    public sealed class PEGAKnowledgeGroupInitialAuthoring
+    public sealed class PegaKnowledgeGroupInitialAuthoring
     {
         [SerializeField, Tooltip("Profile selecionado para o Group que este owner declara criar. O Profile fornece o GroupId; não cria nem representa sozinho um Group vivo.")]
         private GroupProfile groupProfile;
 
         [SerializeField, Tooltip("Fatos iniciais do Group. Cada linha usa o mesmo catálogo e editor Identity → Property → Value dos demais escopos.")]
-        private PEGAKnowledgeFactAuthoringEntry[] facts = Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+        private PegaKnowledgeFactAuthoringEntry[] facts = Array.Empty<PegaKnowledgeFactAuthoringEntry>();
 
         internal GroupProfile GroupProfile => groupProfile;
 
-        internal IReadOnlyList<PEGAKnowledgeFactAuthoringEntry> Facts =>
-            facts ?? Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+        internal IReadOnlyList<PegaKnowledgeFactAuthoringEntry> Facts =>
+            facts ?? Array.Empty<PegaKnowledgeFactAuthoringEntry>();
 
         internal bool HasFacts => facts != null && facts.Length > 0;
 
-        internal PEGAKnowledgeGroupInitialAuthoring Snapshot()
+        internal PegaKnowledgeGroupInitialAuthoring Snapshot()
         {
-            PEGAKnowledgeGroupInitialAuthoring snapshot =
-                (PEGAKnowledgeGroupInitialAuthoring)MemberwiseClone();
+            PegaKnowledgeGroupInitialAuthoring snapshot =
+                (PegaKnowledgeGroupInitialAuthoring)MemberwiseClone();
             snapshot.facts = facts != null
-                ? (PEGAKnowledgeFactAuthoringEntry[])facts.Clone()
-                : Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+                ? (PegaKnowledgeFactAuthoringEntry[])facts.Clone()
+                : Array.Empty<PegaKnowledgeFactAuthoringEntry>();
             return snapshot;
         }
     }

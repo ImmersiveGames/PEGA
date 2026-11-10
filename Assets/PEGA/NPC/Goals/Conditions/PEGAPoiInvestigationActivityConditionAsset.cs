@@ -1,12 +1,14 @@
 using System;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
+using PEGA.GOAP;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Goals.Conditions
 {
-    public enum PEGAPoiInvestigationActivityConditionKind
+    public enum PegaPoiInvestigationActivityConditionKind
     {
         HasPendingInvestigations = 0,
         AllRequiredInvestigationsCompleted = 10
@@ -15,27 +17,27 @@ namespace PEGA.NPC
     [CreateAssetMenu(
         fileName = "PoiInvestigationActivityCondition",
         menuName = "PEGA/NPC/GOAP/POI Investigation Activity Condition")]
-    public sealed class PEGAPoiInvestigationActivityConditionAsset : PEGANpcGoapConditionAsset
+    public sealed class PegaPoiInvestigationActivityConditionAsset : PegaNpcGoapConditionAsset
     {
         [SerializeField]
         [Tooltip("Group Profile whose current, membership-authorized Knowledge defines this activity.")]
         private GroupProfile activityGroup;
 
         [SerializeField]
-        private PEGAPoiInvestigationActivityConditionKind conditionKind;
+        private PegaPoiInvestigationActivityConditionKind conditionKind;
 
         public override GoapTruthValue Evaluate(IGoapStateView state)
         {
             if (state == null || state.Source != GoapStateSource.KnowledgeState ||
                 !(state is IGoapKnowledgeStateView knowledgeState) ||
                 !TryGetGroupId(out GroupId groupId) ||
-                !PEGAPoiGroupKnowledge.TryGetReader(knowledgeState, out PEGAActorGroupKnowledgeReader reader))
+                !PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader))
             {
                 return GoapTruthValue.Unknown;
             }
 
-            PEGAActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> requiredFacts =
-                reader.ReadGroupFacts(PEGAObjectEntryKnowledgeFacts.InvestigationRequired, Time.timeAsDouble);
+            PegaActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> requiredFacts =
+                reader.ReadGroupFacts(PegaObjectEntryKnowledgeFacts.InvestigationRequired, Time.timeAsDouble);
             if (!requiredFacts.IsAuthorized)
             {
                 return GoapTruthValue.Unknown;
@@ -47,7 +49,7 @@ namespace PEGA.NPC
             bool hasUnknownCompletion = false;
             for (int groupIndex = 0; groupIndex < requiredFacts.Groups.Count; groupIndex++)
             {
-                PEGAActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = requiredFacts.Groups[groupIndex];
+                PegaActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = requiredFacts.Groups[groupIndex];
                 if (group.GroupId != groupId)
                 {
                     continue;
@@ -55,9 +57,9 @@ namespace PEGA.NPC
 
                 for (int factIndex = 0; factIndex < group.Facts.Count; factIndex++)
                 {
-                    PEGAKnowledgeFactSnapshot<ObjectEntryId, bool> requiredSnapshot = group.Facts[factIndex];
+                    PegaKnowledgeFactSnapshot<ObjectEntryId, bool> requiredSnapshot = group.Facts[factIndex];
                     if (!requiredSnapshot.Key.IsValid ||
-                        requiredSnapshot.Fact.Scope != PEGAKnowledgeScope.Group)
+                        requiredSnapshot.Fact.Scope != PegaKnowledgeScope.Group)
                     {
                         continue;
                     }
@@ -74,11 +76,11 @@ namespace PEGA.NPC
                     }
 
                     hasRequiredPoi = true;
-                    PEGAActorGroupKnowledgeReadResult<bool> completion = reader.ReadGroupFact(
+                    PegaActorGroupKnowledgeReadResult<bool> completion = reader.ReadGroupFact(
                         groupId,
-                        PEGAObjectEntryKnowledgeFacts.InvestigationCompleted.For(requiredSnapshot.Key.AddressValue),
+                        PegaObjectEntryKnowledgeFacts.InvestigationCompleted.For(requiredSnapshot.Key.AddressValue),
                         Time.timeAsDouble);
-                    if (!completion.IsAuthorized || completion.Fact.Scope != PEGAKnowledgeScope.Group ||
+                    if (!completion.IsAuthorized || completion.Fact.Scope != PegaKnowledgeScope.Group ||
                         !completion.Fact.TryGetValue(out bool isCompleted))
                     {
                         hasUnknownCompletion = true;
@@ -99,13 +101,13 @@ namespace PEGA.NPC
 
             return conditionKind switch
             {
-                PEGAPoiInvestigationActivityConditionKind.HasPendingInvestigations =>
+                PegaPoiInvestigationActivityConditionKind.HasPendingInvestigations =>
                     hasPendingPoi
                         ? GoapTruthValue.True
                         : hasUnknownRequirement || hasUnknownCompletion
                             ? GoapTruthValue.Unknown
                             : GoapTruthValue.False,
-                PEGAPoiInvestigationActivityConditionKind.AllRequiredInvestigationsCompleted =>
+                PegaPoiInvestigationActivityConditionKind.AllRequiredInvestigationsCompleted =>
                     hasPendingPoi
                         ? GoapTruthValue.False
                         : hasUnknownRequirement || hasUnknownCompletion
@@ -117,7 +119,7 @@ namespace PEGA.NPC
 
         public override bool TryValidate(out string diagnostic)
         {
-            bool valid = Enum.IsDefined(typeof(PEGAPoiInvestigationActivityConditionKind), conditionKind) &&
+            bool valid = Enum.IsDefined(typeof(PegaPoiInvestigationActivityConditionKind), conditionKind) &&
                          TryGetGroupId(out _);
             diagnostic = valid
                 ? string.Empty

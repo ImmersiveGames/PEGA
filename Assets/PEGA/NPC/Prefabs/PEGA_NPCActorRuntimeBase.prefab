@@ -26,6 +26,8 @@ GameObject:
   - component: {fileID: 114000022}
   - component: {fileID: 114000023}
   - component: {fileID: 114000024}
+  - component: {fileID: 114000025}
+  - component: {fileID: 114000026}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -156,7 +158,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3dda35013e8848359b1df37a47f67718, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGAActorGroupMembership
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.ActorGroups.Runtime.PegaActorGroupMembership
   groupProfiles:
   - {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
 --- !u!114 &114000006
@@ -170,7 +172,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d5a0324cd05417b827cfecc985488c2, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcPerceptionSource
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Perception.PegaNpcPerceptionSource
   perceivedAreaSensorInstance: {fileID: 114000021}
   visionConeSensorInstance: {fileID: 114000022}
   lostContactEvadedIntervalSeconds: 5
@@ -187,7 +189,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 286156af9b894e1eb6460d3fefb2ff32, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcAutonomy
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Autonomy.PegaNpcAutonomy
   desireProfile: {fileID: 11400000, guid: ec29fa4ffa39430aae581216120e22f3, type: 2}
   availableBehaviors:
   - {fileID: 11400000, guid: 830767df9f6c454bb8f9f66ab3640f7c, type: 2}
@@ -206,7 +208,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77960452a1594177ae0a1768869b1da9, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcNavMeshMovementIntentSource
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Movement.NPC.PegaNpcNavMeshMovementIntentSource
   maximumPositionDivergenceMeters: 0.5
   blockedMovementTimeoutSeconds: 0.75
   positionDivergenceWarningMeters: 0.1
@@ -223,7 +225,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 724481bb75bd4769af20d6fbf4b04cd1, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementMechanic
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Movement.Actor.PegaActorMovementMechanic
   intentSource: {fileID: 114000002}
   maxSpeed: 3.5
   pursuitSpeed: 4.5
@@ -250,7 +252,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorPresentationSignals
   turnMaximumSpeedMetersPerSecond: 1
   turnMinimumAngleDegrees: 60
   turnRearmAngleDegrees: 20
@@ -265,7 +267,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10741d5b90ee4384af4f136990125c9f, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcKnowledgeState
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Individual.PegaNpcKnowledgeState
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -486,3 +488,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
   m_Name:
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryOccurrenceQueryBinding
+--- !u!114 &114000025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c3eae65466c43ec8b0ba26ccb24ec4c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.PegaActorPhysicalInventory
+  capacity: 1
+  carriedItemAnchorOffset: {x: 0, y: 1.15, z: 0}
+  carriedItemSpacingMeters: 0.25
+--- !u!114 &114000026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fd55b53fabf46bc94875c1da80b2c42, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Actor.PegaActorObjectInteractionMechanic
+  playerIntentSource: {fileID: 0}
+  playerSelectionSource: {fileID: 0}
+  playerDiscoverySource: {fileID: 0}

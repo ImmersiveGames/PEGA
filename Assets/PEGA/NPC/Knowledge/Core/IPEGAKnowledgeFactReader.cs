@@ -1,16 +1,16 @@
-using ImmersiveGames.Goap;
-
-namespace PEGA.NPC
+using PEGA.GOAP;
+using PEGA.NPC.Knowledge.Definitions;
+namespace PEGA.NPC.Knowledge.Core
 {
     /// <summary>Read-only access to typed facts owned by one explicit PEGA Knowledge scope authority.</summary>
-    public interface IPEGAKnowledgeFactReader : IGoapKnowledgeCapability
+    public interface IPegaKnowledgeFactReader : IGoapKnowledgeCapability
     {
-        PEGAKnowledgeScope Scope { get; }
+        PegaKnowledgeScope Scope { get; }
 
         bool IsAvailable { get; }
 
-        PEGAKnowledgeFact<TValue> ReadFact<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        PegaKnowledgeFact<TValue> ReadFact<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds);
     }
 }

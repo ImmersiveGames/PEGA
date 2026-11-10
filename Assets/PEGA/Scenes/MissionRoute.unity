@@ -3978,7 +3978,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PegaPointOfInterest
 --- !u!114 &5400000203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4002,7 +4002,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c34500b211aa49be8f7a206f27f81517, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Diagnostics.PEGAObjectEntryAuthoringProbe
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Diagnostics.PegaObjectEntryAuthoringProbe
   identityOnly:
     objectEntryIdText: pega.warehouse.storage-rack-west-north
   identityWithOptionalOwner:
@@ -4069,7 +4069,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PegaPointOfInterest
 --- !u!1 &5400000220
 GameObject:
   m_ObjectHideFlags: 0
@@ -4128,7 +4128,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PegaPointOfInterest
 --- !u!1 &5400000230
 GameObject:
   m_ObjectHideFlags: 0
@@ -4187,7 +4187,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PegaPointOfInterest
 --- !u!1 &5400000240
 GameObject:
   m_ObjectHideFlags: 0
@@ -4246,7 +4246,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d5a3befc2b3469eb75e9aca341a3c40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PEGAPointOfInterest
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.PointsOfInterest.PegaPointOfInterest
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

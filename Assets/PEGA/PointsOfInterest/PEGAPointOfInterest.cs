@@ -6,7 +6,7 @@ namespace PEGA.PointsOfInterest
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ObjectEntryDeclaration))]
     [AddComponentMenu("PEGA/World/Point of Interest")]
-    public sealed class PEGAPointOfInterest : MonoBehaviour
+    public sealed class PegaPointOfInterest : MonoBehaviour
     {
         public bool TryGetIdentity(out ObjectEntryId objectEntryId)
         {

@@ -8,21 +8,25 @@ using Immersive.Framework.RuntimeContent;
 using Immersive.Logging.Records;
 using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Perception
 {
     /// <summary>
     /// PEGA adapter that acquires declared physical candidates, resolves Framework identities after sensor
     /// evaluation, and translates observations into Knowledge State facts and targeted Autonomy requests.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PEGANpcKnowledgeState))]
+    [RequireComponent(typeof(PegaNpcKnowledgeState))]
     [RequireComponent(typeof(PerceptionSensorSet))]
     [RequireComponent(typeof(ActorOccurrenceQueryBinding))]
     [RequireComponent(typeof(ObjectEntryOccurrenceQueryBinding))]
-    [AddComponentMenu("PEGA/NPC/Perception Source")]
-    public sealed class PEGANpcPerceptionSource : MonoBehaviour, IPEGANpcTargetObservationSource
+    [AddComponentMenu("PEGA/Perception/NPC/Perception Source")]
+    public sealed class PegaNpcPerceptionSource : MonoBehaviour, IPegaNpcTargetObservationSource
     {
         private const string LogCategory = "PEGA.Gameplay.Perception";
 
@@ -79,8 +83,8 @@ namespace PEGA.NPC
         [Header("Scene View")]
         [SerializeField]
         [Tooltip("Off oculta a percepção; Resumido mostra limites reais, R (radial), V (visual), Aq (aquisição) e candidatos; Detalhado preserva estados, identidades e diagnósticos completos.")]
-        private PEGADiagnosticVisualizationLevel perceptionVisualizationLevel =
-            PEGADiagnosticVisualizationLevel.Summary;
+        private PegaDiagnosticVisualizationLevel perceptionVisualizationLevel =
+            PegaDiagnosticVisualizationLevel.Summary;
 
         [SerializeField]
         [Tooltip("Desenha os Gizmos mesmo quando este NPC não está selecionado.")]
@@ -102,7 +106,7 @@ namespace PEGA.NPC
         private ObjectEntryOccurrenceQueryBinding _objectEntryRecognitionQuery;
 
         [System.NonSerialized]
-        private PEGANpcKnowledgeState _knowledgeState;
+        private PegaNpcKnowledgeState _knowledgeState;
 
         [System.NonSerialized]
         private PerceptionSensorSet _perceptionSensorSet;
@@ -123,7 +127,7 @@ namespace PEGA.NPC
         private string _lastTargetDiagnostic;
 
         [System.NonSerialized]
-        private EventBus<PEGANpcPlanReevaluationRequestedEvent> _planReevaluationEvents;
+        private EventBus<PegaNpcPlanReevaluationRequestedEvent> _planReevaluationEvents;
 
         [System.NonSerialized]
         private Coroutine _lostContactReevaluationRoutine;
@@ -158,13 +162,43 @@ namespace PEGA.NPC
         private ActorOccurrenceId _lastObserverOccurrenceId;
 
         [System.NonSerialized]
+        private bool _hasResolvedObserverOccurrence;
+
+        [System.NonSerialized]
+        private ActorOccurrenceResolutionStatus? _lastObserverOccurrenceResolutionStatus;
+
+        [System.NonSerialized]
+        private bool _lastObserverOccurrenceWasWarning;
+
+        [System.NonSerialized]
         private string _lastExternalTargetDiagnostic;
+
+        [System.NonSerialized]
+        private ActorOccurrenceResolutionStatus? _lastExternalTargetResolutionStatus;
+
+        [System.NonSerialized]
+        private bool _lastExternalTargetHadReference;
+
+        [System.NonSerialized]
+        private bool _lastExternalTargetWasAvailable;
+
+        [System.NonSerialized]
+        private bool _lastExternalTargetWasWarning;
+
+        [System.NonSerialized]
+        private bool _hasLoggedExternalTargetState;
+
+        [System.NonSerialized]
+        private bool _hasResolvedExternalPlayerOccurrence;
 
         [System.NonSerialized]
         private bool _hasLoggedAcquisitionState;
 
         [System.NonSerialized]
         private PerceptionAcquisitionStatus _lastAcquisitionStatus;
+
+        [System.NonSerialized]
+        private bool _lastAcquisitionHadUnexpectedFailure;
 
         [System.NonSerialized]
         private int _lastPhysicalCandidateCount = -1;
@@ -180,11 +214,11 @@ namespace PEGA.NPC
 #endif
 
 #if UNITY_EDITOR
-        private PEGANpcPerceptionGizmoState _gizmoState;
+        private PegaNpcPerceptionGizmoState _gizmoState;
 
-        public readonly struct PEGANpcPerceptionSensorGizmoResult
+        public readonly struct PegaNpcPerceptionSensorGizmoResult
         {
-            internal PEGANpcPerceptionSensorGizmoResult(
+            internal PegaNpcPerceptionSensorGizmoResult(
                 bool wasSampled,
                 bool hasResult,
                 bool hasOutcome,
@@ -211,15 +245,15 @@ namespace PEGA.NPC
             public string Diagnostic { get; }
         }
 
-        public readonly struct PEGANpcPerceptionCandidateGizmoState
+        public readonly struct PegaNpcPerceptionCandidateGizmoState
         {
-            internal PEGANpcPerceptionCandidateGizmoState(
+            internal PegaNpcPerceptionCandidateGizmoState(
                 int candidateIndex,
                 PerceptionCandidateOrigin origins,
                 bool hasPosition,
                 Vector3 position,
-                PEGANpcPerceptionSensorGizmoResult radial,
-                PEGANpcPerceptionSensorGizmoResult visual,
+                PegaNpcPerceptionSensorGizmoResult radial,
+                PegaNpcPerceptionSensorGizmoResult visual,
                 bool identityRecognized,
                 string identitySummary,
                 string identityDiagnostic)
@@ -239,16 +273,16 @@ namespace PEGA.NPC
             public PerceptionCandidateOrigin Origins { get; }
             public bool HasPosition { get; }
             public Vector3 Position { get; }
-            public PEGANpcPerceptionSensorGizmoResult Radial { get; }
-            public PEGANpcPerceptionSensorGizmoResult Visual { get; }
+            public PegaNpcPerceptionSensorGizmoResult Radial { get; }
+            public PegaNpcPerceptionSensorGizmoResult Visual { get; }
             public bool IdentityRecognized { get; }
             public string IdentitySummary { get; }
             public string IdentityDiagnostic { get; }
         }
 
-        public readonly struct PEGANpcPerceptionAcquisitionGizmoState
+        public readonly struct PegaNpcPerceptionAcquisitionGizmoState
         {
-            internal PEGANpcPerceptionAcquisitionGizmoState(
+            internal PegaNpcPerceptionAcquisitionGizmoState(
                 PerceptionSpatialDiscoveryVolume volume,
                 PerceptionAcquisitionStatus status,
                 string sensorLabels)
@@ -263,9 +297,9 @@ namespace PEGA.NPC
             public string SensorLabels { get; }
         }
 
-        public readonly struct PEGANpcPerceptionGizmoState
+        public readonly struct PegaNpcPerceptionGizmoState
         {
-            internal PEGANpcPerceptionGizmoState(
+            internal PegaNpcPerceptionGizmoState(
                 bool hasSample,
                 bool hasTarget,
                 bool hasAreaObservation,
@@ -282,8 +316,8 @@ namespace PEGA.NPC
                 bool hasVisualContact,
                 PerceptionAcquisitionStatus acquisitionStatus,
                 string acquisitionDiagnostic,
-                IReadOnlyList<PEGANpcPerceptionCandidateGizmoState> candidates,
-                IReadOnlyList<PEGANpcPerceptionAcquisitionGizmoState> acquisitionVolumes)
+                IReadOnlyList<PegaNpcPerceptionCandidateGizmoState> candidates,
+                IReadOnlyList<PegaNpcPerceptionAcquisitionGizmoState> acquisitionVolumes)
             {
                 HasSample = hasSample;
                 HasTarget = hasTarget;
@@ -321,8 +355,8 @@ namespace PEGA.NPC
             public bool HasVisualContact { get; }
             public PerceptionAcquisitionStatus AcquisitionStatus { get; }
             public string AcquisitionDiagnostic { get; }
-            public IReadOnlyList<PEGANpcPerceptionCandidateGizmoState> Candidates { get; }
-            public IReadOnlyList<PEGANpcPerceptionAcquisitionGizmoState> AcquisitionVolumes { get; }
+            public IReadOnlyList<PegaNpcPerceptionCandidateGizmoState> Candidates { get; }
+            public IReadOnlyList<PegaNpcPerceptionAcquisitionGizmoState> AcquisitionVolumes { get; }
 
             private static IReadOnlyList<T> CopyReadOnly<T>(IReadOnlyList<T> source)
             {
@@ -425,7 +459,7 @@ namespace PEGA.NPC
             return false;
         }
 
-        public PEGADiagnosticVisualizationLevel PerceptionVisualizationLevel =>
+        public PegaDiagnosticVisualizationLevel PerceptionVisualizationLevel =>
             perceptionVisualizationLevel;
 
         public bool DrawGizmosWhenUnselected => drawGizmosWhenUnselected;
@@ -459,12 +493,12 @@ namespace PEGA.NPC
                     ? visionConeSensorInstance.Definition as VisionConeSensor
                     : null;
 
-        public PEGANpcPerceptionGizmoState LatestGizmoState => _gizmoState;
+        public PegaNpcPerceptionGizmoState LatestGizmoState => _gizmoState;
 #endif
 
         private void Awake()
         {
-            _log = PEGALogging.CreateScopedLogger<PEGANpcPerceptionSource>(
+            _log = PegaLogging.CreateScopedLogger<PegaNpcPerceptionSource>(
                 LogCategory,
                 gameObject.name);
 
@@ -473,13 +507,13 @@ namespace PEGA.NPC
             _actorOccurrenceQuery = GetComponent<ActorOccurrenceQueryBinding>();
             _actorOccurrenceRecognitionQuery = _actorOccurrenceQuery as IActorOccurrenceRecognitionQuery;
             _objectEntryRecognitionQuery = GetComponent<ObjectEntryOccurrenceQueryBinding>();
-            _knowledgeState = GetComponent<PEGANpcKnowledgeState>();
+            _knowledgeState = GetComponent<PegaNpcKnowledgeState>();
             _perceptionSensorSet = GetComponent<PerceptionSensorSet>();
 
             if (!TryValidateConfiguration(out string issue))
             {
                 _log.Error(
-                    $"{nameof(PEGANpcPerceptionSource)} requires Framework query authorities, Knowledge State and configured Perception sensor assets.",
+                    $"{nameof(PegaNpcPerceptionSource)} requires Framework query authorities, Knowledge State and configured Perception sensor assets.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("diagnostic", issue));
                 enabled = false;
@@ -520,7 +554,7 @@ namespace PEGA.NPC
             if (!_perceptionSensorSet.TryRegisterSamplingDriver(this, out string driverDiagnostic))
             {
                 _log.Error(
-                    $"{nameof(PEGANpcPerceptionSource)} could not become the Actor's Perception sampling driver.",
+                    $"{nameof(PegaNpcPerceptionSource)} could not become the Actor's Perception sampling driver.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("diagnostic", driverDiagnostic));
                 enabled = false;
@@ -547,7 +581,7 @@ namespace PEGA.NPC
         /// de perda de contato. O consumidor avalia os planos; este evento não escolhe nem executa Actions.
         /// </remarks>
         public IEventBinding SubscribeToPlanReevaluationRequests(
-            Action<PEGANpcPlanReevaluationRequestedEvent> handler)
+            Action<PegaNpcPlanReevaluationRequestedEvent> handler)
         {
             if (handler == null)
             {
@@ -631,7 +665,7 @@ namespace PEGA.NPC
 
             if (_knowledgeState == null)
             {
-                diagnostic = $"{nameof(PEGANpcKnowledgeState)} is missing from the NPC root.";
+                diagnostic = $"{nameof(PegaNpcKnowledgeState)} is missing from the NPC root.";
                 return false;
             }
 
@@ -746,7 +780,8 @@ namespace PEGA.NPC
             PerceptionCandidateAcquisition externalCandidates = BuildExternallyKnownCandidates(
                 observationTimeSeconds,
                 out ActorOccurrence? playerOccurrence,
-                out List<StaleActorContact> staleActorContacts);
+                out List<StaleActorContact> staleActorContacts,
+                out ActorOccurrenceResolutionStatus? playerReferenceStatus);
 
             if (!_perceptionSensorSet.TrySample(
                     this,
@@ -776,7 +811,11 @@ namespace PEGA.NPC
             }
 
             SetTargetDiagnostic(string.Empty);
-            LogAcquisitionTransition(acquisition);
+            LogAcquisitionTransition(
+                acquisition,
+                observerOccurrence.HasValue,
+                _actorReference != null,
+                playerReferenceStatus);
 
             bool radialWasSampled = ContainsSensorInstance(sampledSensorInstances, perceivedAreaSensorInstance);
             bool visualWasSampled = ContainsSensorInstance(sampledSensorInstances, visionConeSensorInstance);
@@ -892,7 +931,8 @@ namespace PEGA.NPC
                         physicalCollider,
                         "anonymous:radial-presence",
                         string.Empty,
-                        "Radial detection establishes presence only; no positive visual recognition was produced.");
+                        "Radial detection establishes presence only; no positive visual recognition was produced.",
+                        expectedAnonymousRadialPresence: true);
                 }
 
                 if (!visualWasSampled || !hasVisionObservation)
@@ -1045,7 +1085,7 @@ namespace PEGA.NPC
                 publishRadialPresence = true;
             }
 
-            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea =
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> previousArea =
                 _knowledgeState.GetPerceivedAreaPresence();
             if (publishRadialPresence)
             {
@@ -1115,10 +1155,10 @@ namespace PEGA.NPC
                 }
 
                 _knowledgeState.ObserveFact(
-                    PEGAObjectEntryKnowledgeFacts.Position.For(pair.Key),
+                    PegaObjectEntryKnowledgeFacts.Position.For(pair.Key),
                     observedPosition,
-                    PEGAKnowledgeEvidence.From(
-                        PEGANpcEvidenceOrigin.Perception,
+                    PegaKnowledgeEvidence.From(
+                        PegaNpcEvidenceOrigin.Perception,
                         observationTimeSeconds,
                         this,
                             pair.Key));
@@ -1128,7 +1168,7 @@ namespace PEGA.NPC
             PerceptionSensorObservation focusObservation = focusHasVisionObservation
                 ? focusVisionObservation
                 : focusRadialObservation;
-            PEGANpcPerceptionCandidateGizmoState[] candidateGizmoStates = BuildCandidateGizmoStates(
+            PegaNpcPerceptionCandidateGizmoState[] candidateGizmoStates = BuildCandidateGizmoStates(
                 acquisition,
                 sensorResults,
                 observationTimeSeconds,
@@ -1137,9 +1177,9 @@ namespace PEGA.NPC
                 candidateIdentityRecognized,
                 candidateIdentitySummaries,
                 candidateIdentityDiagnostics);
-            PEGANpcPerceptionAcquisitionGizmoState[] acquisitionGizmoStates =
+            PegaNpcPerceptionAcquisitionGizmoState[] acquisitionGizmoStates =
                 BuildAcquisitionGizmoStates(acquisition);
-            _gizmoState = new PEGANpcPerceptionGizmoState(
+            _gizmoState = new PegaNpcPerceptionGizmoState(
                 true,
                 hasFocus,
                 focusHasRadialObservation,
@@ -1182,7 +1222,7 @@ namespace PEGA.NPC
         }
 
 #if UNITY_EDITOR
-        private PEGANpcPerceptionCandidateGizmoState[] BuildCandidateGizmoStates(
+        private PegaNpcPerceptionCandidateGizmoState[] BuildCandidateGizmoStates(
             PerceptionCandidateAcquisition acquisition,
             IReadOnlyList<PerceptionCandidateSensorResult> results,
             double observationTimeSeconds,
@@ -1192,18 +1232,18 @@ namespace PEGA.NPC
             IReadOnlyList<string> identitySummaries,
             IReadOnlyList<string> identityDiagnostics)
         {
-            var snapshots = new PEGANpcPerceptionCandidateGizmoState[acquisition.Candidates.Count];
+            var snapshots = new PegaNpcPerceptionCandidateGizmoState[acquisition.Candidates.Count];
             for (int candidateIndex = 0; candidateIndex < acquisition.Candidates.Count; candidateIndex++)
             {
                 PerceptionCandidate candidate = acquisition.Candidates[candidateIndex];
-                PEGANpcPerceptionSensorGizmoResult radial = CreateSensorGizmoResult(
+                PegaNpcPerceptionSensorGizmoResult radial = CreateSensorGizmoResult(
                     results,
                     perceivedAreaSensorInstance,
                     candidateIndex,
                     candidate,
                     observationTimeSeconds,
                     radialWasSampled);
-                PEGANpcPerceptionSensorGizmoResult visual = CreateSensorGizmoResult(
+                PegaNpcPerceptionSensorGizmoResult visual = CreateSensorGizmoResult(
                     results,
                     visionConeSensorInstance,
                     candidateIndex,
@@ -1223,7 +1263,7 @@ namespace PEGA.NPC
                     hasPosition = true;
                 }
 
-                snapshots[candidateIndex] = new PEGANpcPerceptionCandidateGizmoState(
+                snapshots[candidateIndex] = new PegaNpcPerceptionCandidateGizmoState(
                     candidateIndex,
                     candidate.Origins,
                     hasPosition,
@@ -1238,7 +1278,7 @@ namespace PEGA.NPC
             return snapshots;
         }
 
-        private static PEGANpcPerceptionSensorGizmoResult CreateSensorGizmoResult(
+        private static PegaNpcPerceptionSensorGizmoResult CreateSensorGizmoResult(
             IReadOnlyList<PerceptionCandidateSensorResult> results,
             PerceptionSensorInstance sensorInstance,
             int candidateIndex,
@@ -1264,7 +1304,7 @@ namespace PEGA.NPC
                         Math.Abs(result.ObservationTimeSeconds - observationTimeSeconds) <= 0.000001d;
                     if (!belongsToCandidate)
                     {
-                        return new PEGANpcPerceptionSensorGizmoResult(
+                        return new PegaNpcPerceptionSensorGizmoResult(
                             wasSampled,
                             true,
                             false,
@@ -1283,7 +1323,7 @@ namespace PEGA.NPC
                     {
                         observation = (PerceptionSensorObservation)result.Evidence;
                     }
-                    return new PEGANpcPerceptionSensorGizmoResult(
+                    return new PegaNpcPerceptionSensorGizmoResult(
                         wasSampled,
                         true,
                         result.HasOutcome,
@@ -1294,7 +1334,7 @@ namespace PEGA.NPC
                 }
             }
 
-            return new PEGANpcPerceptionSensorGizmoResult(
+            return new PegaNpcPerceptionSensorGizmoResult(
                 wasSampled,
                 false,
                 false,
@@ -1304,10 +1344,10 @@ namespace PEGA.NPC
                 wasSampled ? "The sampled sensor returned no result for this candidate." : string.Empty);
         }
 
-        private PEGANpcPerceptionAcquisitionGizmoState[] BuildAcquisitionGizmoStates(
+        private PegaNpcPerceptionAcquisitionGizmoState[] BuildAcquisitionGizmoStates(
             PerceptionCandidateAcquisition acquisition)
         {
-            var snapshots = new List<PEGANpcPerceptionAcquisitionGizmoState>();
+            var snapshots = new List<PegaNpcPerceptionAcquisitionGizmoState>();
             for (int index = 0; index < acquisition.Sources.Count; index++)
             {
                 PerceptionCandidateSourceResult source = acquisition.Sources[index];
@@ -1328,18 +1368,18 @@ namespace PEGA.NPC
                 int existingIndex = FindSameGeometry(snapshots, volume);
                 if (existingIndex < 0)
                 {
-                    snapshots.Add(new PEGANpcPerceptionAcquisitionGizmoState(
+                    snapshots.Add(new PegaNpcPerceptionAcquisitionGizmoState(
                         volume,
                         source.Status,
                         sensorLabel));
                     continue;
                 }
 
-                PEGANpcPerceptionAcquisitionGizmoState previous = snapshots[existingIndex];
+                PegaNpcPerceptionAcquisitionGizmoState previous = snapshots[existingIndex];
                 string labels = previous.SensorLabels.IndexOf(sensorLabel, StringComparison.Ordinal) >= 0
                     ? previous.SensorLabels
                     : previous.SensorLabels + " + " + sensorLabel;
-                snapshots[existingIndex] = new PEGANpcPerceptionAcquisitionGizmoState(
+                snapshots[existingIndex] = new PegaNpcPerceptionAcquisitionGizmoState(
                     previous.Volume,
                     WorseAcquisitionStatus(previous.Status, source.Status),
                     labels);
@@ -1349,7 +1389,7 @@ namespace PEGA.NPC
         }
 
         private static int FindSameGeometry(
-            IReadOnlyList<PEGANpcPerceptionAcquisitionGizmoState> snapshots,
+            IReadOnlyList<PegaNpcPerceptionAcquisitionGizmoState> snapshots,
             PerceptionSpatialDiscoveryVolume candidate)
         {
             for (int index = 0; index < snapshots.Count; index++)
@@ -1430,16 +1470,21 @@ namespace PEGA.NPC
                 LogObserverOccurrenceUnavailable(
                     _actorDeclaration == null
                         ? $"{nameof(ActorDeclaration)} is unavailable."
-                        : $"{nameof(ActorOccurrenceQueryBinding)} is unavailable.");
+                        : $"{nameof(ActorOccurrenceQueryBinding)} is unavailable.",
+                    null,
+                    configurationFailure: true);
                 return null;
             }
 
             if (!_actorDeclaration.TryCreateDescriptor(
-                    nameof(PEGANpcPerceptionSource),
+                    nameof(PegaNpcPerceptionSource),
                     out ActorDescriptor descriptor,
                     out ActorSetIssue issue))
             {
-                LogObserverOccurrenceUnavailable(issue.ToString());
+                LogObserverOccurrenceUnavailable(
+                    issue.ToString(),
+                    null,
+                    configurationFailure: true);
                 return null;
             }
 
@@ -1450,11 +1495,18 @@ namespace PEGA.NPC
                 string diagnostic = resolution.Succeeded
                     ? "The official Actor query resolved this ActorId to a different physical root."
                     : resolution.Diagnostic;
-                LogObserverOccurrenceUnavailable(diagnostic);
+                LogObserverOccurrenceUnavailable(
+                    diagnostic,
+                    resolution.Status,
+                    configurationFailure: resolution.Status != ActorOccurrenceResolutionStatus.Unavailable ||
+                                          resolution.Succeeded);
                 return null;
             }
 
             _lastObserverOccurrenceDiagnostic = string.Empty;
+            _lastObserverOccurrenceResolutionStatus = null;
+            _lastObserverOccurrenceWasWarning = false;
+            _hasResolvedObserverOccurrence = true;
             if (_lastObserverOccurrenceId != resolution.Occurrence.Id)
             {
                 _lastObserverOccurrenceId = resolution.Occurrence.Id;
@@ -1468,39 +1520,73 @@ namespace PEGA.NPC
             return resolution;
         }
 
-        private void LogObserverOccurrenceUnavailable(string diagnostic)
+        private void LogObserverOccurrenceUnavailable(
+            string diagnostic,
+            ActorOccurrenceResolutionStatus? resolutionStatus,
+            bool configurationFailure)
         {
             diagnostic = string.IsNullOrWhiteSpace(diagnostic)
                 ? "The Framework Actor occurrence query is not currently available."
                 : diagnostic;
-            if (string.Equals(_lastObserverOccurrenceDiagnostic, diagnostic, StringComparison.Ordinal))
+            bool expectedCompositionUnavailable =
+                !configurationFailure &&
+                resolutionStatus == ActorOccurrenceResolutionStatus.Unavailable &&
+                !_hasResolvedObserverOccurrence;
+            bool shouldWarn = !expectedCompositionUnavailable;
+            if (string.Equals(_lastObserverOccurrenceDiagnostic, diagnostic, StringComparison.Ordinal) &&
+                _lastObserverOccurrenceResolutionStatus == resolutionStatus &&
+                _lastObserverOccurrenceWasWarning == shouldWarn)
             {
                 return;
             }
 
             _lastObserverOccurrenceDiagnostic = diagnostic;
+            _lastObserverOccurrenceResolutionStatus = resolutionStatus;
+            _lastObserverOccurrenceWasWarning = shouldWarn;
             _lastObserverOccurrenceId = default;
-            _log.Warning(
-                "NPC Perception cannot exclude its own physical occurrence until the official Actor occurrence query resolves it; external candidates remain evaluable and acquisition will retry.",
-                LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("diagnostic", diagnostic));
+            if (shouldWarn)
+            {
+                _log.Warning(
+                    "NPC Perception could not resolve its own Framework Actor occurrence outside the expected unbound-composition state.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("resolutionStatus", resolutionStatus?.ToString() ?? "InvalidConfiguration"),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
+            else
+            {
+                _log.Debug(
+                    "NPC Perception is waiting for its own committed Framework Actor occurrence; candidate acquisition will retry.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("resolutionStatus", resolutionStatus?.ToString() ?? "Unavailable"),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
         }
 
         private PerceptionCandidateAcquisition BuildExternallyKnownCandidates(
             double observationTimeSeconds,
             out ActorOccurrence? playerOccurrence,
-            out List<StaleActorContact> staleActorContacts)
+            out List<StaleActorContact> staleActorContacts,
+            out ActorOccurrenceResolutionStatus? playerReferenceStatus)
         {
             var sources = new List<PerceptionCandidateSourceResult>();
             var candidates = new List<PerceptionCandidate>();
             var includedActorOccurrences = new Dictionary<ActorId, ActorOccurrenceId>();
             playerOccurrence = null;
             staleActorContacts = new List<StaleActorContact>();
+            playerReferenceStatus = null;
             string targetDiagnostic = string.Empty;
 
             if (_actorReference != null)
             {
-                if (_actorReference.TryGetCurrent(out ActorOccurrenceResolution playerResolution) &&
+                bool hasCurrentReference = _actorReference.TryGetCurrent(
+                    out ActorOccurrenceResolution playerResolution);
+                playerReferenceStatus = playerResolution.Status;
+                if (playerResolution.Succeeded)
+                {
+                    _hasResolvedExternalPlayerOccurrence = true;
+                }
+
+                if (hasCurrentReference &&
                     playerResolution.Succeeded &&
                     playerResolution.Occurrence.HasPlayerSlot)
                 {
@@ -1550,7 +1636,11 @@ namespace PEGA.NPC
                 targetDiagnostic = "No Player Slot reference is configured; autonomous Actor and Object Entry sensing remains active.";
             }
 
-            LogExternalTargetAvailability(targetDiagnostic, playerOccurrence.HasValue);
+            LogExternalTargetAvailability(
+                targetDiagnostic,
+                playerOccurrence.HasValue,
+                _actorReference != null,
+                playerReferenceStatus);
 
             foreach (KeyValuePair<ActorId, ActorOccurrenceReference> pair in _recognizedActorReferences)
             {
@@ -1605,15 +1695,40 @@ namespace PEGA.NPC
             return new PerceptionCandidateAcquisition(sources, candidates);
         }
 
-        private void LogExternalTargetAvailability(string diagnostic, bool isAvailable)
+        private void LogExternalTargetAvailability(
+            string diagnostic,
+            bool isAvailable,
+            bool hasPlayerReference,
+            ActorOccurrenceResolutionStatus? resolutionStatus)
         {
-            if (string.Equals(_lastExternalTargetDiagnostic, diagnostic, StringComparison.Ordinal))
+            bool unavailableAfterResolution =
+                hasPlayerReference &&
+                resolutionStatus == ActorOccurrenceResolutionStatus.Unavailable &&
+                _hasResolvedExternalPlayerOccurrence;
+            bool hasResolutionFailure =
+                hasPlayerReference &&
+                resolutionStatus.HasValue &&
+                resolutionStatus.Value != ActorOccurrenceResolutionStatus.Unavailable &&
+                !isAvailable;
+            bool shouldWarn = !isAvailable && (unavailableAfterResolution || hasResolutionFailure);
+
+            if (_hasLoggedExternalTargetState &&
+                string.Equals(_lastExternalTargetDiagnostic, diagnostic, StringComparison.Ordinal) &&
+                _lastExternalTargetResolutionStatus == resolutionStatus &&
+                _lastExternalTargetHadReference == hasPlayerReference &&
+                _lastExternalTargetWasAvailable == isAvailable &&
+                _lastExternalTargetWasWarning == shouldWarn)
             {
                 return;
             }
 
-            bool wasUnavailable = !string.IsNullOrEmpty(_lastExternalTargetDiagnostic);
+            bool wasUnavailable = _hasLoggedExternalTargetState && !_lastExternalTargetWasAvailable;
             _lastExternalTargetDiagnostic = diagnostic ?? string.Empty;
+            _lastExternalTargetResolutionStatus = resolutionStatus;
+            _lastExternalTargetHadReference = hasPlayerReference;
+            _lastExternalTargetWasAvailable = isAvailable;
+            _lastExternalTargetWasWarning = shouldWarn;
+            _hasLoggedExternalTargetState = true;
             if (isAvailable)
             {
                 _log.Info(
@@ -1622,11 +1737,22 @@ namespace PEGA.NPC
                         : "NPC Player reference is available as an external Perception candidate.",
                     LogFields.Field("actorRoot", gameObject.name));
             }
-            else if (!string.IsNullOrWhiteSpace(diagnostic))
+            else if (shouldWarn)
             {
                 _log.Warning(
-                    "NPC Perception has no current external Player candidate; autonomous physical discovery remains active and no negative Player contact is inferred.",
+                    "NPC Perception has an invalid external Player reference or lost a previously resolved Player occurrence.",
                     LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("resolutionStatus", resolutionStatus?.ToString() ?? "Unavailable"),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
+            else
+            {
+                _log.Debug(
+                    hasPlayerReference
+                        ? "NPC Perception has no current external Player candidate; the selected Slot is currently unavailable and no negative Player contact is inferred."
+                        : "NPC Perception has no configured Player Slot reference; autonomous Actor and Object Entry sensing remains active.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("resolutionStatus", resolutionStatus?.ToString() ?? "NotConfigured"),
                     LogFields.Field("diagnostic", diagnostic));
             }
         }
@@ -1735,21 +1861,21 @@ namespace PEGA.NPC
             ActorOccurrenceId staleOccurrenceId,
             double observationTimeSeconds)
         {
-            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
-            if (contact.Status == PEGAKnowledgeStatus.Unknown ||
-                contact.Status == PEGAKnowledgeStatus.Invalidated)
+            PegaKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
+            if (contact.Status == PegaKnowledgeStatus.Unknown ||
+                contact.Status == PegaKnowledgeStatus.Invalidated)
             {
                 return;
             }
 
-            PEGAKnowledgeWriteResult result = _knowledgeState.InvalidateFact(
-                PEGANpcKnowledgeFacts.CharacterVisualContact.For(actorId),
-                PEGAKnowledgeEvidence.From(
-                    PEGANpcEvidenceOrigin.Perception,
+            PegaKnowledgeWriteResult result = _knowledgeState.InvalidateFact(
+                PegaNpcKnowledgeFacts.CharacterVisualContact.For(actorId),
+                PegaKnowledgeEvidence.From(
+                    PegaNpcEvidenceOrigin.Perception,
                     observationTimeSeconds,
                     this,
                     staleOccurrenceId));
-            if (result == PEGAKnowledgeWriteResult.InvalidatedExplicitly)
+            if (result == PegaKnowledgeWriteResult.InvalidatedExplicitly)
             {
                 _log.Debug(
                     "NPC invalidated visual contact for an Actor whose exact Framework occurrence became stale; last known position is preserved.",
@@ -1799,7 +1925,7 @@ namespace PEGA.NPC
                 {
                     bool hasValidActorDeclaration = actorDeclaration != null &&
                         actorDeclaration.TryCreateDescriptor(
-                            nameof(PEGANpcPerceptionSource),
+                            nameof(PegaNpcPerceptionSource),
                             out _,
                             out _);
                     ObjectEntryId objectEntryId = default;
@@ -2127,7 +2253,11 @@ namespace PEGA.NPC
             return false;
         }
 
-        private void LogAcquisitionTransition(PerceptionCandidateAcquisition acquisition)
+        private void LogAcquisitionTransition(
+            PerceptionCandidateAcquisition acquisition,
+            bool observerOccurrenceAvailable,
+            bool hasPlayerReference,
+            ActorOccurrenceResolutionStatus? playerReferenceStatus)
         {
             if (acquisition == null)
             {
@@ -2153,32 +2283,81 @@ namespace PEGA.NPC
                 }
             }
 
-            bool changed = !_hasLoggedAcquisitionState ||
-                           _lastAcquisitionStatus != acquisition.Status ||
-                           _lastPhysicalCandidateCount != physicalCount ||
-                           _lastExternalCandidateCount != externalCount ||
-                           !string.Equals(_lastAcquisitionDiagnostic, diagnostic, StringComparison.Ordinal);
-            if (!changed)
+            bool hasUnexpectedFailure = HasUnexpectedAcquisitionFailure(
+                acquisition,
+                observerOccurrenceAvailable,
+                hasPlayerReference,
+                playerReferenceStatus);
+            bool diagnosticChanged = !string.Equals(
+                _lastAcquisitionDiagnostic,
+                diagnostic,
+                StringComparison.Ordinal);
+            bool stateChanged = !_hasLoggedAcquisitionState ||
+                                _lastAcquisitionStatus != acquisition.Status ||
+                                _lastAcquisitionHadUnexpectedFailure != hasUnexpectedFailure ||
+                                diagnosticChanged &&
+                                (acquisition.Status != PerceptionAcquisitionStatus.Complete ||
+                                 hasUnexpectedFailure);
+            bool candidateCountChanged = _lastPhysicalCandidateCount != physicalCount ||
+                                         _lastExternalCandidateCount != externalCount;
+            if (!stateChanged && !candidateCountChanged && !diagnosticChanged)
             {
                 return;
             }
 
             bool recovered = _hasLoggedAcquisitionState &&
-                             _lastAcquisitionStatus == PerceptionAcquisitionStatus.Unavailable &&
-                             acquisition.Status != PerceptionAcquisitionStatus.Unavailable;
+                             ((_lastAcquisitionStatus == PerceptionAcquisitionStatus.Unavailable &&
+                               acquisition.Status != PerceptionAcquisitionStatus.Unavailable) ||
+                              (_lastAcquisitionStatus == PerceptionAcquisitionStatus.Partial &&
+                               acquisition.Status == PerceptionAcquisitionStatus.Complete) ||
+                              (_lastAcquisitionHadUnexpectedFailure && !hasUnexpectedFailure));
             _hasLoggedAcquisitionState = true;
             _lastAcquisitionStatus = acquisition.Status;
+            _lastAcquisitionHadUnexpectedFailure = hasUnexpectedFailure;
             _lastPhysicalCandidateCount = physicalCount;
             _lastExternalCandidateCount = externalCount;
             _lastAcquisitionDiagnostic = diagnostic;
 
-            if (acquisition.Status == PerceptionAcquisitionStatus.Unavailable ||
-                acquisition.Status == PerceptionAcquisitionStatus.Partial)
+            if (!stateChanged)
+            {
+                _log.Trace(
+                    "NPC Perception candidate acquisition details changed within the same state.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("acquisitionStatus", acquisition.Status),
+                    LogFields.Field("physicalCandidateCount", physicalCount),
+                    LogFields.Field("externalCandidateCount", externalCount),
+                    LogFields.Field("sourceCount", acquisition.Sources.Count),
+                    LogFields.Field("diagnostic", diagnostic));
+                return;
+            }
+
+            if (hasUnexpectedFailure)
             {
                 _log.Warning(
-                    recovered
-                        ? "NPC Perception acquisition recovered with partial candidate coverage."
-                        : "NPC Perception candidate acquisition is partial or unavailable.",
+                    "NPC Perception candidate acquisition has incomplete coverage from an anomalous required or configured source.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("acquisitionStatus", acquisition.Status),
+                    LogFields.Field("physicalCandidateCount", physicalCount),
+                    LogFields.Field("externalCandidateCount", externalCount),
+                    LogFields.Field("sourceCount", acquisition.Sources.Count),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
+            else if (recovered)
+            {
+                _log.Info(
+                    $"NPC Perception candidate acquisition recovered to {acquisition.Status} coverage.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("acquisitionStatus", acquisition.Status),
+                    LogFields.Field("physicalCandidateCount", physicalCount),
+                    LogFields.Field("externalCandidateCount", externalCount),
+                    LogFields.Field("sourceCount", acquisition.Sources.Count),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
+            else if (acquisition.Status == PerceptionAcquisitionStatus.Unavailable ||
+                     acquisition.Status == PerceptionAcquisitionStatus.Partial)
+            {
+                _log.Debug(
+                    "NPC Perception candidate coverage is incomplete while Framework occurrences are being composed or optional Player coverage is absent.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("acquisitionStatus", acquisition.Status),
                     LogFields.Field("physicalCandidateCount", physicalCount),
@@ -2200,11 +2379,70 @@ namespace PEGA.NPC
             }
         }
 
+        private bool HasUnexpectedAcquisitionFailure(
+            PerceptionCandidateAcquisition acquisition,
+            bool observerOccurrenceAvailable,
+            bool hasPlayerReference,
+            ActorOccurrenceResolutionStatus? playerReferenceStatus)
+        {
+            for (int index = 0; index < acquisition.Sources.Count; index++)
+            {
+                PerceptionCandidateSourceResult source = acquisition.Sources[index];
+                if (source.Status == PerceptionAcquisitionStatus.Complete)
+                {
+                    continue;
+                }
+
+                if (source.Status == PerceptionAcquisitionStatus.Partial)
+                {
+                    return true;
+                }
+
+                if (source.Status != PerceptionAcquisitionStatus.Unavailable)
+                {
+                    return true;
+                }
+
+                if ((source.Origin & PerceptionCandidateOrigin.Physical) != 0)
+                {
+                    if (!observerOccurrenceAvailable && !_hasResolvedObserverOccurrence)
+                    {
+                        continue;
+                    }
+
+                    return true;
+                }
+
+                if ((source.Origin & PerceptionCandidateOrigin.External) != 0 &&
+                    hasPlayerReference &&
+                    ReferenceEquals(source.SourceReference, _actorReference))
+                {
+                    if (playerReferenceStatus == ActorOccurrenceResolutionStatus.Unavailable &&
+                        !_hasResolvedExternalPlayerOccurrence)
+                    {
+                        continue;
+                    }
+
+                    return true;
+                }
+
+                if (!observerOccurrenceAvailable && !_hasResolvedObserverOccurrence)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         private void LogCandidateRecognition(
             Collider candidate,
             string state,
             string identitySummary,
-            string diagnostic)
+            string diagnostic,
+            bool expectedAnonymousRadialPresence = false)
         {
             if (candidate == null)
             {
@@ -2229,6 +2467,15 @@ namespace PEGA.NPC
                     LogFields.Field("candidateColliderEntityId", candidate.GetEntityId().ToString()),
                     LogFields.Field("recognitionState", state),
                     LogFields.Field("officialIdentity", identitySummary),
+                    LogFields.Field("diagnostic", diagnostic));
+            }
+            else if (expectedAnonymousRadialPresence)
+            {
+                _log.Debug(
+                    "NPC Perception observed anonymous radial presence without publishing an entity identity.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("candidateColliderEntityId", candidate.GetEntityId().ToString()),
+                    LogFields.Field("recognitionState", state),
                     LogFields.Field("diagnostic", diagnostic));
             }
             else
@@ -2277,7 +2524,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            PEGAKnowledgeFact<bool> previousContact = _knowledgeState.GetCharacterVisualContact(occurrence.ActorId);
+            PegaKnowledgeFact<bool> previousContact = _knowledgeState.GetCharacterVisualContact(occurrence.ActorId);
             bool hadPreviousContact = previousContact.TryGetValue(out bool previousVisualContact);
             bool isReacquisition = hasVisualContact &&
                                    (hadPreviousContact && !previousVisualContact || forceCurrentEvidence);
@@ -2285,7 +2532,7 @@ namespace PEGA.NPC
 
             if (hasVisualContact)
             {
-                PEGAKnowledgeFact<Vector3> previousPosition =
+                PegaKnowledgeFact<Vector3> previousPosition =
                     _knowledgeState.GetLastObservedCharacterPosition(occurrence.ActorId);
                 if (isReacquisition ||
                     !previousPosition.TryGetValue(out Vector3 storedPosition) ||
@@ -2294,7 +2541,7 @@ namespace PEGA.NPC
                     _knowledgeState.ObserveCharacterPosition(
                         occurrence.ActorId,
                         observedRootPosition,
-                        PEGANpcEvidenceOrigin.Perception,
+                        PegaNpcEvidenceOrigin.Perception,
                         observationTimeSeconds);
                 }
 
@@ -2303,7 +2550,7 @@ namespace PEGA.NPC
                     _knowledgeState.ObserveCharacterVisualContact(
                         occurrence.ActorId,
                         true,
-                        PEGANpcEvidenceOrigin.Perception,
+                        PegaNpcEvidenceOrigin.Perception,
                         observationTimeSeconds);
                 }
                 else
@@ -2364,11 +2611,11 @@ namespace PEGA.NPC
         }
 
         private void LogAreaPresenceTransition(
-            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> previousArea,
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> previousArea,
             bool isPresent,
             double observationTimeSeconds)
         {
-            bool hadPrevious = previousArea.TryGetValue(out PEGANpcPerceivedAreaPresence previous);
+            bool hadPrevious = previousArea.TryGetValue(out PegaNpcPerceivedAreaPresence previous);
             if ((hadPrevious && previous.IsPresent == isPresent) ||
                 (!hadPrevious && !isPresent))
             {
@@ -2464,25 +2711,25 @@ namespace PEGA.NPC
 
         private void PublishAreaPresenceIfChanged(bool isPresent, double observationTimeSeconds)
         {
-            PEGAKnowledgeFact<PEGANpcPerceivedAreaPresence> presence =
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> presence =
                 _knowledgeState.GetPerceivedAreaPresence();
-            if (presence.TryGetValue(out PEGANpcPerceivedAreaPresence previousPresence) &&
+            if (presence.TryGetValue(out PegaNpcPerceivedAreaPresence previousPresence) &&
                 previousPresence.IsPresent == isPresent)
             {
                 return;
             }
 
-            if (presence.Status == PEGAKnowledgeStatus.Unknown && !isPresent)
+            if (presence.Status == PegaKnowledgeStatus.Unknown && !isPresent)
             {
                 return;
             }
 
             _knowledgeState.ObservePerceivedAreaPresence(
-                new PEGANpcPerceivedAreaPresence(
+                new PegaNpcPerceivedAreaPresence(
                     isPresent,
                     isPresent ? transform.position : Vector3.zero,
                     _areaPresenceSensor.RadiusMeters),
-                PEGANpcEvidenceOrigin.Perception,
+                PegaNpcEvidenceOrigin.Perception,
                 observationTimeSeconds);
         }
 
@@ -2491,13 +2738,13 @@ namespace PEGA.NPC
             bool hasVisualContact,
             double observationTimeSeconds)
         {
-            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
+            PegaKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             if (contact.TryGetValue(out bool previousContact) && previousContact == hasVisualContact)
             {
                 return;
             }
 
-            if (contact.Status == PEGAKnowledgeStatus.Unknown && !hasVisualContact)
+            if (contact.Status == PegaKnowledgeStatus.Unknown && !hasVisualContact)
             {
                 return;
             }
@@ -2505,7 +2752,7 @@ namespace PEGA.NPC
             _knowledgeState.ObserveCharacterVisualContact(
                 subjectActorId,
                 hasVisualContact,
-                PEGANpcEvidenceOrigin.Perception,
+                PegaNpcEvidenceOrigin.Perception,
                 observationTimeSeconds);
         }
 
@@ -2518,10 +2765,10 @@ namespace PEGA.NPC
                 return;
             }
 
-            PEGAKnowledgeFactKey<ActorId, bool> key =
-                PEGANpcKnowledgeFacts.IsPlayer.For(occurrence.ActorId);
-            PEGAKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(key);
-            if (PEGANpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact))
+            PegaKnowledgeFactKey<ActorId, bool> key =
+                PegaNpcKnowledgeFacts.IsPlayer.For(occurrence.ActorId);
+            PegaKnowledgeFact<bool> playerFact = _knowledgeState.GetFact(key);
+            if (PegaNpcKnowledgeFacts.HasPerceptionBackedPlayerFact(playerFact))
             {
                 return;
             }
@@ -2529,8 +2776,8 @@ namespace PEGA.NPC
             _knowledgeState.ObserveFact(
                 key,
                 true,
-                PEGAKnowledgeEvidence.From(
-                    PEGANpcEvidenceOrigin.Perception,
+                PegaKnowledgeEvidence.From(
+                    PegaNpcEvidenceOrigin.Perception,
                     observationTimeSeconds,
                     this,
                     occurrence.PlayerSlotId));
@@ -2540,18 +2787,18 @@ namespace PEGA.NPC
             ActorId subjectActorId,
             double observationTimeSeconds)
         {
-            PEGAKnowledgeFact<bool> contact =
+            PegaKnowledgeFact<bool> contact =
                 _knowledgeState.GetCharacterVisualContact(subjectActorId);
-            PEGAKnowledgeFact<Vector3> position =
+            PegaKnowledgeFact<Vector3> position =
                 _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);
 
             bool hasConsolidatedEvidence =
                 contact.TryGetValue(out bool hasVisualContact) &&
                 hasVisualContact &&
-                HasCurrentPerceptionEvidence(contact.HasOrigin(PEGANpcEvidenceOrigin.Perception), contact.HasObservationTime,
+                HasCurrentPerceptionEvidence(contact.HasOrigin(PegaNpcEvidenceOrigin.Perception), contact.HasObservationTime,
                     contact.ObservationTimeSeconds, observationTimeSeconds) &&
                 position.TryGetValue(out _) &&
-                HasCurrentPerceptionEvidence(position.HasOrigin(PEGANpcEvidenceOrigin.Perception), position.HasObservationTime,
+                HasCurrentPerceptionEvidence(position.HasOrigin(PegaNpcEvidenceOrigin.Perception), position.HasObservationTime,
                     position.ObservationTimeSeconds, observationTimeSeconds);
 
             if (!hasConsolidatedEvidence)
@@ -2567,8 +2814,8 @@ namespace PEGA.NPC
             }
 
             EnsurePlanReevaluationEventsInitialized();
-            var request = new PEGANpcPlanReevaluationRequestedEvent(
-                PEGANpcPlanReevaluationTrigger.TargetReacquired,
+            var request = new PegaNpcPlanReevaluationRequestedEvent(
+                PegaNpcPlanReevaluationTrigger.TargetReacquired,
                 subjectActorId,
                 observationTimeSeconds,
                 observationTimeSeconds);
@@ -2756,10 +3003,10 @@ namespace PEGA.NPC
             bool expectedContact,
             double expectedObservationTimeSeconds)
         {
-            PEGAKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
+            PegaKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(subjectActorId);
             return contact.TryGetValue(out bool actualContact) &&
                    actualContact == expectedContact &&
-                   contact.HasOrigin(PEGANpcEvidenceOrigin.Perception) &&
+                   contact.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
                    contact.HasObservationTime &&
                    Math.Abs(contact.ObservationTimeSeconds - expectedObservationTimeSeconds) <= 0.000001d;
         }
@@ -2781,8 +3028,8 @@ namespace PEGA.NPC
             }
 
             EnsurePlanReevaluationEventsInitialized();
-            var request = new PEGANpcPlanReevaluationRequestedEvent(
-                PEGANpcPlanReevaluationTrigger.TargetContactLostBeyondWindow,
+            var request = new PegaNpcPlanReevaluationRequestedEvent(
+                PegaNpcPlanReevaluationTrigger.TargetContactLostBeyondWindow,
                 subjectActorId,
                 lossObservationTimeSeconds,
                 requestedAtTimeSeconds);
@@ -2837,17 +3084,17 @@ namespace PEGA.NPC
 
         private void EnsurePlanReevaluationEventsInitialized()
         {
-            _planReevaluationEvents ??= new EventBus<PEGANpcPlanReevaluationRequestedEvent>();
+            _planReevaluationEvents ??= new EventBus<PegaNpcPlanReevaluationRequestedEvent>();
         }
 
         private void LogPlanReevaluationSubscriberFailure(
-            Action<PEGANpcPlanReevaluationRequestedEvent> handler,
-            PEGANpcPlanReevaluationRequestedEvent request,
+            Action<PegaNpcPlanReevaluationRequestedEvent> handler,
+            PegaNpcPlanReevaluationRequestedEvent request,
             Exception exception)
         {
             if (_log == null)
             {
-                _log = PEGALogging.CreateScopedLogger<PEGANpcPerceptionSource>(
+                _log = PegaLogging.CreateScopedLogger<PegaNpcPerceptionSource>(
                     LogCategory,
                     gameObject.name);
             }
@@ -2884,7 +3131,7 @@ namespace PEGA.NPC
         private void SetGizmoUnavailable()
         {
 #if UNITY_EDITOR
-            _gizmoState = new PEGANpcPerceptionGizmoState(
+            _gizmoState = new PegaNpcPerceptionGizmoState(
                 false,
                 false,
                 false,
@@ -2901,8 +3148,8 @@ namespace PEGA.NPC
                 false,
                 PerceptionAcquisitionStatus.Unavailable,
                 string.Empty,
-                Array.Empty<PEGANpcPerceptionCandidateGizmoState>(),
-                Array.Empty<PEGANpcPerceptionAcquisitionGizmoState>());
+                Array.Empty<PegaNpcPerceptionCandidateGizmoState>(),
+                Array.Empty<PegaNpcPerceptionAcquisitionGizmoState>());
 #endif
         }
 

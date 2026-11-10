@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-namespace ImmersiveGames.Goap
+namespace PEGA.GOAP
 {
     /// <summary>
     /// Declara uma mudança de estado prevista para a conclusão bem-sucedida de uma Action.

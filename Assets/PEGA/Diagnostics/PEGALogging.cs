@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace PEGA.Diagnostics
 {
-    internal static class PEGALogging
+    internal static class PegaLogging
     {
         internal static ScopedLogger CreateScopedLogger<T>(string category, string context)
         {

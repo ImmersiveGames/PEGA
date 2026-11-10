@@ -1,8 +1,8 @@
 using System;
-
-namespace PEGA.NPC
+using PEGA.NPC.Actions.Runtime;
+namespace PEGA.NPC.Autonomy.Planning
 {
-    public enum PEGANpcPlanChangeReason
+    public enum PegaNpcPlanChangeReason
     {
         None = 0,
         ActiveActionInvalid = 40,
@@ -11,28 +11,28 @@ namespace PEGA.NPC
         ActiveActionTargetChanged = 70
     }
 
-    public readonly struct PEGANpcPlanChangeAssessment
+    public readonly struct PegaNpcPlanChangeAssessment
     {
-        internal PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason reason)
+        internal PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason reason)
         {
             Reason = reason;
         }
 
-        public PEGANpcPlanChangeReason Reason { get; }
+        public PegaNpcPlanChangeReason Reason { get; }
 
-        public bool RequiresReevaluation => Reason != PEGANpcPlanChangeReason.None;
+        public bool RequiresReevaluation => Reason != PegaNpcPlanChangeReason.None;
     }
 
     /// <summary>
     /// Classifica se uma mudança pode alterar os planos avaliados pelo GOAP.
     /// Não escolhe, substitui, cancela nem executa Actions.
     /// </summary>
-    public static class PEGANpcPlanChangeRelevanceEvaluator
+    public static class PegaNpcPlanChangeRelevanceEvaluator
     {
-        public static PEGANpcPlanChangeAssessment EvaluateActionOutcome(
-            PEGANpcPlanSelectionResult currentSelection,
+        public static PegaNpcPlanChangeAssessment EvaluateActionOutcome(
+            PegaNpcPlanSelectionResult currentSelection,
             long activeRequestId,
-            PEGANpcActionTerminalOutcomeEvent outcome)
+            PegaNpcActionTerminalOutcomeEvent outcome)
         {
             ValidateSelection(currentSelection, nameof(currentSelection));
             if (outcome == null)
@@ -50,8 +50,8 @@ namespace PEGA.NPC
                 return NoChange();
             }
 
-            PEGANpcPlanSnapshot selectedPlan = currentSelection.SelectedPlan;
-            PEGANpcActionExecutionSnapshot execution = outcome.Execution;
+            PegaNpcPlanSnapshot selectedPlan = currentSelection.SelectedPlan;
+            PegaNpcActionExecutionSnapshot execution = outcome.Execution;
             if (execution.RequestId != activeRequestId ||
                 !selectedPlan.PredictedEffect.IsValid ||
                 execution.DeclaredEffect.Kind != selectedPlan.PredictedEffect)
@@ -59,15 +59,15 @@ namespace PEGA.NPC
                 return NoChange();
             }
 
-            if (execution.Outcome != PEGANpcActionOutcome.Success &&
-                execution.Outcome != PEGANpcActionOutcome.Invalid &&
-                execution.Outcome != PEGANpcActionOutcome.Interrupted &&
-                execution.Outcome != PEGANpcActionOutcome.Cancelled)
+            if (execution.Outcome != PegaNpcActionOutcome.Success &&
+                execution.Outcome != PegaNpcActionOutcome.Invalid &&
+                execution.Outcome != PegaNpcActionOutcome.Interrupted &&
+                execution.Outcome != PegaNpcActionOutcome.Cancelled)
             {
                 return NoChange();
             }
 
-            if (execution.Outcome == PEGANpcActionOutcome.Cancelled)
+            if (execution.Outcome == PegaNpcActionOutcome.Cancelled)
             {
                 return NoChange();
             }
@@ -75,23 +75,23 @@ namespace PEGA.NPC
             if (execution.DeclaredEffect.IsTargetResolved &&
                 !execution.DeclaredEffect.TargetPosition.Equals(selectedPlan.TargetPosition))
             {
-                return new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.ActiveActionTargetChanged);
+                return new PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason.ActiveActionTargetChanged);
             }
 
             return execution.Outcome switch
             {
-                PEGANpcActionOutcome.Invalid =>
-                    new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.ActiveActionInvalid),
-                PEGANpcActionOutcome.Interrupted =>
-                    new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.ActiveActionInterrupted),
-                PEGANpcActionOutcome.Success when HasSuccessfulEffect(execution) =>
-                    new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.ActiveActionEffectCompleted),
+                PegaNpcActionOutcome.Invalid =>
+                    new PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason.ActiveActionInvalid),
+                PegaNpcActionOutcome.Interrupted =>
+                    new PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason.ActiveActionInterrupted),
+                PegaNpcActionOutcome.Success when HasSuccessfulEffect(execution) =>
+                    new PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason.ActiveActionEffectCompleted),
                 _ => NoChange()
             };
         }
 
         private static void ValidateSelection(
-            PEGANpcPlanSelectionResult selection,
+            PegaNpcPlanSelectionResult selection,
             string parameterName)
         {
             if (selection == null)
@@ -107,10 +107,10 @@ namespace PEGA.NPC
             }
         }
 
-        private static bool HasSuccessfulEffect(PEGANpcActionExecutionSnapshot execution)
+        private static bool HasSuccessfulEffect(PegaNpcActionExecutionSnapshot execution)
             => execution.EffectObserved && execution.RequestId > 0;
 
-        private static PEGANpcPlanChangeAssessment NoChange() =>
-            new PEGANpcPlanChangeAssessment(PEGANpcPlanChangeReason.None);
+        private static PegaNpcPlanChangeAssessment NoChange() =>
+            new PegaNpcPlanChangeAssessment(PegaNpcPlanChangeReason.None);
     }
 }

@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 namespace PEGA.Diagnostics
 {
-    internal static class PEGANavMeshTopologyAnalyzer
+    internal static class PegaNavMeshTopologyAnalyzer
     {
         private const int MaxGridSamples = 150000;
 

@@ -2,17 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Immersive.Foundation.Events;
-
-namespace PEGA.NPC
+using PEGA.NPC.Knowledge.Definitions;
+namespace PEGA.NPC.Knowledge.Core
 {
-    public enum PEGAKnowledgeStatus
+    public enum PegaKnowledgeStatus
     {
         Unknown,
         Known,
         Invalidated
     }
 
-    public enum PEGAKnowledgeScope
+    public enum PegaKnowledgeScope
     {
         Individual = 0,
         Group = 10,
@@ -20,7 +20,7 @@ namespace PEGA.NPC
     }
 
     [Flags]
-    public enum PEGAKnowledgeInvalidationCause
+    public enum PegaKnowledgeInvalidationCause
     {
         None = 0,
         Explicit = 1 << 0,
@@ -28,7 +28,7 @@ namespace PEGA.NPC
         PolicyValidity = 1 << 2
     }
 
-    public enum PEGAKnowledgeWriteResult
+    public enum PegaKnowledgeWriteResult
     {
         Recorded,
         Replaced,
@@ -41,12 +41,12 @@ namespace PEGA.NPC
     }
 
     /// <summary>Opaque, typed evidence origin shared by facts from every knowledge scope.</summary>
-    public readonly struct PEGAKnowledgeEvidenceOrigin : IEquatable<PEGAKnowledgeEvidenceOrigin>
+    public readonly struct PegaKnowledgeEvidenceOrigin : IEquatable<PegaKnowledgeEvidenceOrigin>
     {
         private readonly Type _originType;
         private readonly object _origin;
 
-        private PEGAKnowledgeEvidenceOrigin(Type originType, object origin)
+        private PegaKnowledgeEvidenceOrigin(Type originType, object origin)
         {
             _originType = originType;
             _origin = origin;
@@ -54,24 +54,24 @@ namespace PEGA.NPC
 
         public bool IsValid => _originType != null;
 
-        public static PEGAKnowledgeEvidenceOrigin From<TOrigin>(TOrigin origin)
+        public static PegaKnowledgeEvidenceOrigin From<TOrigin>(TOrigin origin)
         {
             if (origin is null)
             {
                 throw new ArgumentNullException(nameof(origin));
             }
 
-            return new PEGAKnowledgeEvidenceOrigin(typeof(TOrigin), origin);
+            return new PegaKnowledgeEvidenceOrigin(typeof(TOrigin), origin);
         }
 
         public bool Is<TOrigin>(TOrigin origin) =>
             IsValid && _originType == typeof(TOrigin) && Equals(_origin, origin);
 
-        public bool Equals(PEGAKnowledgeEvidenceOrigin other) =>
+        public bool Equals(PegaKnowledgeEvidenceOrigin other) =>
             _originType == other._originType && Equals(_origin, other._origin);
 
         public override bool Equals(object obj) =>
-            obj is PEGAKnowledgeEvidenceOrigin other && Equals(other);
+            obj is PegaKnowledgeEvidenceOrigin other && Equals(other);
 
         public override int GetHashCode()
         {
@@ -86,10 +86,10 @@ namespace PEGA.NPC
     }
 
     /// <summary>One evidence item; source and payload retain typed domain evidence without a closed source enum.</summary>
-    public readonly struct PEGAKnowledgeEvidence
+    public readonly struct PegaKnowledgeEvidence
     {
-        public PEGAKnowledgeEvidence(
-            PEGAKnowledgeEvidenceOrigin origin,
+        public PegaKnowledgeEvidence(
+            PegaKnowledgeEvidenceOrigin origin,
             double observationTimeSeconds,
             object source = null,
             object payload = null)
@@ -100,7 +100,7 @@ namespace PEGA.NPC
             Payload = payload;
         }
 
-        public PEGAKnowledgeEvidenceOrigin Origin { get; }
+        public PegaKnowledgeEvidenceOrigin Origin { get; }
 
         public double ObservationTimeSeconds { get; }
 
@@ -113,78 +113,78 @@ namespace PEGA.NPC
             !double.IsInfinity(ObservationTimeSeconds) &&
             ObservationTimeSeconds >= 0d;
 
-        public static PEGAKnowledgeEvidence From<TOrigin>(
+        public static PegaKnowledgeEvidence From<TOrigin>(
             TOrigin origin,
             double observationTimeSeconds,
             object source = null,
             object payload = null) =>
-            new PEGAKnowledgeEvidence(
-                PEGAKnowledgeEvidenceOrigin.From(origin),
+            new PegaKnowledgeEvidence(
+                PegaKnowledgeEvidenceOrigin.From(origin),
                 observationTimeSeconds,
                 source,
                 payload);
     }
 
     /// <summary>A value and its shared metadata, independent of the authority that owns it.</summary>
-    public readonly struct PEGAKnowledgeFact<TValue>
+    public readonly struct PegaKnowledgeFact<TValue>
     {
         private readonly TValue _value;
         private readonly TValue _candidate;
         private readonly bool _hasCandidate;
-        private readonly IReadOnlyList<PEGAKnowledgeEvidence> _evidence;
-        private readonly IReadOnlyList<PEGAKnowledgeEvidenceOrigin> _origins;
+        private readonly IReadOnlyList<PegaKnowledgeEvidence> _evidence;
+        private readonly IReadOnlyList<PegaKnowledgeEvidenceOrigin> _origins;
 
-        internal PEGAKnowledgeFact(
-            PEGAKnowledgeStatus status,
+        internal PegaKnowledgeFact(
+            PegaKnowledgeStatus status,
             bool hasObservationTime,
             double observationTimeSeconds,
-            IReadOnlyList<PEGAKnowledgeEvidence> evidence,
-            PEGAKnowledgeInvalidationCause invalidationCauses,
+            IReadOnlyList<PegaKnowledgeEvidence> evidence,
+            PegaKnowledgeInvalidationCause invalidationCauses,
             TValue value,
             TValue candidate,
             bool hasCandidate,
-            PEGAKnowledgeScope scope)
+            PegaKnowledgeScope scope)
         {
             Status = status;
             HasObservationTime = hasObservationTime;
             ObservationTimeSeconds = observationTimeSeconds;
-            _evidence = evidence ?? Array.Empty<PEGAKnowledgeEvidence>();
+            _evidence = evidence ?? Array.Empty<PegaKnowledgeEvidence>();
             InvalidationCauses = invalidationCauses;
             _value = value;
             _candidate = candidate;
             _hasCandidate = hasCandidate;
             Scope = scope;
 
-            var origins = new List<PEGAKnowledgeEvidenceOrigin>();
+            var origins = new List<PegaKnowledgeEvidenceOrigin>();
             for (int index = 0; index < _evidence.Count; index++)
             {
-                PEGAKnowledgeEvidenceOrigin origin = _evidence[index].Origin;
+                PegaKnowledgeEvidenceOrigin origin = _evidence[index].Origin;
                 if (!origins.Contains(origin))
                 {
                     origins.Add(origin);
                 }
             }
 
-            _origins = new ReadOnlyCollection<PEGAKnowledgeEvidenceOrigin>(origins);
+            _origins = new ReadOnlyCollection<PegaKnowledgeEvidenceOrigin>(origins);
         }
 
-        public PEGAKnowledgeStatus Status { get; }
+        public PegaKnowledgeStatus Status { get; }
 
-        public bool HasValue => Status == PEGAKnowledgeStatus.Known;
+        public bool HasValue => Status == PegaKnowledgeStatus.Known;
 
         public bool HasObservationTime { get; }
 
         public double ObservationTimeSeconds { get; }
 
-        public IReadOnlyList<PEGAKnowledgeEvidence> Evidence =>
-            _evidence ?? Array.Empty<PEGAKnowledgeEvidence>();
+        public IReadOnlyList<PegaKnowledgeEvidence> Evidence =>
+            _evidence ?? Array.Empty<PegaKnowledgeEvidence>();
 
-        public IReadOnlyList<PEGAKnowledgeEvidenceOrigin> Origins =>
-            _origins ?? Array.Empty<PEGAKnowledgeEvidenceOrigin>();
+        public IReadOnlyList<PegaKnowledgeEvidenceOrigin> Origins =>
+            _origins ?? Array.Empty<PegaKnowledgeEvidenceOrigin>();
 
-        public PEGAKnowledgeInvalidationCause InvalidationCauses { get; }
+        public PegaKnowledgeInvalidationCause InvalidationCauses { get; }
 
-        public PEGAKnowledgeScope Scope { get; }
+        public PegaKnowledgeScope Scope { get; }
 
         public bool HasOrigin<TOrigin>(TOrigin origin)
         {
@@ -201,7 +201,7 @@ namespace PEGA.NPC
 
         public bool TryGetValue(out TValue value)
         {
-            if (Status == PEGAKnowledgeStatus.Known)
+            if (Status == PegaKnowledgeStatus.Known)
             {
                 value = _value;
                 return true;
@@ -215,29 +215,29 @@ namespace PEGA.NPC
 
         internal TValue Candidate => _candidate;
 
-        internal static PEGAKnowledgeFact<TValue> Unknown(PEGAKnowledgeScope scope) =>
-            new PEGAKnowledgeFact<TValue>(
-                PEGAKnowledgeStatus.Unknown,
+        internal static PegaKnowledgeFact<TValue> Unknown(PegaKnowledgeScope scope) =>
+            new PegaKnowledgeFact<TValue>(
+                PegaKnowledgeStatus.Unknown,
                 false,
                 0d,
-                Array.Empty<PEGAKnowledgeEvidence>(),
-                PEGAKnowledgeInvalidationCause.None,
+                Array.Empty<PegaKnowledgeEvidence>(),
+                PegaKnowledgeInvalidationCause.None,
                 default,
                 default,
                 false,
                 scope);
 
-        internal static PEGAKnowledgeFact<TValue> Create(
-            PEGAKnowledgeStatus status,
+        internal static PegaKnowledgeFact<TValue> Create(
+            PegaKnowledgeStatus status,
             bool hasObservationTime,
             double observationTimeSeconds,
-            IReadOnlyList<PEGAKnowledgeEvidence> evidence,
-            PEGAKnowledgeInvalidationCause invalidationCauses,
+            IReadOnlyList<PegaKnowledgeEvidence> evidence,
+            PegaKnowledgeInvalidationCause invalidationCauses,
             TValue value,
             TValue candidate,
             bool hasCandidate,
-            PEGAKnowledgeScope scope) =>
-            new PEGAKnowledgeFact<TValue>(
+            PegaKnowledgeScope scope) =>
+            new PegaKnowledgeFact<TValue>(
                 status,
                 hasObservationTime,
                 observationTimeSeconds,
@@ -249,11 +249,11 @@ namespace PEGA.NPC
                 scope);
     }
 
-    public readonly struct PEGAKnowledgeFactUpdate<TValue>
+    public readonly struct PegaKnowledgeFactUpdate<TValue>
     {
-        public PEGAKnowledgeFactUpdate(
-            PEGAKnowledgeWriteResult result,
-            PEGAKnowledgeFact<TValue> fact,
+        public PegaKnowledgeFactUpdate(
+            PegaKnowledgeWriteResult result,
+            PegaKnowledgeFact<TValue> fact,
             bool hasValueOrStatusChanged)
         {
             Result = result;
@@ -261,85 +261,85 @@ namespace PEGA.NPC
             HasValueOrStatusChanged = hasValueOrStatusChanged;
         }
 
-        public PEGAKnowledgeWriteResult Result { get; }
+        public PegaKnowledgeWriteResult Result { get; }
 
-        public PEGAKnowledgeFact<TValue> Fact { get; }
+        public PegaKnowledgeFact<TValue> Fact { get; }
 
         public bool HasValueOrStatusChanged { get; }
     }
 
     /// <summary>Per-data policy for validation, recency, resolution, invalidation and query validity.</summary>
-    public interface IPEGAKnowledgeFactPolicy<TValue>
+    public interface IPegaKnowledgeFactPolicy<TValue>
     {
-        PEGAKnowledgeFactUpdate<TValue> Observe(
-            PEGAKnowledgeFact<TValue> current,
+        PegaKnowledgeFactUpdate<TValue> Observe(
+            PegaKnowledgeFact<TValue> current,
             TValue value,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope);
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope);
 
-        PEGAKnowledgeFactUpdate<TValue> Invalidate(
-            PEGAKnowledgeFact<TValue> current,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope);
+        PegaKnowledgeFactUpdate<TValue> Invalidate(
+            PegaKnowledgeFact<TValue> current,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope);
 
-        PEGAKnowledgeFact<TValue> EvaluateValidity(
-            PEGAKnowledgeFact<TValue> current,
+        PegaKnowledgeFact<TValue> EvaluateValidity(
+            PegaKnowledgeFact<TValue> current,
             double queryTimeSeconds,
-            PEGAKnowledgeScope scope);
+            PegaKnowledgeScope scope);
     }
 
     /// <summary>Reusable latest-evidence policy matching the current Individual recency and conflict rules.</summary>
-    public sealed class PEGALatestEvidenceKnowledgePolicy<TValue> : IPEGAKnowledgeFactPolicy<TValue>
+    public sealed class PegaLatestEvidenceKnowledgePolicy<TValue> : IPegaKnowledgeFactPolicy<TValue>
     {
         private readonly Func<TValue, TValue, bool> _areEqual;
         private readonly Func<TValue, string> _validateValue;
-        private readonly Func<PEGAKnowledgeFact<TValue>, double, bool> _isValidAt;
+        private readonly Func<PegaKnowledgeFact<TValue>, double, bool> _isValidAt;
 
-        public PEGALatestEvidenceKnowledgePolicy(
+        public PegaLatestEvidenceKnowledgePolicy(
             Func<TValue, TValue, bool> areEqual = null,
             Func<TValue, string> validateValue = null,
-            Func<PEGAKnowledgeFact<TValue>, double, bool> isValidAt = null)
+            Func<PegaKnowledgeFact<TValue>, double, bool> isValidAt = null)
         {
             _areEqual = areEqual ?? EqualityComparer<TValue>.Default.Equals;
             _validateValue = validateValue;
             _isValidAt = isValidAt;
         }
 
-        public PEGAKnowledgeFactUpdate<TValue> Observe(
-            PEGAKnowledgeFact<TValue> current,
+        public PegaKnowledgeFactUpdate<TValue> Observe(
+            PegaKnowledgeFact<TValue> current,
             TValue value,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope)
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope)
         {
             if (_validateValue != null && _validateValue(value) is string diagnostic &&
                 !string.IsNullOrWhiteSpace(diagnostic))
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    PEGAKnowledgeWriteResult.RejectedInvalid,
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    PegaKnowledgeWriteResult.RejectedInvalid,
                     current,
                     false);
             }
 
             if (current.HasObservationTime && evidence.ObservationTimeSeconds < current.ObservationTimeSeconds)
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.IgnoredStale, current, false);
+                return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.IgnoredStale, current, false);
             }
 
             if (!current.HasObservationTime || evidence.ObservationTimeSeconds > current.ObservationTimeSeconds)
             {
-                PEGAKnowledgeFact<TValue> next = CreateKnown(value, evidence, scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    current.HasObservationTime ? PEGAKnowledgeWriteResult.Replaced : PEGAKnowledgeWriteResult.Recorded,
+                PegaKnowledgeFact<TValue> next = CreateKnown(value, evidence, scope);
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    current.HasObservationTime ? PegaKnowledgeWriteResult.Replaced : PegaKnowledgeWriteResult.Recorded,
                     next,
                     !AreValuesEqual(current, next));
             }
 
-            List<PEGAKnowledgeEvidence> mergedEvidence = new List<PEGAKnowledgeEvidence>(current.Evidence);
+            List<PegaKnowledgeEvidence> mergedEvidence = new List<PegaKnowledgeEvidence>(current.Evidence);
             bool evidenceChanged = AddEvidence(mergedEvidence, evidence);
             bool hasCandidate = current.HasCandidate;
             TValue candidate = current.Candidate;
-            PEGAKnowledgeStatus status = current.Status;
-            PEGAKnowledgeInvalidationCause causes = current.InvalidationCauses;
+            PegaKnowledgeStatus status = current.Status;
+            PegaKnowledgeInvalidationCause causes = current.InvalidationCauses;
             TValue knownValue = current.HasValue && current.TryGetValue(out TValue existingValue)
                 ? existingValue
                 : default;
@@ -352,9 +352,9 @@ namespace PEGA.NPC
             }
             else if (!_areEqual(candidate, value))
             {
-                bool causeChanged = (causes & PEGAKnowledgeInvalidationCause.ConflictingEvidence) == 0;
-                causes |= PEGAKnowledgeInvalidationCause.ConflictingEvidence;
-                status = PEGAKnowledgeStatus.Invalidated;
+                bool causeChanged = (causes & PegaKnowledgeInvalidationCause.ConflictingEvidence) == 0;
+                causes |= PegaKnowledgeInvalidationCause.ConflictingEvidence;
+                status = PegaKnowledgeStatus.Invalidated;
                 knownValue = default;
                 var conflicting = Create(
                     status,
@@ -365,17 +365,17 @@ namespace PEGA.NPC
                     candidate,
                     hasCandidate,
                     scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
+                return new PegaKnowledgeFactUpdate<TValue>(
                     causeChanged
-                        ? PEGAKnowledgeWriteResult.InvalidatedConflict
+                        ? PegaKnowledgeWriteResult.InvalidatedConflict
                         : evidenceChanged
-                            ? PEGAKnowledgeWriteResult.Merged
-                            : PEGAKnowledgeWriteResult.NoChange,
+                            ? PegaKnowledgeWriteResult.Merged
+                            : PegaKnowledgeWriteResult.NoChange,
                     conflicting,
                     current.Status != conflicting.Status || AreValuesEqual(current, conflicting) == false);
             }
 
-            PEGAKnowledgeFact<TValue> resultFact = Create(
+            PegaKnowledgeFact<TValue> resultFact = Create(
                 status,
                 current,
                 mergedEvidence,
@@ -384,110 +384,110 @@ namespace PEGA.NPC
                 candidate,
                 hasCandidate,
                 scope);
-            return new PEGAKnowledgeFactUpdate<TValue>(
-                evidenceChanged ? PEGAKnowledgeWriteResult.Merged : PEGAKnowledgeWriteResult.NoChange,
+            return new PegaKnowledgeFactUpdate<TValue>(
+                evidenceChanged ? PegaKnowledgeWriteResult.Merged : PegaKnowledgeWriteResult.NoChange,
                 resultFact,
                 !AreValuesEqual(current, resultFact));
         }
 
-        public PEGAKnowledgeFactUpdate<TValue> Invalidate(
-            PEGAKnowledgeFact<TValue> current,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope)
+        public PegaKnowledgeFactUpdate<TValue> Invalidate(
+            PegaKnowledgeFact<TValue> current,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope)
         {
             if (current.HasObservationTime && evidence.ObservationTimeSeconds < current.ObservationTimeSeconds)
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.IgnoredStale, current, false);
+                return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.IgnoredStale, current, false);
             }
 
             if (!current.HasObservationTime || evidence.ObservationTimeSeconds > current.ObservationTimeSeconds)
             {
-                PEGAKnowledgeFact<TValue> invalidated = PEGAKnowledgeFact<TValue>.Create(
-                    PEGAKnowledgeStatus.Invalidated,
+                PegaKnowledgeFact<TValue> invalidated = PegaKnowledgeFact<TValue>.Create(
+                    PegaKnowledgeStatus.Invalidated,
                     true,
                     evidence.ObservationTimeSeconds,
                     new[] { evidence },
-                    PEGAKnowledgeInvalidationCause.Explicit,
+                    PegaKnowledgeInvalidationCause.Explicit,
                     default,
                     default,
                     false,
                     scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    PEGAKnowledgeWriteResult.InvalidatedExplicitly,
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    PegaKnowledgeWriteResult.InvalidatedExplicitly,
                     invalidated,
                     current.Status != invalidated.Status || current.HasValue);
             }
 
-            List<PEGAKnowledgeEvidence> mergedEvidence = new List<PEGAKnowledgeEvidence>(current.Evidence);
+            List<PegaKnowledgeEvidence> mergedEvidence = new List<PegaKnowledgeEvidence>(current.Evidence);
             bool evidenceChanged = AddEvidence(mergedEvidence, evidence);
-            bool statusChanged = current.Status != PEGAKnowledgeStatus.Invalidated;
-            bool causeChanged = (current.InvalidationCauses & PEGAKnowledgeInvalidationCause.Explicit) == 0;
-            PEGAKnowledgeFact<TValue> next = Create(
-                PEGAKnowledgeStatus.Invalidated,
+            bool statusChanged = current.Status != PegaKnowledgeStatus.Invalidated;
+            bool causeChanged = (current.InvalidationCauses & PegaKnowledgeInvalidationCause.Explicit) == 0;
+            PegaKnowledgeFact<TValue> next = Create(
+                PegaKnowledgeStatus.Invalidated,
                 current,
                 mergedEvidence,
-                current.InvalidationCauses | PEGAKnowledgeInvalidationCause.Explicit,
+                current.InvalidationCauses | PegaKnowledgeInvalidationCause.Explicit,
                 default,
                 current.Candidate,
                 current.HasCandidate,
                 scope);
-            return new PEGAKnowledgeFactUpdate<TValue>(
+            return new PegaKnowledgeFactUpdate<TValue>(
                 statusChanged || causeChanged
-                    ? PEGAKnowledgeWriteResult.InvalidatedExplicitly
+                    ? PegaKnowledgeWriteResult.InvalidatedExplicitly
                     : evidenceChanged
-                        ? PEGAKnowledgeWriteResult.Merged
-                        : PEGAKnowledgeWriteResult.NoChange,
+                        ? PegaKnowledgeWriteResult.Merged
+                        : PegaKnowledgeWriteResult.NoChange,
                 next,
                 statusChanged || current.HasValue);
         }
 
-        public PEGAKnowledgeFact<TValue> EvaluateValidity(
-            PEGAKnowledgeFact<TValue> current,
+        public PegaKnowledgeFact<TValue> EvaluateValidity(
+            PegaKnowledgeFact<TValue> current,
             double queryTimeSeconds,
-            PEGAKnowledgeScope scope)
+            PegaKnowledgeScope scope)
         {
             if (!current.HasValue || _isValidAt == null || _isValidAt(current, queryTimeSeconds))
             {
                 return current;
             }
 
-            return PEGAKnowledgeFact<TValue>.Create(
-                PEGAKnowledgeStatus.Invalidated,
+            return PegaKnowledgeFact<TValue>.Create(
+                PegaKnowledgeStatus.Invalidated,
                 current.HasObservationTime,
                 current.ObservationTimeSeconds,
                 current.Evidence,
-                current.InvalidationCauses | PEGAKnowledgeInvalidationCause.PolicyValidity,
+                current.InvalidationCauses | PegaKnowledgeInvalidationCause.PolicyValidity,
                 default,
                 current.Candidate,
                 current.HasCandidate,
                 scope);
         }
 
-        private PEGAKnowledgeFact<TValue> CreateKnown(
+        private PegaKnowledgeFact<TValue> CreateKnown(
             TValue value,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope) =>
-            PEGAKnowledgeFact<TValue>.Create(
-                PEGAKnowledgeStatus.Known,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope) =>
+            PegaKnowledgeFact<TValue>.Create(
+                PegaKnowledgeStatus.Known,
                 true,
                 evidence.ObservationTimeSeconds,
                 new[] { evidence },
-                PEGAKnowledgeInvalidationCause.None,
+                PegaKnowledgeInvalidationCause.None,
                 value,
                 value,
                 true,
                 scope);
 
-        private static PEGAKnowledgeFact<TValue> Create(
-            PEGAKnowledgeStatus status,
-            PEGAKnowledgeFact<TValue> current,
-            IReadOnlyList<PEGAKnowledgeEvidence> evidence,
-            PEGAKnowledgeInvalidationCause causes,
+        private static PegaKnowledgeFact<TValue> Create(
+            PegaKnowledgeStatus status,
+            PegaKnowledgeFact<TValue> current,
+            IReadOnlyList<PegaKnowledgeEvidence> evidence,
+            PegaKnowledgeInvalidationCause causes,
             TValue value,
             TValue candidate,
             bool hasCandidate,
-            PEGAKnowledgeScope scope) =>
-            PEGAKnowledgeFact<TValue>.Create(
+            PegaKnowledgeScope scope) =>
+            PegaKnowledgeFact<TValue>.Create(
                 status,
                 current.HasObservationTime,
                 current.ObservationTimeSeconds,
@@ -498,11 +498,11 @@ namespace PEGA.NPC
                 hasCandidate,
                 scope);
 
-        private static bool AddEvidence(List<PEGAKnowledgeEvidence> evidence, PEGAKnowledgeEvidence candidate)
+        private static bool AddEvidence(List<PegaKnowledgeEvidence> evidence, PegaKnowledgeEvidence candidate)
         {
             for (int index = 0; index < evidence.Count; index++)
             {
-                PEGAKnowledgeEvidence current = evidence[index];
+                PegaKnowledgeEvidence current = evidence[index];
                 if (current.Origin.Equals(candidate.Origin) &&
                     ReferenceEquals(current.Source, candidate.Source) &&
                     Equals(current.Payload, candidate.Payload))
@@ -516,8 +516,8 @@ namespace PEGA.NPC
         }
 
         private bool AreValuesEqual(
-            PEGAKnowledgeFact<TValue> left,
-            PEGAKnowledgeFact<TValue> right)
+            PegaKnowledgeFact<TValue> left,
+            PegaKnowledgeFact<TValue> right)
         {
             if (left.Status != right.Status)
             {
@@ -532,12 +532,12 @@ namespace PEGA.NPC
     }
 
     /// <summary>First-accepted policy for structural or authored facts that do not change during their owner lifetime.</summary>
-    public sealed class PEGAStructuralKnowledgePolicy<TValue> : IPEGAKnowledgeFactPolicy<TValue>
+    public sealed class PegaStructuralKnowledgePolicy<TValue> : IPegaKnowledgeFactPolicy<TValue>
     {
         private readonly Func<TValue, string> _validateValue;
         private readonly Func<TValue, TValue, bool> _areEqual;
 
-        public PEGAStructuralKnowledgePolicy(
+        public PegaStructuralKnowledgePolicy(
             Func<TValue, string> validateValue = null,
             Func<TValue, TValue, bool> areEqual = null)
         {
@@ -545,26 +545,26 @@ namespace PEGA.NPC
             _areEqual = areEqual ?? EqualityComparer<TValue>.Default.Equals;
         }
 
-        public PEGAKnowledgeFactUpdate<TValue> Observe(
-            PEGAKnowledgeFact<TValue> current,
+        public PegaKnowledgeFactUpdate<TValue> Observe(
+            PegaKnowledgeFact<TValue> current,
             TValue value,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope)
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope)
         {
             if (_validateValue != null && !string.IsNullOrWhiteSpace(_validateValue(value)))
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.RejectedInvalid, current, false);
+                return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.RejectedInvalid, current, false);
             }
 
             if (current.HasObservationTime && evidence.ObservationTimeSeconds < current.ObservationTimeSeconds)
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.IgnoredStale, current, false);
+                return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.IgnoredStale, current, false);
             }
 
             if (!current.HasValue && current.HasObservationTime &&
                 evidence.ObservationTimeSeconds == current.ObservationTimeSeconds)
             {
-                List<PEGAKnowledgeEvidence> invalidatedEvidence = new List<PEGAKnowledgeEvidence>(current.Evidence);
+                List<PegaKnowledgeEvidence> invalidatedEvidence = new List<PegaKnowledgeEvidence>(current.Evidence);
                 bool isNewEvidence = true;
                 for (int index = 0; index < invalidatedEvidence.Count; index++)
                 {
@@ -583,8 +583,8 @@ namespace PEGA.NPC
                     invalidatedEvidence.Add(evidence);
                 }
 
-                PEGAKnowledgeFact<TValue> stillInvalidated = PEGAKnowledgeFact<TValue>.Create(
-                    PEGAKnowledgeStatus.Invalidated,
+                PegaKnowledgeFact<TValue> stillInvalidated = PegaKnowledgeFact<TValue>.Create(
+                    PegaKnowledgeStatus.Invalidated,
                     true,
                     current.ObservationTimeSeconds,
                     invalidatedEvidence,
@@ -593,31 +593,31 @@ namespace PEGA.NPC
                     current.Candidate,
                     current.HasCandidate,
                     scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    isNewEvidence ? PEGAKnowledgeWriteResult.Merged : PEGAKnowledgeWriteResult.NoChange,
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    isNewEvidence ? PegaKnowledgeWriteResult.Merged : PegaKnowledgeWriteResult.NoChange,
                     stillInvalidated,
                     false);
             }
 
             if (!current.HasValue)
             {
-                PEGAKnowledgeFact<TValue> recorded = PEGAKnowledgeFact<TValue>.Create(
-                    PEGAKnowledgeStatus.Known,
+                PegaKnowledgeFact<TValue> recorded = PegaKnowledgeFact<TValue>.Create(
+                    PegaKnowledgeStatus.Known,
                     true,
                     evidence.ObservationTimeSeconds,
                     new[] { evidence },
-                    PEGAKnowledgeInvalidationCause.None,
+                    PegaKnowledgeInvalidationCause.None,
                     value,
                     value,
                     true,
                     scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    current.HasObservationTime ? PEGAKnowledgeWriteResult.Replaced : PEGAKnowledgeWriteResult.Recorded,
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    current.HasObservationTime ? PegaKnowledgeWriteResult.Replaced : PegaKnowledgeWriteResult.Recorded,
                     recorded,
                     true);
             }
 
-            List<PEGAKnowledgeEvidence> merged = new List<PEGAKnowledgeEvidence>(current.Evidence);
+            List<PegaKnowledgeEvidence> merged = new List<PegaKnowledgeEvidence>(current.Evidence);
             for (int index = 0; index < merged.Count; index++)
             {
                 if (merged[index].Origin.Equals(evidence.Origin) &&
@@ -625,30 +625,30 @@ namespace PEGA.NPC
                     Equals(merged[index].Payload, evidence.Payload) &&
                     merged[index].ObservationTimeSeconds == evidence.ObservationTimeSeconds)
                 {
-                    return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.NoChange, current, false);
+                    return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.NoChange, current, false);
                 }
             }
 
             merged.Add(evidence);
             if (!current.TryGetValue(out TValue existingValue) || !_areEqual(existingValue, value))
             {
-                PEGAKnowledgeFact<TValue> conflict = PEGAKnowledgeFact<TValue>.Create(
-                    PEGAKnowledgeStatus.Invalidated,
+                PegaKnowledgeFact<TValue> conflict = PegaKnowledgeFact<TValue>.Create(
+                    PegaKnowledgeStatus.Invalidated,
                     true,
                     evidence.ObservationTimeSeconds,
                     merged,
-                    current.InvalidationCauses | PEGAKnowledgeInvalidationCause.ConflictingEvidence,
+                    current.InvalidationCauses | PegaKnowledgeInvalidationCause.ConflictingEvidence,
                     default,
                     current.HasCandidate ? current.Candidate : existingValue,
                     current.HasCandidate || current.HasValue,
                     scope);
-                return new PEGAKnowledgeFactUpdate<TValue>(
-                    PEGAKnowledgeWriteResult.InvalidatedConflict,
+                return new PegaKnowledgeFactUpdate<TValue>(
+                    PegaKnowledgeWriteResult.InvalidatedConflict,
                     conflict,
                     true);
             }
 
-            PEGAKnowledgeFact<TValue> updated = PEGAKnowledgeFact<TValue>.Create(
+            PegaKnowledgeFact<TValue> updated = PegaKnowledgeFact<TValue>.Create(
                 current.Status,
                 true,
                 evidence.ObservationTimeSeconds,
@@ -658,23 +658,23 @@ namespace PEGA.NPC
                 current.Candidate,
                 current.HasCandidate,
                 scope);
-            return new PEGAKnowledgeFactUpdate<TValue>(
-                PEGAKnowledgeWriteResult.Merged,
+            return new PegaKnowledgeFactUpdate<TValue>(
+                PegaKnowledgeWriteResult.Merged,
                 updated,
                 false);
         }
 
-        public PEGAKnowledgeFactUpdate<TValue> Invalidate(
-            PEGAKnowledgeFact<TValue> current,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeScope scope)
+        public PegaKnowledgeFactUpdate<TValue> Invalidate(
+            PegaKnowledgeFact<TValue> current,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeScope scope)
         {
             if (current.HasObservationTime && evidence.ObservationTimeSeconds < current.ObservationTimeSeconds)
             {
-                return new PEGAKnowledgeFactUpdate<TValue>(PEGAKnowledgeWriteResult.IgnoredStale, current, false);
+                return new PegaKnowledgeFactUpdate<TValue>(PegaKnowledgeWriteResult.IgnoredStale, current, false);
             }
 
-            List<PEGAKnowledgeEvidence> mergedEvidence = new List<PEGAKnowledgeEvidence>(current.Evidence);
+            List<PegaKnowledgeEvidence> mergedEvidence = new List<PegaKnowledgeEvidence>(current.Evidence);
             bool evidenceChanged = true;
             for (int index = 0; index < mergedEvidence.Count; index++)
             {
@@ -693,44 +693,44 @@ namespace PEGA.NPC
                 mergedEvidence.Add(evidence);
             }
 
-            bool statusChanged = current.Status != PEGAKnowledgeStatus.Invalidated;
-            bool causeChanged = (current.InvalidationCauses & PEGAKnowledgeInvalidationCause.Explicit) == 0;
-            PEGAKnowledgeFact<TValue> invalidated = PEGAKnowledgeFact<TValue>.Create(
-                PEGAKnowledgeStatus.Invalidated,
+            bool statusChanged = current.Status != PegaKnowledgeStatus.Invalidated;
+            bool causeChanged = (current.InvalidationCauses & PegaKnowledgeInvalidationCause.Explicit) == 0;
+            PegaKnowledgeFact<TValue> invalidated = PegaKnowledgeFact<TValue>.Create(
+                PegaKnowledgeStatus.Invalidated,
                 true,
                 evidence.ObservationTimeSeconds,
                 mergedEvidence,
-                current.InvalidationCauses | PEGAKnowledgeInvalidationCause.Explicit,
+                current.InvalidationCauses | PegaKnowledgeInvalidationCause.Explicit,
                 default,
                 current.Candidate,
                 current.HasCandidate,
                 scope);
-            return new PEGAKnowledgeFactUpdate<TValue>(
+            return new PegaKnowledgeFactUpdate<TValue>(
                 statusChanged || causeChanged
-                    ? PEGAKnowledgeWriteResult.InvalidatedExplicitly
+                    ? PegaKnowledgeWriteResult.InvalidatedExplicitly
                     : evidenceChanged
-                        ? PEGAKnowledgeWriteResult.Merged
-                        : PEGAKnowledgeWriteResult.NoChange,
+                        ? PegaKnowledgeWriteResult.Merged
+                        : PegaKnowledgeWriteResult.NoChange,
                 invalidated,
                 statusChanged || current.HasValue);
         }
 
-        public PEGAKnowledgeFact<TValue> EvaluateValidity(
-            PEGAKnowledgeFact<TValue> current,
+        public PegaKnowledgeFact<TValue> EvaluateValidity(
+            PegaKnowledgeFact<TValue> current,
             double queryTimeSeconds,
-            PEGAKnowledgeScope scope) => current;
+            PegaKnowledgeScope scope) => current;
     }
 
-    public sealed class PEGAKnowledgeFactChangedEvent : IEvent
+    public sealed class PegaKnowledgeFactChangedEvent : IEvent
     {
-        internal PEGAKnowledgeFactChangedEvent(
-            IPEGAKnowledgeFactKey key,
-            PEGAKnowledgeScope scope,
-            PEGAKnowledgeWriteResult result,
-            PEGAKnowledgeStatus previousStatus,
-            PEGAKnowledgeStatus currentStatus,
+        internal PegaKnowledgeFactChangedEvent(
+            IPegaKnowledgeFactKey key,
+            PegaKnowledgeScope scope,
+            PegaKnowledgeWriteResult result,
+            PegaKnowledgeStatus previousStatus,
+            PegaKnowledgeStatus currentStatus,
             bool hasValueOrStatusChanged,
-            PEGAKnowledgeEvidence evidence)
+            PegaKnowledgeEvidence evidence)
         {
             FactKey = key;
             Scope = scope;
@@ -741,35 +741,35 @@ namespace PEGA.NPC
             Evidence = evidence;
         }
 
-        public IPEGAKnowledgeFactKey FactKey { get; }
+        public IPegaKnowledgeFactKey FactKey { get; }
 
-        public PEGAKnowledgeScope Scope { get; }
+        public PegaKnowledgeScope Scope { get; }
 
-        public PEGAKnowledgeWriteResult Result { get; }
+        public PegaKnowledgeWriteResult Result { get; }
 
-        public PEGAKnowledgeStatus PreviousStatus { get; }
+        public PegaKnowledgeStatus PreviousStatus { get; }
 
-        public PEGAKnowledgeStatus CurrentStatus { get; }
+        public PegaKnowledgeStatus CurrentStatus { get; }
 
         public bool HasValueOrStatusChanged { get; }
 
-        public PEGAKnowledgeEvidence Evidence { get; }
+        public PegaKnowledgeEvidence Evidence { get; }
 
-        public bool IsFor<TAddress, TValue>(PEGAKnowledgeFactKey<TAddress, TValue> key) =>
+        public bool IsFor<TAddress, TValue>(PegaKnowledgeFactKey<TAddress, TValue> key) =>
             FactKey != null && FactKey.Equals(key);
     }
 
     /// <summary>Scope-local generic storage. Scope authorities own instances and enforce their own access/lifecycle.</summary>
-    public sealed class PEGAKnowledgeFactStore
+    public sealed class PegaKnowledgeFactStore
     {
-        private readonly Dictionary<IPEGAKnowledgeFactKey, IPEGAKnowledgeFactEntry> _facts =
-            new Dictionary<IPEGAKnowledgeFactKey, IPEGAKnowledgeFactEntry>();
+        private readonly Dictionary<IPegaKnowledgeFactKey, IPegaKnowledgeFactEntry> _facts =
+            new Dictionary<IPegaKnowledgeFactKey, IPegaKnowledgeFactEntry>();
 
-        public PEGAKnowledgeFactStore(PEGAKnowledgeScope scope)
+        public PegaKnowledgeFactStore(PegaKnowledgeScope scope)
         {
-            if (scope != PEGAKnowledgeScope.Individual &&
-                scope != PEGAKnowledgeScope.Group &&
-                scope != PEGAKnowledgeScope.Global)
+            if (scope != PegaKnowledgeScope.Individual &&
+                scope != PegaKnowledgeScope.Group &&
+                scope != PegaKnowledgeScope.Global)
             {
                 throw new ArgumentOutOfRangeException(nameof(scope));
             }
@@ -777,12 +777,12 @@ namespace PEGA.NPC
             Scope = scope;
         }
 
-        public PEGAKnowledgeScope Scope { get; }
+        public PegaKnowledgeScope Scope { get; }
 
-        internal event Action<PEGAKnowledgeFactChangedEvent> Changed;
+        internal event Action<PegaKnowledgeFactChangedEvent> Changed;
 
-        public PEGAKnowledgeFact<TValue> Get<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        public PegaKnowledgeFact<TValue> Get<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds)
         {
             ValidateQueryTime(queryTimeSeconds);
@@ -791,12 +791,12 @@ namespace PEGA.NPC
                 throw new ArgumentException("A valid fact definition and address are required.", nameof(key));
             }
 
-            if (!_facts.TryGetValue(key, out IPEGAKnowledgeFactEntry entry))
+            if (!_facts.TryGetValue(key, out IPegaKnowledgeFactEntry entry))
             {
-                return PEGAKnowledgeFact<TValue>.Unknown(Scope);
+                return PegaKnowledgeFact<TValue>.Unknown(Scope);
             }
 
-            if (!(entry is PEGAKnowledgeFactEntry<TAddress, TValue> typedEntry))
+            if (!(entry is PegaKnowledgeFactEntry<TAddress, TValue> typedEntry))
             {
                 throw new InvalidOperationException("A knowledge fact key resolved to an incompatible stored value type.");
             }
@@ -804,28 +804,28 @@ namespace PEGA.NPC
             return key.Definition.Policy.EvaluateValidity(typedEntry.Fact, queryTimeSeconds, Scope);
         }
 
-        public PEGAKnowledgeWriteResult Observe<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        public PegaKnowledgeWriteResult Observe<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             TValue value,
-            PEGAKnowledgeEvidence evidence)
+            PegaKnowledgeEvidence evidence)
         {
             if (!key.IsValid || !evidence.IsValid)
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            IPEGAKnowledgeFactEntry entry = _facts.TryGetValue(key, out IPEGAKnowledgeFactEntry found)
+            IPegaKnowledgeFactEntry entry = _facts.TryGetValue(key, out IPegaKnowledgeFactEntry found)
                 ? found
                 : null;
-            if (entry != null && !(entry is PEGAKnowledgeFactEntry<TAddress, TValue>))
+            if (entry != null && !(entry is PegaKnowledgeFactEntry<TAddress, TValue>))
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            PEGAKnowledgeFact<TValue> previous = entry != null
-                ? ((PEGAKnowledgeFactEntry<TAddress, TValue>)entry).Fact
-                : PEGAKnowledgeFact<TValue>.Unknown(Scope);
-            PEGAKnowledgeFactUpdate<TValue> update = key.Definition.Policy.Observe(
+            PegaKnowledgeFact<TValue> previous = entry != null
+                ? ((PegaKnowledgeFactEntry<TAddress, TValue>)entry).Fact
+                : PegaKnowledgeFact<TValue>.Unknown(Scope);
+            PegaKnowledgeFactUpdate<TValue> update = key.Definition.Policy.Observe(
                 previous,
                 value,
                 evidence,
@@ -834,27 +834,27 @@ namespace PEGA.NPC
             return update.Result;
         }
 
-        public PEGAKnowledgeWriteResult Invalidate<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
-            PEGAKnowledgeEvidence evidence)
+        public PegaKnowledgeWriteResult Invalidate<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeEvidence evidence)
         {
             if (!key.IsValid || !evidence.IsValid)
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            IPEGAKnowledgeFactEntry entry = _facts.TryGetValue(key, out IPEGAKnowledgeFactEntry found)
+            IPegaKnowledgeFactEntry entry = _facts.TryGetValue(key, out IPegaKnowledgeFactEntry found)
                 ? found
                 : null;
-            if (entry != null && !(entry is PEGAKnowledgeFactEntry<TAddress, TValue>))
+            if (entry != null && !(entry is PegaKnowledgeFactEntry<TAddress, TValue>))
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            PEGAKnowledgeFact<TValue> previous = entry != null
-                ? ((PEGAKnowledgeFactEntry<TAddress, TValue>)entry).Fact
-                : PEGAKnowledgeFact<TValue>.Unknown(Scope);
-            PEGAKnowledgeFactUpdate<TValue> update = key.Definition.Policy.Invalidate(
+            PegaKnowledgeFact<TValue> previous = entry != null
+                ? ((PegaKnowledgeFactEntry<TAddress, TValue>)entry).Fact
+                : PegaKnowledgeFact<TValue>.Unknown(Scope);
+            PegaKnowledgeFactUpdate<TValue> update = key.Definition.Policy.Invalidate(
                 previous,
                 evidence,
                 Scope);
@@ -862,8 +862,8 @@ namespace PEGA.NPC
             return update.Result;
         }
 
-        public IReadOnlyList<PEGAKnowledgeFactSnapshot<TAddress, TValue>> GetFacts<TAddress, TValue>(
-            PEGAKnowledgeFactDefinition<TAddress, TValue> definition,
+        public IReadOnlyList<PegaKnowledgeFactSnapshot<TAddress, TValue>> GetFacts<TAddress, TValue>(
+            PegaKnowledgeFactDefinition<TAddress, TValue> definition,
             double queryTimeSeconds)
         {
             ValidateQueryTime(queryTimeSeconds);
@@ -872,28 +872,28 @@ namespace PEGA.NPC
                 throw new ArgumentNullException(nameof(definition));
             }
 
-            var result = new List<PEGAKnowledgeFactSnapshot<TAddress, TValue>>();
-            foreach (KeyValuePair<IPEGAKnowledgeFactKey, IPEGAKnowledgeFactEntry> entry in _facts)
+            var result = new List<PegaKnowledgeFactSnapshot<TAddress, TValue>>();
+            foreach (KeyValuePair<IPegaKnowledgeFactKey, IPegaKnowledgeFactEntry> entry in _facts)
             {
-                if (!(entry.Key is PEGAKnowledgeFactKey<TAddress, TValue> key) ||
+                if (!(entry.Key is PegaKnowledgeFactKey<TAddress, TValue> key) ||
                     !ReferenceEquals(key.Definition, definition) ||
-                    !(entry.Value is PEGAKnowledgeFactEntry<TAddress, TValue> typedEntry))
+                    !(entry.Value is PegaKnowledgeFactEntry<TAddress, TValue> typedEntry))
                 {
                     continue;
                 }
 
-                result.Add(new PEGAKnowledgeFactSnapshot<TAddress, TValue>(
+                result.Add(new PegaKnowledgeFactSnapshot<TAddress, TValue>(
                     key,
                     definition.Policy.EvaluateValidity(typedEntry.Fact, queryTimeSeconds, Scope)));
             }
 
-            return new ReadOnlyCollection<PEGAKnowledgeFactSnapshot<TAddress, TValue>>(result);
+            return new ReadOnlyCollection<PegaKnowledgeFactSnapshot<TAddress, TValue>>(result);
         }
 
-        public IReadOnlyList<IPEGAKnowledgeFactKey> GetFactKeys()
+        public IReadOnlyList<IPegaKnowledgeFactKey> GetFactKeys()
         {
-            var keys = new List<IPEGAKnowledgeFactKey>(_facts.Keys);
-            return new ReadOnlyCollection<IPEGAKnowledgeFactKey>(keys);
+            var keys = new List<IPegaKnowledgeFactKey>(_facts.Keys);
+            return new ReadOnlyCollection<IPegaKnowledgeFactKey>(keys);
         }
 
         public void Clear() => _facts.Clear();
@@ -907,25 +907,25 @@ namespace PEGA.NPC
         }
 
         private void Commit<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
-            IPEGAKnowledgeFactEntry existing,
-            PEGAKnowledgeFactUpdate<TValue> update,
-            PEGAKnowledgeEvidence evidence)
+            PegaKnowledgeFactKey<TAddress, TValue> key,
+            IPegaKnowledgeFactEntry existing,
+            PegaKnowledgeFactUpdate<TValue> update,
+            PegaKnowledgeEvidence evidence)
         {
             if (!IsCommitted(update.Result))
             {
                 return;
             }
 
-            PEGAKnowledgeStatus previousStatus = existing != null
-                ? ((PEGAKnowledgeFactEntry<TAddress, TValue>)existing).Fact.Status
-                : PEGAKnowledgeStatus.Unknown;
+            PegaKnowledgeStatus previousStatus = existing != null
+                ? ((PegaKnowledgeFactEntry<TAddress, TValue>)existing).Fact.Status
+                : PegaKnowledgeStatus.Unknown;
 
-            PEGAKnowledgeFactEntry<TAddress, TValue> entry =
-                existing as PEGAKnowledgeFactEntry<TAddress, TValue>;
+            PegaKnowledgeFactEntry<TAddress, TValue> entry =
+                existing as PegaKnowledgeFactEntry<TAddress, TValue>;
             if (entry == null)
             {
-                entry = new PEGAKnowledgeFactEntry<TAddress, TValue>(key, update.Fact);
+                entry = new PegaKnowledgeFactEntry<TAddress, TValue>(key, update.Fact);
                 _facts.Add(key, entry);
             }
             else
@@ -933,7 +933,7 @@ namespace PEGA.NPC
                 entry.Set(update.Fact);
             }
 
-            Changed?.Invoke(new PEGAKnowledgeFactChangedEvent(
+            Changed?.Invoke(new PegaKnowledgeFactChangedEvent(
                 key,
                 Scope,
                 update.Result,
@@ -943,47 +943,47 @@ namespace PEGA.NPC
                 evidence));
         }
 
-        private static bool IsCommitted(PEGAKnowledgeWriteResult result) =>
-            result == PEGAKnowledgeWriteResult.Recorded ||
-            result == PEGAKnowledgeWriteResult.Replaced ||
-            result == PEGAKnowledgeWriteResult.Merged ||
-            result == PEGAKnowledgeWriteResult.InvalidatedConflict ||
-            result == PEGAKnowledgeWriteResult.InvalidatedExplicitly;
+        private static bool IsCommitted(PegaKnowledgeWriteResult result) =>
+            result == PegaKnowledgeWriteResult.Recorded ||
+            result == PegaKnowledgeWriteResult.Replaced ||
+            result == PegaKnowledgeWriteResult.Merged ||
+            result == PegaKnowledgeWriteResult.InvalidatedConflict ||
+            result == PegaKnowledgeWriteResult.InvalidatedExplicitly;
 
-        private interface IPEGAKnowledgeFactEntry
+        private interface IPegaKnowledgeFactEntry
         {
         }
 
-        private sealed class PEGAKnowledgeFactEntry<TAddress, TValue> : IPEGAKnowledgeFactEntry
+        private sealed class PegaKnowledgeFactEntry<TAddress, TValue> : IPegaKnowledgeFactEntry
         {
-            public PEGAKnowledgeFactEntry(
-                PEGAKnowledgeFactKey<TAddress, TValue> key,
-                PEGAKnowledgeFact<TValue> fact)
+            public PegaKnowledgeFactEntry(
+                PegaKnowledgeFactKey<TAddress, TValue> key,
+                PegaKnowledgeFact<TValue> fact)
             {
                 Key = key;
                 Fact = fact;
             }
 
-            public PEGAKnowledgeFactKey<TAddress, TValue> Key { get; }
+            public PegaKnowledgeFactKey<TAddress, TValue> Key { get; }
 
-            public PEGAKnowledgeFact<TValue> Fact { get; private set; }
+            public PegaKnowledgeFact<TValue> Fact { get; private set; }
 
-            public void Set(PEGAKnowledgeFact<TValue> fact) => Fact = fact;
+            public void Set(PegaKnowledgeFact<TValue> fact) => Fact = fact;
         }
     }
 
-    public readonly struct PEGAKnowledgeFactSnapshot<TAddress, TValue>
+    public readonly struct PegaKnowledgeFactSnapshot<TAddress, TValue>
     {
-        public PEGAKnowledgeFactSnapshot(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
-            PEGAKnowledgeFact<TValue> fact)
+        public PegaKnowledgeFactSnapshot(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeFact<TValue> fact)
         {
             Key = key;
             Fact = fact;
         }
 
-        public PEGAKnowledgeFactKey<TAddress, TValue> Key { get; }
+        public PegaKnowledgeFactKey<TAddress, TValue> Key { get; }
 
-        public PEGAKnowledgeFact<TValue> Fact { get; }
+        public PegaKnowledgeFact<TValue> Fact { get; }
     }
 }

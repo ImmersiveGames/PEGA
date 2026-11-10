@@ -16,13 +16,6 @@ MonoBehaviour:
   - context: 0
     planSelectionPolicy:
       costReferenceSeconds: 10
-      scorePolicy:
-        rid: 4252839036489302104
+      weightAndTimeBalance: {fileID: 11400000, guid: c0239dde8a634094a59df2bd7b32d10b, type: 2}
     desires:
     - {fileID: 11400000, guid: 177736f2fcd348e09dc9a05bb24b81d4, type: 2}
-  references:
-    version: 2
-    RefIds:
-    - rid: 4252839036489302104
-      type: {class: PEGANpcMultiplicativePlanScorePolicy, ns: PEGA.NPC, asm: Assembly-CSharp}
-      data: 

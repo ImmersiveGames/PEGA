@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
-using ImmersiveGames.Goap;
 using PEGA.Diagnostics;
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Desires
 {
-    public readonly struct PEGANpcDesireSatisfactionSnapshot
+    public readonly struct PegaNpcDesireSatisfactionSnapshot
     {
-        internal PEGANpcDesireSatisfactionSnapshot(
+        internal PegaNpcDesireSatisfactionSnapshot(
             string desireId,
             float satisfaction,
             int completedExecutions)
@@ -27,24 +27,24 @@ namespace PEGA.NPC
         public int CompletedExecutions { get; }
     }
 
-    public sealed class PEGANpcDesireStateSnapshot
+    public sealed class PegaNpcDesireStateSnapshot
     {
-        private static readonly IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> EmptyValues =
-            Array.AsReadOnly(Array.Empty<PEGANpcDesireSatisfactionSnapshot>());
+        private static readonly IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> EmptyValues =
+            Array.AsReadOnly(Array.Empty<PegaNpcDesireSatisfactionSnapshot>());
 
-        private readonly Dictionary<string, PEGANpcDesireSatisfactionSnapshot> _byDesireId;
-        private readonly IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> _values;
+        private readonly Dictionary<string, PegaNpcDesireSatisfactionSnapshot> _byDesireId;
+        private readonly IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> _values;
 
-        internal PEGANpcDesireStateSnapshot(
-            IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> values)
+        internal PegaNpcDesireStateSnapshot(
+            IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> values)
         {
-            PEGANpcDesireSatisfactionSnapshot[] copy = new PEGANpcDesireSatisfactionSnapshot[values.Count];
-            _byDesireId = new Dictionary<string, PEGANpcDesireSatisfactionSnapshot>(
+            PegaNpcDesireSatisfactionSnapshot[] copy = new PegaNpcDesireSatisfactionSnapshot[values.Count];
+            _byDesireId = new Dictionary<string, PegaNpcDesireSatisfactionSnapshot>(
                 values.Count,
                 StringComparer.Ordinal);
             for (int index = 0; index < values.Count; index++)
             {
-                PEGANpcDesireSatisfactionSnapshot value = values[index];
+                PegaNpcDesireSatisfactionSnapshot value = values[index];
                 copy[index] = value;
                 _byDesireId[value.DesireId] = value;
             }
@@ -52,9 +52,9 @@ namespace PEGA.NPC
             _values = Array.AsReadOnly(copy);
         }
 
-        public IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> Values => _values ?? EmptyValues;
+        public IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> Values => _values ?? EmptyValues;
 
-        public bool TryGet(string desireId, out PEGANpcDesireSatisfactionSnapshot value)
+        public bool TryGet(string desireId, out PegaNpcDesireSatisfactionSnapshot value)
         {
             if (_byDesireId != null && !string.IsNullOrWhiteSpace(desireId) &&
                 _byDesireId.TryGetValue(desireId, out value))
@@ -62,22 +62,22 @@ namespace PEGA.NPC
                 return true;
             }
 
-            value = new PEGANpcDesireSatisfactionSnapshot(desireId, 0f, 0);
+            value = new PegaNpcDesireSatisfactionSnapshot(desireId, 0f, 0);
             return false;
         }
     }
 
-    public sealed class PEGANpcDesireSatisfactionUpdate
+    public sealed class PegaNpcDesireSatisfactionUpdate
     {
-        private static readonly IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> EmptyValues =
-            Array.AsReadOnly(Array.Empty<PEGANpcDesireSatisfactionSnapshot>());
+        private static readonly IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> EmptyValues =
+            Array.AsReadOnly(Array.Empty<PegaNpcDesireSatisfactionSnapshot>());
 
-        private readonly IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> _updatedValues;
+        private readonly IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> _updatedValues;
 
-        internal PEGANpcDesireSatisfactionUpdate(
-            IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> updatedValues)
+        internal PegaNpcDesireSatisfactionUpdate(
+            IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> updatedValues)
         {
-            PEGANpcDesireSatisfactionSnapshot[] copy = new PEGANpcDesireSatisfactionSnapshot[updatedValues.Count];
+            PegaNpcDesireSatisfactionSnapshot[] copy = new PegaNpcDesireSatisfactionSnapshot[updatedValues.Count];
             for (int index = 0; index < updatedValues.Count; index++)
             {
                 copy[index] = updatedValues[index];
@@ -86,13 +86,13 @@ namespace PEGA.NPC
             _updatedValues = Array.AsReadOnly(copy);
         }
 
-        public IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> UpdatedValues =>
+        public IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> UpdatedValues =>
             _updatedValues ?? EmptyValues;
 
         public int UpdatedCount => UpdatedValues.Count;
     }
 
-    public sealed class PEGANpcDesireState
+    public sealed class PegaNpcDesireState
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Desires";
         private readonly string _actorRootName;
@@ -109,55 +109,55 @@ namespace PEGA.NPC
         [NonSerialized]
         private long _highestRecordedRequestId;
 
-        internal PEGANpcDesireState(string actorRootName)
+        internal PegaNpcDesireState(string actorRootName)
         {
             _actorRootName = string.IsNullOrWhiteSpace(actorRootName) ? "NPC" : actorRootName;
             EnsureEntriesInitialized();
             EnsureLoggerInitialized();
         }
 
-        public PEGANpcDesireStateSnapshot GetSnapshot()
+        public PegaNpcDesireStateSnapshot GetSnapshot()
         {
             EnsureEntriesInitialized();
             List<string> ids = new List<string>(_entries.Keys);
             ids.Sort(StringComparer.Ordinal);
 
-            List<PEGANpcDesireSatisfactionSnapshot> values =
-                new List<PEGANpcDesireSatisfactionSnapshot>(ids.Count);
+            List<PegaNpcDesireSatisfactionSnapshot> values =
+                new List<PegaNpcDesireSatisfactionSnapshot>(ids.Count);
             for (int index = 0; index < ids.Count; index++)
             {
                 Entry entry = _entries[ids[index]];
-                values.Add(new PEGANpcDesireSatisfactionSnapshot(
+                values.Add(new PegaNpcDesireSatisfactionSnapshot(
                     ids[index],
                     entry.Satisfaction,
                     entry.CompletedExecutions));
             }
 
-            return new PEGANpcDesireStateSnapshot(values);
+            return new PegaNpcDesireStateSnapshot(values);
         }
 
         public bool TryGetSatisfaction(
             string desireId,
-            out PEGANpcDesireSatisfactionSnapshot satisfaction)
+            out PegaNpcDesireSatisfactionSnapshot satisfaction)
         {
             EnsureEntriesInitialized();
             if (!string.IsNullOrWhiteSpace(desireId) && _entries.TryGetValue(desireId, out Entry entry))
             {
-                satisfaction = new PEGANpcDesireSatisfactionSnapshot(
+                satisfaction = new PegaNpcDesireSatisfactionSnapshot(
                     desireId,
                     entry.Satisfaction,
                     entry.CompletedExecutions);
                 return true;
             }
 
-            satisfaction = new PEGANpcDesireSatisfactionSnapshot(desireId, 0f, 0);
+            satisfaction = new PegaNpcDesireSatisfactionSnapshot(desireId, 0f, 0);
             return false;
         }
 
-        public PEGANpcDesireSatisfactionUpdate RecordCompletedAction(
-            PEGANpcObservedActionEffect observedEffect,
+        public PegaNpcDesireSatisfactionUpdate RecordCompletedAction(
+            PegaNpcObservedActionEffect observedEffect,
             IGoapObservedStateView observedState,
-            PEGANpcDesireContextDefinition activeContext)
+            PegaNpcDesireContextDefinition activeContext)
         {
             if (observedState == null)
             {
@@ -187,8 +187,8 @@ namespace PEGA.NPC
 
             EnsureEntriesInitialized();
             EnsureLoggerInitialized();
-            List<PEGANpcDesireSatisfactionSnapshot> updated =
-                new List<PEGANpcDesireSatisfactionSnapshot>();
+            List<PegaNpcDesireSatisfactionSnapshot> updated =
+                new List<PegaNpcDesireSatisfactionSnapshot>();
             bool staleOrDuplicateObservation = false;
 
             if (observedEffect.IsValid && observedState.ObservedEffects.Count > 0)
@@ -200,12 +200,12 @@ namespace PEGA.NPC
                 else
                 {
                     _highestRecordedRequestId = observedEffect.RequestId;
-                    IReadOnlyList<PEGANpcDesireConfiguration> configurations = activeContext.Desires;
+                    IReadOnlyList<PegaNpcDesireConfiguration> configurations = activeContext.Desires;
                     for (int index = 0; index < configurations.Count; index++)
                     {
-                        PEGANpcDesireConfiguration configuration = configurations[index];
-                        PEGANpcDesireDefinition definition = configuration.Definition;
-                        PEGANpcDesireSatisfactionSnapshot current = GetSatisfaction(definition.DesireId);
+                        PegaNpcDesireConfiguration configuration = configurations[index];
+                        PegaNpcDesireDefinition definition = configuration.Definition;
+                        PegaNpcDesireSatisfactionSnapshot current = GetSatisfaction(definition.DesireId);
                         if (definition.CreateGoal().Evaluate(observedState) != GoapTruthValue.True ||
                             !configuration.CanRecordSatisfaction(current))
                         {
@@ -222,7 +222,7 @@ namespace PEGA.NPC
                             current.Satisfaction + configuration.SatisfactionGain);
                         Entry entry = new Entry(nextSatisfaction, current.CompletedExecutions + 1);
                         _entries[definition.DesireId] = entry;
-                        updated.Add(new PEGANpcDesireSatisfactionSnapshot(
+                        updated.Add(new PegaNpcDesireSatisfactionSnapshot(
                             definition.DesireId,
                             entry.Satisfaction,
                             entry.CompletedExecutions));
@@ -231,7 +231,7 @@ namespace PEGA.NPC
             }
 
             updated.Sort((left, right) => string.CompareOrdinal(left.DesireId, right.DesireId));
-            PEGANpcDesireSatisfactionUpdate result = new PEGANpcDesireSatisfactionUpdate(updated);
+            PegaNpcDesireSatisfactionUpdate result = new PegaNpcDesireSatisfactionUpdate(updated);
             _log.Debug(
                 "Completed NPC Action evaluated against active Goal conditions.",
                 LogFields.Field("actorRoot", _actorRootName),
@@ -248,17 +248,17 @@ namespace PEGA.NPC
             return result;
         }
 
-        private PEGANpcDesireSatisfactionSnapshot GetSatisfaction(string desireId)
+        private PegaNpcDesireSatisfactionSnapshot GetSatisfaction(string desireId)
         {
             if (_entries.TryGetValue(desireId, out Entry entry))
             {
-                return new PEGANpcDesireSatisfactionSnapshot(
+                return new PegaNpcDesireSatisfactionSnapshot(
                     desireId,
                     entry.Satisfaction,
                     entry.CompletedExecutions);
             }
 
-            return new PEGANpcDesireSatisfactionSnapshot(desireId, 0f, 0);
+            return new PegaNpcDesireSatisfactionSnapshot(desireId, 0f, 0);
         }
 
         private void EnsureEntriesInitialized()
@@ -273,14 +273,14 @@ namespace PEGA.NPC
                 return;
             }
 
-            _log = PEGALogging.CreateScopedLogger<PEGANpcDesireState>(
+            _log = PegaLogging.CreateScopedLogger<PegaNpcDesireState>(
                 LogCategory,
                 _actorRootName);
             _loggerInitialized = true;
         }
 
         private static string JoinDesireIds(
-            IReadOnlyList<PEGANpcDesireSatisfactionSnapshot> values)
+            IReadOnlyList<PegaNpcDesireSatisfactionSnapshot> values)
         {
             if (values.Count == 0)
             {

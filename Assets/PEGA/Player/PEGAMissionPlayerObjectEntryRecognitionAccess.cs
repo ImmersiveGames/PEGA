@@ -4,13 +4,14 @@ using Immersive.Framework.ObjectEntry;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Diagnostics;
+using PEGA.Player.Perception;
 using UnityEngine;
 
 namespace PEGA.Player
 {
     /// <summary>Entrega a consulta Activity-scoped ao source do Player atual e a retira no release.</summary>
     [DisallowMultipleComponent]
-    public sealed class PEGAMissionPlayerObjectEntryRecognitionAccess : ActivityContentBehaviour
+    public sealed class PegaMissionPlayerObjectEntryRecognitionAccess : ActivityContentBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.PlayerObjectDiscovery";
 
@@ -22,7 +23,7 @@ namespace PEGA.Player
         [Tooltip("Referência oficial ao Slot do Player que receberá acesso à consulta.")]
         private ActorOccurrenceReferenceBinding playerActorReference;
 
-        private PEGAPlayerObjectEntryDiscoverySource _boundSource;
+        private PegaPlayerObjectEntryDiscoverySource _boundSource;
         private ObjectEntryOccurrenceQueryBinding _boundQuery;
         private ScopedLogger _log;
         private string _lastReportedDiagnostic;
@@ -131,8 +132,8 @@ namespace PEGA.Player
             }
 
             GameObject playerRoot = player.Occurrence.ActorRoot;
-            PEGAPlayerObjectEntryDiscoverySource source = playerRoot != null
-                ? playerRoot.GetComponent<PEGAPlayerObjectEntryDiscoverySource>()
+            PegaPlayerObjectEntryDiscoverySource source = playerRoot != null
+                ? playerRoot.GetComponent<PegaPlayerObjectEntryDiscoverySource>()
                 : null;
             if (source == null)
             {
@@ -198,7 +199,7 @@ namespace PEGA.Player
 
         private void DetachFromPlayer(string reason)
         {
-            PEGAPlayerObjectEntryDiscoverySource source = _boundSource;
+            PegaPlayerObjectEntryDiscoverySource source = _boundSource;
             ObjectEntryOccurrenceQueryBinding query = _boundQuery;
             _boundSource = null;
             _boundQuery = null;
@@ -250,7 +251,7 @@ namespace PEGA.Player
 
         private ScopedLogger GetLogger()
         {
-            _log ??= PEGALogging.CreateScopedLogger<PEGAMissionPlayerObjectEntryRecognitionAccess>(
+            _log ??= PegaLogging.CreateScopedLogger<PegaMissionPlayerObjectEntryRecognitionAccess>(
                 LogCategory,
                 gameObject.name);
             return _log;

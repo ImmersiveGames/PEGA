@@ -1,20 +1,24 @@
+using Immersive.Framework.Actors;
+using Immersive.Framework.ObjectEntry;
+using PEGA.Movement.NPC;
+using PEGA.NPC.Autonomy;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 using UnityEngine.AI;
-using Immersive.Framework.Actors;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Actions.Runtime
 {
     /// <summary>
     /// Shared, authored Action definition. PEGANpcAutonomy creates one hidden runtime clone per Actor;
     /// mutable execution state therefore never lives in the shared project asset.
     /// </summary>
-    public abstract class PEGANpcActionDefinitionAsset : ScriptableObject
+    public abstract class PegaNpcActionDefinitionAsset : ScriptableObject
     {
-        private PEGANpcActionRuntimeContext _runtimeContext;
+        private PegaNpcActionRuntimeContext _runtimeContext;
         private bool _runtimeInitialized;
         private bool _runtimeEnabled;
 
-        protected PEGANpcActionRuntimeContext RuntimeContext => _runtimeContext;
+        protected PegaNpcActionRuntimeContext RuntimeContext => _runtimeContext;
         protected GameObject ActorRoot => _runtimeContext != null ? _runtimeContext.ActorRoot : null;
         protected Transform ActorTransform => _runtimeContext != null ? _runtimeContext.ActorTransform : null;
         protected bool IsRuntimeActive =>
@@ -25,7 +29,7 @@ namespace PEGA.NPC
             _runtimeContext.ActorRoot != null &&
             _runtimeContext.ActorRoot.activeInHierarchy;
 
-        internal bool InitializeRuntime(PEGANpcActionRuntimeContext context, out string diagnostic)
+        internal bool InitializeRuntime(PegaNpcActionRuntimeContext context, out string diagnostic)
         {
             diagnostic = string.Empty;
             if (_runtimeInitialized || context == null || context.ActorRoot == null)
@@ -113,16 +117,17 @@ namespace PEGA.NPC
     }
 
     /// <summary>Actor-local services explicitly supplied to each Action runtime clone.</summary>
-    public sealed class PEGANpcActionRuntimeContext
+    public sealed class PegaNpcActionRuntimeContext
     {
-        internal PEGANpcActionRuntimeContext(
-            PEGANpcAutonomy autonomy,
-            PEGANpcKnowledgeState knowledgeState,
-            PEGANpcKnowledgeReadView knowledgeReadView,
-            PEGANpcNavMeshMovementIntentSource navigationSource,
+        internal PegaNpcActionRuntimeContext(
+            PegaNpcAutonomy autonomy,
+            PegaNpcKnowledgeState knowledgeState,
+            PegaNpcKnowledgeReadView knowledgeReadView,
+            PegaNpcNavMeshMovementIntentSource navigationSource,
             ActorOccurrenceReferenceBinding actorReference,
             NavMeshAgent navigationAgent,
-            IPEGANpcLastKnownTargetContinuationProvider lastKnownTargetContinuationProvider)
+            IPegaNpcLastKnownTargetContinuationProvider lastKnownTargetContinuationProvider,
+            ObjectEntryOccurrenceQueryBinding objectEntryOccurrenceQueryBinding)
         {
             Autonomy = autonomy;
             ActorRoot = autonomy != null ? autonomy.gameObject : null;
@@ -134,16 +139,18 @@ namespace PEGA.NPC
             ActorReference = actorReference;
             NavigationAgent = navigationAgent;
             LastKnownTargetContinuationProvider = lastKnownTargetContinuationProvider;
+            ObjectEntryOccurrenceQueryBinding = objectEntryOccurrenceQueryBinding;
         }
 
-        public PEGANpcAutonomy Autonomy { get; }
+        public PegaNpcAutonomy Autonomy { get; }
         public GameObject ActorRoot { get; }
         public Transform ActorTransform { get; }
-        public PEGANpcKnowledgeState KnowledgeState { get; }
-        public PEGANpcKnowledgeReadView KnowledgeReadView { get; }
-        public PEGANpcNavMeshMovementIntentSource NavigationSource { get; }
+        public PegaNpcKnowledgeState KnowledgeState { get; }
+        public PegaNpcKnowledgeReadView KnowledgeReadView { get; }
+        public PegaNpcNavMeshMovementIntentSource NavigationSource { get; }
         public ActorOccurrenceReferenceBinding ActorReference { get; }
         public NavMeshAgent NavigationAgent { get; }
-        public IPEGANpcLastKnownTargetContinuationProvider LastKnownTargetContinuationProvider { get; }
+        public IPegaNpcLastKnownTargetContinuationProvider LastKnownTargetContinuationProvider { get; }
+        public ObjectEntryOccurrenceQueryBinding ObjectEntryOccurrenceQueryBinding { get; }
     }
 }

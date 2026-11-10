@@ -1,49 +1,49 @@
-using System;
 using Immersive.Framework.Actors;
-using UnityEngine.Scripting;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+using UnityEngine.Scripting;
+namespace PEGA.NPC.Knowledge.Definitions
 {
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>
     [Preserve]
-    internal static class PEGANpcKnowledgeFacts
+    internal static class PegaNpcKnowledgeFacts
     {
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<byte, PEGANpcPerceivedAreaPresence> PerceivedAreaPresence =
-            new PEGAKnowledgeFactDefinition<byte, PEGANpcPerceivedAreaPresence>(
+        public static readonly PegaKnowledgeFactDefinition<byte, PegaNpcPerceivedAreaPresence> PerceivedAreaPresence =
+            new PegaKnowledgeFactDefinition<byte, PegaNpcPerceivedAreaPresence>(
                 "pega.npc.perceived-area-presence",
                 "Perceived area presence",
-                new PEGALatestEvidenceKnowledgePolicy<PEGANpcPerceivedAreaPresence>(
+                new PegaLatestEvidenceKnowledgePolicy<PegaNpcPerceivedAreaPresence>(
                     areEqual: ArePerceivedAreaPresenceEqual,
                     validateValue: value => value.IsValid ? string.Empty : "Perceived presence evidence is invalid."),
                 address => address == 0,
                 allowsDesignerAuthoredInitialFact: false);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ActorId, bool> IsPlayer =
-            new PEGAKnowledgeFactDefinition<ActorId, bool>(
+        public static readonly PegaKnowledgeFactDefinition<ActorId, bool> IsPlayer =
+            new PegaKnowledgeFactDefinition<ActorId, bool>(
                 "pega.actor.is-player",
                 "Is player",
-                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: false);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ActorId, bool> CharacterVisualContact =
-            new PEGAKnowledgeFactDefinition<ActorId, bool>(
+        public static readonly PegaKnowledgeFactDefinition<ActorId, bool> CharacterVisualContact =
+            new PegaKnowledgeFactDefinition<ActorId, bool>(
                 "pega.actor.character-visual-contact",
                 "Character visual contact",
-                new PEGALatestEvidenceKnowledgePolicy<bool>(),
+                new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: false);
 
         [Preserve]
-        public static readonly PEGAKnowledgeFactDefinition<ActorId, Vector3> LastObservedCharacterPosition =
-            new PEGAKnowledgeFactDefinition<ActorId, Vector3>(
+        public static readonly PegaKnowledgeFactDefinition<ActorId, Vector3> LastObservedCharacterPosition =
+            new PegaKnowledgeFactDefinition<ActorId, Vector3>(
                 "pega.actor.last-observed-character-position",
                 "Last observed character position",
-                new PEGALatestEvidenceKnowledgePolicy<Vector3>(
+                new PegaLatestEvidenceKnowledgePolicy<Vector3>(
                     areEqual: AreExactlyEqual,
                     validateValue: value => IsFinite(value)
                         ? string.Empty
@@ -52,7 +52,7 @@ namespace PEGA.NPC
                 allowsDesignerAuthoredInitialFact: true);
 
         public static bool TryGetCharacterSubject(
-            PEGAKnowledgeFactChangedEvent change,
+            PegaKnowledgeFactChangedEvent change,
             out ActorId subjectActorId)
         {
             subjectActorId = default;
@@ -66,35 +66,35 @@ namespace PEGA.NPC
         }
 
         public static bool IsCharacterFactChangeFor(
-            PEGAKnowledgeFactChangedEvent change,
+            PegaKnowledgeFactChangedEvent change,
             ActorId subjectActorId) =>
             change != null && subjectActorId.IsValid &&
             (change.IsFor(IsPlayer.For(subjectActorId)) ||
              change.IsFor(CharacterVisualContact.For(subjectActorId)) ||
              change.IsFor(LastObservedCharacterPosition.For(subjectActorId)));
 
-        public static bool HasPerceptionBackedPlayerFact(PEGAKnowledgeFact<bool> fact) =>
+        public static bool HasPerceptionBackedPlayerFact(PegaKnowledgeFact<bool> fact) =>
             fact.TryGetValue(out bool isPlayer) &&
             isPlayer &&
             fact.HasObservationTime &&
-            fact.HasOrigin(PEGANpcEvidenceOrigin.Perception);
+            fact.HasOrigin(PegaNpcEvidenceOrigin.Perception);
 
         public static bool HasPerceptionBackedPlayerFactAtOrBefore(
-            PEGAKnowledgeFact<bool> fact,
+            PegaKnowledgeFact<bool> fact,
             double observationTimeSeconds) =>
             HasPerceptionBackedPlayerFact(fact) &&
             fact.ObservationTimeSeconds <= observationTimeSeconds + 0.000001d;
 
         public static bool IsPerceptionContactChange(
-            PEGAKnowledgeFactChangedEvent change,
+            PegaKnowledgeFactChangedEvent change,
             ActorId subjectActorId) =>
             change != null && subjectActorId.IsValid &&
             change.IsFor(CharacterVisualContact.For(subjectActorId)) &&
-            change.Evidence.Origin.Is(PEGANpcEvidenceOrigin.Perception);
+            change.Evidence.Origin.Is(PegaNpcEvidenceOrigin.Perception);
 
         private static bool ArePerceivedAreaPresenceEqual(
-            PEGANpcPerceivedAreaPresence left,
-            PEGANpcPerceivedAreaPresence right) =>
+            PegaNpcPerceivedAreaPresence left,
+            PegaNpcPerceivedAreaPresence right) =>
             left.IsPresent == right.IsPresent &&
             AreExactlyEqual(left.ObserverPosition, right.ObserverPosition) &&
             left.PerceivedAreaRadiusMeters == right.PerceivedAreaRadiusMeters;

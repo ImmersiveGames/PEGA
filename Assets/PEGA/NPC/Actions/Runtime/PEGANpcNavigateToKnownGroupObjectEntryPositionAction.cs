@@ -1,29 +1,31 @@
 using System;
 using System.Collections.Generic;
-using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
-using ImmersiveGames.Goap;
-using PEGA.Actors;
+using PEGA.GOAP;
+using PEGA.Movement.Actor;
+using PEGA.NPC.Autonomy.Planning;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Group;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Actions.Runtime
 {
     [CreateAssetMenu(
         fileName = "NavigateToKnownGroupObjectEntryPosition",
         menuName = "PEGA/NPC/Movement/Navigate To Known Group Object Entry Position")]
-    public sealed class PEGANpcNavigateToKnownGroupObjectEntryPositionAction : PEGANpcActionProviderAsset
+    public sealed class PegaNpcNavigateToKnownGroupObjectEntryPositionAction : PegaNpcActionProviderAsset
     {
-        private PEGAActorGroupKnowledgeReader _groupKnowledgeReader;
-        private PEGANpcPlanSnapshot _executionPlan;
+        private PegaActorGroupKnowledgeReader _groupKnowledgeReader;
+        private PegaNpcPlanSnapshot _executionPlan;
         private bool _hasExecutionPlan;
 
-        protected override PEGANpcActionEffectKind ActionEffectKind =>
-            PEGANpcActionEffectKind.ReachKnownGroupObjectEntryPosition;
+        protected override PegaNpcActionEffectKind ActionEffectKind =>
+            PegaNpcActionEffectKind.ReachKnownGroupObjectEntryPosition;
 
-        public override PEGANpcActionContract Contract => new PEGANpcActionContract(
-            PEGANpcPlanningActionId.NavigateToKnownGroupObjectEntryPosition,
+        public override PegaNpcActionContract Contract => new PegaNpcActionContract(
+            PegaNpcPlanningActionId.NavigateToKnownGroupObjectEntryPosition,
             ActionEffectKind,
-            PEGANpcPlanningTargetKind.GroupObjectEntryPosition,
+            PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
             true,
             "NPC began navigating to a Group-known Object Entry position.");
 
@@ -34,7 +36,7 @@ namespace PEGA.NPC
                 return false;
             }
 
-            _groupKnowledgeReader = ActorRoot.GetComponent<PEGAActorGroupKnowledgeReader>();
+            _groupKnowledgeReader = ActorRoot.GetComponent<PegaActorGroupKnowledgeReader>();
             if (_groupKnowledgeReader == null || _groupKnowledgeReader.gameObject != ActorRoot)
             {
                 diagnostic = "The Action requires the Actor's composed Group Knowledge Reader on the same root.";
@@ -46,13 +48,13 @@ namespace PEGA.NPC
         }
 
         public override bool TryCreatePlanningCandidates(
-            PEGANpcActionPlanningContext context,
-            out IReadOnlyList<PEGANpcPlanningTarget> targets,
-            out IReadOnlyList<PEGANpcPlanningActionCandidate> candidates,
+            PegaNpcActionPlanningContext context,
+            out IReadOnlyList<PegaNpcPlanningTarget> targets,
+            out IReadOnlyList<PegaNpcPlanningActionCandidate> candidates,
             out string diagnostic)
         {
-            var targetList = new List<PEGANpcPlanningTarget>();
-            var candidateList = new List<PEGANpcPlanningActionCandidate>();
+            var targetList = new List<PegaNpcPlanningTarget>();
+            var candidateList = new List<PegaNpcPlanningActionCandidate>();
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
             diagnostic = string.Empty;
@@ -62,13 +64,13 @@ namespace PEGA.NPC
                 return true;
             }
 
-            if (!TryGetComposedReader(context.ComposedKnowledgeState, out PEGAActorGroupKnowledgeReader reader, out diagnostic))
+            if (!TryGetComposedReader(context.ComposedKnowledgeState, out PegaActorGroupKnowledgeReader reader, out diagnostic))
             {
                 return false;
             }
 
-            PEGAActorGroupKnowledgeFactSetReadResult<ObjectEntryId, Vector3> read = reader.ReadGroupFacts(
-                PEGAObjectEntryKnowledgeFacts.Position,
+            PegaActorGroupKnowledgeFactSetReadResult<ObjectEntryId, Vector3> read = reader.ReadGroupFacts(
+                PegaObjectEntryKnowledgeFacts.Position,
                 Time.timeAsDouble);
             if (!read.IsAuthorized)
             {
@@ -80,7 +82,7 @@ namespace PEGA.NPC
 
             for (int groupIndex = 0; groupIndex < read.Groups.Count; groupIndex++)
             {
-                PEGAActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, Vector3> group = read.Groups[groupIndex];
+                PegaActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, Vector3> group = read.Groups[groupIndex];
                 if (!group.GroupId.IsValid)
                 {
                     diagnostic = "Group Knowledge returned a fact set without a valid GroupId.";
@@ -89,9 +91,9 @@ namespace PEGA.NPC
 
                 for (int factIndex = 0; factIndex < group.Facts.Count; factIndex++)
                 {
-                    PEGAKnowledgeFactSnapshot<ObjectEntryId, Vector3> snapshot = group.Facts[factIndex];
+                    PegaKnowledgeFactSnapshot<ObjectEntryId, Vector3> snapshot = group.Facts[factIndex];
                     if (!snapshot.Key.IsValid || !snapshot.Key.AddressValue.IsValid ||
-                        snapshot.Fact.Scope != PEGAKnowledgeScope.Group ||
+                        snapshot.Fact.Scope != PegaKnowledgeScope.Group ||
                         !snapshot.Fact.TryGetValue(out Vector3 knownPosition))
                     {
                         continue;
@@ -103,7 +105,7 @@ namespace PEGA.NPC
                         return false;
                     }
 
-                    PEGANpcPlanningTarget target = PEGANpcPlanningTarget.FromKnownGroupObjectEntryPosition(
+                    PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromKnownGroupObjectEntryPosition(
                         snapshot.Key.AddressValue,
                         group.GroupId,
                         knownPosition,
@@ -126,8 +128,8 @@ namespace PEGA.NPC
             }
 
             if (!TryDeferNavigationRoute(
-                    PEGAActorMovementSpeedRegime.Movement,
-                    out PEGANpcNavigationRouteEstimate deferredRoute,
+                    PegaActorMovementSpeedRegime.Movement,
+                    out PegaNpcNavigationRouteEstimate deferredRoute,
                     out diagnostic))
             {
                 return false;
@@ -135,12 +137,12 @@ namespace PEGA.NPC
 
             for (int index = 0; index < targetList.Count; index++)
             {
-                PEGANpcPlanningTarget target = targetList[index];
-                candidateList.Add(new PEGANpcPlanningActionCandidate(
+                PegaNpcPlanningTarget target = targetList[index];
+                candidateList.Add(new PegaNpcPlanningActionCandidate(
                     Contract,
                     this,
                     target.TargetId,
-                    PEGAActorMovementSpeedRegime.Movement,
+                    PegaActorMovementSpeedRegime.Movement,
                     deferredRoute,
                     IntrinsicDurationSeconds));
             }
@@ -152,17 +154,17 @@ namespace PEGA.NPC
         }
 
         public override bool CanOfferCandidate(
-            PEGANpcPlanningActionCandidate candidate,
-            PEGANpcPlanContinuation? continuation) =>
+            PegaNpcPlanningActionCandidate candidate,
+            PegaNpcPlanContinuation? continuation) =>
             !continuation.HasValue &&
             CandidateMatchesContract(candidate) &&
-            candidate.TargetId.IdentityKind == PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
+            candidate.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
             candidate.TargetId.ObjectEntryId.IsValid &&
             candidate.TargetId.KnowledgeGroupId.IsValid;
 
         public override bool IsCurrentPlanValid(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out Vector3 currentKnownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -171,11 +173,11 @@ namespace PEGA.NPC
             evidenceTimeSeconds = 0d;
             diagnostic = string.Empty;
             if (continuation.HasValue ||
-                plan.Purpose != PEGANpcPlanPurpose.DesireGoal ||
+                plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId ||
                 plan.TargetKind != Contract.TargetKind ||
-                plan.TargetProvenance != PEGANpcPlanningTargetProvenance.DerivedFromKnowledge ||
-                plan.TargetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+                plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
+                plan.TargetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                 !TryReadCurrentPositionEvidence(
                     plan.TargetId,
                     out currentKnownPosition,
@@ -195,8 +197,8 @@ namespace PEGA.NPC
         }
 
         public override bool TryStart(
-            PEGANpcPlanSnapshot plan,
-            PEGANpcPlanContinuation? continuation,
+            PegaNpcPlanSnapshot plan,
+            PegaNpcPlanContinuation? continuation,
             out string diagnostic)
         {
             if (!IsCurrentPlanValid(
@@ -217,7 +219,7 @@ namespace PEGA.NPC
             if (!TryStartNavigation(
                     plan.TargetId,
                     knownPosition,
-                    PEGAActorMovementSpeedRegime.Movement,
+                    PegaActorMovementSpeedRegime.Movement,
                     out diagnostic))
             {
                 _hasExecutionPlan = false;
@@ -273,7 +275,7 @@ namespace PEGA.NPC
         }
 
         private bool TryReadCurrentPositionEvidence(
-            PEGANpcPlanningTargetId targetId,
+            PegaNpcPlanningTargetId targetId,
             out Vector3 knownPosition,
             out double evidenceTimeSeconds,
             out string diagnostic)
@@ -281,19 +283,19 @@ namespace PEGA.NPC
             knownPosition = default;
             evidenceTimeSeconds = 0d;
             if (_groupKnowledgeReader == null ||
-                targetId.IdentityKind != PEGANpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+                targetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                 !targetId.ObjectEntryId.IsValid || !targetId.KnowledgeGroupId.IsValid)
             {
                 diagnostic = "The Action requires a typed ObjectEntryId and GroupId from its selected Target.";
                 return false;
             }
 
-            PEGAActorGroupKnowledgeReadResult<Vector3> read = _groupKnowledgeReader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<Vector3> read = _groupKnowledgeReader.ReadGroupFact(
                 targetId.KnowledgeGroupId,
-                PEGAObjectEntryKnowledgeFacts.Position.For(targetId.ObjectEntryId),
+                PegaObjectEntryKnowledgeFacts.Position.For(targetId.ObjectEntryId),
                 Time.timeAsDouble);
             if (!read.IsAuthorized ||
-                read.Fact.Scope != PEGAKnowledgeScope.Group ||
+                read.Fact.Scope != PegaKnowledgeScope.Group ||
                 !read.Fact.TryGetValue(out knownPosition) ||
                 !read.Fact.HasObservationTime)
             {
@@ -308,7 +310,7 @@ namespace PEGA.NPC
 
         private bool TryGetComposedReader(
             IGoapKnowledgeStateView composedKnowledgeState,
-            out PEGAActorGroupKnowledgeReader reader,
+            out PegaActorGroupKnowledgeReader reader,
             out string diagnostic)
         {
             reader = null;
@@ -320,7 +322,7 @@ namespace PEGA.NPC
 
             for (int index = 0; index < composedKnowledgeState.Capabilities.Count; index++)
             {
-                if (!(composedKnowledgeState.Capabilities[index] is PEGAActorGroupKnowledgeReader candidate))
+                if (!(composedKnowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader candidate))
                 {
                     continue;
                 }

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e9f2c4c91bf44cd949fc198f6b77526, type: 3}
   m_Name: InvestigateKnownGroupPoi
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcInvestigateKnownGroupPoiAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcInvestigateKnownGroupPoiAction
   arrivalToleranceMeters: 1.25
   activityGroup: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
   investigationDurationSeconds: 2

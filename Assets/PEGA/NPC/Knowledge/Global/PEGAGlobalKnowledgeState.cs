@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
-using Immersive.Framework.Actors;
 using Immersive.Framework.ActivityFlow;
+using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Diagnostics;
+using PEGA.NPC.Knowledge.Authoring;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Knowledge.Global
 {
     /// <summary>
     /// Global Knowledge authority owned by one Activity content contribution. It exposes typed writes and a
@@ -15,19 +18,19 @@ namespace PEGA.NPC
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/Knowledge/Global Knowledge State")]
-    public sealed class PEGAGlobalKnowledgeState : MonoBehaviour,
-        IPEGAKnowledgeFactReader,
-        IPEGAKnowledgeFactWriter,
+    public sealed class PegaGlobalKnowledgeState : MonoBehaviour,
+        IPegaKnowledgeFactReader,
+        IPegaKnowledgeFactWriter,
         IActivityContentLifecycleReceiver
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
         [SerializeField, Tooltip("Fatos iniciais da Activity. Cada linha usa o catálogo canônico e é publicada somente na authority Global deste owner.")]
-        private List<PEGAKnowledgeFactAuthoringEntry> initialKnowledge =
-            new List<PEGAKnowledgeFactAuthoringEntry>();
+        private List<PegaKnowledgeFactAuthoringEntry> initialKnowledge =
+            new List<PegaKnowledgeFactAuthoringEntry>();
 
         [NonSerialized]
-        private PEGAKnowledgeFactStore _factStore;
+        private PegaKnowledgeFactStore _factStore;
 
         [NonSerialized]
         private ActivityContentContribution _contribution;
@@ -36,7 +39,7 @@ namespace PEGA.NPC
         private Immersive.Framework.Authoring.ActivityAsset _activeActivity;
 
         [NonSerialized]
-        private PEGAKnowledgeFactAuthoringEntry[] _initialKnowledgeSnapshot;
+        private PegaKnowledgeFactAuthoringEntry[] _initialKnowledgeSnapshot;
 
         [NonSerialized]
         private ActorOccurrenceReferenceBinding _actorBinding;
@@ -50,7 +53,7 @@ namespace PEGA.NPC
         [NonSerialized]
         private bool _loggerInitialized;
 
-        public PEGAKnowledgeScope Scope => PEGAKnowledgeScope.Global;
+        public PegaKnowledgeScope Scope => PegaKnowledgeScope.Global;
 
         public bool IsAvailable => _factStore != null && _activeActivity != null;
 
@@ -77,11 +80,11 @@ namespace PEGA.NPC
             }
 
             ClearStore();
-            _factStore = new PEGAKnowledgeFactStore(PEGAKnowledgeScope.Global);
+            _factStore = new PegaKnowledgeFactStore(PegaKnowledgeScope.Global);
             _activeActivity = context.Activity;
             _initialKnowledgeSnapshot = initialKnowledge != null
                 ? initialKnowledge.ToArray()
-                : Array.Empty<PEGAKnowledgeFactAuthoringEntry>();
+                : Array.Empty<PegaKnowledgeFactAuthoringEntry>();
             _actorBinding = GetComponent<ActorOccurrenceReferenceBinding>();
             _initialKnowledgeObservationTimeSeconds = Time.timeAsDouble;
             _log.Info(
@@ -107,47 +110,47 @@ namespace PEGA.NPC
             ClearStore();
         }
 
-        public PEGAKnowledgeFact<TValue> ReadFact<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        public PegaKnowledgeFact<TValue> ReadFact<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds)
         {
             ValidateQuery(key, queryTimeSeconds);
             return IsAvailable
                 ? _factStore.Get(key, queryTimeSeconds)
-                : PEGAKnowledgeFact<TValue>.Unknown(PEGAKnowledgeScope.Global);
+                : PegaKnowledgeFact<TValue>.Unknown(PegaKnowledgeScope.Global);
         }
 
-        public PEGAKnowledgeWriteResult ObserveFact<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+        public PegaKnowledgeWriteResult ObserveFact<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             TValue value,
-            PEGAKnowledgeEvidence evidence)
+            PegaKnowledgeEvidence evidence)
         {
-            PEGAKnowledgeFactStore store = RequireActiveStore();
+            PegaKnowledgeFactStore store = RequireActiveStore();
             if (!key.IsValid || !evidence.IsValid)
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            PEGAKnowledgeFact<TValue> previous = store.Get(key, evidence.ObservationTimeSeconds);
-            PEGAKnowledgeWriteResult result = store.Observe(key, value, evidence);
-            PEGAKnowledgeFact<TValue> current = store.Get(key, evidence.ObservationTimeSeconds);
+            PegaKnowledgeFact<TValue> previous = store.Get(key, evidence.ObservationTimeSeconds);
+            PegaKnowledgeWriteResult result = store.Observe(key, value, evidence);
+            PegaKnowledgeFact<TValue> current = store.Get(key, evidence.ObservationTimeSeconds);
             LogWriteResult(key, result, evidence, previous, current);
             return result;
         }
 
-        public PEGAKnowledgeWriteResult InvalidateFact<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
-            PEGAKnowledgeEvidence evidence)
+        public PegaKnowledgeWriteResult InvalidateFact<TAddress, TValue>(
+            PegaKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeEvidence evidence)
         {
-            PEGAKnowledgeFactStore store = RequireActiveStore();
+            PegaKnowledgeFactStore store = RequireActiveStore();
             if (!key.IsValid || !evidence.IsValid)
             {
-                return PEGAKnowledgeWriteResult.RejectedInvalid;
+                return PegaKnowledgeWriteResult.RejectedInvalid;
             }
 
-            PEGAKnowledgeFact<TValue> previous = store.Get(key, evidence.ObservationTimeSeconds);
-            PEGAKnowledgeWriteResult result = store.Invalidate(key, evidence);
-            PEGAKnowledgeFact<TValue> current = store.Get(key, evidence.ObservationTimeSeconds);
+            PegaKnowledgeFact<TValue> previous = store.Get(key, evidence.ObservationTimeSeconds);
+            PegaKnowledgeWriteResult result = store.Invalidate(key, evidence);
+            PegaKnowledgeFact<TValue> current = store.Get(key, evidence.ObservationTimeSeconds);
             LogWriteResult(key, result, evidence, previous, current);
             return result;
         }
@@ -173,7 +176,7 @@ namespace PEGA.NPC
             return _contribution != null && context.Contribution == _contribution;
         }
 
-        private PEGAKnowledgeFactStore RequireActiveStore()
+        private PegaKnowledgeFactStore RequireActiveStore()
         {
             if (!IsAvailable)
             {
@@ -185,7 +188,7 @@ namespace PEGA.NPC
         }
 
         private static void ValidateQuery<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds)
         {
             if (!key.IsValid)
@@ -200,11 +203,11 @@ namespace PEGA.NPC
         }
 
         private void LogWriteResult<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
-            PEGAKnowledgeWriteResult result,
-            PEGAKnowledgeEvidence evidence,
-            PEGAKnowledgeFact<TValue> previous,
-            PEGAKnowledgeFact<TValue> current)
+            PegaKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeWriteResult result,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeFact<TValue> previous,
+            PegaKnowledgeFact<TValue> current)
         {
             EnsureLoggerInitialized();
             LogField[] fields =
@@ -221,8 +224,8 @@ namespace PEGA.NPC
                 LogFields.Field("hasValueOrStatusChanged", HasValueOrStatusChanged(previous, current))
             };
 
-            if (result == PEGAKnowledgeWriteResult.RejectedInvalid ||
-                result == PEGAKnowledgeWriteResult.InvalidatedConflict)
+            if (result == PegaKnowledgeWriteResult.RejectedInvalid ||
+                result == PegaKnowledgeWriteResult.InvalidatedConflict)
             {
                 _log.Warning("Global Knowledge fact write completed with a diagnostic result.", fields);
                 return;
@@ -232,8 +235,8 @@ namespace PEGA.NPC
         }
 
         private static bool HasValueOrStatusChanged<TValue>(
-            PEGAKnowledgeFact<TValue> previous,
-            PEGAKnowledgeFact<TValue> current)
+            PegaKnowledgeFact<TValue> previous,
+            PegaKnowledgeFact<TValue> current)
         {
             bool previousHasValue = previous.TryGetValue(out TValue previousValue);
             bool currentHasValue = current.TryGetValue(out TValue currentValue);
@@ -249,7 +252,7 @@ namespace PEGA.NPC
                 return;
             }
 
-            _log = PEGALogging.CreateScopedLogger<PEGAGlobalKnowledgeState>(LogCategory, gameObject.name);
+            _log = PegaLogging.CreateScopedLogger<PegaGlobalKnowledgeState>(LogCategory, gameObject.name);
             _loggerInitialized = true;
         }
 
@@ -272,32 +275,32 @@ namespace PEGA.NPC
 
             for (int index = 0; index < _initialKnowledgeSnapshot.Length; index++)
             {
-                PEGAKnowledgeFactAuthoringEntry entry = _initialKnowledgeSnapshot[index];
-                PEGAKnowledgeFactInitialAuthoringStatus status = entry.TryApply(
+                PegaKnowledgeFactAuthoringEntry entry = _initialKnowledgeSnapshot[index];
+                PegaKnowledgeFactInitialAuthoringStatus status = entry.TryApply(
                     _actorBinding,
                     this,
-                    PEGAKnowledgeEvidence.From(
-                        PEGANpcEvidenceOrigin.DesignerAuthoredInitial,
+                    PegaKnowledgeEvidence.From(
+                        PegaNpcEvidenceOrigin.DesignerAuthoredInitial,
                         _initialKnowledgeObservationTimeSeconds,
                         this,
                         entry.DefinitionId),
-                    out PEGAKnowledgeWriteResult result,
+                    out PegaKnowledgeWriteResult result,
                     out string diagnostic);
 
-                if (status == PEGAKnowledgeFactInitialAuthoringStatus.Pending)
+                if (status == PegaKnowledgeFactInitialAuthoringStatus.Pending)
                 {
                     diagnostic = "The selected Actor identity is not resolved during this Activity owner entry; use a resolved ActorDeclaration or an available binding.";
                 }
 
-                if ((status != PEGAKnowledgeFactInitialAuthoringStatus.Applied ||
-                     result == PEGAKnowledgeWriteResult.RejectedInvalid) &&
+                if ((status != PegaKnowledgeFactInitialAuthoringStatus.Applied ||
+                     result == PegaKnowledgeWriteResult.RejectedInvalid) &&
                     string.IsNullOrWhiteSpace(diagnostic))
                 {
                     diagnostic = $"The Global fact writer rejected the value with result '{result}'; check the definition policy and typed value.";
                 }
 
-                if (status != PEGAKnowledgeFactInitialAuthoringStatus.Applied ||
-                    result == PEGAKnowledgeWriteResult.RejectedInvalid)
+                if (status != PegaKnowledgeFactInitialAuthoringStatus.Applied ||
+                    result == PegaKnowledgeWriteResult.RejectedInvalid)
                 {
                     EnsureLoggerInitialized();
                     _log.Error(

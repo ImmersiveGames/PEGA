@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Desires
 {
-    public enum PEGANpcDesireContext
+    public enum PegaNpcDesireContext
     {
         Normal = 0
     }
@@ -13,15 +12,15 @@ namespace PEGA.NPC
     [CreateAssetMenu(
         fileName = "New Desire Profile",
         menuName = "PEGA/NPC/Desire Profiles")]
-    public sealed class PEGANpcDesireProfile : ScriptableObject
+    public sealed class PegaNpcDesireProfile : ScriptableObject
     {
         [SerializeField]
         [Tooltip("Desire Settings and plan comparison used in each gameplay context of this Profile.")]
-        private PEGANpcDesireContextDefinition[] contexts = Array.Empty<PEGANpcDesireContextDefinition>();
+        private PegaNpcDesireContextDefinition[] contexts = Array.Empty<PegaNpcDesireContextDefinition>();
 
         public bool TryGetContext(
-            PEGANpcDesireContext context,
-            out PEGANpcDesireContextDefinition definition,
+            PegaNpcDesireContext context,
+            out PegaNpcDesireContextDefinition definition,
             out string diagnostic)
         {
             definition = null;
@@ -53,18 +52,18 @@ namespace PEGA.NPC
                 return false;
             }
 
-            HashSet<PEGANpcDesireContext> seenContexts = new HashSet<PEGANpcDesireContext>();
+            HashSet<PegaNpcDesireContext> seenContexts = new HashSet<PegaNpcDesireContext>();
             HashSet<string> seenDesireIds = new HashSet<string>(StringComparer.Ordinal);
             for (int contextIndex = 0; contextIndex < contexts.Length; contextIndex++)
             {
-                PEGANpcDesireContextDefinition context = contexts[contextIndex];
+                PegaNpcDesireContextDefinition context = contexts[contextIndex];
                 if (context == null)
                 {
                     diagnostic = $"Desire context at index {contextIndex} is null.";
                     return false;
                 }
 
-                if (!Enum.IsDefined(typeof(PEGANpcDesireContext), context.Context))
+                if (!Enum.IsDefined(typeof(PegaNpcDesireContext), context.Context))
                 {
                     diagnostic = $"Desire context at index {contextIndex} has an unsupported value.";
                     return false;
@@ -88,52 +87,53 @@ namespace PEGA.NPC
     }
 
     [Serializable]
-    public sealed class PEGANpcDesireContextDefinition
+    public sealed class PegaNpcDesireContextDefinition
     {
         [SerializeField]
         [Tooltip("Contexto explícito em que estes Desejos podem ser avaliados.")]
-        private PEGANpcDesireContext context;
+        private PegaNpcDesireContext context;
 
         [SerializeField]
         [FormerlySerializedAs("planSelectionPolicy")]
         [Tooltip("How each Desire's effective weight and estimated plan time are compared. A higher weight influences selection but does not guarantee that a Desire wins.")]
-        private PEGANpcPlanSelectionPolicy planComparison = new PEGANpcPlanSelectionPolicy();
+        private PegaNpcPlanSelectionPolicy planComparison = new PegaNpcPlanSelectionPolicy();
 
         [SerializeField]
         [FormerlySerializedAs("desires")]
         [Tooltip("Desire Settings assigned to this Profile and context. Settings are reusable assets; editing a shared Setting affects every Profile that references it.")]
-        private PEGANpcDesireConfiguration[] desireSettings = Array.Empty<PEGANpcDesireConfiguration>();
+        private PegaNpcDesireConfiguration[] desireSettings = Array.Empty<PegaNpcDesireConfiguration>();
 
-        public PEGANpcDesireContextDefinition()
+        public PegaNpcDesireContextDefinition()
         {
         }
 
-        internal PEGANpcDesireContextDefinition(
-            PEGANpcDesireContext context,
+        internal PegaNpcDesireContextDefinition(
+            PegaNpcDesireContext context,
             float costReferenceSeconds,
-            PEGANpcDesireConfiguration[] desireSettings)
+            PegaNpcPlanScorePolicy scorePolicy,
+            PegaNpcDesireConfiguration[] desireSettings)
         {
             this.context = context;
-            planComparison = new PEGANpcPlanSelectionPolicy(costReferenceSeconds);
+            planComparison = new PegaNpcPlanSelectionPolicy(costReferenceSeconds, scorePolicy);
             this.desireSettings = desireSettings != null
-                ? (PEGANpcDesireConfiguration[])desireSettings.Clone()
-                : Array.Empty<PEGANpcDesireConfiguration>();
+                ? (PegaNpcDesireConfiguration[])desireSettings.Clone()
+                : Array.Empty<PegaNpcDesireConfiguration>();
         }
 
-        public PEGANpcDesireContext Context => context;
+        public PegaNpcDesireContext Context => context;
 
-        public PEGANpcPlanSelectionPolicy PlanSelectionPolicy => planComparison;
+        public PegaNpcPlanSelectionPolicy PlanSelectionPolicy => planComparison;
 
-        public IReadOnlyList<PEGANpcDesireConfiguration> Desires =>
-            Array.AsReadOnly(desireSettings ?? Array.Empty<PEGANpcDesireConfiguration>());
+        public IReadOnlyList<PegaNpcDesireConfiguration> Desires =>
+            Array.AsReadOnly(desireSettings ?? Array.Empty<PegaNpcDesireConfiguration>());
 
-        internal PEGANpcDesireConfiguration[] Configurations =>
-            desireSettings ?? Array.Empty<PEGANpcDesireConfiguration>();
+        internal PegaNpcDesireConfiguration[] Configurations =>
+            desireSettings ?? Array.Empty<PegaNpcDesireConfiguration>();
 
         internal bool TryValidate(HashSet<string> allDesireIds, out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (!Enum.IsDefined(typeof(PEGANpcDesireContext), context))
+            if (!Enum.IsDefined(typeof(PegaNpcDesireContext), context))
             {
                 diagnostic = "Context has an unsupported value.";
                 return false;
@@ -155,7 +155,7 @@ namespace PEGA.NPC
 
             for (int index = 0; index < desireSettings.Length; index++)
             {
-                PEGANpcDesireConfiguration configuration = desireSettings[index];
+                PegaNpcDesireConfiguration configuration = desireSettings[index];
                 if (configuration == null)
                 {
                     diagnostic = $"Desire Setting at index {index} is null.";
@@ -168,7 +168,7 @@ namespace PEGA.NPC
                     return false;
                 }
 
-                PEGANpcDesireDefinition definition = configuration.Definition;
+                PegaNpcDesireDefinition definition = configuration.Definition;
                 if (!allDesireIds.Add(definition.DesireId))
                 {
                     diagnostic = $"Desire ID '{definition.DesireId}' is duplicated in this profile.";
@@ -199,89 +199,33 @@ namespace PEGA.NPC
             value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
-    /// <summary>
-    /// Extensible policy that maps an effective Desire weight and estimated plan duration to separate
-    /// cost-preference and comparison-score values. It does not choose or execute a plan.
-    /// </summary>
     [Serializable]
-    public abstract class PEGANpcPlanScorePolicy
-    {
-        public abstract bool TryValidate(float costReferenceSeconds, out string diagnostic);
-
-        public abstract bool TryEvaluate(
-            float effectiveDesireWeight,
-            float estimatedSeconds,
-            float costReferenceSeconds,
-            out float costPreference,
-            out float score);
-    }
-
-    /// <summary>Preserves the current reciprocal cost preference and weighted-cost product.</summary>
-    [Serializable]
-    public sealed class PEGANpcMultiplicativePlanScorePolicy : PEGANpcPlanScorePolicy
-    {
-        public override bool TryValidate(float costReferenceSeconds, out string diagnostic)
-        {
-            bool valid = IsPositiveFinite(costReferenceSeconds);
-            diagnostic = valid
-                ? string.Empty
-                : "Cost reference time must be finite and greater than zero.";
-            return valid;
-        }
-
-        public override bool TryEvaluate(
-            float effectiveDesireWeight,
-            float estimatedSeconds,
-            float costReferenceSeconds,
-            out float costPreference,
-            out float score)
-        {
-            costPreference = 0f;
-            score = 0f;
-            if (!IsPositiveFinite(effectiveDesireWeight) ||
-                !IsPositiveFinite(costReferenceSeconds) ||
-                !IsNonNegativeFinite(estimatedSeconds))
-            {
-                return false;
-            }
-
-            costPreference = 1f / (1f + estimatedSeconds / costReferenceSeconds);
-            score = effectiveDesireWeight * costPreference;
-            return IsPositiveFinite(costPreference) && IsPositiveFinite(score);
-        }
-
-        private static bool IsPositiveFinite(float value) =>
-            value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
-
-        private static bool IsNonNegativeFinite(float value) =>
-            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
-    }
-
-    [Serializable]
-    public sealed class PEGANpcPlanSelectionPolicy
+    public sealed class PegaNpcPlanSelectionPolicy
     {
         [SerializeField, Min(0.01f)]
         [FormerlySerializedAs("costReferenceSeconds")]
         [Tooltip("Reference time in seconds for comparing estimated plan durations. Shorter plans tend to score higher; this is a comparison scale, not a time limit.")]
         private float planTimeReferenceSeconds = 10f;
 
-        [SerializeReference]
-        [FormerlySerializedAs("scorePolicy")]
+        [SerializeField]
         [Tooltip("How a Desire's effective weight and estimated plan time combine when plans are compared.")]
-        private PEGANpcPlanScorePolicy weightAndTimeBalance = new PEGANpcMultiplicativePlanScorePolicy();
+        private PegaNpcPlanScorePolicy weightAndTimeBalance;
 
-        public PEGANpcPlanSelectionPolicy()
+        public PegaNpcPlanSelectionPolicy()
         {
         }
 
-        internal PEGANpcPlanSelectionPolicy(float costReferenceSeconds)
+        internal PegaNpcPlanSelectionPolicy(
+            float costReferenceSeconds,
+            PegaNpcPlanScorePolicy weightAndTimeBalance)
         {
             planTimeReferenceSeconds = costReferenceSeconds;
+            this.weightAndTimeBalance = weightAndTimeBalance;
         }
 
         public float CostReferenceSeconds => planTimeReferenceSeconds;
 
-        public PEGANpcPlanScorePolicy ScorePolicy => weightAndTimeBalance;
+        public PegaNpcPlanScorePolicy ScorePolicy => weightAndTimeBalance;
 
         public bool TryEvaluateScore(
             float effectiveDesireWeight,

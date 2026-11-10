@@ -11,5 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92b23e4865a84c4483a6c9ec6ead0380, type: 3}
   m_Name: ApproachKnownCharacter
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.PEGANpcApproachKnownCharacterAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcApproachKnownCharacterAction
   arrivalToleranceMeters: 1.25

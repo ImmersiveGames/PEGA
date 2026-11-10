@@ -4,13 +4,15 @@ using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
-using ImmersiveGames.Goap;
 using PEGA.Diagnostics;
+using PEGA.GOAP;
+using PEGA.NPC.Actions.Runtime;
+using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
 using UnityEngine;
-
-namespace PEGA.NPC
+namespace PEGA.NPC.Knowledge.Group
 {
-    public enum PEGAActorGroupKnowledgeAccessStatus
+    public enum PegaActorGroupKnowledgeAccessStatus
     {
         Authorized,
         NotMember,
@@ -21,77 +23,77 @@ namespace PEGA.NPC
     }
 
     /// <summary>Separates authorization from fact status so Unknown can mean absent or denied without exposing data.</summary>
-    public readonly struct PEGAActorGroupKnowledgeReadResult<TValue>
+    public readonly struct PegaActorGroupKnowledgeReadResult<TValue>
     {
-        internal PEGAActorGroupKnowledgeReadResult(
-            PEGAActorGroupKnowledgeAccessStatus accessStatus,
-            PEGAKnowledgeFact<TValue> fact)
+        internal PegaActorGroupKnowledgeReadResult(
+            PegaActorGroupKnowledgeAccessStatus accessStatus,
+            PegaKnowledgeFact<TValue> fact)
         {
             AccessStatus = accessStatus;
             Fact = fact;
         }
 
-        public PEGAActorGroupKnowledgeAccessStatus AccessStatus { get; }
+        public PegaActorGroupKnowledgeAccessStatus AccessStatus { get; }
 
-        public PEGAKnowledgeFact<TValue> Fact { get; }
+        public PegaKnowledgeFact<TValue> Fact { get; }
 
-        public bool IsAuthorized => AccessStatus == PEGAActorGroupKnowledgeAccessStatus.Authorized;
+        public bool IsAuthorized => AccessStatus == PegaActorGroupKnowledgeAccessStatus.Authorized;
     }
 
     /// <summary>Instantâneo somente para leitura dos fatos pertencentes a um Group autorizado.</summary>
-    public readonly struct PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>
+    public readonly struct PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>
     {
-        internal PEGAActorGroupKnowledgeFactSetSnapshot(
+        internal PegaActorGroupKnowledgeFactSetSnapshot(
             GroupId groupId,
-            IReadOnlyList<PEGAKnowledgeFactSnapshot<TAddress, TValue>> facts)
+            IReadOnlyList<PegaKnowledgeFactSnapshot<TAddress, TValue>> facts)
         {
             GroupId = groupId;
-            Facts = facts ?? Array.Empty<PEGAKnowledgeFactSnapshot<TAddress, TValue>>();
+            Facts = facts ?? Array.Empty<PegaKnowledgeFactSnapshot<TAddress, TValue>>();
         }
 
         public GroupId GroupId { get; }
 
-        public IReadOnlyList<PEGAKnowledgeFactSnapshot<TAddress, TValue>> Facts { get; }
+        public IReadOnlyList<PegaKnowledgeFactSnapshot<TAddress, TValue>> Facts { get; }
     }
 
     /// <summary>Instantâneo dos fatos de Groups vivos nos quais este Actor possui membership atual.</summary>
-    public readonly struct PEGAActorGroupKnowledgeFactSetReadResult<TAddress, TValue>
+    public readonly struct PegaActorGroupKnowledgeFactSetReadResult<TAddress, TValue>
     {
-        internal PEGAActorGroupKnowledgeFactSetReadResult(
-            PEGAActorGroupKnowledgeAccessStatus accessStatus,
-            IReadOnlyList<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> groups,
+        internal PegaActorGroupKnowledgeFactSetReadResult(
+            PegaActorGroupKnowledgeAccessStatus accessStatus,
+            IReadOnlyList<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> groups,
             string diagnostic)
         {
             AccessStatus = accessStatus;
-            Groups = groups ?? Array.Empty<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
+            Groups = groups ?? Array.Empty<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
             Diagnostic = diagnostic ?? string.Empty;
         }
 
-        public PEGAActorGroupKnowledgeAccessStatus AccessStatus { get; }
+        public PegaActorGroupKnowledgeAccessStatus AccessStatus { get; }
 
-        public IReadOnlyList<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> Groups { get; }
+        public IReadOnlyList<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> Groups { get; }
 
         public string Diagnostic { get; }
 
-        public bool IsAuthorized => AccessStatus == PEGAActorGroupKnowledgeAccessStatus.Authorized;
+        public bool IsAuthorized => AccessStatus == PegaActorGroupKnowledgeAccessStatus.Authorized;
     }
 
     /// <summary>Reads Group Knowledge through explicit owner references and current Framework membership.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorDeclaration))]
     [AddComponentMenu("PEGA/Knowledge/Actor Group Knowledge Reader")]
-    public sealed class PEGAActorGroupKnowledgeReader : MonoBehaviour,
+    public sealed class PegaActorGroupKnowledgeReader : MonoBehaviour,
         IGoapKnowledgeCapability,
-        IPEGANpcPlanningInputChangeSource
+        IPegaNpcPlanningInputChangeSource
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
         [SerializeField]
         [Tooltip("PEGA Group Knowledge owners that can be consulted by this Actor. Each owner checks live Framework membership before returning a fact.")]
-        private PEGAActorGroupKnowledgeState[] authorityStates = Array.Empty<PEGAActorGroupKnowledgeState>();
+        private PegaActorGroupKnowledgeState[] authorityStates = Array.Empty<PegaActorGroupKnowledgeState>();
 
         [NonSerialized]
-        private EventBus<PEGANpcPlanningInputsChangedEvent> _planningInputChangeEvents;
+        private EventBus<PegaNpcPlanningInputsChangedEvent> _planningInputChangeEvents;
 
         [NonSerialized]
         private ScopedLogger _log;
@@ -100,7 +102,7 @@ namespace PEGA.NPC
         private bool _loggerInitialized;
 
         public IEventBinding SubscribeToPlanningInputChanges(
-            Action<PEGANpcPlanningInputsChangedEvent> handler)
+            Action<PegaNpcPlanningInputsChangedEvent> handler)
         {
             if (handler == null)
             {
@@ -135,35 +137,35 @@ namespace PEGA.NPC
         internal void NotifyPlanningInputsChanged()
         {
             EnsurePlanningInputChangeEventsInitialized();
-            _planningInputChangeEvents.Publish(new PEGANpcPlanningInputsChangedEvent());
+            _planningInputChangeEvents.Publish(new PegaNpcPlanningInputsChangedEvent());
         }
 
         /// <summary>Consults one Group fact; denied and unavailable results contain an empty Unknown fact.</summary>
-        public PEGAActorGroupKnowledgeReadResult<TValue> ReadGroupFact<TAddress, TValue>(
+        public PegaActorGroupKnowledgeReadResult<TValue> ReadGroupFact<TAddress, TValue>(
             GroupId groupId,
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds)
         {
             ValidateQuery(key, queryTimeSeconds);
             ActorDeclaration actor = GetComponent<ActorDeclaration>();
             if (!TryReadActorId(actor, out ActorId actorId))
             {
-                return Empty<TValue>(PEGAActorGroupKnowledgeAccessStatus.InvalidActor);
+                return Empty<TValue>(PegaActorGroupKnowledgeAccessStatus.InvalidActor);
             }
 
             if (authorityStates == null || authorityStates.Length == 0)
             {
-                return Empty<TValue>(PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
+                return Empty<TValue>(PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
             }
 
-            var visited = new HashSet<PEGAActorGroupKnowledgeState>();
+            var visited = new HashSet<PegaActorGroupKnowledgeState>();
             int activeAuthorities = 0;
             int availableOwners = 0;
             int ownershipClaims = 0;
-            PEGAActorGroupKnowledgeReadResult<TValue> selected = default;
+            PegaActorGroupKnowledgeReadResult<TValue> selected = default;
             for (int index = 0; index < authorityStates.Length; index++)
             {
-                PEGAActorGroupKnowledgeState authority = authorityStates[index];
+                PegaActorGroupKnowledgeState authority = authorityStates[index];
                 if (authority == null || !authority.isActiveAndEnabled || !visited.Add(authority))
                 {
                     continue;
@@ -175,17 +177,17 @@ namespace PEGA.NPC
                     availableOwners++;
                 }
 
-                PEGAActorGroupKnowledgeReadResult<TValue> result = authority.ReadGroupFact(
+                PegaActorGroupKnowledgeReadResult<TValue> result = authority.ReadGroupFact(
                     actorId,
                     groupId,
                     key,
                     queryTimeSeconds);
-                if (result.AccessStatus == PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable)
+                if (result.AccessStatus == PegaActorGroupKnowledgeAccessStatus.GroupUnavailable)
                 {
                     continue;
                 }
 
-                if (result.AccessStatus == PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable &&
+                if (result.AccessStatus == PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable &&
                     !authority.HasRegisteredGroup(groupId))
                 {
                     continue;
@@ -195,7 +197,7 @@ namespace PEGA.NPC
                 selected = result;
                 if (ownershipClaims > 1)
                 {
-                    return Empty<TValue>(PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority);
+                    return Empty<TValue>(PegaActorGroupKnowledgeAccessStatus.AmbiguousAuthority);
                 }
             }
 
@@ -205,42 +207,42 @@ namespace PEGA.NPC
             }
 
             return Empty<TValue>(activeAuthorities == 0
-                ? PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable
+                ? PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable
                 : availableOwners == 0
-                    ? PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable
-                    : PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable);
+                    ? PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable
+                    : PegaActorGroupKnowledgeAccessStatus.GroupUnavailable);
         }
 
         /// <summary>Submits a fact to the unique owning Group authority, which checks this Actor's current membership.</summary>
-        public PEGAActorGroupKnowledgeAccessStatus SubmitGroupFact<TAddress, TValue>(
+        public PegaActorGroupKnowledgeAccessStatus SubmitGroupFact<TAddress, TValue>(
             GroupId groupId,
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             TValue value,
-            PEGAKnowledgeEvidence evidence,
-            out PEGAKnowledgeWriteResult writeResult)
+            PegaKnowledgeEvidence evidence,
+            out PegaKnowledgeWriteResult writeResult)
         {
-            writeResult = PEGAKnowledgeWriteResult.RejectedInvalid;
+            writeResult = PegaKnowledgeWriteResult.RejectedInvalid;
             if (!groupId.IsValid || !key.IsValid || !evidence.IsValid)
             {
-                return PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+                return PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
             }
 
             ActorDeclaration actor = GetComponent<ActorDeclaration>();
             if (!TryReadActorId(actor, out ActorId actorId))
             {
-                return PEGAActorGroupKnowledgeAccessStatus.InvalidActor;
+                return PegaActorGroupKnowledgeAccessStatus.InvalidActor;
             }
 
             if (authorityStates == null || authorityStates.Length == 0)
             {
-                return PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
+                return PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable;
             }
 
-            PEGAActorGroupKnowledgeState selectedOwner = null;
-            var visited = new HashSet<PEGAActorGroupKnowledgeState>();
+            PegaActorGroupKnowledgeState selectedOwner = null;
+            var visited = new HashSet<PegaActorGroupKnowledgeState>();
             for (int index = 0; index < authorityStates.Length; index++)
             {
-                PEGAActorGroupKnowledgeState authority = authorityStates[index];
+                PegaActorGroupKnowledgeState authority = authorityStates[index];
                 if (authority == null || !authority.isActiveAndEnabled || !visited.Add(authority) ||
                     !authority.HasRegisteredGroup(groupId))
                 {
@@ -249,7 +251,7 @@ namespace PEGA.NPC
 
                 if (selectedOwner != null)
                 {
-                    return PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority;
+                    return PegaActorGroupKnowledgeAccessStatus.AmbiguousAuthority;
                 }
 
                 selectedOwner = authority;
@@ -257,7 +259,7 @@ namespace PEGA.NPC
 
             if (selectedOwner == null)
             {
-                return PEGAActorGroupKnowledgeAccessStatus.GroupUnavailable;
+                return PegaActorGroupKnowledgeAccessStatus.GroupUnavailable;
             }
 
             return selectedOwner.ObserveFactForActor(
@@ -273,29 +275,29 @@ namespace PEGA.NPC
         /// Enumera fatos tipados somente de Groups retornados pela consulta de membership efetiva do Framework.
         /// Cada resultado preserva o GroupId proprietário; authorities conflitantes falham como ambíguas.
         /// </summary>
-        public PEGAActorGroupKnowledgeFactSetReadResult<TAddress, TValue> ReadGroupFacts<TAddress, TValue>(
-            PEGAKnowledgeFactDefinition<TAddress, TValue> definition,
+        public PegaActorGroupKnowledgeFactSetReadResult<TAddress, TValue> ReadGroupFacts<TAddress, TValue>(
+            PegaKnowledgeFactDefinition<TAddress, TValue> definition,
             double queryTimeSeconds)
         {
             ValidateDefinitionQuery(definition, queryTimeSeconds);
             ActorDeclaration actor = GetComponent<ActorDeclaration>();
             if (!TryReadActorId(actor, out ActorId actorId))
             {
-                return EmptyFactSets<TAddress, TValue>(PEGAActorGroupKnowledgeAccessStatus.InvalidActor);
+                return EmptyFactSets<TAddress, TValue>(PegaActorGroupKnowledgeAccessStatus.InvalidActor);
             }
 
             if (authorityStates == null || authorityStates.Length == 0)
             {
-                return EmptyFactSets<TAddress, TValue>(PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
+                return EmptyFactSets<TAddress, TValue>(PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
             }
 
-            var visitedAuthorities = new HashSet<PEGAActorGroupKnowledgeState>();
+            var visitedAuthorities = new HashSet<PegaActorGroupKnowledgeState>();
             var seenGroups = new HashSet<GroupId>();
-            var groups = new List<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
+            var groups = new List<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>();
             int activeAuthorities = 0;
             for (int index = 0; index < authorityStates.Length; index++)
             {
-                PEGAActorGroupKnowledgeState authority = authorityStates[index];
+                PegaActorGroupKnowledgeState authority = authorityStates[index];
                 if (authority == null || !authority.isActiveAndEnabled || !visitedAuthorities.Add(authority))
                 {
                     continue;
@@ -306,8 +308,8 @@ namespace PEGA.NPC
                         actorId,
                         definition,
                         queryTimeSeconds,
-                        out IReadOnlyList<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> authorityGroups,
-                        out PEGAActorGroupKnowledgeAccessStatus accessStatus,
+                        out IReadOnlyList<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>> authorityGroups,
+                        out PegaActorGroupKnowledgeAccessStatus accessStatus,
                         out string diagnostic))
                 {
                     return EmptyFactSets<TAddress, TValue>(
@@ -319,11 +321,11 @@ namespace PEGA.NPC
 
                 for (int groupIndex = 0; groupIndex < authorityGroups.Count; groupIndex++)
                 {
-                    PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue> group = authorityGroups[groupIndex];
+                    PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue> group = authorityGroups[groupIndex];
                     if (!seenGroups.Add(group.GroupId))
                     {
                         return EmptyFactSets<TAddress, TValue>(
-                            PEGAActorGroupKnowledgeAccessStatus.AmbiguousAuthority,
+                            PegaActorGroupKnowledgeAccessStatus.AmbiguousAuthority,
                             $"More than one Group Knowledge authority claims live GroupId '{group.GroupId.StableText}'.");
                     }
 
@@ -333,27 +335,27 @@ namespace PEGA.NPC
 
             if (activeAuthorities == 0)
             {
-                return EmptyFactSets<TAddress, TValue>(PEGAActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
+                return EmptyFactSets<TAddress, TValue>(PegaActorGroupKnowledgeAccessStatus.AuthorityUnavailable);
             }
 
-            return new PEGAActorGroupKnowledgeFactSetReadResult<TAddress, TValue>(
-                PEGAActorGroupKnowledgeAccessStatus.Authorized,
+            return new PegaActorGroupKnowledgeFactSetReadResult<TAddress, TValue>(
+                PegaActorGroupKnowledgeAccessStatus.Authorized,
                 Array.AsReadOnly(groups.ToArray()),
                 string.Empty);
         }
 
-        private static PEGAActorGroupKnowledgeReadResult<TValue> Empty<TValue>(
-            PEGAActorGroupKnowledgeAccessStatus accessStatus) =>
-            new PEGAActorGroupKnowledgeReadResult<TValue>(
+        private static PegaActorGroupKnowledgeReadResult<TValue> Empty<TValue>(
+            PegaActorGroupKnowledgeAccessStatus accessStatus) =>
+            new PegaActorGroupKnowledgeReadResult<TValue>(
                 accessStatus,
-                PEGAKnowledgeFact<TValue>.Unknown(PEGAKnowledgeScope.Group));
+                PegaKnowledgeFact<TValue>.Unknown(PegaKnowledgeScope.Group));
 
-        private static PEGAActorGroupKnowledgeFactSetReadResult<TAddress, TValue> EmptyFactSets<TAddress, TValue>(
-            PEGAActorGroupKnowledgeAccessStatus accessStatus,
+        private static PegaActorGroupKnowledgeFactSetReadResult<TAddress, TValue> EmptyFactSets<TAddress, TValue>(
+            PegaActorGroupKnowledgeAccessStatus accessStatus,
             string diagnostic = "") =>
-            new PEGAActorGroupKnowledgeFactSetReadResult<TAddress, TValue>(
+            new PegaActorGroupKnowledgeFactSetReadResult<TAddress, TValue>(
                 accessStatus,
-                Array.Empty<PEGAActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>(),
+                Array.Empty<PegaActorGroupKnowledgeFactSetSnapshot<TAddress, TValue>>(),
                 diagnostic);
 
         private void OnDestroy()
@@ -364,16 +366,16 @@ namespace PEGA.NPC
 
         private void EnsurePlanningInputChangeEventsInitialized()
         {
-            _planningInputChangeEvents ??= new EventBus<PEGANpcPlanningInputsChangedEvent>();
+            _planningInputChangeEvents ??= new EventBus<PegaNpcPlanningInputsChangedEvent>();
         }
 
         private void LogPlanningInputChangeSubscriberFailure(
-            Action<PEGANpcPlanningInputsChangedEvent> handler,
+            Action<PegaNpcPlanningInputsChangedEvent> handler,
             Exception exception)
         {
             if (!_loggerInitialized)
             {
-                _log = PEGALogging.CreateScopedLogger<PEGAActorGroupKnowledgeReader>(
+                _log = PegaLogging.CreateScopedLogger<PegaActorGroupKnowledgeReader>(
                     LogCategory,
                     gameObject.name);
                 _loggerInitialized = true;
@@ -406,7 +408,7 @@ namespace PEGA.NPC
         }
 
         private static void ValidateQuery<TAddress, TValue>(
-            PEGAKnowledgeFactKey<TAddress, TValue> key,
+            PegaKnowledgeFactKey<TAddress, TValue> key,
             double queryTimeSeconds)
         {
             if (!key.IsValid)
@@ -421,7 +423,7 @@ namespace PEGA.NPC
         }
 
         private static void ValidateDefinitionQuery<TAddress, TValue>(
-            PEGAKnowledgeFactDefinition<TAddress, TValue> definition,
+            PegaKnowledgeFactDefinition<TAddress, TValue> definition,
             double queryTimeSeconds)
         {
             if (definition == null)

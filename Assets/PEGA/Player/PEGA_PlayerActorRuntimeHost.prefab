@@ -9,19 +9,22 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 400000000}
+  - component: {fileID: 143000000}
   - component: {fileID: 114000000}
   - component: {fileID: 114000001}
   - component: {fileID: 114000002}
   - component: {fileID: 114000003}
-  - component: {fileID: 114000004}
   - component: {fileID: 114000005}
   - component: {fileID: 114000006}
+  - component: {fileID: 114000004}
   - component: {fileID: 114000007}
   - component: {fileID: 114000008}
   - component: {fileID: 114000009}
   - component: {fileID: 114000010}
   - component: {fileID: 114000011}
-  - component: {fileID: 143000000}
+  - component: {fileID: 114000012}
+  - component: {fileID: 114000013}
+  - component: {fileID: 114000014}
   m_Layer: 8
   m_Name: PEGA_PlayerActorRuntimeHost
   m_TagString: Untagged
@@ -46,6 +49,31 @@ Transform:
   - {fileID: 400000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &143000000
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &114000000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -104,6 +132,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 390f1d653bee4a0dbc17dce425c59eaa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerGameplayInputReader
+--- !u!114 &114000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b2a12a820c343d2b49e6da48ce17cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Movement.Player.PegaPlayerMovementIntentSource
+  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  additionalMoveDeadzone: 0
+  analogResponseExponent: 1
+--- !u!114 &114000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorPresentationSignals
+  turnMaximumSpeedMetersPerSecond: 1
+  turnMinimumAngleDegrees: 60
+  turnRearmAngleDegrees: 20
 --- !u!114 &114000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,7 +173,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 724481bb75bd4769af20d6fbf4b04cd1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorMovementMechanic
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Movement.Actor.PegaActorMovementMechanic
   intentSource: {fileID: 114000005}
   maxSpeed: 6
   pursuitSpeed: 0
@@ -131,36 +189,6 @@ MonoBehaviour:
   closedCurveSpeedRetention: 0.9
   reversalBrakingAcceleration: 8
   rotationSpeed: 420
---- !u!114 &114000005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b2a12a820c343d2b49e6da48ce17cb4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerMovementIntentSource
-  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  additionalMoveDeadzone: 0
-  analogResponseExponent: 1
---- !u!114 &114000006
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d7025d45a2f49edab29abfd5a19c2f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.PEGAActorPresentationSignals
-  turnMaximumSpeedMetersPerSecond: 1
-  turnMinimumAngleDegrees: 60
-  turnRearmAngleDegrees: 20
 --- !u!114 &114000007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,7 +200,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: add8f78c638f4a6ebc59a6a6c12773aa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerObjectEntryDiscoverySource
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.Perception.PegaPlayerObjectEntryDiscoverySource
   candidateDiscoverySensorInstance: {fileID: 114000010}
   discoveryVisualizationLevel: 1
   drawGizmosWhenUnselected: 1
@@ -187,7 +215,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d751d35ae6aa4834bcb837e2af5539ce, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerObjectEntrySelectionSource
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Selection.Player.PegaPlayerObjectEntrySelectionSource
   selectionRangeMeters: 5
   aimAssistViewportRadius: 0.45
   stickyViewportMargin: 0.1
@@ -234,32 +262,50 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fef973a2263a4b53ac6bfb2e95f61f7c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PEGAPlayerSelectionFeedbackPresenter
---- !u!143 &143000000
-CharacterController:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Player.PegaPlayerSelectionFeedbackPresenter
+--- !u!114 &114000012
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 100000000}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 2
-  m_Radius: 0.5
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 1, z: 0}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b72e1e9b5045628201ce715d60548d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Player.PegaPlayerObjectEntryInteractionIntentSource
+  interactAction: {fileID: 1781555164194001046, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+--- !u!114 &114000013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c3eae65466c43ec8b0ba26ccb24ec4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.PegaActorPhysicalInventory
+  capacity: 1
+  carriedItemAnchorOffset: {x: 0, y: 1.15, z: 0}
+  carriedItemSpacingMeters: 0.25
+--- !u!114 &114000014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fd55b53fabf46bc94875c1da80b2c42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Actor.PegaActorObjectInteractionMechanic
+  playerIntentSource: {fileID: 114000012}
+  playerSelectionSource: {fileID: 114000008}
+  playerDiscoverySource: {fileID: 114000007}
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0

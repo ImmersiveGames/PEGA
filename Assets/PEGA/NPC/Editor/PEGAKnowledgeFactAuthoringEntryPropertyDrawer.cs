@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
+using PEGA.Interactions.Runtime;
+using PEGA.NPC.Knowledge.Authoring;
+using PEGA.NPC.Knowledge.Definitions;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEditor;
 using UnityEngine;
 
 namespace PEGA.NPC.Editor
 {
-    [CustomPropertyDrawer(typeof(PEGAKnowledgeFactAuthoringEntry))]
-    internal sealed class PEGAKnowledgeFactAuthoringEntryPropertyDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(PegaKnowledgeFactAuthoringEntry))]
+    internal sealed class PegaKnowledgeFactAuthoringEntryPropertyDrawer : PropertyDrawer
     {
         private const float Spacing = 2f;
         private const float HelpBoxHeight = 38f;
@@ -28,15 +32,15 @@ namespace PEGA.NPC.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float height = EditorGUIUtility.singleLineHeight;
-            if (!TryGetSelectedDefinition(property, out IPEGAKnowledgeFactDefinition definition, out string diagnostic))
+            if (!TryGetSelectedDefinition(property, out IPegaKnowledgeFactDefinition definition, out string diagnostic))
             {
                 return height + Spacing + HelpBoxHeight;
             }
 
             if (!definition.AllowsDesignerAuthoredInitialFact ||
-                !(definition is IPEGAKnowledgeFactInitialAuthoringDefinition) ||
-                !PEGAKnowledgeFactAuthoringPayload.Supports(definition.AddressType) ||
-                !PEGAKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
+                !(definition is IPegaKnowledgeFactInitialAuthoringDefinition) ||
+                !PegaKnowledgeFactAuthoringPayload.Supports(definition.AddressType) ||
+                !PegaKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
             {
                 return height + Spacing + HelpBoxHeight;
             }
@@ -59,7 +63,7 @@ namespace PEGA.NPC.Editor
             float lineHeight = EditorGUIUtility.singleLineHeight;
             var row = new Rect(position.x, position.y, position.width, lineHeight);
             SerializedProperty definitionId = property.FindPropertyRelative("definitionId");
-            List<IPEGAKnowledgeFactDefinition> definitions = GetAvailableDefinitions();
+            List<IPegaKnowledgeFactDefinition> definitions = GetAvailableDefinitions();
             string[] names = new string[definitions.Count + 1];
             names[0] = EmptyOptions[0].text;
             for (int index = 0; index < definitions.Count; index++)
@@ -78,7 +82,7 @@ namespace PEGA.NPC.Editor
             }
 
             row.y += lineHeight + Spacing;
-            if (!TryGetSelectedDefinition(property, out IPEGAKnowledgeFactDefinition selectedDefinition, out string issue))
+            if (!TryGetSelectedDefinition(property, out IPegaKnowledgeFactDefinition selectedDefinition, out string issue))
             {
                 EditorGUI.HelpBox(row, issue, MessageType.Info);
                 EditorGUI.indentLevel = originalIndent;
@@ -87,9 +91,9 @@ namespace PEGA.NPC.Editor
             }
 
             if (!selectedDefinition.AllowsDesignerAuthoredInitialFact ||
-                !(selectedDefinition is IPEGAKnowledgeFactInitialAuthoringDefinition) ||
-                !PEGAKnowledgeFactAuthoringPayload.Supports(selectedDefinition.AddressType) ||
-                !PEGAKnowledgeFactAuthoringPayload.Supports(selectedDefinition.ValueType))
+                !(selectedDefinition is IPegaKnowledgeFactInitialAuthoringDefinition) ||
+                !PegaKnowledgeFactAuthoringPayload.Supports(selectedDefinition.AddressType) ||
+                !PegaKnowledgeFactAuthoringPayload.Supports(selectedDefinition.ValueType))
             {
                 EditorGUI.HelpBox(row, "Esta definição não possui um payload Inspector compatível para autoria inicial.", MessageType.Warning);
                 EditorGUI.indentLevel = originalIndent;
@@ -126,7 +130,7 @@ namespace PEGA.NPC.Editor
             {
                 SerializedProperty source = payload.FindPropertyRelative("actorIdentitySource");
                 float height = EditorGUI.GetPropertyHeight(source, true);
-                if (source.enumValueIndex == (int)PEGAKnowledgeActorIdentitySource.ActorDeclaration)
+                if (source.enumValueIndex == (int)PegaKnowledgeActorIdentitySource.ActorDeclaration)
                 {
                     height += Spacing + EditorGUIUtility.singleLineHeight;
                 }
@@ -172,12 +176,12 @@ namespace PEGA.NPC.Editor
                     sourceRect.yMax + Spacing,
                     position.width,
                     position.height - lineHeight - Spacing);
-                if (source.enumValueIndex == (int)PEGAKnowledgeActorIdentitySource.ActorDeclaration)
+                if (source.enumValueIndex == (int)PegaKnowledgeActorIdentitySource.ActorDeclaration)
                 {
                     SerializedProperty declaration = payload.FindPropertyRelative("actorDeclaration");
                     EditorGUI.PropertyField(detailRect, declaration, label, true);
                 }
-                else if (source.enumValueIndex == (int)PEGAKnowledgeActorIdentitySource.CurrentPlayerActorFromNpcBinding)
+                else if (source.enumValueIndex == (int)PegaKnowledgeActorIdentitySource.CurrentPlayerActorFromNpcBinding)
                 {
                     bool hasBinding = owner != null && owner.GetComponent<ActorOccurrenceReferenceBinding>() != null;
                     EditorGUI.HelpBox(
@@ -232,19 +236,20 @@ namespace PEGA.NPC.Editor
                 type == typeof(double) ? "doubleValue" :
                 type == typeof(bool) ? "boolValue" :
                 type == typeof(Vector3) ? "vector3Value" :
-                type == typeof(PEGANpcPerceivedAreaPresence) ? "perceivedAreaPresenceValue" :
+                type == typeof(PegaNpcPerceivedAreaPresence) ? "perceivedAreaPresenceValue" :
+                type == typeof(PegaRobObjectEntryConfigurationSnapshot) ? "objectEntryRobActionValue" :
                 null;
             return fieldName != null ? payload.FindPropertyRelative(fieldName) : null;
         }
 
         private static bool TryGetSelectedDefinition(
             SerializedProperty property,
-            out IPEGAKnowledgeFactDefinition definition,
+            out IPegaKnowledgeFactDefinition definition,
             out string diagnostic)
         {
             SerializedProperty definitionId = property.FindPropertyRelative("definitionId");
             if (!string.IsNullOrWhiteSpace(definitionId.stringValue) &&
-                PEGAKnowledgeFactDefinitionCatalog.TryGet(definitionId.stringValue, out definition))
+                PegaKnowledgeFactDefinitionCatalog.TryGet(definitionId.stringValue, out definition))
             {
                 diagnostic = string.Empty;
                 return true;
@@ -257,14 +262,14 @@ namespace PEGA.NPC.Editor
             return false;
         }
 
-        private static List<IPEGAKnowledgeFactDefinition> GetAvailableDefinitions()
+        private static List<IPegaKnowledgeFactDefinition> GetAvailableDefinitions()
         {
-            return PEGAKnowledgeFactDefinitionCatalog.All
+            return PegaKnowledgeFactDefinitionCatalog.All
                 .Where(definition =>
                     definition.AllowsDesignerAuthoredInitialFact &&
-                    definition is IPEGAKnowledgeFactInitialAuthoringDefinition &&
-                    PEGAKnowledgeFactAuthoringPayload.Supports(definition.AddressType) &&
-                    PEGAKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
+                    definition is IPegaKnowledgeFactInitialAuthoringDefinition &&
+                    PegaKnowledgeFactAuthoringPayload.Supports(definition.AddressType) &&
+                    PegaKnowledgeFactAuthoringPayload.Supports(definition.ValueType))
                 .OrderBy(definition => definition.Name, StringComparer.Ordinal)
                 .ThenBy(definition => definition.Id, StringComparer.Ordinal)
                 .ToList();

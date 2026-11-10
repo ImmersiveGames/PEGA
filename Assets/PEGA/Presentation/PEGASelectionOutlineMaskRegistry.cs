@@ -4,7 +4,7 @@ using UnityEngine;
 namespace PEGA.Presentation
 {
     /// <summary>Marca renderers atualmente selecionados para a passagem visual do URP.</summary>
-    internal static class PEGASelectionOutlineMaskRegistry
+    internal static class PegaSelectionOutlineMaskRegistry
     {
         internal const int SelectionRenderingLayerIndex = 8;
         internal const uint SelectionRenderingLayerMask = 1u << SelectionRenderingLayerIndex;
