@@ -32,7 +32,7 @@ namespace PEGA.NPC.Actions.Runtime
         public static PegaNpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PegaNpcPlanningActionId("investigate-perceived-area-presence");
         public static PegaNpcPlanningActionId NavigateToKnownGroupObjectEntryPosition { get; } = new PegaNpcPlanningActionId("navigate-to-known-group-object-entry-position");
         public static PegaNpcPlanningActionId InvestigateKnownGroupPoi { get; } = new PegaNpcPlanningActionId("investigate-known-group-poi");
-        public static PegaNpcPlanningActionId RobKnownObjectEntry { get; } = new PegaNpcPlanningActionId("rob-known-object-entry");
+        public static PegaNpcPlanningActionId PickUpKnownObjectEntry { get; } = new PegaNpcPlanningActionId("pick-up-known-object-entry");
 
         public static PegaNpcPlanningActionId FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PegaNpcPlanningActionId(stableText.Trim());

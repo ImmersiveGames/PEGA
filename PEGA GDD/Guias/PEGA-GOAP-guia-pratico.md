@@ -39,7 +39,7 @@ Os nomes `Desire Definition`, `Desire Settings` e `Desire Profiles` também apar
 - Ajustes de cada desejo: [`Assets/PEGA/NPC/Desires/Settings`](../../Assets/PEGA/NPC/Desires/Settings/)
 - Combinações para NPCs: [`Assets/PEGA/NPC/Desires/Profiles`](../../Assets/PEGA/NPC/Desires/Profiles/)
 - Prefab base: [`Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab`](../../Assets/PEGA/NPC/Prefabs/PEGA_NPCActorRuntimeBase.prefab)
-- Cena com três larápios e dois Actor Groups: [`Assets/PEGA/Scenes/MissionActivityContent.unity`](../../Assets/PEGA/Scenes/MissionActivityContent.unity)
+- Cena com quatro NPCs demonstradores e dois Actor Groups: [`Assets/PEGA/Scenes/MissionActivityContent.unity`](../../Assets/PEGA/Scenes/MissionActivityContent.unity)
 
 O caminho geral é: uma definição de **Desire** aponta para uma **Goal Condition**; um asset **Desire Settings** escolhe essa definição, pode fornecer uma condição de aplicabilidade e ajusta seus valores; um **Desire Profile** referencia essas configurações; e o componente **Autonomy** do NPC recebe o Profile e sua lista de **Available Behaviors**. Aplicabilidade, satisfação do Goal e disponibilidade de plano são avaliações distintas. O Profile não contém cópias isoladas das configurações: se o mesmo asset Desire Settings for usado em mais de um Profile, editar esse asset afeta todos eles.
 
@@ -67,10 +67,19 @@ O prefab base contém estes quatro assets:
 - [`InvestigateDetectedPresence.asset`](../../Assets/PEGA/NPC/Actions/Definitions/InvestigateDetectedPresence.asset) — investigar presença detectada.
 - [`NavigateToKnownGroupObjectEntryPosition.asset`](../../Assets/PEGA/NPC/Actions/Definitions/NavigateToKnownGroupObjectEntryPosition.asset) — navegar a uma posição tipada de POI conhecida pelo Group, usando a avaliação e execução de rota existentes.
 - [`InvestigateKnownGroupPoi.asset`](../../Assets/PEGA/NPC/Actions/Definitions/InvestigateKnownGroupPoi.asset) — permanecer no POI conhecido, confirmar a investigação e publicar o fato de conclusão no Group Knowledge.
+- [`PickUpKnownObjectEntry.asset`](../../Assets/PEGA/NPC/Actions/Definitions/PickUpKnownObjectEntry.asset) — planejar a operação Pick Up contra um Object Entry conhecido pelo Group.
 
 O demonstrador usa a Action de navegação para alcançar a saída após as investigações. Isso não inicia uma transição para `ResultActivity` nem implementa, por si só, o fluxo de Fuga Final do GDD.
 
 As Actions de aproximação e afastamento exigem dois fatos Individuais obtidos por Perception: `IsPlayer == true` e uma última posição observada válida. O `ActorId` endereça esses fatos, mas não comprova sozinho que o alvo é Player. A fonte só publica `IsPlayer` após contato visual com uma ocorrência vinculada a Player Slot; presença radial mantém o fato desconhecido e pode sustentar a investigação local. Ao perder contato, a última posição continua disponível. A continuação é aberta somente quando o plano selecionado pertence à Action de aproximação; a readquisição visual ou a reavaliação após o intervalo configurado devolve a escolha aos planos normais do GOAP.
+
+### Pick Up: decisão e execução compartilhada
+
+Para o NPC, `PickUpKnownObjectEntry.asset` é o comportamento de planejamento: o GOAP escolhe o Desire, a Action e um Target disponível no Group Knowledge autorizado. No Player, a intenção genérica de interagir é resolvida pela seleção e autoridade de descoberta do Player. `PegaPlayerObjectInteractionMechanic` e `PegaNpcObjectInteractionMechanic` expõem essas entradas distintas; `PegaActorObjectInteractionMechanic` mantém a validação e o encaminhamento de execução compartilhados.
+
+O Inspector de cada Object Entry compõe a oferta pelo componente **Interaction Aggregator**, associando a Action no mesmo objeto e os participantes permitidos. O componente **Pick Up** contém `Interaction Range Meters` e `Execution Duration Seconds`. Os objetos de prova da cena usam ambos os participantes, **1,35 m** e **1 s**; a configuração é por objeto. Para a decisão do NPC, o Group Knowledge correspondente mantém os fatos tipados de posição, disponibilidade para Pick Up e parâmetros de planejamento daquela identidade.
+
+O componente **Physical Inventory** expõe `Capacity`. O prefab do Player e o prefab base dos NPCs estão configurados para **2 itens**. Essa capacidade é conferida antes de iniciar e durante a execução da operação.
 
 ## 4. Tutorial: configurar outro NPC para teste
 
@@ -96,9 +105,9 @@ Se quiser mudar qual condição define um Desire, faça cópias dos assets de `D
 
 Também é possível criar assets pelos menus da janela **Project**: botão direito > **Create** > **PEGA** > **NPC**. As opções incluem **Desire Definition**, **Desire Settings**, **Desire Profiles** e **GOAP** > **Target Reached Goal Condition**. A última opção cria outra configuração da condição que já existe; não cria um tipo novo de Goal.
 
-## 5. Os três larápios demonstrativos
+## 5. Os quatro larápios demonstrativos
 
-Os três objetos na cena são instâncias do mesmo prefab base. Os dois larápios originais permanecem no primeiro Actor Group e conservam seus Profiles distintos. `Larapio NPC - Second Group Demo` tem identidade e `GroupProfile` próprios e usa o Profile `Demo_SecondGroupInvestigationAndExit`.
+Os quatro NPCs da cena são instâncias do mesmo prefab base. Os dois larápios originais permanecem no primeiro Actor Group e conservam seus Profiles distintos. `Larapio NPC - Second Group Demo` e `Larapio NPC - Pick Up Demo` têm identidades próprias, pertencem ao Group de demonstração e usam Profiles separados.
 
 ### `Larapio NPC - Pursuit Demo` — foco em perseguição
 
@@ -123,6 +132,12 @@ Sua lista `Available Behaviors` conserva os quatro comportamentos-base e acresce
 A Action de investigação tem pausa configurada de **2 segundos** e raio de chegada de **1,25 m**. A posição chega ao planner pelo Group Knowledge e a navegação reutiliza o provider normal de rota. Para cada POI pendente, o GOAP avalia a cadeia causal navegação → chegada válida → investigação; a comparação usa a rota real estimada mais a duração da investigação. Com os pesos iguais, os custos disponíveis influenciam a escolha. Depois de cada investigação confirmada, a conclusão é lida de volta no Group Knowledge e o GOAP reavalia a partir da posição atual. Não há ordem de waypoints configurada. Quando não resta POI obrigatório pendente, o Desire de saída pode competir normalmente e seu Goal só se satisfaz depois da chegada confirmada.
 
 **Evidência de Play Mode:** o responsável reportou que os três POIs foram investigados, a saída foi alcançada e os Goals correspondentes foram satisfeitos; os logs do Unity corroboraram o resultado. Encontros ocasionais com o Player e as reavaliações associadas foram aceitos para este escopo. O Codex não executou Unity nem inspecionou os arquivos brutos dos logs, que não estão anexados ao repositório.
+
+### `Larapio NPC - Pick Up Demo` — Pick Up de um Object Entry conhecido
+
+Este NPC usa `Demo_SecondGroupPickUpOnly`, pertence ao mesmo Group de demonstração e disponibiliza os quatro comportamentos-base, navegação para Object Entry e `PickUpKnownObjectEntry`. Seu Desire de Pick Up pode ser planejado quando o Group Knowledge autoriza posição e disponibilidade do item. O fluxo GOAP determina Action e Target; a execução física usa a mesma oferta e o mesmo componente **Pick Up** disponíveis ao Player.
+
+Na cena, `Object Entry - Pick Up (Player Proof)` e `Object Entry - Pick Up (NPC Proof)` conservam identidades e posições próprias. Ambos oferecem Pick Up a Player e NPC com alcance **1,35 m** e duração **1 s**. Seus IDs técnicos continuam `pega.mission.player.rob-item` e `pega.mission.second-group.rob-item`; a palavra `rob` nesses valores pertence aos identificadores estáveis, enquanto a operação e os labels atuais são **Pick Up**. A capacidade configurada do inventário físico é **2** para Player e NPC.
 
 ## 6. Experimentar combinações
 
@@ -162,7 +177,7 @@ Os **pequenos círculos amarelos** ao redor da região de busca radial represent
 
 **Como interpretar:** os volumes de investigação aparecem ao selecionar um NPC com o comportamento correspondente disponível, inclusive como **prévia** antes de ele investigar qualquer coisa. Sua presença **não comprova** que a Action tenha sido selecionada ou iniciada. Já o destino verde exige uma Action de investigação em execução. A linha que liga o NPC ao alvo, acompanhada de um rótulo como *Target: contato visual* ou *Target: fora da percepção*, representa a observação mais recente do sensor, não um destino do GOAP.
 
-Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conforme **Draw Perception Gizmos** e **Draw Gizmos When Unselected** no componente **Perception Source**. As prévias das duas investigações são desenhadas quando o **Autonomy** do NPC está selecionado. Para reduzir a sobreposição na Scene, selecione outro objeto ou desative **Gizmos** na janela Scene; isso não altera o comportamento do NPC.
+Os círculos de percepção podem aparecer mesmo em NPCs não selecionados, conforme **Draw Perception Gizmos** e **Draw Gizmos When Unselected** no componente **Perception Source**. As prévias das investigações são desenhadas quando o **Autonomy** do NPC está selecionado. Para reduzir a sobreposição na Scene, selecione outro objeto ou desative **Gizmos** na janela Scene; isso não altera o comportamento do NPC.
 
 ## 8. Limitações atuais
 

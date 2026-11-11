@@ -9,9 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c529b8f67ac4b4ab41ae2046ca529c2, type: 3}
-  m_Name: RobObjectEntry
+  m_Script: {fileID: 11500000, guid: 6e825ca88e6644d993300827b8473100, type: 3}
+  m_Name: PickUpKnownObjectEntry
   m_EditorClassIdentifier:
-  desireId: pega.npc.rob-known-object-entry
-  displayName: Roubar um item conhecido
-  desiredGoalCondition: {fileID: 11400000, guid: 1badc796ec17423f8d7585375a704c9e, type: 2}
+  arrivalToleranceMeters: 0

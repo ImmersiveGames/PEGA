@@ -33,8 +33,9 @@ namespace PEGA.NPC.Knowledge.Authoring
         [SerializeField, HideInInspector] private Vector3 vector3Value;
         [SerializeField, HideInInspector] private PegaNpcPerceivedAreaPresence perceivedAreaPresenceValue;
         [SerializeField, HideInInspector]
+        [FormerlySerializedAs("objectEntryRobActionValue")]
         [FormerlySerializedAs("robObjectEntryActionValue")]
-        private PegaObjectEntryRobAction objectEntryRobActionValue;
+        private PegaObjectEntryPickUpAction objectEntryPickUpActionValue;
 
         public static bool Supports(Type type) =>
             type == typeof(ActorId) ||
@@ -48,7 +49,7 @@ namespace PEGA.NPC.Knowledge.Authoring
             type == typeof(bool) ||
             type == typeof(Vector3) ||
             type == typeof(PegaNpcPerceivedAreaPresence) ||
-            type == typeof(PegaRobObjectEntryConfigurationSnapshot) ||
+            type == typeof(PegaPickUpObjectEntryConfigurationSnapshot) ||
             IsSupportedEnum(type);
 
         private static bool IsSupportedEnum(Type type) =>
@@ -76,39 +77,39 @@ namespace PEGA.NPC.Knowledge.Authoring
                 return TryGetActorId(actorBinding, out resolved, out pending, out diagnostic);
             }
 
-            if (type == typeof(PegaRobObjectEntryConfigurationSnapshot))
+            if (type == typeof(PegaPickUpObjectEntryConfigurationSnapshot))
             {
                 if (!(expectedAddress is ObjectEntryId expectedObjectEntryId) ||
                     !expectedObjectEntryId.IsValid)
                 {
-                    diagnostic = "Rob planning parameters require a valid ObjectEntryId address.";
+                    diagnostic = "Pick Up planning parameters require a valid ObjectEntryId address.";
                     return false;
                 }
 
-                if (objectEntryRobActionValue == null ||
-                    !objectEntryRobActionValue.TryGetConfiguration(
-                        out PegaRobObjectEntryConfigurationSnapshot parameters,
+                if (objectEntryPickUpActionValue == null ||
+                    !objectEntryPickUpActionValue.TryGetConfiguration(
+                        out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                         out diagnostic))
                 {
                     diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                        ? "Select a valid Rob action component offered to NPC participants."
+                        ? "Select a valid Pick Up action component offered to NPC participants."
                         : diagnostic;
                     return false;
                 }
 
                 PegaObjectEntryInteractionAggregator aggregator =
-                    objectEntryRobActionValue.GetComponent<PegaObjectEntryInteractionAggregator>();
+                    objectEntryPickUpActionValue.GetComponent<PegaObjectEntryInteractionAggregator>();
                 if (aggregator == null || !aggregator.IsOfferedTo(
-                        objectEntryRobActionValue,
+                        objectEntryPickUpActionValue,
                         PegaObjectInteractionParticipant.Npc))
                 {
-                    diagnostic = "The selected Rob action must be offered to NPC participants by its Object Entry aggregator before its configuration can enter Group Knowledge.";
+                    diagnostic = "The selected Pick Up action must be offered to NPC participants by its Object Entry aggregator before its configuration can enter Group Knowledge.";
                     return false;
                 }
 
                 if (parameters.ObjectEntryId != expectedObjectEntryId)
                 {
-                    diagnostic = "The selected Rob action's ObjectEntryId does not match this fact address.";
+                    diagnostic = "The selected Pick Up action's ObjectEntryId does not match this fact address.";
                     return false;
                 }
 

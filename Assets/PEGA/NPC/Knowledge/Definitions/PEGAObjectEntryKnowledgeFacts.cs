@@ -23,24 +23,24 @@ namespace PEGA.NPC.Knowledge.Definitions
                 allowsDesignerAuthoredInitialFact: true);
 
         [Preserve]
-        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> Robbable =
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, bool> PickUpAvailable =
             new PegaKnowledgeFactDefinition<ObjectEntryId, bool>(
-                "pega.object-entry.robbable",
-                "Object Entry can be robbed",
+                "pega.object-entry.pick-up-available",
+                "Object Entry pick up available",
                 new PegaLatestEvidenceKnowledgePolicy<bool>(),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 
         [Preserve]
-        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, PegaRobObjectEntryConfigurationSnapshot> RobPlanningParameters =
-            new PegaKnowledgeFactDefinition<ObjectEntryId, PegaRobObjectEntryConfigurationSnapshot>(
-                "pega.object-entry.rob-planning-parameters",
-                "Object Entry Rob planning parameters",
-                new PegaLatestEvidenceKnowledgePolicy<PegaRobObjectEntryConfigurationSnapshot>(
+        public static readonly PegaKnowledgeFactDefinition<ObjectEntryId, PegaPickUpObjectEntryConfigurationSnapshot> PickUpPlanningParameters =
+            new PegaKnowledgeFactDefinition<ObjectEntryId, PegaPickUpObjectEntryConfigurationSnapshot>(
+                "pega.object-entry.pick-up-planning-parameters",
+                "Object Entry Pick Up planning parameters",
+                new PegaLatestEvidenceKnowledgePolicy<PegaPickUpObjectEntryConfigurationSnapshot>(
                     areEqual: (left, right) => left.Equals(right),
                     validateValue: value => value.IsValid
                         ? string.Empty
-                        : "Rob planning parameters require a valid ObjectEntryId and finite, non-negative range and duration."),
+                        : "Pick Up planning parameters require a valid ObjectEntryId and finite, non-negative range and duration."),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: true);
 

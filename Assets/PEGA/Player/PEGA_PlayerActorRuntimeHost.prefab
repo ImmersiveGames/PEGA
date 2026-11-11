@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c3eae65466c43ec8b0ba26ccb24ec4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.PegaActorPhysicalInventory
-  capacity: 1
+  capacity: 2
   carriedItemAnchorOffset: {x: 0, y: 1.15, z: 0}
   carriedItemSpacingMeters: 0.25
 --- !u!114 &114000014
@@ -302,7 +302,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7fd55b53fabf46bc94875c1da80b2c42, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Actor.PegaActorObjectInteractionMechanic
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Actor.PegaPlayerObjectInteractionMechanic
   playerIntentSource: {fileID: 114000012}
   playerSelectionSource: {fileID: 114000008}
   playerDiscoverySource: {fileID: 114000007}

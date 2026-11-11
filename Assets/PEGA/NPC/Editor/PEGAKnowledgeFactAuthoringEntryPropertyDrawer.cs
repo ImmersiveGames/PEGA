@@ -237,7 +237,7 @@ namespace PEGA.NPC.Editor
                 type == typeof(bool) ? "boolValue" :
                 type == typeof(Vector3) ? "vector3Value" :
                 type == typeof(PegaNpcPerceivedAreaPresence) ? "perceivedAreaPresenceValue" :
-                type == typeof(PegaRobObjectEntryConfigurationSnapshot) ? "objectEntryRobActionValue" :
+                type == typeof(PegaPickUpObjectEntryConfigurationSnapshot) ? "objectEntryPickUpActionValue" :
                 null;
             return fieldName != null ? payload.FindPropertyRelative(fieldName) : null;
         }
