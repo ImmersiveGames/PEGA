@@ -38,10 +38,10 @@ namespace PEGA.Interactions.Runtime
         bool TryGetIntent(out PegaObjectInteractionIntent intent);
     }
 
-    /// <summary>Immutable snapshot of one Rob action component's authored configuration.</summary>
-    public readonly struct PegaRobObjectEntryConfigurationSnapshot : System.IEquatable<PegaRobObjectEntryConfigurationSnapshot>
+    /// <summary>Immutable snapshot of one Pick Up action component's authored configuration.</summary>
+    public readonly struct PegaPickUpObjectEntryConfigurationSnapshot : System.IEquatable<PegaPickUpObjectEntryConfigurationSnapshot>
     {
-        public PegaRobObjectEntryConfigurationSnapshot(
+        public PegaPickUpObjectEntryConfigurationSnapshot(
             ObjectEntryId objectEntryId,
             float interactionRangeMeters,
             float executionDurationSeconds)
@@ -59,13 +59,13 @@ namespace PEGA.Interactions.Runtime
             IsNonNegativeFinite(InteractionRangeMeters) &&
             IsNonNegativeFinite(ExecutionDurationSeconds);
 
-        public bool Equals(PegaRobObjectEntryConfigurationSnapshot other) =>
+        public bool Equals(PegaPickUpObjectEntryConfigurationSnapshot other) =>
             ObjectEntryId == other.ObjectEntryId &&
             InteractionRangeMeters == other.InteractionRangeMeters &&
             ExecutionDurationSeconds == other.ExecutionDurationSeconds;
 
         public override bool Equals(object obj) =>
-            obj is PegaRobObjectEntryConfigurationSnapshot other && Equals(other);
+            obj is PegaPickUpObjectEntryConfigurationSnapshot other && Equals(other);
 
         public override int GetHashCode()
         {

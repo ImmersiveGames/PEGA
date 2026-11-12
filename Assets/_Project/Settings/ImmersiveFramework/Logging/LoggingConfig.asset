@@ -23,8 +23,32 @@ MonoBehaviour:
   deduplicateSameFrame: 1
   warnRepeatedSameFrame: 0
   namespaceRules:
-  - ruleId: pega_gameplay_observation
+  - ruleId: pega_sensor_and_player_perception
     enabled: 1
-    namespacePrefix: PEGA.Gameplay
+    namespacePrefix: PEGA.Gameplay.Perception
+    minimumLevel: 1
+  - ruleId: pega_npc_autonomy_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.NPC.Autonomy
+    minimumLevel: 1
+  - ruleId: pega_npc_actions_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.NPC.Actions
+    minimumLevel: 1
+  - ruleId: pega_npc_desires_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.NPC.Desires
+    minimumLevel: 1
+  - ruleId: pega_object_interaction_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.ObjectInteraction
+    minimumLevel: 1
+  - ruleId: pega_knowledge_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.Knowledge
+    minimumLevel: 1
+  - ruleId: pega_actor_groups_debug
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.ActorGroups
     minimumLevel: 1
   typeRules: []

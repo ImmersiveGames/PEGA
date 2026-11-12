@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
 using Immersive.Framework.RuntimeContent;
+using Immersive.Logging.Loggers;
+using Immersive.Logging.Records;
+using PEGA.Diagnostics;
 using PEGA.GOAP;
 using PEGA.Interactions.Runtime;
 using PEGA.Interactions.Runtime.Actor;
@@ -16,33 +19,36 @@ using UnityEngine;
 namespace PEGA.NPC.Actions.Runtime
 {
     [CreateAssetMenu(
-        fileName = "RobKnownObjectEntry",
-        menuName = "PEGA/NPC/Actions/Rob Known Object Entry")]
-    public sealed class PegaNpcRobKnownObjectEntryAction : PegaNpcActionProviderAsset,
+        fileName = "PickUpKnownObjectEntry",
+        menuName = "PEGA/NPC/Actions/Pick Up Known Object Entry")]
+    public sealed class PegaNpcPickUpKnownObjectEntryAction : PegaNpcActionProviderAsset,
         IPegaObjectInteractionOccurrenceAuthority
     {
+        private const string LogCategory = "PEGA.Gameplay.NPC.Actions";
+
         private PegaActorGroupKnowledgeReader _groupKnowledgeReader;
         private PegaActorPhysicalInventory _inventory;
-        private PegaActorObjectInteractionMechanic _interactionMechanic;
+        private PegaNpcObjectInteractionMechanic _interactionMechanic;
         private ObjectEntryOccurrenceQueryBinding _occurrenceQuery;
         private PegaNpcPlanSnapshot _executionPlan;
-        private PegaObjectEntryRobAction _executionAction;
+        private PegaObjectEntryPickUpAction _executionAction;
         private long _objectInteractionExecutionId;
         private long _interactionActionExecutionId;
         private bool _hasExecutionPlan;
         private bool _hasPossessionEvidence;
         private bool _interactionLifecycleActive;
         private bool _interactionStartInProgress;
+        private ScopedLogger _planningLog;
 
         protected override PegaNpcActionEffectKind ActionEffectKind =>
             PegaNpcActionEffectKind.PossessObjectEntry;
 
         public override PegaNpcActionContract Contract => new PegaNpcActionContract(
-            PegaNpcPlanningActionId.RobKnownObjectEntry,
+            PegaNpcPlanningActionId.PickUpKnownObjectEntry,
             ActionEffectKind,
             PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
             false,
-            "NPC began the composed Rob action for a known, offered Object Entry.");
+            "NPC began the composed Pick Up action for a known, offered Object Entry.");
 
         protected override bool OnRuntimeInitialize(out string diagnostic)
         {
@@ -51,9 +57,13 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
+            _planningLog ??= PegaLogging.CreateScopedLogger<PegaNpcPickUpKnownObjectEntryAction>(
+                LogCategory,
+                ActorRoot.name);
+
             _groupKnowledgeReader = ActorRoot.GetComponent<PegaActorGroupKnowledgeReader>();
             _inventory = ActorRoot.GetComponent<PegaActorPhysicalInventory>();
-            _interactionMechanic = ActorRoot.GetComponent<PegaActorObjectInteractionMechanic>();
+            _interactionMechanic = ActorRoot.GetComponent<PegaNpcObjectInteractionMechanic>();
             _occurrenceQuery = RuntimeContext.ObjectEntryOccurrenceQueryBinding;
             if (_groupKnowledgeReader == null || _groupKnowledgeReader.gameObject != ActorRoot ||
                 _inventory == null || _inventory.gameObject != ActorRoot ||
@@ -81,8 +91,29 @@ namespace PEGA.NPC.Actions.Runtime
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
             diagnostic = string.Empty;
-            if (context.PlanContinuation.HasValue || _inventory == null || !_inventory.HasFreeCapacity)
+            if (context.PlanContinuation.HasValue)
             {
+                LogCandidateGeneration(
+                    0,
+                    0,
+                    0,
+                    0,
+                    _inventory != null && _inventory.HasFreeCapacity,
+                    "The active plan continuation owns planning and does not offer Pick Up candidates.");
+                return true;
+            }
+
+            if (_inventory == null || !_inventory.HasFreeCapacity)
+            {
+                LogCandidateGeneration(
+                    0,
+                    0,
+                    0,
+                    0,
+                    false,
+                    _inventory == null
+                        ? "The NPC physical inventory is unavailable."
+                        : "The NPC physical inventory has no free capacity.");
                 return true;
             }
 
@@ -95,22 +126,26 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             PegaActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> offers = reader.ReadGroupFacts(
-                PegaObjectEntryKnowledgeFacts.Robbable,
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable,
                 Time.timeAsDouble);
             if (!offers.IsAuthorized)
             {
                 diagnostic = string.IsNullOrWhiteSpace(offers.Diagnostic)
-                    ? $"Group Knowledge cannot provide current Object Entry Rob offers ({offers.AccessStatus})."
+                    ? $"Group Knowledge cannot provide current Object Entry Pick Up offers ({offers.AccessStatus})."
                     : offers.Diagnostic;
                 return false;
             }
 
+            int availableOfferCount = 0;
+            int knownPositionCount = 0;
+            int validParameterCount = 0;
+            string firstSkippedOfferDiagnostic = string.Empty;
             for (int groupIndex = 0; groupIndex < offers.Groups.Count; groupIndex++)
             {
                 PegaActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = offers.Groups[groupIndex];
                 if (!group.GroupId.IsValid)
                 {
-                    diagnostic = "Group Knowledge returned a Rob offer set without a valid GroupId.";
+                    diagnostic = "Group Knowledge returned a Pick Up offer set without a valid GroupId.";
                     return false;
                 }
 
@@ -119,11 +154,12 @@ namespace PEGA.NPC.Actions.Runtime
                     PegaKnowledgeFactSnapshot<ObjectEntryId, bool> fact = group.Facts[factIndex];
                     if (!fact.Key.IsValid || !fact.Key.AddressValue.IsValid ||
                         fact.Fact.Scope != PegaKnowledgeScope.Group ||
-                        !fact.Fact.TryGetValue(out bool isRobbable) || !isRobbable)
+                        !fact.Fact.TryGetValue(out bool isPickUpAvailable) || !isPickUpAvailable)
                     {
                         continue;
                     }
 
+                    availableOfferCount++;
                     ObjectEntryId objectEntryId = fact.Key.AddressValue;
                     if (!TryReadKnownTarget(
                             reader,
@@ -131,21 +167,33 @@ namespace PEGA.NPC.Actions.Runtime
                             objectEntryId,
                             out Vector3 knownPosition,
                             out double positionEvidenceTimeSeconds,
-                            out _))
+                            out string positionDiagnostic))
                     {
+                        if (string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
+                        {
+                            firstSkippedOfferDiagnostic = positionDiagnostic;
+                        }
+
                         continue;
                     }
 
-                    if (!TryReadKnownRobPlanningParameters(
+                    knownPositionCount++;
+                    if (!TryReadKnownPickUpPlanningParameters(
                             reader,
                             group.GroupId,
                             objectEntryId,
-                            out PegaRobObjectEntryConfigurationSnapshot parameters,
-                            out _))
+                            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
+                            out string parameterDiagnostic))
                     {
+                        if (string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
+                        {
+                            firstSkippedOfferDiagnostic = parameterDiagnostic;
+                        }
+
                         continue;
                     }
 
+                    validParameterCount++;
                     PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromKnownGroupObjectEntryPosition(
                         objectEntryId,
                         group.GroupId,
@@ -153,7 +201,7 @@ namespace PEGA.NPC.Actions.Runtime
                         positionEvidenceTimeSeconds);
                     if (!target.IsValid)
                     {
-                        diagnostic = $"Group Knowledge returned an invalid Rob Target for ObjectEntryId '{objectEntryId.StableText}'.";
+                        diagnostic = $"Group Knowledge returned an invalid Pick Up Target for ObjectEntryId '{objectEntryId.StableText}'.";
                         return false;
                     }
 
@@ -168,9 +216,47 @@ namespace PEGA.NPC.Actions.Runtime
                 }
             }
 
+            if (candidateList.Count == 0 && string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
+            {
+                firstSkippedOfferDiagnostic = availableOfferCount == 0
+                    ? "Group Knowledge supplied no currently true PickUpAvailable fact."
+                    : knownPositionCount == 0
+                        ? "No authorized Group position was available for the offered Object Entries."
+                        : validParameterCount == 0
+                            ? "No valid authorized Pick Up planning parameters were available for the offered Object Entries."
+                            : "No Pick Up candidate could be formed from the current Group offers.";
+            }
+
+            LogCandidateGeneration(
+                availableOfferCount,
+                knownPositionCount,
+                validParameterCount,
+                candidateList.Count,
+                true,
+                firstSkippedOfferDiagnostic);
             targets = Array.AsReadOnly(targetList.ToArray());
             candidates = Array.AsReadOnly(candidateList.ToArray());
             return true;
+        }
+
+        private void LogCandidateGeneration(
+            int availableOfferCount,
+            int knownPositionCount,
+            int validParameterCount,
+            int candidateCount,
+            bool inventoryHasFreeCapacity,
+            string diagnostic)
+        {
+            _planningLog?.Debug(
+                "NPC Pick Up provider evaluated its Group offers for GOAP candidates.",
+                LogFields.Field("actorRoot", ActorRoot != null ? ActorRoot.name : string.Empty),
+                LogFields.Field("actionId", Contract.ActionId),
+                LogFields.Field("availableOfferCount", availableOfferCount),
+                LogFields.Field("knownPositionCount", knownPositionCount),
+                LogFields.Field("validParameterCount", validParameterCount),
+                LogFields.Field("candidateCount", candidateCount),
+                LogFields.Field("inventoryHasFreeCapacity", inventoryHasFreeCapacity),
+                LogFields.Field("diagnostic", diagnostic ?? string.Empty));
         }
 
         public override bool CanOfferCandidate(
@@ -203,11 +289,11 @@ namespace PEGA.NPC.Actions.Runtime
                     out currentKnownPosition,
                     out evidenceTimeSeconds,
                     out diagnostic) ||
-                !TryReadKnownRobPlanningParameters(
+                !TryReadKnownPickUpPlanningParameters(
                     _groupKnowledgeReader,
                     plan.TargetId.KnowledgeGroupId,
                     plan.TargetId.ObjectEntryId,
-                    out PegaRobObjectEntryConfigurationSnapshot parameters,
+                    out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out diagnostic) ||
                 !MatchesPlanParameters(parameters, plan) ||
                 !currentKnownPosition.Equals(plan.TargetPosition) ||
@@ -215,7 +301,7 @@ namespace PEGA.NPC.Actions.Runtime
                 _inventory == null || !_inventory.HasFreeCapacity)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The selected Rob plan no longer matches its known offer, position or Actor inventory capacity."
+                    ? "The selected Pick Up plan no longer matches its known offer, position or Actor inventory capacity."
                     : diagnostic;
                 return false;
             }
@@ -239,11 +325,11 @@ namespace PEGA.NPC.Actions.Runtime
                     out Vector3 position,
                     out double evidenceTimeSeconds,
                     out diagnostic) ||
-                !TryReadKnownRobPlanningParameters(
+                !TryReadKnownPickUpPlanningParameters(
                     _groupKnowledgeReader,
                     candidate.TargetId.KnowledgeGroupId,
                     candidate.TargetId.ObjectEntryId,
-                    out PegaRobObjectEntryConfigurationSnapshot parameters,
+                    out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out diagnostic) ||
                 !MatchesCandidateParameters(parameters, candidate) ||
                 !position.Equals(target.Target.KnownPosition) ||
@@ -251,7 +337,7 @@ namespace PEGA.NPC.Actions.Runtime
                 !TryGetActorId(out ActorId actorId, out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The causal Rob candidate is not a current, membership-authorized Object Entry offer."
+                    ? "The causal Pick Up candidate is not a current, membership-authorized Object Entry offer."
                     : diagnostic;
                 return false;
             }
@@ -260,9 +346,11 @@ namespace PEGA.NPC.Actions.Runtime
                 new IGoapCondition[]
                 {
                     new PegaObjectEntryInteractionRangeCondition(
+                        candidate.TargetId,
                         ActorTransform.position,
                         position,
-                        candidate.TargetRadiusOverrideMeters.Value)
+                        candidate.TargetRadiusOverrideMeters.Value,
+                        _planningLog)
                 },
                 new IGoapEffect[]
                 {
@@ -296,7 +384,7 @@ namespace PEGA.NPC.Actions.Runtime
                 GoapTruthValue result = definition.SuccessPreconditions[index].Evaluate(stateBeforeStep);
                 if (result != GoapTruthValue.True)
                 {
-                    diagnostic = "The hypothetical Actor position is outside the Rob interaction range.";
+                    diagnostic = "The hypothetical Actor position is outside the Pick Up interaction range.";
                     return result == GoapTruthValue.Unknown
                         ? PegaNpcCausalStepEvaluationStatus.Unknown
                         : PegaNpcCausalStepEvaluationStatus.Unavailable;
@@ -329,7 +417,7 @@ namespace PEGA.NPC.Actions.Runtime
                     out diagnostic))
             {
                 RejectStart(string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Rob Target is no longer known as available."
+                    ? "The Pick Up Target is no longer known as available."
                     : diagnostic);
                 return false;
             }
@@ -369,37 +457,37 @@ namespace PEGA.NPC.Actions.Runtime
                     out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The selected Object Entry no longer offers a Rob action to this Actor."
+                    ? "The selected Object Entry no longer offers a Pick Up action to this Actor."
                     : diagnostic;
                 RejectStart(diagnostic);
                 return false;
             }
 
-            PegaObjectEntryRobAction objectEntryRobAction = null;
+            PegaObjectEntryPickUpAction objectEntryPickUpAction = null;
             for (int index = 0; index < availableActions.Count; index++)
             {
-                if (!(availableActions[index] is PegaObjectEntryRobAction candidateAction) ||
+                if (!(availableActions[index] is PegaObjectEntryPickUpAction candidateAction) ||
                     !candidateAction.TryGetConfiguration(
-                        out PegaRobObjectEntryConfigurationSnapshot currentParameters,
+                        out PegaPickUpObjectEntryConfigurationSnapshot currentParameters,
                         out _) ||
                     !MatchesPlanParameters(currentParameters, plan))
                 {
                     continue;
                 }
 
-                if (objectEntryRobAction != null)
+                if (objectEntryPickUpAction != null)
                 {
-                    diagnostic = "The Object Entry offers more than one matching Rob component; the Action will not choose implicitly.";
+                    diagnostic = "The Object Entry offers more than one matching Pick Up component; the Action will not choose implicitly.";
                     RejectStart(diagnostic);
                     return false;
                 }
 
-                objectEntryRobAction = candidateAction;
+                objectEntryPickUpAction = candidateAction;
             }
 
-            if (objectEntryRobAction == null)
+            if (objectEntryPickUpAction == null)
             {
-                diagnostic = "The selected Object Entry has no currently eligible Rob action matching its authorized Group Knowledge parameters.";
+                diagnostic = "The selected Object Entry has no currently eligible Pick Up action matching its authorized Group Knowledge parameters.";
                 RejectStart(diagnostic);
                 return false;
             }
@@ -417,7 +505,7 @@ namespace PEGA.NPC.Actions.Runtime
             _interactionLifecycleActive = true;
             _interactionStartInProgress = true;
             if (!_interactionMechanic.TryStartRequestedAction(
-                    objectEntryRobAction,
+                    objectEntryPickUpAction,
                     request,
                     out _objectInteractionExecutionId,
                     out diagnostic))
@@ -428,13 +516,13 @@ namespace PEGA.NPC.Actions.Runtime
                 CompleteAction(
                     PegaNpcActionOutcome.Invalid,
                     string.IsNullOrWhiteSpace(diagnostic)
-                        ? "The shared Rob action could not begin for the selected Object Entry."
+                        ? "The shared Pick Up action could not begin for the selected Object Entry."
                         : diagnostic);
                 return false;
             }
 
             _interactionStartInProgress = false;
-            _executionAction = objectEntryRobAction;
+            _executionAction = objectEntryPickUpAction;
             return true;
         }
 
@@ -455,7 +543,7 @@ namespace PEGA.NPC.Actions.Runtime
                 !IsActionSpecificEffectObserved(out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The shared Rob execution did not confirm physical inventory possession for its declared Actor and Object Entry."
+                    ? "The shared Pick Up execution did not confirm physical inventory possession for its declared Actor and Object Entry."
                     : diagnostic;
                 return false;
             }
@@ -470,7 +558,7 @@ namespace PEGA.NPC.Actions.Runtime
             diagnostic = string.Empty;
             bool actionConfigurationMatches = _executionAction == null ||
                 (_executionAction.TryGetConfiguration(
-                     out PegaRobObjectEntryConfigurationSnapshot actionParameters,
+                     out PegaPickUpObjectEntryConfigurationSnapshot actionParameters,
                      out _) &&
                  MatchesPlanParameters(actionParameters, _executionPlan));
             if (!_hasExecutionPlan ||
@@ -479,11 +567,11 @@ namespace PEGA.NPC.Actions.Runtime
                     out Vector3 position,
                     out double evidenceTimeSeconds,
                     out diagnostic) ||
-                !TryReadKnownRobPlanningParameters(
+                !TryReadKnownPickUpPlanningParameters(
                     _groupKnowledgeReader,
                     _executionPlan.TargetId.KnowledgeGroupId,
                     _executionPlan.TargetId.ObjectEntryId,
-                    out PegaRobObjectEntryConfigurationSnapshot knownParameters,
+                    out PegaPickUpObjectEntryConfigurationSnapshot knownParameters,
                     out diagnostic) ||
                 !MatchesPlanParameters(knownParameters, _executionPlan) ||
                 !actionConfigurationMatches ||
@@ -495,7 +583,7 @@ namespace PEGA.NPC.Actions.Runtime
                     position) > _executionPlan.TargetRadiusOverrideMeters.Value)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Actor left the known interaction range or the authorized Group offer changed during Rob."
+                    ? "The Actor left the known interaction range or the authorized Group offer changed during Pick Up."
                     : diagnostic;
                 return false;
             }
@@ -514,8 +602,8 @@ namespace PEGA.NPC.Actions.Runtime
                     _executionAction.TryCancelExecution(
                         _objectInteractionExecutionId,
                         string.IsNullOrWhiteSpace(diagnostic)
-                            ? "The NPC GOAP execution ended before Rob committed."
-                            : $"The NPC GOAP execution ended before Rob committed: {diagnostic}");
+                            ? "The NPC GOAP execution ended before Pick Up committed."
+                            : $"The NPC GOAP execution ended before Pick Up committed: {diagnostic}");
                 }
 
                 _hasExecutionPlan = false;
@@ -566,7 +654,7 @@ namespace PEGA.NPC.Actions.Runtime
                 !ArePreconditionsStillValid(out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The NPC's active GOAP plan or membership-authorized Rob preconditions are no longer current."
+                    ? "The NPC's active GOAP plan or membership-authorized Pick Up preconditions are no longer current."
                     : diagnostic;
                 return false;
             }
@@ -580,7 +668,7 @@ namespace PEGA.NPC.Actions.Runtime
                 CurrentExecutionId != _interactionActionExecutionId)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The NPC's active GOAP action or Rob preconditions changed before commit."
+                    ? "The NPC's active GOAP action or Pick Up preconditions changed before commit."
                     : diagnostic;
                 return false;
             }
@@ -597,7 +685,7 @@ namespace PEGA.NPC.Actions.Runtime
                     out diagnostic) || status != PegaObjectInteractionExecutionStatus.Running)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The NPC's exact shared Rob execution is no longer running."
+                    ? "The NPC's exact shared Pick Up execution is no longer running."
                     : diagnostic;
                 return false;
             }
@@ -617,7 +705,7 @@ namespace PEGA.NPC.Actions.Runtime
                 CompleteAction(
                     PegaNpcActionOutcome.Invalid,
                     string.IsNullOrWhiteSpace(diagnostic)
-                        ? "The shared Rob action execution is unavailable."
+                        ? "The shared Pick Up action execution is unavailable."
                         : diagnostic);
                 return;
             }
@@ -632,7 +720,7 @@ namespace PEGA.NPC.Actions.Runtime
                 CompleteAction(
                     PegaNpcActionOutcome.Invalid,
                     string.IsNullOrWhiteSpace(diagnostic)
-                        ? "The shared Rob action did not commit the item transfer."
+                        ? "The shared Pick Up action did not commit the item transfer."
                         : diagnostic);
                 return;
             }
@@ -640,7 +728,7 @@ namespace PEGA.NPC.Actions.Runtime
             _hasPossessionEvidence = true;
             CompleteAction(
                 PegaNpcActionOutcome.Success,
-                "The shared Rob action transferred the Object Entry into the NPC's physical inventory.");
+                "The shared Pick Up action transferred the Object Entry into the NPC's physical inventory.");
         }
 
         protected override bool IsActionSpecificEffectObserved(out string diagnostic)
@@ -655,7 +743,7 @@ namespace PEGA.NPC.Actions.Runtime
                     out diagnostic) || status != PegaObjectInteractionExecutionStatus.Succeeded)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Actor's physical inventory does not contain the selected ObjectEntryId after Rob."
+                    ? "The Actor's physical inventory does not contain the selected ObjectEntryId after Pick Up."
                     : diagnostic;
                 return false;
             }
@@ -674,31 +762,31 @@ namespace PEGA.NPC.Actions.Runtime
             return true;
         }
 
-        private bool TryReadKnownRobPlanningParameters(
+        private bool TryReadKnownPickUpPlanningParameters(
             PegaActorGroupKnowledgeReader reader,
             GroupId groupId,
             ObjectEntryId objectEntryId,
-            out PegaRobObjectEntryConfigurationSnapshot parameters,
+            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
             out string diagnostic)
         {
             parameters = default;
             if (reader == null || !groupId.IsValid || !objectEntryId.IsValid)
             {
-                diagnostic = "Rob planning parameters require an authorized Group reader, GroupId and ObjectEntryId.";
+                diagnostic = "Pick Up planning parameters require an authorized Group reader, GroupId and ObjectEntryId.";
                 return false;
             }
 
-            PegaActorGroupKnowledgeReadResult<PegaRobObjectEntryConfigurationSnapshot> read =
+            PegaActorGroupKnowledgeReadResult<PegaPickUpObjectEntryConfigurationSnapshot> read =
                 reader.ReadGroupFact(
                     groupId,
-                    PegaObjectEntryKnowledgeFacts.RobPlanningParameters.For(objectEntryId),
+                    PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters.For(objectEntryId),
                     Time.timeAsDouble);
             if (!read.IsAuthorized || read.Fact.Scope != PegaKnowledgeScope.Group ||
                 !read.Fact.TryGetValue(out parameters) || !read.Fact.HasObservationTime ||
                 !parameters.IsValid || parameters.ObjectEntryId != objectEntryId)
             {
                 parameters = default;
-                diagnostic = $"The Group Rob parameters are unavailable or invalid (access='{read.AccessStatus}', factStatus='{read.Fact.Status}').";
+                diagnostic = $"The Group Pick Up parameters are unavailable or invalid (access='{read.AccessStatus}', factStatus='{read.Fact.Status}').";
                 return false;
             }
 
@@ -707,7 +795,7 @@ namespace PEGA.NPC.Actions.Runtime
         }
 
         private static bool MatchesCandidateParameters(
-            PegaRobObjectEntryConfigurationSnapshot parameters,
+            PegaPickUpObjectEntryConfigurationSnapshot parameters,
             PegaNpcPlanningActionCandidate candidate) =>
             parameters.IsValid &&
             parameters.ObjectEntryId == candidate.TargetId.ObjectEntryId &&
@@ -716,7 +804,7 @@ namespace PEGA.NPC.Actions.Runtime
             parameters.ExecutionDurationSeconds == candidate.IntrinsicDurationSeconds;
 
         private static bool MatchesPlanParameters(
-            PegaRobObjectEntryConfigurationSnapshot parameters,
+            PegaPickUpObjectEntryConfigurationSnapshot parameters,
             PegaNpcPlanSnapshot plan) =>
             parameters.IsValid &&
             parameters.ObjectEntryId == plan.TargetId.ObjectEntryId &&
@@ -736,7 +824,7 @@ namespace PEGA.NPC.Actions.Runtime
                 targetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
                 !targetId.ObjectEntryId.IsValid || !targetId.KnowledgeGroupId.IsValid)
             {
-                diagnostic = "The Rob Action requires a typed ObjectEntryId and GroupId from its selected known Target.";
+                diagnostic = "The Pick Up Action requires a typed ObjectEntryId and GroupId from its selected known Target.";
                 return false;
             }
 
@@ -759,20 +847,20 @@ namespace PEGA.NPC.Actions.Runtime
         {
             position = default;
             evidenceTimeSeconds = 0d;
-            PegaActorGroupKnowledgeReadResult<bool> robbable = reader.ReadGroupFact(
+            PegaActorGroupKnowledgeReadResult<bool> pickUpAvailable = reader.ReadGroupFact(
                 groupId,
-                PegaObjectEntryKnowledgeFacts.Robbable.For(objectEntryId),
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
                 Time.timeAsDouble);
             PegaActorGroupKnowledgeReadResult<Vector3> positionFact = reader.ReadGroupFact(
                 groupId,
                 PegaObjectEntryKnowledgeFacts.Position.For(objectEntryId),
                 Time.timeAsDouble);
-            if (!robbable.IsAuthorized || !robbable.Fact.TryGetValue(out bool canRob) || !canRob ||
-                robbable.Fact.Scope != PegaKnowledgeScope.Group ||
+            if (!pickUpAvailable.IsAuthorized || !pickUpAvailable.Fact.TryGetValue(out bool canPickUp) || !canPickUp ||
+                pickUpAvailable.Fact.Scope != PegaKnowledgeScope.Group ||
                 !positionFact.IsAuthorized || positionFact.Fact.Scope != PegaKnowledgeScope.Group ||
                 !positionFact.Fact.TryGetValue(out position) || !positionFact.Fact.HasObservationTime)
             {
-                diagnostic = "The Actor's current membership-authorized Group Knowledge does not prove a Rob offer and its position.";
+                diagnostic = "The Actor's current membership-authorized Group Knowledge does not prove a Pick Up offer and its position.";
                 return false;
             }
 
@@ -789,7 +877,7 @@ namespace PEGA.NPC.Actions.Runtime
             reader = null;
             if (composedKnowledgeState == null || composedKnowledgeState.Source != GoapStateSource.KnowledgeState)
             {
-                diagnostic = "Rob candidate generation requires this NPC's explicit composed Knowledge State view.";
+                diagnostic = "Pick Up candidate generation requires this NPC's explicit composed Knowledge State view.";
                 return false;
             }
 
@@ -802,7 +890,7 @@ namespace PEGA.NPC.Actions.Runtime
 
                 if (reader != null && reader != candidate)
                 {
-                    diagnostic = "More than one Group Knowledge Reader is composed for this NPC; Rob will not choose an authority implicitly.";
+                    diagnostic = "More than one Group Knowledge Reader is composed for this NPC; Pick Up planning will not choose an authority implicitly.";
                     return false;
                 }
 
@@ -811,7 +899,7 @@ namespace PEGA.NPC.Actions.Runtime
 
             if (reader == null || reader != _groupKnowledgeReader)
             {
-                diagnostic = "The Rob Action's Group Knowledge Reader is absent from this NPC's composed Knowledge State.";
+                diagnostic = "The Pick Up Action's Group Knowledge Reader is absent from this NPC's composed Knowledge State.";
                 return false;
             }
 

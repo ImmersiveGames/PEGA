@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
@@ -1177,6 +1178,16 @@ namespace PEGA.NPC.Autonomy
                 request,
                 lostContactIntent,
                 causes);
+            _log.Debug(
+                "NPC GOAP evaluated viable plan candidates.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("causes", causes),
+                LogFields.Field("candidatePlanCount", selection.CandidatePlans.Count),
+                LogFields.Field("selectedDesireId", selectedPlan.DesireId),
+                LogFields.Field("selectedActionId", selectedPlan.ActionId),
+                LogFields.Field("selectedTargetId", selectedPlan.TargetId),
+                LogFields.Field("viablePlans", DescribeViablePlans(selection.CandidatePlans)),
+                LogFields.Field("causalSearches", DescribeCausalSearches(selection.CausalEvaluation)));
             if (_hasActivePlan)
             {
                 bool activeActionIsRunning =
@@ -1477,6 +1488,14 @@ namespace PEGA.NPC.Autonomy
                     return false;
                 }
 
+                _log.Debug(
+                    "NPC Action provider supplied planning candidates to GOAP.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("actionId", provider.Contract.ActionId),
+                    LogFields.Field("targetCount", providerTargets.Count),
+                    LogFields.Field("candidateCount", providerCandidates.Count),
+                    LogFields.Field("candidates", DescribeActionCandidates(providerCandidates)));
+
                 for (int targetIndex = 0; targetIndex < providerTargets.Count; targetIndex++)
                 {
                     if (!TryAddTargetUnique(targets, providerTargets[targetIndex]))
@@ -1660,6 +1679,8 @@ namespace PEGA.NPC.Autonomy
                 LogFields.Field("candidatePlanCount", selection != null ? selection.CandidatePlans.Count : 0),
                 LogFields.Field("lastKnownPositionReached", _hasActivePlanContinuation &&
                     _activePlanContinuation.LastKnownPositionReached),
+                LogFields.Field("causalSearches", DescribeCausalSearches(
+                    selection != null ? selection.CausalEvaluation : null)),
                 LogFields.Field("diagnostic", diagnostic));
             if (_hasLoggedObjective)
             {
@@ -2541,6 +2562,131 @@ namespace PEGA.NPC.Autonomy
             _hasLoggedObjective &&
             string.Equals(_lastLoggedDesireId, plan.DesireId, StringComparison.Ordinal) &&
             _lastLoggedTargetId.Equals(plan.TargetId);
+
+        private static string DescribeActionCandidates(
+            IReadOnlyList<PegaNpcPlanningActionCandidate> candidates)
+        {
+            if (candidates == null || candidates.Count == 0)
+            {
+                return "<none>";
+            }
+
+            const int maximumEntries = 12;
+            int entryCount = Math.Min(candidates.Count, maximumEntries);
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < entryCount; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(" | ");
+                }
+
+                PegaNpcPlanningActionCandidate candidate = candidates[index];
+                builder.Append(candidate.ActionId.StableText)
+                    .Append('@')
+                    .Append(candidate.TargetId);
+                if (candidate.TargetRadiusOverrideMeters.HasValue)
+                {
+                    builder.Append(" range=")
+                        .Append(candidate.TargetRadiusOverrideMeters.Value.ToString("0.###"));
+                }
+            }
+
+            if (candidates.Count > entryCount)
+            {
+                builder.Append(" | … +")
+                    .Append(candidates.Count - entryCount)
+                    .Append(" candidates");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string DescribeViablePlans(IReadOnlyList<PegaNpcPlanSnapshot> plans)
+        {
+            if (plans == null || plans.Count == 0)
+            {
+                return "<none>";
+            }
+
+            const int maximumEntries = 12;
+            int entryCount = Math.Min(plans.Count, maximumEntries);
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < entryCount; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(" | ");
+                }
+
+                PegaNpcPlanSnapshot plan = plans[index];
+                builder.Append(plan.ActionId.StableText)
+                    .Append('@')
+                    .Append(plan.TargetId)
+                    .Append(" score=")
+                    .Append(plan.Score.ToString("0.###"));
+            }
+
+            if (plans.Count > entryCount)
+            {
+                builder.Append(" | … +")
+                    .Append(plans.Count - entryCount)
+                    .Append(" plans");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string DescribeCausalSearches(PegaNpcCausalPlanEvaluation evaluation)
+        {
+            if (evaluation == null || evaluation.GoalSearches.Count == 0)
+            {
+                return "<none>";
+            }
+
+            const int maximumEntries = 8;
+            int entryCount = Math.Min(evaluation.GoalSearches.Count, maximumEntries);
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < entryCount; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(" | ");
+                }
+
+                PegaNpcCausalGoalSearchEvaluation search = evaluation.GoalSearches[index];
+                builder.Append(search.DesireId)
+                    .Append(" status=")
+                    .Append(search.Search.Status)
+                    .Append(" evaluations=")
+                    .Append(search.Search.CandidateEvaluations)
+                    .Append('/')
+                    .Append(search.Search.CandidateEvaluationBudget);
+                if (search.HasIncompleteStepEvaluation)
+                {
+                    builder.Append(" incompleteStep=true");
+                }
+
+                if (!string.IsNullOrWhiteSpace(search.Diagnostic))
+                {
+                    builder.Append(" diagnostic=").Append(search.Diagnostic);
+                }
+
+                if (!string.IsNullOrWhiteSpace(search.Search.StepEvaluationDiagnostic))
+                {
+                    builder.Append(" stepDiagnostic=").Append(search.Search.StepEvaluationDiagnostic);
+                }
+            }
+
+            if (evaluation.GoalSearches.Count > entryCount)
+            {
+                builder.Append(" | … +")
+                    .Append(evaluation.GoalSearches.Count - entryCount)
+                    .Append(" searches");
+            }
+
+            return builder.ToString();
+        }
 
         private void EnsureLoggerInitialized()
         {

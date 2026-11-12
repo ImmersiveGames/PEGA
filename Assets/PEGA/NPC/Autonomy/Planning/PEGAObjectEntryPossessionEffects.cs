@@ -1,6 +1,9 @@
 using System;
+using Immersive.Logging.Loggers;
+using Immersive.Logging.Records;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
+using PEGA.Diagnostics;
 using PEGA.GOAP;
 using UnityEngine;
 namespace PEGA.NPC.Autonomy.Planning
@@ -27,15 +30,21 @@ namespace PEGA.NPC.Autonomy.Planning
         private readonly Vector3 _actorPosition;
         private readonly Vector3 _targetPosition;
         private readonly float _interactionRangeMeters;
+        private readonly PegaNpcPlanningTargetId _targetId;
+        private readonly ScopedLogger _log;
 
         public PegaObjectEntryInteractionRangeCondition(
+            PegaNpcPlanningTargetId targetId,
             Vector3 actorPosition,
             Vector3 targetPosition,
-            float interactionRangeMeters)
+            float interactionRangeMeters,
+            ScopedLogger log)
         {
+            _targetId = targetId;
             _actorPosition = actorPosition;
             _targetPosition = targetPosition;
             _interactionRangeMeters = interactionRangeMeters;
+            _log = log;
         }
 
         public GoapTruthValue Evaluate(IGoapStateView state)
@@ -44,22 +53,57 @@ namespace PEGA.NPC.Autonomy.Planning
                 !IsFinite(_actorPosition) || !IsFinite(_targetPosition) ||
                 !IsNonNegativeFinite(_interactionRangeMeters))
             {
+                LogRangeEvaluation(
+                    GoapTruthValue.Unknown,
+                    _actorPosition,
+                    false,
+                    float.PositiveInfinity,
+                    "The hypothetical state or Pick Up range inputs are unavailable or invalid.");
                 return GoapTruthValue.Unknown;
             }
 
             Vector3 hypotheticalActorPosition = _actorPosition;
+            bool hasProjectedArrival = false;
             for (int index = 0; index < effectState.Effects.Count; index++)
             {
                 if (effectState.Effects[index] is PegaNpcTargetReachedEffect reached &&
                     reached.HasTargetPosition)
                 {
                     hypotheticalActorPosition = reached.TargetPosition;
+                    hasProjectedArrival = true;
                 }
             }
 
-            return Vector3.Distance(hypotheticalActorPosition, _targetPosition) <= _interactionRangeMeters
+            float distanceMeters = Vector3.Distance(hypotheticalActorPosition, _targetPosition);
+            GoapTruthValue result = distanceMeters <= _interactionRangeMeters
                 ? GoapTruthValue.True
                 : GoapTruthValue.False;
+            LogRangeEvaluation(
+                result,
+                hypotheticalActorPosition,
+                hasProjectedArrival,
+                distanceMeters,
+                string.Empty);
+            return result;
+        }
+
+        private void LogRangeEvaluation(
+            GoapTruthValue result,
+            Vector3 hypotheticalActorPosition,
+            bool hasProjectedArrival,
+            float distanceMeters,
+            string diagnostic)
+        {
+            _log?.Debug(
+                "NPC Pick Up causal interaction range condition was evaluated.",
+                LogFields.Field("targetId", _targetId),
+                LogFields.Field("result", result),
+                LogFields.Field("hasProjectedArrival", hasProjectedArrival),
+                LogFields.Field("hypotheticalActorPosition", hypotheticalActorPosition),
+                LogFields.Field("knownTargetPosition", _targetPosition),
+                LogFields.Field("distance3dMeters", distanceMeters),
+                LogFields.Field("interactionRangeMeters", _interactionRangeMeters),
+                LogFields.Field("diagnostic", diagnostic));
         }
 
         private static bool IsFinite(Vector3 value) =>

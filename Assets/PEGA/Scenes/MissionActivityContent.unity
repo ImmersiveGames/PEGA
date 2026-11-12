@@ -865,7 +865,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -882,7 +882,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -900,7 +900,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -917,7 +917,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -935,7 +935,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -952,7 +952,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -970,7 +970,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -987,7 +987,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -1005,7 +1005,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1022,7 +1022,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -1040,7 +1040,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1057,7 +1057,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -1075,7 +1075,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1092,7 +1092,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
         actorIdentitySource: 0
@@ -1110,7 +1110,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1127,7 +1127,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
         actorIdentitySource: 0
@@ -1145,7 +1145,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1162,7 +1162,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -1180,7 +1180,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1197,7 +1197,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.activity-exit
       address:
         actorIdentitySource: 0
@@ -1215,7 +1215,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1232,7 +1232,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
         actorIdentitySource: 0
@@ -1250,7 +1250,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1267,8 +1267,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
-    - definitionId: pega.object-entry.robbable
+        objectEntryPickUpActionValue: {fileID: 0}
+    - definitionId: pega.object-entry.pick-up-available
       address:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1285,7 +1285,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1302,8 +1302,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
-    - definitionId: pega.object-entry.rob-planning-parameters
+        objectEntryPickUpActionValue: {fileID: 0}
+    - definitionId: pega.object-entry.pick-up-planning-parameters
       address:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1320,7 +1320,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 0}
+        objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
         actorDeclaration: {fileID: 0}
@@ -1337,7 +1337,7 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
-        objectEntryRobActionValue: {fileID: 950000000000000010}
+        objectEntryPickUpActionValue: {fileID: 950000000000000010}
 --- !u!4 &2500000427 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
@@ -1457,7 +1457,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_Name
-      value: Larapio NPC - Rob Demo
+      value: Larapio NPC - Pick Up Demo
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
@@ -1469,7 +1469,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: displayName
-      value: Larapio demonstrador - Roubo
+      value: Larapio demonstrador - Pick Up
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -1633,7 +1633,7 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
-      objectEntryRobActionValue: {fileID: 0}
+      objectEntryPickUpActionValue: {fileID: 0}
     value:
       actorIdentitySource: 0
       actorDeclaration: {fileID: 0}
@@ -1650,7 +1650,7 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
-      objectEntryRobActionValue: {fileID: 0}
+      objectEntryPickUpActionValue: {fileID: 0}
 --- !u!1 &6100000001 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
@@ -2032,7 +2032,7 @@ GameObject:
   - component: {fileID: 940000000000000009}
   - component: {fileID: 940000000000000010}
   m_Layer: 0
-  m_Name: Object Entry - Rob (Player Proof)
+  m_Name: Object Entry - Pick Up (Player Proof)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2197,7 +2197,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6952e6645554bf08e4f393820f1a6f6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryRobAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPickUpAction
   interactionRangeMeters: 1.35
   executionDurationSeconds: 1
 --- !u!1 &950000000000000001
@@ -2218,7 +2218,7 @@ GameObject:
   - component: {fileID: 950000000000000009}
   - component: {fileID: 950000000000000010}
   m_Layer: 0
-  m_Name: Object Entry - Rob (NPC Proof)
+  m_Name: Object Entry - Pick Up (NPC Proof)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2383,9 +2383,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6952e6645554bf08e4f393820f1a6f6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryRobAction
-  interactionRangeMeters: 1.5
-  executionDurationSeconds: 1.25
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPickUpAction
+  interactionRangeMeters: 1.35
+  executionDurationSeconds: 1
 --- !u!1 &9100000000000001000
 GameObject:
   m_ObjectHideFlags: 0

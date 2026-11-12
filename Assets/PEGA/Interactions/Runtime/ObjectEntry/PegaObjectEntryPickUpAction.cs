@@ -7,8 +7,8 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PegaObjectEntryPhysicalItem))]
-    [AddComponentMenu("PEGA/Interaction/Object Entry/Actions/Rob")]
-    public sealed class PegaObjectEntryRobAction : PegaObjectInteractionAction
+    [AddComponentMenu("PEGA/Interaction/Object Entry/Actions/Pick Up")]
+    public sealed class PegaObjectEntryPickUpAction : PegaObjectInteractionAction
     {
         private const string LogCategory = "PEGA.Gameplay.ObjectInteraction";
 
@@ -25,14 +25,14 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
         private PegaObjectEntryPhysicalItem _reservedItem;
         private ScopedLogger _log;
 
-        public override string DisplayName => "Roubar";
+        public override string DisplayName => "Pick Up";
 
         public float InteractionRangeMeters => interactionRangeMeters;
 
         public float ExecutionDurationSeconds => executionDurationSeconds;
 
         public bool TryGetConfiguration(
-            out PegaRobObjectEntryConfigurationSnapshot parameters,
+            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
             out string diagnostic)
         {
             parameters = default;
@@ -45,7 +45,7 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
         {
             diagnostic = string.Empty;
             if (!TryBuildConfiguration(
-                    out PegaRobObjectEntryConfigurationSnapshot parameters,
+                    out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out diagnostic))
             {
                 return false;
@@ -66,8 +66,8 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
                 parameters.InteractionRangeMeters)
             {
                 diagnostic = parameters.ObjectEntryId != request.ObjectEntryId
-                    ? "The authored Rob parameters do not address this Object Entry identity."
-                    : "The Actor is outside the configured Rob interaction range.";
+                    ? "The authored Pick Up parameters do not address this Object Entry identity."
+                    : "The Actor is outside the configured Pick Up interaction range.";
                 return false;
             }
 
@@ -105,7 +105,7 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
             long executionId)
         {
             if (!TryBuildConfiguration(
-                    out PegaRobObjectEntryConfigurationSnapshot parameters,
+                    out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out string diagnostic) ||
                 _reservedInventory == null || _reservedItem == null ||
                 _reservedInventory.gameObject != request.ActorRoot ||
@@ -152,7 +152,7 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
             CompleteExecution(
                 executionId,
                 PegaObjectInteractionExecutionStatus.Succeeded,
-                "The Object Entry was transferred to the Actor's physical inventory.");
+                "Pick Up completed: the Object Entry was transferred to the Actor's physical inventory.");
         }
 
         protected override void OnExecutionCompleted(
@@ -167,11 +167,11 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
 
             if (status == PegaObjectInteractionExecutionStatus.Succeeded)
             {
-                _log ??= PegaLogging.CreateScopedLogger<PegaObjectEntryRobAction>(
+                _log ??= PegaLogging.CreateScopedLogger<PegaObjectEntryPickUpAction>(
                     LogCategory,
                     gameObject.name);
                 _log.Info(
-                    "Object Entry was transferred to an Actor's physical inventory.",
+                    "Pick Up completed: Object Entry was transferred to an Actor's physical inventory.",
                     LogFields.Field("participant", request.Participant),
                     LogFields.Field("actorId", request.ActorId.StableText),
                     LogFields.Field("objectEntryId", request.ObjectEntryId.StableText),
@@ -198,7 +198,7 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
                 item == null || item.gameObject != request.TargetRoot ||
                 !item.TryGetObjectEntryId(out ObjectEntryId itemId) || itemId != request.ObjectEntryId)
             {
-                diagnostic = "Rob requires this Actor's physical inventory and a physical-item component on the exact Object Entry root.";
+                diagnostic = "Pick Up requires this Actor's physical inventory and a physical-item component on the exact Object Entry root.";
                 return false;
             }
 
@@ -207,14 +207,14 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
         }
 
         private bool TryBuildConfiguration(
-            out PegaRobObjectEntryConfigurationSnapshot parameters,
+            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
             out string diagnostic)
         {
             parameters = default;
             if (!IsNonNegativeFinite(interactionRangeMeters) ||
                 !IsNonNegativeFinite(executionDurationSeconds))
             {
-                diagnostic = "Rob requires finite, non-negative interaction range and execution duration values.";
+                diagnostic = "Pick Up requires finite, non-negative interaction range and execution duration values.";
                 return false;
             }
 
@@ -223,11 +223,11 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
                 !declaration.TryGetObjectEntryId(out ObjectEntryId objectEntryId) ||
                 !objectEntryId.IsValid)
             {
-                diagnostic = "Rob requires an ObjectEntryDeclaration on the same root as its action component.";
+                diagnostic = "Pick Up requires an ObjectEntryDeclaration on the same root as its action component.";
                 return false;
             }
 
-            parameters = new PegaRobObjectEntryConfigurationSnapshot(
+            parameters = new PegaPickUpObjectEntryConfigurationSnapshot(
                 objectEntryId,
                 interactionRangeMeters,
                 executionDurationSeconds);
