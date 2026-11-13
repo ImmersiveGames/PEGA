@@ -240,7 +240,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -675,7 +675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -866,6 +866,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -883,6 +885,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
@@ -901,6 +905,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -918,6 +924,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
@@ -936,6 +944,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -953,6 +963,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
@@ -971,6 +983,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -988,6 +1002,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
@@ -1006,6 +1022,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1023,6 +1041,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
@@ -1041,6 +1061,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1058,6 +1080,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
@@ -1076,6 +1100,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1093,6 +1119,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-required
       address:
@@ -1111,6 +1139,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1128,6 +1158,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.investigation-completed
       address:
@@ -1146,6 +1178,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1163,6 +1197,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
@@ -1181,6 +1217,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1198,6 +1236,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.poi.activity-exit
       address:
@@ -1216,6 +1256,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1233,6 +1275,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.position
       address:
@@ -1251,6 +1295,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1268,6 +1314,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.pick-up-available
       address:
@@ -1286,6 +1334,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1303,6 +1353,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
     - definitionId: pega.object-entry.pick-up-planning-parameters
       address:
@@ -1321,6 +1373,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 0}
       value:
         actorIdentitySource: 0
@@ -1338,6 +1392,8 @@ MonoBehaviour:
           isPresent: 0
           observerPosition: {x: 0, y: 0, z: 0}
           perceivedAreaRadiusMeters: 0
+          opportunitySequence: 0
+          activeOpportunities: []
         objectEntryPickUpActionValue: {fileID: 950000000000000010}
 --- !u!4 &2500000427 stripped
 Transform:
@@ -1363,7 +1419,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1467,7 +1523,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1519,7 +1575,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 9.82
+      value: 7.28
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1575,7 +1631,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1591,11 +1647,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: desireProfile
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: b44a3a8eb84440d9a98b2df098564c67, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: globalKnowledgeState
-      value:
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: availableBehaviors.Array.size
@@ -1603,31 +1659,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[3]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 4b43b5ae7e724e93ba5872e8d1714ff2, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[4]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[5]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[6]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: f82ad38b598042d39628650820397efc, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[7]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 4399f4df6dbf456a8c817789d787d88e, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: objectEntryOccurrenceQueryBinding
-      value:
+      value: 
       objectReference: {fileID: 442300475}
     - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'groupProfiles.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1639,7 +1695,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.68
+      value: 19.48
       objectReference: {fileID: 0}
     - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1759,6 +1815,8 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
+        opportunitySequence: 0
+        activeOpportunities: []
       objectEntryPickUpActionValue: {fileID: 0}
     value:
       actorIdentitySource: 0
@@ -1776,6 +1834,8 @@ MonoBehaviour:
         isPresent: 0
         observerPosition: {x: 0, y: 0, z: 0}
         perceivedAreaRadiusMeters: 0
+        opportunitySequence: 0
+        activeOpportunities: []
       objectEntryPickUpActionValue: {fileID: 0}
 --- !u!1 &6100000001 stripped
 GameObject:
@@ -1868,7 +1928,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
@@ -2192,7 +2252,7 @@ Transform:
   m_GameObject: {fileID: 940000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.2, z: 1.2}
+  m_LocalPosition: {x: 0, y: 0.272, z: 1.2}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2378,7 +2438,7 @@ Transform:
   m_GameObject: {fileID: 950000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 27, y: 0.2, z: 16.2}
+  m_LocalPosition: {x: 27, y: 0.263, z: 16.2}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2564,7 +2624,7 @@ Transform:
   m_GameObject: {fileID: 980000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14.44, y: 0.2, z: 2.85}
+  m_LocalPosition: {x: 14.44, y: 0.263, z: 2.85}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2658,7 +2718,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a517da3a8044fb9a4e63c43cbbd048f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryDeclaration
   objectEntryId: pega.mission.second-group.opportunistic-pick-up
   requiredness: 10
@@ -2672,7 +2732,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 748fa036d522db5ce18d2ceddf49fe58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.ObjectEntry.ObjectEntryCompositionAuthoring
   profile: {fileID: 11400000, guid: d2443f0e1a3b4554bcff65d3b64821dd, type: 2}
   allowDynamicContributions: 0
@@ -2686,7 +2746,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ed4a8a99e4b41b5a67f40518712ebce, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPhysicalItem
 --- !u!114 &980000000000000009
 MonoBehaviour:
@@ -2698,7 +2758,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 666950db791b4f5dac747365a8b98d02, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryInteractionAggregator
   offers:
   - action: {fileID: 980000000000000010}
@@ -2713,7 +2773,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6952e6645554bf08e4f393820f1a6f6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.ObjectEntry.PegaObjectEntryPickUpAction
   interactionRangeMeters: 1.35
   executionDurationSeconds: 1

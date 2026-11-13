@@ -101,6 +101,118 @@ namespace PEGA.Player.Perception
         [NonSerialized]
         private string _lastAcquisitionDiagnostic = string.Empty;
 
+        internal readonly struct CandidateCurrentnessDiagnostic
+        {
+            private CandidateCurrentnessDiagnostic(
+                bool isCurrent,
+                string failureReason,
+                bool recognitionQueryExecuted,
+                bool failureRecognitionQueryExecuted,
+                ObjectEntryRecognitionStatus? recognitionStatus,
+                string frameworkDiagnostic,
+                string failureColliderName,
+                string recognitionQueryColliderName,
+                int rejectedRecognitionColliderCount)
+            {
+                IsCurrent = isCurrent;
+                FailureReason = failureReason ?? string.Empty;
+                RecognitionQueryExecuted = recognitionQueryExecuted;
+                FailureRecognitionQueryExecuted = failureRecognitionQueryExecuted;
+                RecognitionStatus = recognitionStatus;
+                FrameworkDiagnostic = frameworkDiagnostic ?? string.Empty;
+                FailureColliderName = failureColliderName ?? string.Empty;
+                RecognitionQueryColliderName = recognitionQueryColliderName ?? string.Empty;
+                RejectedRecognitionColliderCount = rejectedRecognitionColliderCount;
+            }
+
+            internal bool IsCurrent { get; }
+
+            internal string FailureReason { get; }
+
+            internal bool RecognitionQueryExecuted { get; }
+
+            internal bool FailureRecognitionQueryExecuted { get; }
+
+            internal ObjectEntryRecognitionStatus? RecognitionStatus { get; }
+
+            internal string FrameworkDiagnostic { get; }
+
+            internal string FailureColliderName { get; }
+
+            internal string RecognitionQueryColliderName { get; }
+
+            internal int RejectedRecognitionColliderCount { get; }
+
+            internal static CandidateCurrentnessDiagnostic Rejected(
+                string reason,
+                string colliderName = "") =>
+                new CandidateCurrentnessDiagnostic(
+                    false,
+                    reason,
+                    false,
+                    false,
+                    null,
+                    string.Empty,
+                    colliderName,
+                    string.Empty,
+                    0);
+
+            internal static CandidateCurrentnessDiagnostic RejectedAfterRecognition(
+                string reason,
+                ObjectEntryRecognitionResult recognition,
+                string colliderName) =>
+                new CandidateCurrentnessDiagnostic(
+                    false,
+                    reason,
+                    true,
+                    true,
+                    recognition.Status,
+                    recognition.Diagnostic,
+                    colliderName,
+                    colliderName,
+                    0);
+
+            internal static CandidateCurrentnessDiagnostic Recognized(
+                string colliderName,
+                int rejectedRecognitionColliderCount,
+                ObjectEntryRecognitionResult? recognition = null) =>
+                new CandidateCurrentnessDiagnostic(
+                    true,
+                    string.Empty,
+                    recognition.HasValue,
+                    recognition.HasValue,
+                    recognition.HasValue ? recognition.Value.Status : null,
+                    recognition.HasValue ? recognition.Value.Diagnostic : string.Empty,
+                    colliderName,
+                    colliderName,
+                    rejectedRecognitionColliderCount);
+
+            internal CandidateCurrentnessDiagnostic WithRejectedColliderCount(int count) =>
+                new CandidateCurrentnessDiagnostic(
+                    IsCurrent,
+                    FailureReason,
+                    RecognitionQueryExecuted,
+                    FailureRecognitionQueryExecuted,
+                    RecognitionStatus,
+                    FrameworkDiagnostic,
+                    FailureColliderName,
+                    RecognitionQueryColliderName,
+                    count);
+
+            internal CandidateCurrentnessDiagnostic WithRecognitionObservation(
+                CandidateCurrentnessDiagnostic recognitionObservation) =>
+                new CandidateCurrentnessDiagnostic(
+                    IsCurrent,
+                    FailureReason,
+                    recognitionObservation.RecognitionQueryExecuted,
+                    FailureRecognitionQueryExecuted,
+                    recognitionObservation.RecognitionStatus,
+                    recognitionObservation.FrameworkDiagnostic,
+                    FailureColliderName,
+                    recognitionObservation.RecognitionQueryColliderName,
+                    RejectedRecognitionColliderCount);
+        }
+
         public IReadOnlyList<PegaPlayerObjectEntryCandidate> Candidates => _candidateSnapshot;
 
         public string Diagnostic => _diagnostic;
@@ -608,33 +720,117 @@ namespace PEGA.Player.Perception
             return physicalTransform == actorRootTransform || physicalTransform.IsChildOf(actorRootTransform);
         }
 
-        internal bool IsCurrentCandidate(PegaPlayerObjectEntryCandidate candidate)
+        internal bool IsCurrentCandidate(PegaPlayerObjectEntryCandidate candidate) =>
+            IsCurrentCandidate(candidate, out _);
+
+        internal bool IsCurrentCandidate(
+            PegaPlayerObjectEntryCandidate candidate,
+            out CandidateCurrentnessDiagnostic diagnostic)
         {
             ObjectEntryOccurrenceQueryBinding queryBinding = _recognitionQueryBinding;
             ActorOccurrenceReferenceBinding actorReference = _playerActorReference;
             ActorOccurrence playerOccurrence = _playerOccurrence;
             GameObject occurrence = candidate.Occurrence;
 
-            if (queryBinding == null || actorReference == null ||
-                _perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled ||
-                candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled ||
-                occurrence == null || !occurrence.activeInHierarchy ||
-                !IsSameBoundAccess(queryBinding, actorReference) ||
-                !playerOccurrence.IsValid ||
-                !object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject) ||
-                !playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) ||
-                BelongsToPlayerOccurrence(playerOccurrence, occurrence.transform))
+            if (queryBinding == null)
             {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("recognition-query-unavailable");
+                return false;
+            }
+
+            if (actorReference == null)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-actor-reference-unavailable");
+                return false;
+            }
+
+            if (_perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-perception-sensor-set-unavailable");
+                return false;
+            }
+
+            if (candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("discovery-sensor-instance-unavailable");
+                return false;
+            }
+
+            if (occurrence == null)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("occurrence-destroyed-or-unavailable");
+                return false;
+            }
+
+            if (!occurrence.activeInHierarchy)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("occurrence-inactive");
+                return false;
+            }
+
+            if (!IsSameBoundAccess(queryBinding, actorReference))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-recognition-access-changed");
+                return false;
+            }
+
+            if (!playerOccurrence.IsValid)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-occurrence-unavailable");
+                return false;
+            }
+
+            if (!object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-occurrence-root-changed");
+                return false;
+            }
+
+            if (!playerOccurrence.Id.Equals(_boundPlayerOccurrenceId))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("player-occurrence-identity-changed");
+                return false;
+            }
+
+            if (BelongsToPlayerOccurrence(playerOccurrence, occurrence.transform))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("candidate-belongs-to-player-occurrence");
                 return false;
             }
 
             IReadOnlyList<Collider> recognitionColliders = candidate.RecognitionColliders;
-            for (int index = 0; recognitionColliders != null && index < recognitionColliders.Count; index++)
+            if (recognitionColliders == null || recognitionColliders.Count == 0)
             {
-                if (IsCurrentRecognitionCollider(candidate, recognitionColliders[index]))
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("candidate-has-no-recognition-colliders");
+                return false;
+            }
+
+            CandidateCurrentnessDiagnostic lastColliderDiagnostic = default;
+            CandidateCurrentnessDiagnostic lastRecognitionQueryDiagnostic = default;
+            bool hasRecognitionQueryDiagnostic = false;
+            int rejectedColliderCount = 0;
+            for (int index = 0; index < recognitionColliders.Count; index++)
+            {
+                Collider recognitionCollider = recognitionColliders[index];
+                if (IsCurrentRecognitionCollider(candidate, recognitionCollider, out CandidateCurrentnessDiagnostic colliderDiagnostic))
                 {
+                    diagnostic = colliderDiagnostic.WithRejectedColliderCount(rejectedColliderCount);
                     return true;
                 }
+
+                rejectedColliderCount++;
+                lastColliderDiagnostic = colliderDiagnostic;
+                if (colliderDiagnostic.RecognitionQueryExecuted)
+                {
+                    lastRecognitionQueryDiagnostic = colliderDiagnostic;
+                    hasRecognitionQueryDiagnostic = true;
+                }
+            }
+
+            diagnostic = lastColliderDiagnostic.WithRejectedColliderCount(rejectedColliderCount);
+            if (hasRecognitionQueryDiagnostic && !diagnostic.RecognitionQueryExecuted)
+            {
+                diagnostic = diagnostic.WithRecognitionObservation(lastRecognitionQueryDiagnostic);
             }
 
             return false;
@@ -671,24 +867,88 @@ namespace PEGA.Player.Perception
 
         internal bool IsCurrentRecognitionCollider(
             PegaPlayerObjectEntryCandidate candidate,
-            Collider recognitionCollider)
+            Collider recognitionCollider) =>
+            IsCurrentRecognitionCollider(candidate, recognitionCollider, out _);
+
+        internal bool IsCurrentRecognitionCollider(
+            PegaPlayerObjectEntryCandidate candidate,
+            Collider recognitionCollider,
+            out CandidateCurrentnessDiagnostic diagnostic)
         {
             ObjectEntryOccurrenceQueryBinding queryBinding = _recognitionQueryBinding;
             ActorOccurrenceReferenceBinding actorReference = _playerActorReference;
             ActorOccurrence playerOccurrence = _playerOccurrence;
             GameObject occurrence = candidate.Occurrence;
-            if (queryBinding == null || actorReference == null ||
-                _perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled ||
-                candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled ||
-                recognitionCollider == null || !recognitionCollider.enabled ||
-                !recognitionCollider.gameObject.activeInHierarchy ||
-                occurrence == null || !occurrence.activeInHierarchy ||
-                !IsSameBoundAccess(queryBinding, actorReference) ||
-                !playerOccurrence.IsValid ||
-                !object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject) ||
-                !playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) ||
-                BelongsToPlayerOccurrence(playerOccurrence, recognitionCollider.transform))
+
+            if (queryBinding == null || actorReference == null)
             {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "recognition-query-or-player-reference-unavailable",
+                    recognitionCollider == null ? string.Empty : recognitionCollider.name);
+                return false;
+            }
+
+            if (_perceptionSensorSet == null || !_perceptionSensorSet.isActiveAndEnabled)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "player-perception-sensor-set-unavailable",
+                    recognitionCollider == null ? string.Empty : recognitionCollider.name);
+                return false;
+            }
+
+            if (candidateDiscoverySensorInstance == null || !candidateDiscoverySensorInstance.isActiveAndEnabled)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "discovery-sensor-instance-unavailable",
+                    recognitionCollider == null ? string.Empty : recognitionCollider.name);
+                return false;
+            }
+
+            if (recognitionCollider == null)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected("recognition-collider-destroyed-or-unavailable");
+                return false;
+            }
+
+            if (!recognitionCollider.enabled || !recognitionCollider.gameObject.activeInHierarchy)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "recognition-collider-inactive",
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (occurrence == null || !occurrence.activeInHierarchy)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "occurrence-destroyed-inactive-or-unavailable",
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!IsSameBoundAccess(queryBinding, actorReference))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "player-recognition-access-changed",
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!playerOccurrence.IsValid ||
+                !object.ReferenceEquals(playerOccurrence.ActorRoot, gameObject) ||
+                !playerOccurrence.Id.Equals(_boundPlayerOccurrenceId))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "player-occurrence-changed-or-unavailable",
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (BelongsToPlayerOccurrence(playerOccurrence, recognitionCollider.transform))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "candidate-belongs-to-player-occurrence",
+                    recognitionCollider.name);
                 return false;
             }
 
@@ -705,15 +965,63 @@ namespace PEGA.Player.Perception
 
             if (!belongsToCandidateSnapshot)
             {
+                diagnostic = CandidateCurrentnessDiagnostic.Rejected(
+                    "recognition-collider-not-in-candidate-snapshot",
+                    recognitionCollider.name);
                 return false;
             }
 
             ObjectEntryRecognitionResult recognition = queryBinding.Recognize(recognitionCollider);
-            return IsSameBoundAccess(queryBinding, actorReference) &&
-                   playerOccurrence.Id.Equals(_boundPlayerOccurrenceId) &&
-                   recognition.Succeeded &&
-                   recognition.ObjectEntryId.Equals(candidate.ObjectEntryId) &&
-                   object.ReferenceEquals(recognition.Occurrence, occurrence);
+            if (!IsSameBoundAccess(queryBinding, actorReference))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.RejectedAfterRecognition(
+                    "player-recognition-access-changed-during-query",
+                    recognition,
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!playerOccurrence.Id.Equals(_boundPlayerOccurrenceId))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.RejectedAfterRecognition(
+                    "player-occurrence-identity-changed-during-query",
+                    recognition,
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!recognition.Succeeded)
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.RejectedAfterRecognition(
+                    "framework-recognition-rejected-collider",
+                    recognition,
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!recognition.ObjectEntryId.Equals(candidate.ObjectEntryId))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.RejectedAfterRecognition(
+                    "recognized-object-entry-identity-changed",
+                    recognition,
+                    recognitionCollider.name);
+                return false;
+            }
+
+            if (!object.ReferenceEquals(recognition.Occurrence, occurrence))
+            {
+                diagnostic = CandidateCurrentnessDiagnostic.RejectedAfterRecognition(
+                    "recognized-occurrence-reference-changed",
+                    recognition,
+                    recognitionCollider.name);
+                return false;
+            }
+
+            diagnostic = CandidateCurrentnessDiagnostic.Recognized(
+                recognitionCollider.name,
+                rejectedRecognitionColliderCount: 0,
+                recognition: recognition);
+            return true;
         }
 
         private void AddRecognitionColliderToCandidate(

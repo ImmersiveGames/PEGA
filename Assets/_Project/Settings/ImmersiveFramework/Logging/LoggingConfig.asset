@@ -26,29 +26,49 @@ MonoBehaviour:
   - ruleId: pega_sensor_and_player_perception
     enabled: 1
     namespacePrefix: PEGA.Gameplay.Perception
-    minimumLevel: 1
+    minimumLevel: 5
   - ruleId: pega_npc_autonomy_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.NPC.Autonomy
-    minimumLevel: 1
+    minimumLevel: 5
   - ruleId: pega_npc_actions_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.NPC.Actions
-    minimumLevel: 1
+    minimumLevel: 5
   - ruleId: pega_npc_desires_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.NPC.Desires
-    minimumLevel: 1
+    minimumLevel: 5
   - ruleId: pega_object_interaction_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.ObjectInteraction
-    minimumLevel: 1
+    minimumLevel: 2
   - ruleId: pega_knowledge_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.Knowledge
-    minimumLevel: 1
+    minimumLevel: 5
   - ruleId: pega_actor_groups_debug
     enabled: 1
     namespacePrefix: PEGA.Gameplay.ActorGroups
+    minimumLevel: 5
+  - ruleId: pega_npc_navigation
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.NPC.Navigation
+    minimumLevel: 5
+  - ruleId: pega_npc_target_continuation
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.NPC.TargetContinuation
+    minimumLevel: 5
+  - ruleId: pega_player_object_entry_discovery
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.PlayerObjectDiscovery
+    minimumLevel: 1
+  - ruleId: pega_player_object_selection
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.PlayerObjectSelection
+    minimumLevel: 0
+  - ruleId: pega_player_interaction_intent
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.PlayerInteractionIntent
     minimumLevel: 1
   typeRules: []
