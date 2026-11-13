@@ -1,8 +1,8 @@
 # PEGA — Planejamento de produção do vertical slice e da Demo
 
 **Status:** backlog derivado do escopo aprovado e da estratégia vigente em ADR PP-37
-**Versão:** 0.8.0
-**Atualização:** 2026-10-25
+**Versão:** 0.8.1
+**Atualização:** 2026-11-13
 **Escopo:** capacidades de gameplay do vertical slice e evolução posterior da Demo
 
 Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra a diretriz arquitetural transversal do PEGA e decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
@@ -21,7 +21,7 @@ O Immersive Framework é infraestrutura adotada pelo PEGA. Usar contratos/capaci
 
 - [ ] **VS · Movimento-base e velocidades configuráveis** — movimento do Actor relativo à câmera, projeção no solo, aceleração, rotação, parada, limite diagonal e velocidades especializadas conforme GDD, sem atributo universal de Agilidade. Rastreabilidade: [#34 — movimento e colisão](https://trello.com/c/6pE7J5R0). E03–E04 do cartão permanecem pendentes; a checagem de colisão com o ambiente conjunto ocorre após a preparação do estágio 3.
 - [ ] **VS · Responsividade funcional do controle** — evoluir frenagem/desaceleração, resposta a inversões e intensidade analógica proporcional, preservando controles digitais previsíveis, orientação, direção relativa à câmera e limite de velocidade. Rastreabilidade atual: [#85 — responsividade do controle](https://trello.com/c/s7NpZaCd); E03 (calibração analógica) e E04 (aceite manual de gameplay) foram adiados e não são declarados concluídos por este backlog. Inspector final, tuning definitivo, extensão para Petra/P2 e sinais visuais de animação permanecem polimento posterior. Não reimplementar Input Reader/Input Gate do Framework.
-- Esquiva, salto, interação contextual, combate e recuperação não são pré-requisitos universais da perseguição. Antecipá-los para esta prioridade somente se uma necessidade concreta estiver sustentada pelo GDD; caso contrário, evoluem após a avaliação da perseguição central.
+- Esquiva, interação contextual, combate e recuperação não são pré-requisitos universais da perseguição. O salto livre foi retirado do design; Atacar terá comando próprio e independente de Interagir (`B`). Antecipá-los para esta prioridade somente se uma necessidade concreta estiver sustentada pelo GDD; caso contrário, evoluem após a avaliação da perseguição central.
 
 ## 2. NPCs/larápios — movimento e autonomia para perseguição
 
@@ -43,11 +43,11 @@ O Immersive Framework é infraestrutura adotada pelo PEGA. Usar contratos/capaci
 
 Depois da perseguição central satisfatória, desenvolver os demais resultados necessários ao MVP em incrementos coerentes, preservando suas fronteiras e a autoridade de posse:
 
-- [ ] **VS · Interação contextual do Player** — seleção de alvos por contexto/alcance e distinção entre interação, ataque e soltura. Rastreabilidade: [#37 — interação contextual](https://trello.com/c/wWbleLBj).
+- [ ] **VS · Interação contextual do Player (prova mínima concluída)** — seleção e Pick Up contextual pelo comando Interagir (`B`), sem fallback para ataque. Seleção avançada é posterior. Rastreabilidade: [#37 — interação contextual](https://trello.com/c/wWbleLBj), concluído; [#108 — seleção avançada](https://trello.com/c/OnzrYJ1j).
 - [ ] **VS · Itens, posse e transferência** — disponibilidade, portador, posse exclusiva, coleta, soltura, roubo, recuperação e depósito sem duplicação/perda; capacidade configurável por Actor. Rastreabilidade: [#38 — posse e soltura](https://trello.com/c/dCc2lbu7), [#70 — investigação/roubo](https://trello.com/c/hFYlIZ5l) e [#83 — depósito em cofre](https://trello.com/c/687JSVZ0).
-- [ ] **VS · Confronto** — aplicar ataque válido, Capacidade de Ataque × Resistência, incapacitação e queda de itens conforme GDD; sem HP ou desgaste acumulativo. Rastreabilidade: [#40 — ataque e confronto](https://trello.com/c/7EGgunYM).
+- [ ] **VS · Confronto (ordem do próximo incremento)** — primeiro disponibilizar **Atacar** como comando independente de Interagir, sem salto, com ataque direcional e acerto físico observável para Player e NPCs agressivos quando aplicável. Depois ligar consequências do impacto: queda de itens, nocaute e captura automática na prova mínima, preservando separação entre eventos e o combate completo do GDD para evolução posterior. Rastreabilidade: [#93 — confronto mínimo](https://trello.com/c/BbLpynTw).
 - [ ] **VS · Recuperação e captura** — recuperação temporizada, transporte e captura efetiva por entrega na prisão; manter as restrições de ação, posse e inventário previstas no GDD. Rastreabilidade: [#42 — recuperação](https://trello.com/c/BJUgV7EY) e [#39 — captura](https://trello.com/c/Trj9hyl6).
-- [ ] **VS · Esquiva, salto e obstáculos especiais** — incluir conforme necessidade do recorte sustentada pelo GDD; não inventar ameaça/obstáculo nem torná-los pré-requisitos da perseguição básica. Rastreabilidade: [#35 — esquiva](https://trello.com/c/ePIM6alK) e [#36 — salto](https://trello.com/c/Vnmzl21P).
+- [ ] **VS · Esquiva e obstáculos especiais** — incluir esquiva/transposições contextuais conforme necessidade do recorte sustentada pelo GDD; não reintroduzir salto livre. Rastreabilidade: [#35 — esquiva](https://trello.com/c/ePIM6alK).
 - [ ] **VS · Preparação e invasão** — configurar duração, escolha de cofre, Spawn Seguro e receitas/relógios de invasão segundo GDD/MVP, sem misturar relógios ou declarar pronto/skip fora das regras aprovadas.
 - [ ] **VS · GOAP de roubo, proteção e recuperação** — integrar investigação/descoberta de item, ações de roubo, replanejamento por informação válida, posse, confronto e recuperação conforme GDD; se o Player obtiver o item antes, o larápio só altera sua decisão depois de informação legítima. Não substituir o GOAP por roteiro.
 - [ ] **VS · Encerramento completo** — compor Preparação, invasão, Assalto, Fuga Final, estados Capturado/Escapou/Não escapou, resolução de itens e Result Activity conforme GDD/MVP; preservar os dados necessários antes de descarregar conteúdo de gameplay.
