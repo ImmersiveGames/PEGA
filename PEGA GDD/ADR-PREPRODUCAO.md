@@ -358,3 +358,11 @@ A ordem é de prioridade e as dependências explicitadas nos itens 3 e 4 são ga
 - **Escalabilidade:** ampliar repertório e complexidade com estrutura sustentável e custos operacionais controláveis.
 
 Esta diretriz vale para os sistemas do PEGA, inclusive quando não pertencem ao GOAP. Ela orienta decisões de arquitetura sem exigir que tudo seja abstrato, intercambiável ou configurável. Soluções específicas são legítimas quando generalizar não acrescenta reutilização ou clareza; o núcleo muda quando surgir uma necessidade semântica geral comprovada, e não apenas pela adição de uma mecânica. A diretriz não cria uma regra de gameplay, um pacote, serviço ou infraestrutura genérica obrigatórios, nem altera fronteiras de ownership por implicação. A decisão explícita da §7 atualiza essa fronteira para os mecanismos GOAP e Perception, preservando as regras específicas em cada jogo.
+
+## 14. Alinhamento de controles do Player — 2026-11-13
+
+**Decisão de gameplay registrada no GDD:** Interagir (`B`) e Atacar deixam de compartilhar o mesmo comando. Atacar passa a ser uma ação independente, com entrada própria liberada pela retirada do salto livre do jogo. O botão físico definitivo ainda depende do mapeamento de Input do PEGA. A escolha de atacar não depende da ausência de interação válida nem do foco em Object Entry; acerto direcional e consequências de impacto são responsabilidades distintas.
+
+**Efeito sobre a produção:** na Etapa 5 de PP-37, o primeiro incremento do confronto [#93](https://trello.com/c/BbLpynTw) é comprovar a ação de Atacar e a identificação legítima de um impacto. Queda de itens, nocaute, captura automática de NPC e recuperação do Player são incrementos posteriores da prova mínima. A prova intermediária de captura automática não substitui o contrato de transporte e entrega à prisão exigido pelo MVP final.
+
+**Preservação histórica:** menções a salto nas decisões e estimativas anteriores (incluindo PP-36) documentam o escopo à época, **não** uma capacidade ainda vigente. Salto livre está cancelado, sem ser tratado como entregue. A esquiva e a transposição contextual de obstáculos continuam sujeitas aos requisitos pertinentes do GDD. Não atualizar provas históricas como se tivessem sido executadas novamente.
