@@ -26,6 +26,7 @@ namespace PEGA.Interactions.Runtime.Actor
 
         private IPegaObjectInteractionIntentSource _playerIntentSource;
         private bool _isConfigured;
+        private int _pendingInteractionIntentFrame = -1;
 
         private void Awake()
         {
@@ -53,8 +54,27 @@ namespace PEGA.Interactions.Runtime.Actor
                 LogFields.Field("playerIntentPath", true));
         }
 
+        private void OnEnable()
+        {
+            if (_isConfigured && playerSelectionSource != null)
+            {
+                playerSelectionSource.ContextualEvaluationCompleted += OnContextualEvaluationCompleted;
+            }
+        }
+
         private void Update()
         {
+            if (_pendingInteractionIntentFrame >= 0 &&
+                _pendingInteractionIntentFrame != Time.frameCount)
+            {
+                _pendingInteractionIntentFrame = -1;
+                LogPlayerRequestRejected(
+                    "The Player physical selection was not evaluated in the current frame before this interaction request expired.",
+                    playerSelectionSource != null
+                        ? playerSelectionSource.CurrentSelection
+                        : null);
+            }
+
             if (!_isConfigured || !isActiveAndEnabled ||
                 !_playerIntentSource.TryGetIntent(out PegaObjectInteractionIntent intent) ||
                 !intent.IsRequested)
@@ -62,7 +82,29 @@ namespace PEGA.Interactions.Runtime.Actor
                 return;
             }
 
+            _pendingInteractionIntentFrame = Time.frameCount;
+        }
+
+        private void OnContextualEvaluationCompleted()
+        {
+            if (!_isConfigured || !isActiveAndEnabled ||
+                _pendingInteractionIntentFrame != Time.frameCount)
+            {
+                return;
+            }
+
+            _pendingInteractionIntentFrame = -1;
             ProcessPlayerIntent();
+        }
+
+        private void OnDisable()
+        {
+            if (playerSelectionSource != null)
+            {
+                playerSelectionSource.ContextualEvaluationCompleted -= OnContextualEvaluationCompleted;
+            }
+
+            _pendingInteractionIntentFrame = -1;
         }
 
         private void ProcessPlayerIntent()

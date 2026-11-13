@@ -154,18 +154,32 @@ namespace PEGA.Player.Editor
             PegaPlayerObjectEntryCandidate? currentSelection,
             bool isDetailed)
         {
-            Vector3 selectionCenter = source.DiscoveryCenter;
+            if (!selection.TryGetPhysicalSelectionFrame(
+                    out Vector3 selectionCenter,
+                    out Vector3 visibilityOrigin))
+            {
+                Handles.color = SelectionColor;
+                Handles.Label(
+                    source.DiscoveryCenter + Vector3.up * 2f,
+                    "Seleção: corpo físico indisponível");
+                return;
+            }
+
             if (selection.SelectionRangeMeters > 0f)
             {
                 Gizmos.color = SelectionColor;
                 Gizmos.DrawWireSphere(selectionCenter, selection.SelectionRangeMeters);
+                DrawPlayerSelectionVolume(selection, selectionCenter);
             }
+
+            Gizmos.color = SelectionColor;
+            Gizmos.DrawWireSphere(visibilityOrigin, 0.08f);
 
             if (!currentSelection.HasValue || currentSelection.Value.Occurrence == null)
             {
                 Handles.color = SelectionColor;
                 string noSelectionLabel = isDetailed
-                    ? $"Seleção: nenhuma\nAlcance: {selection.SelectionRangeMeters:0.##} m / mira: {selection.AimAssistViewportRadius:0.##} viewport"
+                    ? $"Seleção: nenhuma\nAlcance: {selection.SelectionRangeMeters:0.##} m / volume: ±{selection.SelectionHorizontalHalfAngleDegrees:0.#}° × ±{selection.SelectionVerticalHalfAngleDegrees:0.#}°"
                     : $"Seleção: {selection.SelectionRangeMeters:0.##} m · foco: —";
                 Handles.Label(selectionCenter + Vector3.up * 2f, noSelectionLabel);
                 return;
@@ -177,9 +191,120 @@ namespace PEGA.Player.Editor
             Gizmos.DrawWireCube(occurrence.transform.position, Vector3.one * 0.42f);
             Handles.color = SelectionColor;
             string selectedLabel = isDetailed
-                ? $"SELECIONADO\n{selected.ObjectEntryId.StableText}\n{occurrence.name}\nAlcance: {selection.SelectionRangeMeters:0.##} m / mira: {selection.AimAssistViewportRadius:0.##} viewport"
+                ? $"SELECIONADO\n{selected.ObjectEntryId.StableText}\n{occurrence.name}\nAlcance: {selection.SelectionRangeMeters:0.##} m / volume: ±{selection.SelectionHorizontalHalfAngleDegrees:0.#}° × ±{selection.SelectionVerticalHalfAngleDegrees:0.#}° (+{selection.StickyVolumeMarginDegrees:0.#}° para manter)"
                 : $"Foco: {occurrence.name}";
             Handles.Label(occurrence.transform.position + Vector3.up * 0.65f, selectedLabel);
+        }
+
+        private static void DrawPlayerSelectionVolume(
+            PegaPlayerObjectEntrySelectionSource selection,
+            Vector3 center)
+        {
+            float horizontalAngle = selection.SelectionHorizontalHalfAngleDegrees;
+            float verticalAngle = selection.SelectionVerticalHalfAngleDegrees;
+            float range = selection.SelectionRangeMeters;
+            Vector3 forward = selection.transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude <= 0f)
+            {
+                return;
+            }
+
+            forward.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+            Gizmos.color = SelectionColor;
+            DrawAngularVolume(center, forward, right, range, horizontalAngle, verticalAngle);
+
+            if (selection.StickyVolumeMarginDegrees > 0f)
+            {
+                Gizmos.color = new Color(SelectionColor.r, SelectionColor.g, SelectionColor.b, 0.35f);
+                DrawAngularVolume(
+                    center,
+                    forward,
+                    right,
+                    range,
+                    horizontalAngle + selection.StickyVolumeMarginDegrees,
+                    verticalAngle + selection.StickyVolumeMarginDegrees);
+            }
+        }
+
+        private static void DrawAngularVolume(
+            Vector3 center,
+            Vector3 forward,
+            Vector3 right,
+            float range,
+            float horizontalAngle,
+            float verticalAngle)
+        {
+            for (int horizontalSign = -1; horizontalSign <= 1; horizontalSign += 2)
+            {
+                float azimuth = horizontalAngle * horizontalSign;
+                DrawVolumeRay(center, forward, right, range, azimuth, 0f);
+                DrawVolumeArc(center, forward, right, range, azimuth, -verticalAngle, verticalAngle, vertical: true);
+            }
+
+            for (int verticalSign = -1; verticalSign <= 1; verticalSign += 2)
+            {
+                float elevation = verticalAngle * verticalSign;
+                DrawVolumeRay(center, forward, right, range, 0f, elevation);
+                DrawVolumeArc(center, forward, right, range, elevation, -horizontalAngle, horizontalAngle, vertical: false);
+            }
+
+            Gizmos.DrawLine(center, center + forward * range);
+        }
+
+        private static void DrawVolumeRay(
+            Vector3 center,
+            Vector3 forward,
+            Vector3 right,
+            float range,
+            float azimuthDegrees,
+            float elevationDegrees)
+        {
+            Gizmos.DrawLine(
+                center,
+                center + GetVolumeDirection(forward, right, azimuthDegrees, elevationDegrees) * range);
+        }
+
+        private static void DrawVolumeArc(
+            Vector3 center,
+            Vector3 forward,
+            Vector3 right,
+            float range,
+            float fixedAngleDegrees,
+            float startAngleDegrees,
+            float endAngleDegrees,
+            bool vertical)
+        {
+            const int segmentCount = 16;
+            Vector3 previous = default;
+            for (int segment = 0; segment <= segmentCount; segment++)
+            {
+                float interpolation = segment / (float)segmentCount;
+                float changingAngle = Mathf.Lerp(startAngleDegrees, endAngleDegrees, interpolation);
+                Vector3 direction = vertical
+                    ? GetVolumeDirection(forward, right, fixedAngleDegrees, changingAngle)
+                    : GetVolumeDirection(forward, right, changingAngle, fixedAngleDegrees);
+                Vector3 point = center + direction * range;
+                if (segment > 0)
+                {
+                    Gizmos.DrawLine(previous, point);
+                }
+
+                previous = point;
+            }
+        }
+
+        private static Vector3 GetVolumeDirection(
+            Vector3 forward,
+            Vector3 right,
+            float azimuthDegrees,
+            float elevationDegrees)
+        {
+            float azimuth = azimuthDegrees * Mathf.Deg2Rad;
+            float elevation = elevationDegrees * Mathf.Deg2Rad;
+            Vector3 horizontal = forward * Mathf.Cos(azimuth) + right * Mathf.Sin(azimuth);
+            return horizontal * Mathf.Cos(elevation) + Vector3.up * Mathf.Sin(elevation);
         }
 
         private static string FormatDiscoveryVolume(PerceptionSpatialDiscoveryVolume volume)

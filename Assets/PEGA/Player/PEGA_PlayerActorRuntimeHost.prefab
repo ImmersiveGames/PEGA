@@ -217,8 +217,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Selection.Player.PegaPlayerObjectEntrySelectionSource
   selectionRangeMeters: 5
-  aimAssistViewportRadius: 0.45
-  stickyViewportMargin: 0.1
+  selectionHorizontalHalfAngleDegrees: 35
+  selectionVerticalHalfAngleDegrees: 70
+  stickyVolumeMarginDegrees: 5
   proximityWeight: 0.3
   playerFacingWeight: 0.2
   facingIntentAlignmentThreshold: 0.9

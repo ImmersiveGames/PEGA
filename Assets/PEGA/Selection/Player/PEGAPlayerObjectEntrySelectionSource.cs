@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
@@ -8,59 +9,62 @@ using PEGA.Player.Perception;
 using UnityEngine;
 namespace PEGA.Selection.Player
 {
-    /// <summary>Seleciona a ocorrência física elegível mais relevante para a câmera deste Player.</summary>
+    /// <summary>Seleciona a ocorrência física elegível mais relevante à frente deste Player.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PegaPlayerObjectEntryDiscoverySource))]
     [AddComponentMenu("PEGA/Selection/Player/Object Entry Selection Source")]
     public sealed class PegaPlayerObjectEntrySelectionSource : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.PlayerObjectSelection";
-        private const int ProjectedBoundsGridSize = 3;
+        private const int PlayerVolumeGridSize = 3;
         private const int InitialVisibilityHitBufferSize = 32;
         private const int MaximumVisibilityHitBufferSize = 1024;
-        private const float VisibilityDistanceToleranceMeters = 0.005f;
-        private static readonly Vector2 ViewportCenter = new Vector2(0.5f, 0.5f);
 
-        [Header("Contextual Selection")]
-        [SerializeField, Min(0f)]
-        [Tooltip("Distância máxima, em metros, do centro físico do Player até um ponto visível da geometria elegível.")]
+        [Header("Seleção Contextual 3D")]
+        [SerializeField, Min(0f), InspectorName("Alcance de seleção (m)")]
+        [Tooltip("Distância máxima do centro físico do Player até um ponto visível do collider reconhecido. Use metros.")]
         private float selectionRangeMeters = 5f;
 
-        [SerializeField, Range(0.01f, 1f)]
-        [Tooltip("Raio máximo da mira contextual em coordenadas normalizadas da viewport da câmera.")]
-        private float aimAssistViewportRadius = 0.45f;
+        [SerializeField, Range(0f, 90f), InspectorName("Ângulo horizontal (±°)")]
+        [Tooltip("Semiângulo para cada lado da direção horizontal do Player. Define a abertura lateral do volume frontal, em graus.")]
+        private float selectionHorizontalHalfAngleDegrees = 35f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Margem adicional de viewport usada apenas para manter a ocorrência já selecionada.")]
-        private float stickyViewportMargin = 0.1f;
+        [SerializeField, Range(0f, 90f), InspectorName("Ângulo vertical (±°)")]
+        [Tooltip("Elevação permitida acima e abaixo do plano horizontal do Player, em graus. Permite selecionar objetos no chão e em superfícies elevadas.")]
+        private float selectionVerticalHalfAngleDegrees = 70f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Peso da distância física no score relativo; o peso restante é dividido entre mira e direção do Player.")]
+        [SerializeField, Range(0f, 90f), InspectorName("Margem de retenção (°)")]
+        [Tooltip("Margem angular adicionada aos dois ângulos somente para manter a ocorrência já selecionada. Não altera a elegibilidade de novos alvos.")]
+        private float stickyVolumeMarginDegrees = 5f;
+
+        [Header("Priorização e Estabilidade")]
+        [SerializeField, Range(0f, 1f), InspectorName("Peso da distância")]
+        [Tooltip("Participação normalizada da proximidade física no ranqueamento relativo dos alvos. O peso total de distância, volume frontal e direção não pode exceder 1.")]
         private float proximityWeight = 0.3f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Peso do alinhamento entre a frente horizontal do Player e a geometria avaliada.")]
+        [SerializeField, Range(0f, 1f), InspectorName("Peso da direção do Player")]
+        [Tooltip("Participação do alinhamento entre a direção horizontal do Player e o alvo no ranqueamento relativo.")]
         private float playerFacingWeight = 0.2f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Alinhamento mínimo da frente do Player para contar como intenção clara de troca.")]
+        [SerializeField, Range(0f, 1f), InspectorName("Alinhamento mínimo para intenção")]
+        [Tooltip("Alinhamento normalizado mínimo entre a frente horizontal do Player e outro alvo para reconhecer intenção clara de troca.")]
         private float facingIntentAlignmentThreshold = 0.9f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Vantagem mínima de alinhamento frontal para superar a retenção do foco atual.")]
+        [SerializeField, Range(0f, 1f), InspectorName("Vantagem mínima de alinhamento")]
+        [Tooltip("Vantagem mínima no alinhamento frontal de outro alvo para superar a retenção do foco atual.")]
         private float facingIntentAdvantage = 0.2f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Vantagem mínima do score de outro candidato para iniciar a troca de foco.")]
+        [SerializeField, Range(0f, 1f), InspectorName("Margem de troca de foco")]
+        [Tooltip("Vantagem mínima no score relativo de outro candidato para iniciar a troca de foco.")]
         private float switchScoreMargin = 0.12f;
 
-        [SerializeField, Min(0f)]
-        [Tooltip("Tempo, em segundos, pelo qual outro candidato deve manter vantagem antes da troca.")]
+        [SerializeField, Min(0f), InspectorName("Confirmação da troca (s)")]
+        [Tooltip("Tempo pelo qual outro candidato deve manter vantagem antes de se tornar o foco. Use segundos.")]
         private float switchConfirmationSeconds = 0.15f;
 
-        [Header("Scene View")]
-        [SerializeField]
-        [Tooltip("Off oculta a seleção; Resumido mostra alcance e foco atual; Detalhado inclui a identidade estável do objeto e a mira contextual.")]
+        [Header("Visualização na Scene View")]
+        [SerializeField, InspectorName("Nível de visualização")]
+        [Tooltip("Off oculta a seleção; Resumido mostra alcance e foco; Detalhado também mostra identidade e limites angulares do volume frontal.")]
         private PegaDiagnosticVisualizationLevel selectionVisualizationLevel =
             PegaDiagnosticVisualizationLevel.Summary;
 
@@ -69,16 +73,16 @@ namespace PEGA.Selection.Player
 
         private RaycastHit[] _visibilityHits;
         private PegaPlayerObjectEntryDiscoverySource _discoverySource;
-        private PlayerActorDeclaration _playerActorDeclaration;
+        private CharacterController _characterController;
         private ScopedLogger _log;
         private PegaPlayerObjectEntryCandidate? _currentSelection;
         private PegaPlayerObjectEntryCandidate? _pendingSwitch;
         private float _pendingSwitchElapsedSeconds;
         private string _lastConfigurationDiagnostic = string.Empty;
-        private string _lastCameraDiagnostic = string.Empty;
         private bool _visibilityBufferSaturationReported;
         private bool _visibilityBufferSaturatedThisUpdate;
         private bool _visibilityQueryPerformedThisUpdate;
+        private int _lastPendingSwitchAccumulationFrame = -1;
 
         /// <summary>A seleção física atual; nula quando não há candidato elegível.</summary>
         public PegaPlayerObjectEntryCandidate? CurrentSelection => _currentSelection;
@@ -86,10 +90,31 @@ namespace PEGA.Selection.Player
         /// <summary>O alcance físico máximo da seleção, em metros.</summary>
         public float SelectionRangeMeters => selectionRangeMeters;
 
-        /// <summary>O raio de mira contextual medido em coordenadas normalizadas da viewport.</summary>
-        public float AimAssistViewportRadius => aimAssistViewportRadius;
+        /// <summary>O semiângulo horizontal do volume frontal de seleção, em graus.</summary>
+        public float SelectionHorizontalHalfAngleDegrees => selectionHorizontalHalfAngleDegrees;
+
+        /// <summary>O semiângulo vertical do volume frontal de seleção, em graus.</summary>
+        public float SelectionVerticalHalfAngleDegrees => selectionVerticalHalfAngleDegrees;
+
+        /// <summary>A margem angular aplicada somente à ocorrência já selecionada, em graus.</summary>
+        public float StickyVolumeMarginDegrees => stickyVolumeMarginDegrees;
 
 #if UNITY_EDITOR
+        /// <summary>Obtém centro e origem física da avaliação quando o corpo do Player está ativo.</summary>
+        public bool TryGetPhysicalSelectionFrame(
+            out Vector3 selectionCenter,
+            out Vector3 visibilityOrigin)
+        {
+            PegaPlayerObjectEntryDiscoverySource discoverySource = _discoverySource != null
+                ? _discoverySource
+                : GetComponent<PegaPlayerObjectEntryDiscoverySource>();
+            return TryGetPhysicalSelectionFrame(
+                discoverySource,
+                out selectionCenter,
+                out visibilityOrigin,
+                out _);
+        }
+
         public PegaDiagnosticVisualizationLevel SelectionVisualizationLevel =>
             selectionVisualizationLevel;
 #endif
@@ -97,10 +122,13 @@ namespace PEGA.Selection.Player
         /// <summary>Notifica consumidores quando a ocorrência selecionada muda ou é removida.</summary>
         public event Action<PegaPlayerObjectEntryCandidate?> SelectionChanged;
 
+        /// <summary>Notifica consumidores após avaliar a seleção física atual do Player.</summary>
+        internal event Action ContextualEvaluationCompleted;
+
         private void Awake()
         {
             _discoverySource = GetComponent<PegaPlayerObjectEntryDiscoverySource>();
-            _playerActorDeclaration = GetComponent<PlayerActorDeclaration>();
+            _characterController = GetComponent<CharacterController>();
             _visibilityHits = _initialVisibilityHits;
             _log = PegaLogging.CreateScopedLogger<PegaPlayerObjectEntrySelectionSource>(
                 LogCategory,
@@ -115,10 +143,10 @@ namespace PEGA.Selection.Player
                 return;
             }
 
-            if (_playerActorDeclaration == null)
+            if (_characterController == null)
             {
                 _log.Error(
-                    $"{nameof(PegaPlayerObjectEntrySelectionSource)} requires {nameof(PlayerActorDeclaration)} on the Player Actor root to read its bound camera.",
+                    $"{nameof(PegaPlayerObjectEntrySelectionSource)} requires {nameof(CharacterController)} on the Player Actor root for physical selection.",
                     LogFields.Field("actorRoot", gameObject.name));
                 enabled = false;
             }
@@ -129,32 +157,36 @@ namespace PEGA.Selection.Player
             ResetPendingSwitch();
         }
 
-        private void Update()
+        private void LateUpdate()
+        {
+            EvaluateSelection();
+            ContextualEvaluationCompleted?.Invoke();
+        }
+
+        private void EvaluateSelection()
         {
             _visibilityBufferSaturatedThisUpdate = false;
             _visibilityQueryPerformedThisUpdate = false;
-            if (!TryGetPlayerCamera(out Camera playerCamera, out string cameraDiagnostic))
-            {
-                ReportCameraDiagnostic(cameraDiagnostic);
-                ResetPendingSwitch();
-                PublishSelection(null, "player-camera-unavailable", 0f, 0f);
-                return;
-            }
-
-            ClearCameraDiagnostic();
             if (!TryValidateConfiguration(out string configurationDiagnostic))
             {
                 ReportConfigurationDiagnostic(configurationDiagnostic);
+                LogField[] selectionLossFields = CreateCurrentSelectionEvaluationUnavailableFields(
+                    "invalid-selection-configuration",
+                    configurationDiagnostic);
                 ResetPendingSwitch();
-                PublishSelection(null, "invalid-selection-configuration", 0f, 0f);
+                PublishSelection(null, "invalid-selection-configuration", 0f, 0f, selectionLossFields);
                 return;
             }
 
             if (!TryGetPlayerForward(out Vector3 playerForward))
             {
-                ReportConfigurationDiagnostic("Player forward direction is not finite or has no horizontal component.");
+                const string forwardDiagnostic = "Player forward direction is not finite or has no horizontal component.";
+                ReportConfigurationDiagnostic(forwardDiagnostic);
+                LogField[] selectionLossFields = CreateCurrentSelectionEvaluationUnavailableFields(
+                    "player-forward-unavailable",
+                    forwardDiagnostic);
                 ResetPendingSwitch();
-                PublishSelection(null, "player-forward-unavailable", 0f, 0f);
+                PublishSelection(null, "player-forward-unavailable", 0f, 0f, selectionLossFields);
                 return;
             }
 
@@ -163,16 +195,25 @@ namespace PEGA.Selection.Player
             PegaPlayerObjectEntryDiscoverySource discoverySource = _discoverySource;
             if (discoverySource == null || !discoverySource.isActiveAndEnabled)
             {
+                LogField[] selectionLossFields = CreateCurrentSelectionEvaluationUnavailableFields(
+                    "discovery-source-unavailable",
+                    "The discovery source is missing or inactive.");
                 ResetPendingSwitch();
-                PublishSelection(null, "discovery-source-unavailable", 0f, 0f);
+                PublishSelection(null, "discovery-source-unavailable", 0f, 0f, selectionLossFields);
                 return;
             }
 
-            Vector3 discoveryCenter = discoverySource.DiscoveryCenter;
-            if (!IsFinite(discoveryCenter))
+            if (!TryGetPhysicalSelectionFrame(
+                    discoverySource,
+                    out Vector3 discoveryCenter,
+                    out Vector3 visibilityOrigin,
+                    out string bodyDiagnostic))
             {
+                LogField[] selectionLossFields = CreateCurrentSelectionEvaluationUnavailableFields(
+                    "player-physical-body-unavailable",
+                    bodyDiagnostic);
                 ResetPendingSwitch();
-                PublishSelection(null, "player-selection-origin-unavailable", 0f, 0f);
+                PublishSelection(null, "player-physical-body-unavailable", 0f, 0f, selectionLossFields);
                 return;
             }
 
@@ -181,6 +222,12 @@ namespace PEGA.Selection.Player
             bool foundBestFacingCandidate = false;
             bool foundBestFacingBandCandidate = false;
             bool foundCurrentCandidate = false;
+            bool currentCandidateFoundInSnapshot = false;
+            bool currentCandidateRevalidationAttempted = false;
+            bool currentCandidateEvaluationAttempted = false;
+            string currentCandidateFailureReason = string.Empty;
+            PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic currentCandidateRevalidation = default;
+            CandidateEvaluationDiagnostics currentCandidateEvaluationDiagnostics = default;
             CandidateEvaluation bestCandidate = default;
             CandidateEvaluation bestFacingCandidate = default;
             CandidateEvaluation bestFacingBandCandidate = default;
@@ -191,24 +238,73 @@ namespace PEGA.Selection.Player
             {
                 PegaPlayerObjectEntryCandidate candidate = candidates[index];
                 GameObject occurrence = candidate.Occurrence;
-                if (occurrence == null ||
-                    !discoverySource.IsCurrentCandidate(candidate))
+                bool isCurrent = _currentSelection.HasValue &&
+                    IsSameOccurrence(candidate, _currentSelection.Value);
+                if (isCurrent)
+                {
+                    currentCandidateFoundInSnapshot = true;
+                }
+
+                if (occurrence == null)
+                {
+                    if (isCurrent)
+                    {
+                        currentCandidateFailureReason = "selected-occurrence-reference-unavailable";
+                    }
+
+                    continue;
+                }
+
+                bool candidateIsCurrent;
+                if (isCurrent)
+                {
+                    currentCandidateRevalidationAttempted = true;
+                    candidateIsCurrent = discoverySource.IsCurrentCandidate(
+                        candidate,
+                        out currentCandidateRevalidation);
+                    if (!candidateIsCurrent)
+                    {
+                        currentCandidateFailureReason = currentCandidateRevalidation.FailureReason;
+                    }
+                }
+                else
+                {
+                    candidateIsCurrent = discoverySource.IsCurrentCandidate(candidate);
+                }
+
+                if (!candidateIsCurrent)
                 {
                     continue;
                 }
 
-                bool isCurrent = _currentSelection.HasValue &&
-                    IsSameOccurrence(candidate, _currentSelection.Value);
+                CandidateEvaluationDiagnostics candidateEvaluationDiagnostics = default;
+                if (isCurrent)
+                {
+                    currentCandidateEvaluationAttempted = true;
+                }
+
                 if (!TryEvaluateCandidate(
                         candidate,
-                        playerCamera,
                         discoveryCenter,
+                        visibilityOrigin,
                         playerForward,
                         selectionRangeSquared,
                         isCurrent,
-                        out CandidateEvaluation evaluation))
+                        out CandidateEvaluation evaluation,
+                        out candidateEvaluationDiagnostics))
                 {
+                    if (isCurrent)
+                    {
+                        currentCandidateEvaluationDiagnostics = candidateEvaluationDiagnostics;
+                        currentCandidateFailureReason = "no-player-volume-sample-passed-all-selection-criteria";
+                    }
+
                     continue;
+                }
+
+                if (isCurrent)
+                {
+                    currentCandidateEvaluationDiagnostics = candidateEvaluationDiagnostics;
                 }
 
                 if (isCurrent)
@@ -241,6 +337,20 @@ namespace PEGA.Selection.Player
             }
 
             FlushVisibilityBufferDiagnostic();
+            LogField[] currentSelectionLossFields = _currentSelection.HasValue && !foundCurrentCandidate
+                ? CreateCurrentSelectionEligibilityLossFields(
+                    _currentSelection.Value,
+                    currentCandidateFoundInSnapshot,
+                    currentCandidateRevalidationAttempted,
+                    currentCandidateRevalidation,
+                    currentCandidateEvaluationAttempted,
+                    currentCandidateEvaluationDiagnostics,
+                    currentCandidateFailureReason,
+                    discoveryCenter,
+                    visibilityOrigin,
+                    playerForward)
+                : null;
+
             if (!foundBestCandidate)
             {
                 ResetPendingSwitch();
@@ -250,7 +360,8 @@ namespace PEGA.Selection.Player
                         ? "previous-selection-no-longer-visible-or-eligible"
                         : "no-contextual-candidate",
                     0f,
-                    0f);
+                    0f,
+                    currentSelectionLossFields);
                 return;
             }
 
@@ -263,29 +374,30 @@ namespace PEGA.Selection.Player
                         ? "previous-selection-no-longer-visible-or-eligible"
                         : "best-contextual-candidate",
                     bestCandidate.DistanceMeters,
-                    bestCandidate.Score);
+                    bestCandidate.Score,
+                    currentSelectionLossFields);
                 return;
             }
 
             CandidateEvaluation switchCandidate = bestCandidate;
             bool isPlayerFacingIntentSwitch = false;
             bool isFacingBandScoreSwitch = false;
-            bool hasDirectCameraSwitch = bestCandidate.IsDirectlyAimed &&
+            bool hasDirectPlayerForwardSwitch = bestCandidate.IsDirectlyAimed &&
                 !currentCandidate.IsDirectlyAimed &&
                 !IsSameOccurrence(bestCandidate.Candidate, currentCandidate.Candidate);
 
-            if (!hasDirectCameraSwitch && currentCandidate.IsDirectlyAimed)
+            if (!hasDirectPlayerForwardSwitch && currentCandidate.IsDirectlyAimed)
             {
                 ResetPendingSwitch();
                 PublishSelection(
                     currentCandidate.Candidate,
-                    "current-selection-directly-aimed",
+                    "current-selection-on-player-forward-axis",
                     currentCandidate.DistanceMeters,
                     currentCandidate.Score);
                 return;
             }
 
-            if (!hasDirectCameraSwitch &&
+            if (!hasDirectPlayerForwardSwitch &&
                 currentCandidate.PlayerFacingAlignment >= facingIntentAlignmentThreshold)
             {
                 if (!foundBestFacingBandCandidate ||
@@ -305,7 +417,7 @@ namespace PEGA.Selection.Player
                 isFacingBandScoreSwitch = true;
             }
 
-            if (!hasDirectCameraSwitch && !isFacingBandScoreSwitch &&
+            if (!hasDirectPlayerForwardSwitch && !isFacingBandScoreSwitch &&
                 foundBestFacingCandidate &&
                 !IsSameOccurrence(bestFacingCandidate.Candidate, currentCandidate.Candidate) &&
                 bestFacingCandidate.PlayerFacingAlignment - currentCandidate.PlayerFacingAlignment >= facingIntentAdvantage)
@@ -325,7 +437,7 @@ namespace PEGA.Selection.Player
                 return;
             }
 
-            if (!hasDirectCameraSwitch && !isPlayerFacingIntentSwitch &&
+            if (!hasDirectPlayerForwardSwitch && !isPlayerFacingIntentSwitch &&
                 !isFacingBandScoreSwitch &&
                 switchCandidate.Score + switchScoreMargin >= currentCandidate.Score)
             {
@@ -346,8 +458,8 @@ namespace PEGA.Selection.Player
                     switchCandidate.Candidate,
                     isPlayerFacingIntentSwitch
                         ? "player-facing-intent-confirmed"
-                        : hasDirectCameraSwitch
-                            ? "direct-camera-focus-confirmed"
+                        : hasDirectPlayerForwardSwitch
+                            ? "direct-player-forward-focus-confirmed"
                             : isFacingBandScoreSwitch
                                 ? "clearer-focus-within-player-facing-band-confirmed"
                                 : "clearer-contextual-focus-confirmed",
@@ -366,48 +478,308 @@ namespace PEGA.Selection.Player
         private void OnDisable()
         {
             ResetPendingSwitch();
-            PublishSelection(null, "selection-source-disabled", 0f, 0f);
+            LogField[] selectionLossFields = CreateCurrentSelectionEvaluationUnavailableFields(
+                "selection-source-disabled",
+                "The contextual selection source was disabled before another evaluation could run.");
+            PublishSelection(null, "selection-source-disabled", 0f, 0f, selectionLossFields);
         }
 
-        private bool TryGetPlayerCamera(out Camera camera, out string diagnostic)
+        private LogField[] CreateCurrentSelectionEvaluationUnavailableFields(string reason, string diagnostic)
         {
-            camera = null;
-            if (_playerActorDeclaration == null)
+            if (!_currentSelection.HasValue)
             {
-                diagnostic = $"{nameof(PlayerActorDeclaration)} is unavailable on the Player Actor root.";
+                return null;
+            }
+
+            PegaPlayerObjectEntryCandidate candidate = _currentSelection.Value;
+            bool snapshotAvailable = TryGetDiscoverySnapshotMembership(candidate, out bool snapshotContainsCandidate);
+            List<LogField> fields = CreateSelectionLossFields(
+                candidate,
+                "selection-evaluation-context-unavailable",
+                reason,
+                snapshotAvailable,
+                snapshotContainsCandidate);
+            fields.Add(LogFields.Field("recognitionRevalidationResult", "not-performed"));
+            fields.Add(LogFields.Field("recognitionRevalidationSkipReason", reason));
+            if (!string.IsNullOrWhiteSpace(diagnostic))
+            {
+                fields.Add(LogFields.Field("evaluationContextDiagnostic", diagnostic));
+            }
+
+            return fields.ToArray();
+        }
+
+        private LogField[] CreateCurrentSelectionEligibilityLossFields(
+            PegaPlayerObjectEntryCandidate candidate,
+            bool candidateFoundInSnapshot,
+            bool currentnessRevalidationAttempted,
+            PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic currentness,
+            bool candidateEvaluationAttempted,
+            CandidateEvaluationDiagnostics evaluation,
+            string failureReason,
+            Vector3 discoveryCenter,
+            Vector3 visibilityOrigin,
+            Vector3 playerForward)
+        {
+            string lossClassification;
+            if (!candidateFoundInSnapshot)
+            {
+                lossClassification = "discovery-snapshot-absent";
+                failureReason = "selected-occurrence-not-present-in-discovery-snapshot";
+            }
+            else if (!currentnessRevalidationAttempted)
+            {
+                lossClassification = "candidate-reference-unavailable-before-revalidation";
+            }
+            else if (!currentness.IsCurrent)
+            {
+                lossClassification = ClassifyCurrentnessFailure(currentness);
+                failureReason = currentness.FailureReason;
+            }
+            else if (candidateEvaluationAttempted && evaluation.RecognizedColliderCount == 0)
+            {
+                lossClassification = evaluation.RecognitionColliderRejectionCount > 0
+                    ? "recognition-revalidation-rejected-during-evaluation"
+                    : "no-recognized-collider-reached-contextual-evaluation";
+            }
+            else if (evaluation.CandidateColliderRevalidationBlockCount > 0 ||
+                     evaluation.RecognitionColliderRejectionCount > 0)
+            {
+                lossClassification = "contextual-evaluation-with-recognition-rejections";
+            }
+            else
+            {
+                lossClassification = "player-volume-geometry-or-visibility-rejected";
+            }
+
+            List<LogField> fields = CreateSelectionLossFields(
+                candidate,
+                lossClassification,
+                failureReason,
+                snapshotAvailable: true,
+                snapshotContainsCandidate: candidateFoundInSnapshot);
+            fields.Add(LogFields.Field(
+                "recognitionRevalidationResult",
+                !currentnessRevalidationAttempted
+                    ? "not-performed"
+                    : currentness.IsCurrent
+                        ? "passed"
+                        : "rejected"));
+            fields.Add(LogFields.Field(
+                "recognitionQueryExecuted",
+                currentnessRevalidationAttempted && currentness.RecognitionQueryExecuted));
+            fields.Add(LogFields.Field(
+                "recognitionQueryStatus",
+                currentness.RecognitionStatus.HasValue
+                    ? currentness.RecognitionStatus.Value.ToString()
+                    : "not-run"));
+            fields.Add(LogFields.Field("recognitionFailureReason", currentness.FailureReason));
+            fields.Add(LogFields.Field("recognitionDiagnostic", currentness.FrameworkDiagnostic));
+            fields.Add(LogFields.Field("recognitionFailureQueryExecuted", currentness.FailureRecognitionQueryExecuted));
+            fields.Add(LogFields.Field("recognitionFailureCollider", currentness.FailureColliderName));
+            fields.Add(LogFields.Field("recognitionQueryCollider", currentness.RecognitionQueryColliderName));
+            fields.Add(LogFields.Field(
+                "recognitionResultScope",
+                currentness.IsCurrent
+                    ? "matching-recognition-collider"
+                    : currentness.RecognitionQueryExecuted && !currentness.FailureRecognitionQueryExecuted
+                        ? "latest-query-from-another-rejected-collider"
+                        : currentness.RejectedRecognitionColliderCount > 1
+                        ? "last-rejected-recognition-collider"
+                        : currentness.RejectedRecognitionColliderCount == 1
+                            ? "rejected-recognition-collider"
+                            : "candidate-level-check"));
+            fields.Add(LogFields.Field(
+                "recognitionRejectedColliderCount",
+                currentness.RejectedRecognitionColliderCount));
+            fields.Add(LogFields.Field("candidateEvaluationAttempted", candidateEvaluationAttempted));
+            fields.Add(LogFields.Field("selectionCenterX", discoveryCenter.x));
+            fields.Add(LogFields.Field("selectionCenterY", discoveryCenter.y));
+            fields.Add(LogFields.Field("selectionCenterZ", discoveryCenter.z));
+            fields.Add(LogFields.Field("visibilityOriginX", visibilityOrigin.x));
+            fields.Add(LogFields.Field("visibilityOriginY", visibilityOrigin.y));
+            fields.Add(LogFields.Field("visibilityOriginZ", visibilityOrigin.z));
+            fields.Add(LogFields.Field("playerForwardX", playerForward.x));
+            fields.Add(LogFields.Field("playerForwardY", playerForward.y));
+            fields.Add(LogFields.Field("playerForwardZ", playerForward.z));
+            AddEvaluationDiagnosticFields(fields, evaluation);
+
+            return fields.ToArray();
+        }
+
+        private List<LogField> CreateSelectionLossFields(
+            PegaPlayerObjectEntryCandidate candidate,
+            string lossClassification,
+            string failureReason,
+            bool snapshotAvailable,
+            bool snapshotContainsCandidate)
+        {
+            return new List<LogField>(28)
+            {
+                LogFields.Field("lostObjectEntryId", candidate.ObjectEntryId.StableText),
+                LogFields.Field("lostOccurrenceId", candidate.OccurrenceId.ToString()),
+                LogFields.Field("lostPhysicalRoot", candidate.PhysicalRootName),
+                LogFields.Field("lossClassification", lossClassification),
+                LogFields.Field("failureReason", failureReason ?? string.Empty),
+                LogFields.Field("discoverySnapshotAvailable", snapshotAvailable),
+                LogFields.Field("discoverySnapshotContainsOccurrence", snapshotContainsCandidate),
+                LogFields.Field(
+                    "discoverySourceActiveAndEnabled",
+                    _discoverySource != null && _discoverySource.isActiveAndEnabled),
+                LogFields.Field("selectionRangeMeters", selectionRangeMeters),
+                LogFields.Field("selectionHorizontalHalfAngleDegrees", selectionHorizontalHalfAngleDegrees),
+                LogFields.Field("selectionVerticalHalfAngleDegrees", selectionVerticalHalfAngleDegrees),
+                LogFields.Field("stickyVolumeMarginDegrees", stickyVolumeMarginDegrees),
+                LogFields.Field("physicsVisibilityLayerMask", Physics.DefaultRaycastLayers),
+                LogFields.Field("physicsVisibilityTriggers", QueryTriggerInteraction.Ignore.ToString()),
+                LogFields.Field("visibilityHitBufferCapacity", _visibilityHits == null ? 0 : _visibilityHits.Length)
+            };
+        }
+
+        private bool TryGetDiscoverySnapshotMembership(
+            PegaPlayerObjectEntryCandidate candidate,
+            out bool containsCandidate)
+        {
+            containsCandidate = false;
+            PegaPlayerObjectEntryDiscoverySource discoverySource = _discoverySource;
+            if (discoverySource == null)
+            {
                 return false;
             }
 
-            if (_playerActorDeclaration.PlayerInput == null)
+            IReadOnlyList<PegaPlayerObjectEntryCandidate> candidates = discoverySource.Candidates;
+            for (int index = 0; index < candidates.Count; index++)
             {
-                diagnostic = "The current Player occurrence has no bound PlayerInput evidence yet.";
-                return false;
+                if (IsSameOccurrence(candidates[index], candidate))
+                {
+                    containsCandidate = true;
+                    break;
+                }
             }
 
-            camera = _playerActorDeclaration.PlayerInput.camera;
-            if (camera == null)
-            {
-                diagnostic = "The current PlayerInput has no camera assigned by its Player camera Output.";
-                return false;
-            }
-
-            if (!camera.isActiveAndEnabled)
-            {
-                diagnostic = "The camera assigned to this Player is not active and enabled.";
-                camera = null;
-                return false;
-            }
-
-            if (!IsPositiveFinite(camera.farClipPlane) ||
-                !IsPositiveFinite(camera.nearClipPlane))
-            {
-                diagnostic = "The camera clipping planes are invalid for contextual selection.";
-                camera = null;
-                return false;
-            }
-
-            diagnostic = string.Empty;
             return true;
+        }
+
+        private static string ClassifyCurrentnessFailure(
+            PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic currentness)
+        {
+            if (currentness.FailureRecognitionQueryExecuted &&
+                currentness.FailureReason == "framework-recognition-rejected-collider")
+            {
+                return "framework-recognition-rejected";
+            }
+
+            string failureReason = currentness.FailureReason;
+            if (failureReason == "occurrence-destroyed-or-unavailable" ||
+                failureReason == "occurrence-inactive" ||
+                failureReason == "candidate-has-no-recognition-colliders" ||
+                failureReason == "recognition-collider-destroyed-or-unavailable" ||
+                failureReason == "recognition-collider-inactive" ||
+                failureReason == "occurrence-destroyed-inactive-or-unavailable" ||
+                failureReason == "recognition-collider-not-in-candidate-snapshot" ||
+                failureReason == "recognized-object-entry-identity-changed" ||
+                failureReason == "recognized-occurrence-reference-changed")
+            {
+                return "physical-occurrence-or-collider-currentness-rejected";
+            }
+
+            return "discovery-or-player-access-currentness-rejected";
+        }
+
+        private static void AddEvaluationDiagnosticFields(
+            List<LogField> fields,
+            CandidateEvaluationDiagnostics diagnostics)
+        {
+            fields.Add(LogFields.Field("rejectionCriteria", diagnostics.BuildRejectionCriteria()));
+            fields.Add(LogFields.Field("playerVolumeRaySampleCount", diagnostics.PlayerVolumeRaySampleCount));
+            fields.Add(LogFields.Field("recognizedColliderCountDuringEvaluation", diagnostics.RecognizedColliderCount));
+            fields.Add(LogFields.Field("recognitionColliderRejectionCountDuringEvaluation", diagnostics.RecognitionColliderRejectionCount));
+            fields.Add(LogFields.Field("candidateColliderRayMissCount", diagnostics.CandidateColliderRayMissCount));
+            fields.Add(LogFields.Field("invalidTargetPointCount", diagnostics.InvalidTargetPointCount));
+            fields.Add(LogFields.Field("invalidTargetDistanceCount", diagnostics.InvalidTargetDistanceCount));
+            fields.Add(LogFields.Field("outOfRangeSampleCount", diagnostics.OutOfRangeCount));
+            fields.Add(LogFields.Field("behindPlayerSampleCount", diagnostics.BehindPlayerCount));
+            fields.Add(LogFields.Field("outsideHorizontalSelectionVolumeCount", diagnostics.OutsideHorizontalVolumeCount));
+            fields.Add(LogFields.Field("outsideVerticalSelectionVolumeCount", diagnostics.OutsideVerticalVolumeCount));
+            fields.Add(LogFields.Field("invalidVisibilityRayCount", diagnostics.InvalidVisibilityRayCount));
+            fields.Add(LogFields.Field("visibilityBlockedByColliderSampleCount", diagnostics.OccludedRayCount));
+            fields.Add(LogFields.Field("candidateColliderRevalidationBlockCount", diagnostics.CandidateColliderRevalidationBlockCount));
+            fields.Add(LogFields.Field("visibilityHitBufferSaturatedSampleCount", diagnostics.VisibilityBufferSaturatedCount));
+
+            if (diagnostics.HasFailedTargetPoint)
+            {
+                fields.Add(LogFields.Field("lastRejectedTargetPointX", diagnostics.LastFailedTargetPoint.x));
+                fields.Add(LogFields.Field("lastRejectedTargetPointY", diagnostics.LastFailedTargetPoint.y));
+                fields.Add(LogFields.Field("lastRejectedTargetPointZ", diagnostics.LastFailedTargetPoint.z));
+            }
+
+            if (diagnostics.HasTargetDistance)
+            {
+                fields.Add(LogFields.Field(
+                    "minimumEvaluatedTargetDistanceMeters",
+                    Mathf.Sqrt(diagnostics.MinimumTargetDistanceSquared)));
+            }
+
+            if (diagnostics.HasSelectionAngles)
+            {
+                fields.Add(LogFields.Field("minimumHorizontalSelectionAngleDegrees", diagnostics.MinimumHorizontalAngleDegrees));
+                fields.Add(LogFields.Field("maximumHorizontalSelectionAngleDegrees", diagnostics.MaximumHorizontalAngleDegrees));
+                fields.Add(LogFields.Field("minimumVerticalSelectionAngleDegrees", diagnostics.MinimumVerticalAngleDegrees));
+                fields.Add(LogFields.Field("maximumVerticalSelectionAngleDegrees", diagnostics.MaximumVerticalAngleDegrees));
+            }
+
+            if (diagnostics.HasPlayerFacingDot)
+            {
+                fields.Add(LogFields.Field("maximumPlayerFacingDot", diagnostics.MaximumPlayerFacingDot));
+            }
+
+            if (!string.IsNullOrEmpty(diagnostics.NearestOccludingColliderName))
+            {
+                fields.Add(LogFields.Field("nearestVisibilityBlocker", diagnostics.NearestOccludingColliderName));
+                fields.Add(LogFields.Field("nearestVisibilityBlockerEntityId", diagnostics.NearestOccludingColliderEntityId));
+                fields.Add(LogFields.Field("nearestVisibilityBlockerDistanceMeters", diagnostics.NearestOccludingDistanceMeters));
+            }
+
+            if (!string.IsNullOrEmpty(diagnostics.LastRecognitionFailureReason))
+            {
+                fields.Add(LogFields.Field("evaluationRecognitionFailureReason", diagnostics.LastRecognitionFailureReason));
+                fields.Add(LogFields.Field("evaluationRecognitionFailureQueryExecuted", diagnostics.LastRecognitionFailureQueryExecuted));
+                fields.Add(LogFields.Field("evaluationRecognitionFailureStatus", diagnostics.LastRecognitionStatus));
+                fields.Add(LogFields.Field("evaluationRecognitionDiagnostic", diagnostics.LastRecognitionDiagnostic));
+                fields.Add(LogFields.Field("evaluationRecognitionCollider", diagnostics.LastRecognitionColliderName));
+                fields.Add(LogFields.Field("evaluationRecognitionQueryCount", diagnostics.RecognitionQueryCount));
+                fields.Add(LogFields.Field("evaluationLatestRecognitionQueryStatus", diagnostics.LastRecognitionQueryStatus));
+                fields.Add(LogFields.Field("evaluationLatestRecognitionQueryDiagnostic", diagnostics.LastRecognitionQueryDiagnostic));
+                fields.Add(LogFields.Field("evaluationLatestRecognitionQueryCollider", diagnostics.LastRecognitionQueryColliderName));
+            }
+
+            if (!string.IsNullOrEmpty(diagnostics.CandidateColliderRevalidationFailureReason))
+            {
+                fields.Add(LogFields.Field(
+                    "candidateColliderRevalidationFailureReason",
+                    diagnostics.CandidateColliderRevalidationFailureReason));
+                fields.Add(LogFields.Field(
+                    "candidateColliderRevalidationFailureQueryExecuted",
+                    diagnostics.CandidateColliderRevalidationFailureQueryExecuted));
+                fields.Add(LogFields.Field(
+                    "candidateColliderRevalidationFailureStatus",
+                    diagnostics.CandidateColliderRevalidationStatus));
+                fields.Add(LogFields.Field(
+                    "candidateColliderRevalidationDiagnostic",
+                    diagnostics.CandidateColliderRevalidationDiagnostic));
+                fields.Add(LogFields.Field(
+                    "candidateColliderRevalidationQueryCount",
+                    diagnostics.CandidateColliderRevalidationQueryCount));
+                fields.Add(LogFields.Field(
+                    "candidateColliderLatestQueryStatus",
+                    diagnostics.CandidateColliderLatestQueryStatus));
+                fields.Add(LogFields.Field(
+                    "candidateColliderLatestQueryDiagnostic",
+                    diagnostics.CandidateColliderLatestQueryDiagnostic));
+                fields.Add(LogFields.Field(
+                    "candidateColliderLatestQueryCollider",
+                    diagnostics.CandidateColliderLatestQueryColliderName));
+            }
         }
 
         private bool TryValidateConfiguration(out string diagnostic)
@@ -418,17 +790,26 @@ namespace PEGA.Selection.Player
                 return false;
             }
 
-            if (!IsPositiveFinite(aimAssistViewportRadius) ||
-                aimAssistViewportRadius > 1f)
+            if (!IsNonNegativeFinite(selectionHorizontalHalfAngleDegrees) ||
+                selectionHorizontalHalfAngleDegrees > 90f)
             {
-                diagnostic = "Aim assist viewport radius must be finite and within (0, 1].";
+                diagnostic = "Horizontal selection half-angle must be finite and within [0, 90] degrees.";
                 return false;
             }
 
-            if (!IsNonNegativeFinite(stickyViewportMargin) ||
-                stickyViewportMargin > 1f)
+            if (!IsNonNegativeFinite(selectionVerticalHalfAngleDegrees) ||
+                selectionVerticalHalfAngleDegrees > 90f)
             {
-                diagnostic = "Sticky viewport margin must be finite and within [0, 1].";
+                diagnostic = "Vertical selection half-angle must be finite and within [0, 90] degrees.";
+                return false;
+            }
+
+            if (!IsNonNegativeFinite(stickyVolumeMarginDegrees) ||
+                stickyVolumeMarginDegrees > 90f ||
+                selectionHorizontalHalfAngleDegrees + stickyVolumeMarginDegrees > 90f ||
+                selectionVerticalHalfAngleDegrees + stickyVolumeMarginDegrees > 90f)
+            {
+                diagnostic = "Sticky volume margin must be finite and keep both selection half-angles within 90 degrees.";
                 return false;
             }
 
@@ -484,16 +865,63 @@ namespace PEGA.Selection.Player
             return true;
         }
 
+        private bool TryGetPhysicalSelectionFrame(
+            PegaPlayerObjectEntryDiscoverySource discoverySource,
+            out Vector3 selectionCenter,
+            out Vector3 visibilityOrigin,
+            out string diagnostic)
+        {
+            selectionCenter = default;
+            visibilityOrigin = default;
+            CharacterController controller = _characterController != null
+                ? _characterController
+                : GetComponent<CharacterController>();
+            if (controller == null || !controller.enabled || !controller.gameObject.activeInHierarchy)
+            {
+                diagnostic = "The Player CharacterController is missing, disabled or inactive.";
+                return false;
+            }
+
+            Bounds bodyBounds = controller.bounds;
+            if (!IsFinite(bodyBounds.center) ||
+                !IsFinite(bodyBounds.extents) ||
+                bodyBounds.extents.sqrMagnitude <= 0f ||
+                !IsPositiveFinite(controller.height) ||
+                !IsPositiveFinite(controller.radius))
+            {
+                diagnostic = "The Player CharacterController has no usable physical bounds.";
+                return false;
+            }
+
+            selectionCenter = discoverySource != null
+                ? discoverySource.DiscoveryCenter
+                : bodyBounds.center;
+            visibilityOrigin = bodyBounds.center + Vector3.up * (bodyBounds.extents.y * 0.75f);
+            if (!IsFinite(selectionCenter) || !IsFinite(visibilityOrigin))
+            {
+                selectionCenter = default;
+                visibilityOrigin = default;
+                diagnostic = "The current Player physical selection frame is not finite.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         private bool TryEvaluateCandidate(
             PegaPlayerObjectEntryCandidate candidate,
-            Camera camera,
             Vector3 playerCenter,
+            Vector3 visibilityOrigin,
             Vector3 playerForward,
             float selectionRangeSquared,
             bool isCurrent,
-            out CandidateEvaluation bestEvaluation)
+            out CandidateEvaluation bestEvaluation,
+            out CandidateEvaluationDiagnostics diagnostics)
         {
             bestEvaluation = default;
+            diagnostics = default;
+
             bool foundEvaluation = false;
             IReadOnlyList<Collider> recognitionColliders = candidate.RecognitionColliders;
             for (int colliderIndex = 0;
@@ -501,33 +929,102 @@ namespace PEGA.Selection.Player
                  colliderIndex++)
             {
                 Collider candidateCollider = recognitionColliders[colliderIndex];
-                if (!_discoverySource.IsCurrentRecognitionCollider(candidate, candidateCollider))
+                PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic colliderCurrentness = default;
+                bool isCurrentRecognitionCollider;
+                if (isCurrent)
                 {
+                    isCurrentRecognitionCollider = _discoverySource.IsCurrentRecognitionCollider(
+                        candidate,
+                        candidateCollider,
+                        out colliderCurrentness);
+                }
+                else
+                {
+                    isCurrentRecognitionCollider = _discoverySource.IsCurrentRecognitionCollider(
+                        candidate,
+                        candidateCollider);
+                }
+
+                if (!isCurrentRecognitionCollider)
+                {
+                    if (isCurrent)
+                    {
+                        diagnostics.RecordRecognitionColliderRejection(colliderCurrentness);
+                    }
+
                     continue;
                 }
 
-                if (TryGetProjectedViewportBounds(
-                        camera,
-                        candidateCollider.bounds,
-                        out Vector2 viewportMinimum,
-                        out Vector2 viewportMaximum))
+                if (isCurrent)
                 {
-                    for (int yIndex = 0; yIndex < ProjectedBoundsGridSize; yIndex++)
+                    diagnostics.RecognizedColliderCount++;
+                }
+
+                float maximumDirectRayDistance = selectionRangeMeters +
+                    Vector3.Distance(visibilityOrigin, playerCenter);
+                Vector3 directRayEnd = visibilityOrigin + playerForward * maximumDirectRayDistance;
+                if (TryEvaluatePlayerVolumeRay(
+                        candidate,
+                        candidateCollider,
+                        directRayEnd,
+                        visibilityOrigin,
+                        playerCenter,
+                        playerForward,
+                        selectionRangeSquared,
+                        isCurrent,
+                        isDirectlyAimed: true,
+                        out CandidateEvaluation directEvaluation,
+                        ref diagnostics) &&
+                    (!foundEvaluation || IsMoreRelevant(directEvaluation, bestEvaluation)))
+                {
+                    foundEvaluation = true;
+                    bestEvaluation = directEvaluation;
+                }
+
+                if (!TryGetPlayerLocalBounds(candidateCollider.bounds, out Vector3 localBoundsMinimum, out Vector3 localBoundsMaximum))
+                {
+                    if (isCurrent)
                     {
-                        float viewportY = GridCoordinate(yIndex, viewportMinimum.y, viewportMaximum.y);
-                        for (int xIndex = 0; xIndex < ProjectedBoundsGridSize; xIndex++)
+                        diagnostics.InvalidTargetPointCount++;
+                    }
+
+                    continue;
+                }
+
+                for (int zIndex = 0; zIndex < PlayerVolumeGridSize; zIndex++)
+                {
+                    float localZ = GridCoordinate(
+                        zIndex,
+                        PlayerVolumeGridSize,
+                        localBoundsMinimum.z,
+                        localBoundsMaximum.z);
+                    for (int yIndex = 0; yIndex < PlayerVolumeGridSize; yIndex++)
+                    {
+                        float localY = GridCoordinate(
+                            yIndex,
+                            PlayerVolumeGridSize,
+                            localBoundsMinimum.y,
+                            localBoundsMaximum.y);
+                        for (int xIndex = 0; xIndex < PlayerVolumeGridSize; xIndex++)
                         {
-                            float viewportX = GridCoordinate(xIndex, viewportMinimum.x, viewportMaximum.x);
-                            if (!TryEvaluateViewportRay(
+                            float localX = GridCoordinate(
+                                xIndex,
+                                PlayerVolumeGridSize,
+                                localBoundsMinimum.x,
+                                localBoundsMaximum.x);
+                            Vector3 samplePoint = transform.TransformPoint(new Vector3(localX, localY, localZ));
+                            if (!TryEvaluatePlayerVolumeRay(
                                     candidate,
                                     candidateCollider,
-                                    camera,
+                                    samplePoint,
+                                    visibilityOrigin,
                                     playerCenter,
                                     playerForward,
                                     selectionRangeSquared,
                                     isCurrent,
-                                    new Vector2(viewportX, viewportY),
-                                    out CandidateEvaluation evaluation))
+                                    isDirectlyAimed: false,
+                                    out CandidateEvaluation evaluation,
+                                    ref diagnostics))
                             {
                                 continue;
                             }
@@ -540,40 +1037,20 @@ namespace PEGA.Selection.Player
                         }
                     }
                 }
-
-                if (TryEvaluateViewportRay(
-                        candidate,
-                        candidateCollider,
-                        camera,
-                        playerCenter,
-                        playerForward,
-                        selectionRangeSquared,
-                        isCurrent,
-                        ViewportCenter,
-                        out CandidateEvaluation centeredEvaluation) &&
-                    (!foundEvaluation || IsMoreRelevant(centeredEvaluation, bestEvaluation)))
-                {
-                    foundEvaluation = true;
-                    bestEvaluation = centeredEvaluation;
-                }
             }
 
             return foundEvaluation;
         }
 
-        private static bool TryGetProjectedViewportBounds(
-            Camera camera,
+        private bool TryGetPlayerLocalBounds(
             Bounds worldBounds,
-            out Vector2 viewportMinimum,
-            out Vector2 viewportMaximum)
+            out Vector3 localMinimum,
+            out Vector3 localMaximum)
         {
             Vector3 boundsMinimum = worldBounds.min;
             Vector3 boundsMaximum = worldBounds.max;
-            float minimumX = float.PositiveInfinity;
-            float minimumY = float.PositiveInfinity;
-            float maximumX = float.NegativeInfinity;
-            float maximumY = float.NegativeInfinity;
-            bool foundFrontCorner = false;
+            localMinimum = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+            localMaximum = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
 
             for (int corner = 0; corner < 8; corner++)
             {
@@ -581,71 +1058,133 @@ namespace PEGA.Selection.Player
                     (corner & 1) == 0 ? boundsMinimum.x : boundsMaximum.x,
                     (corner & 2) == 0 ? boundsMinimum.y : boundsMaximum.y,
                     (corner & 4) == 0 ? boundsMinimum.z : boundsMaximum.z);
-                Vector3 viewportPoint = camera.WorldToViewportPoint(worldPoint);
-                if (!IsFinite(viewportPoint) || viewportPoint.z <= camera.nearClipPlane)
+                Vector3 localPoint = transform.InverseTransformPoint(worldPoint);
+                if (!IsFinite(localPoint))
                 {
-                    continue;
+                    localMinimum = default;
+                    localMaximum = default;
+                    return false;
                 }
 
-                foundFrontCorner = true;
-                minimumX = Mathf.Min(minimumX, viewportPoint.x);
-                minimumY = Mathf.Min(minimumY, viewportPoint.y);
-                maximumX = Mathf.Max(maximumX, viewportPoint.x);
-                maximumY = Mathf.Max(maximumY, viewportPoint.y);
+                localMinimum = Vector3.Min(localMinimum, localPoint);
+                localMaximum = Vector3.Max(localMaximum, localPoint);
             }
 
-            if (!foundFrontCorner ||
-                maximumX < 0f || minimumX > 1f ||
-                maximumY < 0f || minimumY > 1f)
+            if (!IsFinite(localMinimum) || !IsFinite(localMaximum))
             {
-                viewportMinimum = default;
-                viewportMaximum = default;
+                localMinimum = default;
+                localMaximum = default;
                 return false;
             }
 
-            viewportMinimum = new Vector2(
-                Mathf.Clamp01(minimumX),
-                Mathf.Clamp01(minimumY));
-            viewportMaximum = new Vector2(
-                Mathf.Clamp01(maximumX),
-                Mathf.Clamp01(maximumY));
-            return viewportMinimum.x <= viewportMaximum.x &&
-                   viewportMinimum.y <= viewportMaximum.y;
+            return localMinimum.x <= localMaximum.x &&
+                   localMinimum.y <= localMaximum.y &&
+                   localMinimum.z <= localMaximum.z;
         }
 
-        private bool TryEvaluateViewportRay(
+        private bool TryEvaluatePlayerVolumeRay(
             PegaPlayerObjectEntryCandidate candidate,
             Collider candidateCollider,
-            Camera camera,
+            Vector3 samplePoint,
+            Vector3 visibilityOrigin,
             Vector3 playerCenter,
             Vector3 playerForward,
             float selectionRangeSquared,
             bool isCurrent,
-            Vector2 viewportPoint,
-            out CandidateEvaluation evaluation)
+            bool isDirectlyAimed,
+            out CandidateEvaluation evaluation,
+            ref CandidateEvaluationDiagnostics diagnostics)
         {
             evaluation = default;
-            Ray viewRay = camera.ViewportPointToRay(
-                new Vector3(viewportPoint.x, viewportPoint.y, 0f));
-            if (!candidateCollider.Raycast(viewRay, out RaycastHit targetHit, camera.farClipPlane) ||
-                !IsFinite(targetHit.point))
+            if (isCurrent)
             {
+                diagnostics.PlayerVolumeRaySampleCount++;
+            }
+
+            Vector3 toSample = samplePoint - visibilityOrigin;
+            float sampleDistance = toSample.magnitude;
+            if (!IsFinite(samplePoint) || !IsFinite(sampleDistance) || sampleDistance <= 0f)
+            {
+                if (isCurrent)
+                {
+                    diagnostics.InvalidTargetPointCount++;
+                    diagnostics.RecordFailedTargetPoint(samplePoint);
+                }
+
+                return false;
+            }
+
+            Ray playerVolumeRay = new Ray(visibilityOrigin, toSample / sampleDistance);
+            if (!candidateCollider.Raycast(playerVolumeRay, out RaycastHit targetHit, sampleDistance))
+            {
+                if (isCurrent)
+                {
+                    diagnostics.CandidateColliderRayMissCount++;
+                    diagnostics.RecordFailedTargetPoint(samplePoint);
+                }
+
+                return false;
+            }
+
+            if (!IsFinite(targetHit.point))
+            {
+                if (isCurrent)
+                {
+                    diagnostics.InvalidTargetPointCount++;
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
             Vector3 toTarget = targetHit.point - playerCenter;
             float distanceSquared = toTarget.sqrMagnitude;
-            if (!IsFinite(distanceSquared) || distanceSquared > selectionRangeSquared)
+            if (!IsFinite(distanceSquared))
             {
+                if (isCurrent)
+                {
+                    diagnostics.InvalidTargetDistanceCount++;
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
+                return false;
+            }
+
+            if (isCurrent)
+            {
+                diagnostics.RecordTargetDistance(distanceSquared);
+            }
+
+            if (distanceSquared > selectionRangeSquared)
+            {
+                if (isCurrent)
+                {
+                    diagnostics.OutOfRangeCount++;
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
             Vector3 planarToTarget = toTarget;
             planarToTarget.y = 0f;
             float planarDistanceSquared = planarToTarget.sqrMagnitude;
-            if (planarDistanceSquared > 0f &&
-                Vector3.Dot(playerForward, planarToTarget / Mathf.Sqrt(planarDistanceSquared)) < 0f)
+            float playerFacingDot = planarDistanceSquared > 0f
+                ? Vector3.Dot(playerForward, planarToTarget / Mathf.Sqrt(planarDistanceSquared))
+                : 1f;
+            if (isCurrent)
             {
+                diagnostics.RecordPlayerFacingDot(playerFacingDot);
+            }
+
+            if (planarDistanceSquared > 0f && playerFacingDot < 0f)
+            {
+                if (isCurrent)
+                {
+                    diagnostics.BehindPlayerCount++;
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
@@ -655,42 +1194,86 @@ namespace PEGA.Selection.Player
                     planarToTarget / Mathf.Sqrt(planarDistanceSquared)))
                 : 1f;
 
-            Vector3 projectedTarget = camera.WorldToViewportPoint(targetHit.point);
-            if (!IsFinite(projectedTarget) ||
-                projectedTarget.z <= camera.nearClipPlane ||
-                projectedTarget.z > camera.farClipPlane)
+            float horizontalAngleDegrees = planarDistanceSquared > 0f
+                ? Vector3.Angle(playerForward, planarToTarget)
+                : 0f;
+            float planarDistance = Mathf.Sqrt(planarDistanceSquared);
+            float verticalAngleDegrees = Mathf.Atan2(
+                Mathf.Abs(toTarget.y),
+                planarDistance) * Mathf.Rad2Deg;
+            if (!IsFinite(horizontalAngleDegrees) || !IsFinite(verticalAngleDegrees))
             {
+                if (isCurrent)
+                {
+                    diagnostics.InvalidTargetDistanceCount++;
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
-            float viewportCenterDistance = Vector2.Distance(
-                new Vector2(projectedTarget.x, projectedTarget.y),
-                ViewportCenter);
-            float maximumViewportDistance = aimAssistViewportRadius +
-                (isCurrent ? stickyViewportMargin : 0f);
-            if (!IsFinite(viewportCenterDistance) ||
-                viewportCenterDistance > maximumViewportDistance)
+            if (isCurrent)
             {
+                diagnostics.RecordSelectionAngles(horizontalAngleDegrees, verticalAngleDegrees);
+            }
+
+            float maximumHorizontalAngle = selectionHorizontalHalfAngleDegrees +
+                (isCurrent ? stickyVolumeMarginDegrees : 0f);
+            float maximumVerticalAngle = selectionVerticalHalfAngleDegrees +
+                (isCurrent ? stickyVolumeMarginDegrees : 0f);
+            bool outsideHorizontalVolume = horizontalAngleDegrees > maximumHorizontalAngle;
+            bool outsideVerticalVolume = verticalAngleDegrees > maximumVerticalAngle;
+            if (outsideHorizontalVolume || outsideVerticalVolume)
+            {
+                if (isCurrent)
+                {
+                    if (outsideHorizontalVolume)
+                    {
+                        diagnostics.OutsideHorizontalVolumeCount++;
+                    }
+
+                    if (outsideVerticalVolume)
+                    {
+                        diagnostics.OutsideVerticalVolumeCount++;
+                    }
+
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
             float distanceMeters = Mathf.Sqrt(distanceSquared);
             if (!HasClearLineOfSight(
                     candidate,
-                    viewRay,
-                    targetHit.distance))
+                    playerVolumeRay,
+                    targetHit.distance,
+                    out VisibilityRejectionDiagnostic visibilityRejection))
             {
+                if (isCurrent)
+                {
+                    diagnostics.RecordVisibilityRejection(visibilityRejection);
+                    diagnostics.RecordFailedTargetPoint(targetHit.point);
+                }
+
                 return false;
             }
 
-            float normalizedViewDistance = Mathf.Clamp01(
-                viewportCenterDistance / aimAssistViewportRadius);
+            float normalizedHorizontalAngle = NormalizeSelectionAngle(
+                horizontalAngleDegrees,
+                selectionHorizontalHalfAngleDegrees);
+            float normalizedVerticalAngle = NormalizeSelectionAngle(
+                verticalAngleDegrees,
+                selectionVerticalHalfAngleDegrees);
+            float normalizedVolumeDistance = Mathf.Max(
+                normalizedHorizontalAngle,
+                normalizedVerticalAngle);
             float normalizedRangeDistance = selectionRangeMeters > 0f
                 ? Mathf.Clamp01(distanceMeters / selectionRangeMeters)
                 : 0f;
-            float cameraWeight = 1f - proximityWeight - playerFacingWeight;
+            float volumeWeight = 1f - proximityWeight - playerFacingWeight;
             float score =
-                cameraWeight * normalizedViewDistance +
+                volumeWeight * normalizedVolumeDistance +
                 proximityWeight * normalizedRangeDistance +
                 playerFacingWeight * (1f - playerFacingAlignment);
             evaluation = new CandidateEvaluation(
@@ -698,9 +1281,14 @@ namespace PEGA.Selection.Player
                 score,
                 distanceMeters,
                 playerFacingAlignment,
-                viewportCenterDistance <= 0.001f);
+                isDirectlyAimed);
             return true;
         }
+
+        private static float NormalizeSelectionAngle(float angleDegrees, float halfAngleDegrees) =>
+            halfAngleDegrees > 0f
+                ? Mathf.Clamp01(angleDegrees / halfAngleDegrees)
+                : angleDegrees <= 0f ? 0f : 1f;
 
         private static bool IsMoreRelevant(
             CandidateEvaluation candidate,
@@ -731,11 +1319,14 @@ namespace PEGA.Selection.Player
         private bool HasClearLineOfSight(
             PegaPlayerObjectEntryCandidate candidate,
             Ray viewRay,
-            float targetDistanceMeters)
+            float targetDistanceMeters,
+            out VisibilityRejectionDiagnostic rejection)
         {
+            rejection = default;
             if (!IsFinite(viewRay.origin) || !IsFinite(viewRay.direction) ||
                 !IsPositiveFinite(targetDistanceMeters))
             {
+                rejection = new VisibilityRejectionDiagnostic("invalid-visibility-ray", null, 0f, false, default);
                 return false;
             }
 
@@ -764,20 +1355,52 @@ namespace PEGA.Selection.Player
             if (hitCount >= _visibilityHits.Length)
             {
                 _visibilityBufferSaturatedThisUpdate = true;
+                rejection = new VisibilityRejectionDiagnostic(
+                    "visibility-hit-buffer-saturated",
+                    null,
+                    0f,
+                    false,
+                    default);
                 return false;
             }
 
+            bool foundBlockingHit = false;
+            float nearestBlockingDistance = float.PositiveInfinity;
+            VisibilityRejectionDiagnostic nearestBlockingRejection = default;
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 RaycastHit hit = _visibilityHits[hitIndex];
                 Collider hitCollider = hit.collider;
-                if (hitCollider == null ||
-                    hit.distance >= targetDistanceMeters - VisibilityDistanceToleranceMeters ||
-                    IsIgnoredVisibilityCollider(candidate, hitCollider))
+                if (hitCollider == null || hit.distance >= targetDistanceMeters)
                 {
                     continue;
                 }
 
+                if (IsIgnoredVisibilityCollider(
+                        candidate,
+                        hitCollider,
+                        out bool isCandidateRecognitionCollider,
+                        out PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic colliderCurrentness) ||
+                    hit.distance >= nearestBlockingDistance)
+                {
+                    continue;
+                }
+
+                foundBlockingHit = true;
+                nearestBlockingDistance = hit.distance;
+                nearestBlockingRejection = new VisibilityRejectionDiagnostic(
+                    isCandidateRecognitionCollider
+                        ? "candidate-collider-recognition-revalidation-failed"
+                        : "occluding-collider",
+                    hitCollider,
+                    hit.distance,
+                    isCandidateRecognitionCollider,
+                    colliderCurrentness);
+            }
+
+            if (foundBlockingHit)
+            {
+                rejection = nearestBlockingRejection;
                 return false;
             }
 
@@ -786,8 +1409,12 @@ namespace PEGA.Selection.Player
 
         private bool IsIgnoredVisibilityCollider(
             PegaPlayerObjectEntryCandidate candidate,
-            Collider collider)
+            Collider collider,
+            out bool isCandidateRecognitionCollider,
+            out PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic currentness)
         {
+            isCandidateRecognitionCollider = false;
+            currentness = default;
             Transform colliderTransform = collider.transform;
             if (colliderTransform == transform || colliderTransform.IsChildOf(transform))
             {
@@ -797,10 +1424,19 @@ namespace PEGA.Selection.Player
             IReadOnlyList<Collider> recognitionColliders = candidate.RecognitionColliders;
             for (int index = 0; recognitionColliders != null && index < recognitionColliders.Count; index++)
             {
-                if (object.ReferenceEquals(recognitionColliders[index], collider) &&
-                    _discoverySource.IsCurrentRecognitionCollider(candidate, collider))
+                if (object.ReferenceEquals(recognitionColliders[index], collider))
                 {
-                    return true;
+                    isCandidateRecognitionCollider = true;
+                    if (_discoverySource.IsCurrentRecognitionCollider(
+                            candidate,
+                            collider,
+                            out PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic colliderCurrentness))
+                    {
+                        currentness = colliderCurrentness;
+                        return true;
+                    }
+
+                    currentness = colliderCurrentness;
                 }
             }
 
@@ -816,6 +1452,12 @@ namespace PEGA.Selection.Player
                 _pendingSwitchElapsedSeconds = 0f;
             }
 
+            if (_lastPendingSwitchAccumulationFrame == Time.frameCount)
+            {
+                return;
+            }
+
+            _lastPendingSwitchAccumulationFrame = Time.frameCount;
             _pendingSwitchElapsedSeconds += Time.deltaTime;
         }
 
@@ -829,7 +1471,8 @@ namespace PEGA.Selection.Player
             PegaPlayerObjectEntryCandidate? selection,
             string reason,
             float distanceMeters,
-            float relevanceScore)
+            float relevanceScore,
+            LogField[] selectionLossFields = null)
         {
             PegaPlayerObjectEntryCandidate? previous = _currentSelection;
             if (SameSelection(previous, selection))
@@ -842,59 +1485,54 @@ namespace PEGA.Selection.Player
             if (selection.HasValue)
             {
                 PegaPlayerObjectEntryCandidate current = selection.Value;
+                LogField[] fields = AppendLogFields(
+                    new[]
+                    {
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("objectEntryId", current.ObjectEntryId.StableText),
+                        LogFields.Field("occurrenceId", current.OccurrenceId.ToString()),
+                        LogFields.Field("physicalRoot", current.PhysicalRootName),
+                        LogFields.Field("distanceMeters", distanceMeters),
+                        LogFields.Field("relevanceScore", relevanceScore),
+                        LogFields.Field("reason", reason)
+                    },
+                    selectionLossFields);
                 _log.Trace(
                     "Player selected a visible world Object Entry occurrence.",
-                    LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("objectEntryId", current.ObjectEntryId.StableText),
-                    LogFields.Field("occurrenceId", current.OccurrenceId.ToString()),
-                    LogFields.Field("physicalRoot", current.PhysicalRootName),
-                    LogFields.Field("distanceMeters", distanceMeters),
-                    LogFields.Field("relevanceScore", relevanceScore),
-                    LogFields.Field("reason", reason));
+                    fields);
             }
             else if (previous.HasValue)
             {
                 PegaPlayerObjectEntryCandidate prior = previous.Value;
+                LogField[] fields = AppendLogFields(
+                    new[]
+                    {
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("objectEntryId", prior.ObjectEntryId.StableText),
+                        LogFields.Field("occurrenceId", prior.OccurrenceId.ToString()),
+                        LogFields.Field("physicalRoot", prior.PhysicalRootName),
+                        LogFields.Field("reason", reason)
+                    },
+                    selectionLossFields);
                 _log.Trace(
                     "Player cleared the selected world Object Entry occurrence.",
-                    LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("objectEntryId", prior.ObjectEntryId.StableText),
-                    LogFields.Field("occurrenceId", prior.OccurrenceId.ToString()),
-                    LogFields.Field("physicalRoot", prior.PhysicalRootName),
-                    LogFields.Field("reason", reason));
+                    fields);
             }
 
             SelectionChanged?.Invoke(selection);
         }
 
-        private void ReportCameraDiagnostic(string diagnostic)
+        private static LogField[] AppendLogFields(LogField[] baseFields, LogField[] additionalFields)
         {
-            if (string.Equals(_lastCameraDiagnostic, diagnostic, StringComparison.Ordinal))
+            if (additionalFields == null || additionalFields.Length == 0)
             {
-                return;
+                return baseFields;
             }
 
-            _lastCameraDiagnostic = diagnostic;
-            _log.Warning(
-                "Player Object Entry selection is waiting for its bound camera.",
-                LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("diagnostic", diagnostic),
-                LogFields.Field("reason", "player-camera-unavailable"));
-        }
-
-        private void ClearCameraDiagnostic()
-        {
-            if (string.IsNullOrEmpty(_lastCameraDiagnostic))
-            {
-                return;
-            }
-
-            _log.Info(
-                "Player Object Entry selection camera became available again.",
-                LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("previousDiagnostic", _lastCameraDiagnostic),
-                LogFields.Field("reason", "player-camera-restored"));
-            _lastCameraDiagnostic = string.Empty;
+            LogField[] combinedFields = new LogField[baseFields.Length + additionalFields.Length];
+            Array.Copy(baseFields, combinedFields, baseFields.Length);
+            Array.Copy(additionalFields, 0, combinedFields, baseFields.Length, additionalFields.Length);
+            return combinedFields;
         }
 
         private void ReportConfigurationDiagnostic(string diagnostic)
@@ -981,14 +1619,14 @@ namespace PEGA.Selection.Player
             first.ObjectEntryId.Equals(second.ObjectEntryId) &&
             object.ReferenceEquals(first.Occurrence, second.Occurrence);
 
-        private static float GridCoordinate(int index, float minimum, float maximum)
+        private static float GridCoordinate(int index, int sampleCount, float minimum, float maximum)
         {
             if (index == 0)
             {
                 return minimum;
             }
 
-            if (index == ProjectedBoundsGridSize - 1)
+            if (index == sampleCount - 1)
             {
                 return maximum;
             }
@@ -1033,6 +1671,243 @@ namespace PEGA.Selection.Player
             internal float PlayerFacingAlignment { get; }
 
             internal bool IsDirectlyAimed { get; }
+        }
+
+        internal readonly struct VisibilityRejectionDiagnostic
+        {
+            internal VisibilityRejectionDiagnostic(
+                string reason,
+                Collider blockingCollider,
+                float blockingDistanceMeters,
+                bool isCandidateRecognitionCollider,
+                PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic candidateColliderCurrentness)
+            {
+                Reason = reason ?? string.Empty;
+                BlockingCollider = blockingCollider;
+                BlockingDistanceMeters = blockingDistanceMeters;
+                IsCandidateRecognitionCollider = isCandidateRecognitionCollider;
+                CandidateColliderCurrentness = candidateColliderCurrentness;
+            }
+
+            internal string Reason { get; }
+
+            internal Collider BlockingCollider { get; }
+
+            internal float BlockingDistanceMeters { get; }
+
+            internal bool IsCandidateRecognitionCollider { get; }
+
+            internal PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic CandidateColliderCurrentness { get; }
+        }
+
+        private struct CandidateEvaluationDiagnostics
+        {
+            internal int PlayerVolumeRaySampleCount;
+            internal int RecognizedColliderCount;
+            internal int RecognitionColliderRejectionCount;
+            internal int CandidateColliderRayMissCount;
+            internal int InvalidTargetPointCount;
+            internal int InvalidTargetDistanceCount;
+            internal int OutOfRangeCount;
+            internal int BehindPlayerCount;
+            internal int OutsideHorizontalVolumeCount;
+            internal int OutsideVerticalVolumeCount;
+            internal int InvalidVisibilityRayCount;
+            internal int OccludedRayCount;
+            internal int CandidateColliderRevalidationBlockCount;
+            internal int CandidateColliderRevalidationQueryCount;
+            internal int VisibilityBufferSaturatedCount;
+            internal bool HasFailedTargetPoint;
+            internal Vector3 LastFailedTargetPoint;
+            internal bool HasTargetDistance;
+            internal float MinimumTargetDistanceSquared;
+            internal bool HasSelectionAngles;
+            internal float MinimumHorizontalAngleDegrees;
+            internal float MaximumHorizontalAngleDegrees;
+            internal float MinimumVerticalAngleDegrees;
+            internal float MaximumVerticalAngleDegrees;
+            internal bool HasPlayerFacingDot;
+            internal float MaximumPlayerFacingDot;
+            internal string NearestOccludingColliderName;
+            internal string NearestOccludingColliderEntityId;
+            internal float NearestOccludingDistanceMeters;
+            internal string LastRecognitionFailureReason;
+            internal bool LastRecognitionFailureQueryExecuted;
+            internal string LastRecognitionStatus;
+            internal string LastRecognitionDiagnostic;
+            internal string LastRecognitionColliderName;
+            internal int RecognitionQueryCount;
+            internal string LastRecognitionQueryStatus;
+            internal string LastRecognitionQueryDiagnostic;
+            internal string LastRecognitionQueryColliderName;
+            internal string CandidateColliderRevalidationFailureReason;
+            internal bool CandidateColliderRevalidationFailureQueryExecuted;
+            internal string CandidateColliderRevalidationStatus;
+            internal string CandidateColliderRevalidationDiagnostic;
+            internal string CandidateColliderLatestQueryStatus;
+            internal string CandidateColliderLatestQueryDiagnostic;
+            internal string CandidateColliderLatestQueryColliderName;
+
+            internal void RecordRecognitionColliderRejection(
+                PegaPlayerObjectEntryDiscoverySource.CandidateCurrentnessDiagnostic currentness)
+            {
+                RecognitionColliderRejectionCount++;
+                LastRecognitionFailureReason = currentness.FailureReason;
+                LastRecognitionFailureQueryExecuted = currentness.FailureRecognitionQueryExecuted;
+                LastRecognitionStatus = currentness.RecognitionStatus.HasValue
+                    ? currentness.RecognitionStatus.Value.ToString()
+                    : "not-run";
+                LastRecognitionDiagnostic = currentness.FrameworkDiagnostic;
+                LastRecognitionColliderName = currentness.FailureColliderName;
+                if (currentness.RecognitionQueryExecuted)
+                {
+                    RecognitionQueryCount++;
+                    LastRecognitionQueryStatus = currentness.RecognitionStatus.HasValue
+                        ? currentness.RecognitionStatus.Value.ToString()
+                        : "not-run";
+                    LastRecognitionQueryDiagnostic = currentness.FrameworkDiagnostic;
+                    LastRecognitionQueryColliderName = currentness.RecognitionQueryColliderName;
+                }
+            }
+
+            internal void RecordTargetDistance(float distanceSquared)
+            {
+                if (!HasTargetDistance || distanceSquared < MinimumTargetDistanceSquared)
+                {
+                    HasTargetDistance = true;
+                    MinimumTargetDistanceSquared = distanceSquared;
+                }
+            }
+
+            internal void RecordSelectionAngles(float horizontalAngleDegrees, float verticalAngleDegrees)
+            {
+                if (!HasSelectionAngles)
+                {
+                    HasSelectionAngles = true;
+                    MinimumHorizontalAngleDegrees = horizontalAngleDegrees;
+                    MaximumHorizontalAngleDegrees = horizontalAngleDegrees;
+                    MinimumVerticalAngleDegrees = verticalAngleDegrees;
+                    MaximumVerticalAngleDegrees = verticalAngleDegrees;
+                    return;
+                }
+
+                MinimumHorizontalAngleDegrees = Mathf.Min(
+                    MinimumHorizontalAngleDegrees,
+                    horizontalAngleDegrees);
+                MaximumHorizontalAngleDegrees = Mathf.Max(
+                    MaximumHorizontalAngleDegrees,
+                    horizontalAngleDegrees);
+                MinimumVerticalAngleDegrees = Mathf.Min(
+                    MinimumVerticalAngleDegrees,
+                    verticalAngleDegrees);
+                MaximumVerticalAngleDegrees = Mathf.Max(
+                    MaximumVerticalAngleDegrees,
+                    verticalAngleDegrees);
+            }
+
+            internal void RecordPlayerFacingDot(float playerFacingDot)
+            {
+                if (!HasPlayerFacingDot || playerFacingDot > MaximumPlayerFacingDot)
+                {
+                    HasPlayerFacingDot = true;
+                    MaximumPlayerFacingDot = playerFacingDot;
+                }
+            }
+
+            internal void RecordFailedTargetPoint(Vector3 targetPoint)
+            {
+                HasFailedTargetPoint = true;
+                LastFailedTargetPoint = targetPoint;
+            }
+
+            internal void RecordVisibilityRejection(VisibilityRejectionDiagnostic rejection)
+            {
+                switch (rejection.Reason)
+                {
+                    case "invalid-visibility-ray":
+                        InvalidVisibilityRayCount++;
+                        break;
+                    case "visibility-hit-buffer-saturated":
+                        VisibilityBufferSaturatedCount++;
+                        break;
+                    case "candidate-collider-recognition-revalidation-failed":
+                        CandidateColliderRevalidationBlockCount++;
+                        CandidateColliderRevalidationFailureReason =
+                            rejection.CandidateColliderCurrentness.FailureReason;
+                        CandidateColliderRevalidationFailureQueryExecuted =
+                            rejection.CandidateColliderCurrentness.FailureRecognitionQueryExecuted;
+                        CandidateColliderRevalidationStatus = rejection.CandidateColliderCurrentness.RecognitionStatus.HasValue
+                            ? rejection.CandidateColliderCurrentness.RecognitionStatus.Value.ToString()
+                            : "not-run";
+                        CandidateColliderRevalidationDiagnostic =
+                            rejection.CandidateColliderCurrentness.FrameworkDiagnostic;
+                        if (rejection.CandidateColliderCurrentness.RecognitionQueryExecuted)
+                        {
+                            CandidateColliderRevalidationQueryCount++;
+                            CandidateColliderLatestQueryStatus =
+                                rejection.CandidateColliderCurrentness.RecognitionStatus.HasValue
+                                    ? rejection.CandidateColliderCurrentness.RecognitionStatus.Value.ToString()
+                                    : "not-run";
+                            CandidateColliderLatestQueryDiagnostic =
+                                rejection.CandidateColliderCurrentness.FrameworkDiagnostic;
+                            CandidateColliderLatestQueryColliderName =
+                                rejection.CandidateColliderCurrentness.RecognitionQueryColliderName;
+                        }
+
+                        break;
+                    case "occluding-collider":
+                        OccludedRayCount++;
+                        if (rejection.BlockingCollider != null &&
+                            (string.IsNullOrEmpty(NearestOccludingColliderName) ||
+                             rejection.BlockingDistanceMeters < NearestOccludingDistanceMeters))
+                        {
+                            NearestOccludingColliderName = rejection.BlockingCollider.name;
+                            NearestOccludingColliderEntityId = rejection.BlockingCollider.GetEntityId().ToString();
+                            NearestOccludingDistanceMeters = rejection.BlockingDistanceMeters;
+                        }
+
+                        break;
+                    default:
+                        InvalidVisibilityRayCount++;
+                        break;
+                }
+            }
+
+            internal string BuildRejectionCriteria()
+            {
+                StringBuilder criteria = new StringBuilder();
+                AppendRejectionCount(criteria, "recognition-collider", RecognitionColliderRejectionCount);
+                AppendRejectionCount(criteria, "candidate-collider-ray-miss", CandidateColliderRayMissCount);
+                AppendRejectionCount(criteria, "invalid-target-point", InvalidTargetPointCount);
+                AppendRejectionCount(criteria, "invalid-target-distance", InvalidTargetDistanceCount);
+                AppendRejectionCount(criteria, "out-of-range", OutOfRangeCount);
+                AppendRejectionCount(criteria, "behind-player", BehindPlayerCount);
+                AppendRejectionCount(criteria, "outside-horizontal-selection-volume", OutsideHorizontalVolumeCount);
+                AppendRejectionCount(criteria, "outside-vertical-selection-volume", OutsideVerticalVolumeCount);
+                AppendRejectionCount(criteria, "invalid-visibility-ray", InvalidVisibilityRayCount);
+                AppendRejectionCount(criteria, "occluding-collider", OccludedRayCount);
+                AppendRejectionCount(
+                    criteria,
+                    "candidate-collider-recognition-failed-during-visibility",
+                    CandidateColliderRevalidationBlockCount);
+                AppendRejectionCount(criteria, "visibility-hit-buffer-saturated", VisibilityBufferSaturatedCount);
+                return criteria.Length == 0 ? "no-sample-reason-recorded" : criteria.ToString();
+            }
+
+            private static void AppendRejectionCount(StringBuilder criteria, string reason, int count)
+            {
+                if (count <= 0)
+                {
+                    return;
+                }
+
+                if (criteria.Length > 0)
+                {
+                    criteria.Append(';');
+                }
+
+                criteria.Append(reason).Append('=').Append(count);
+            }
         }
     }
 }
