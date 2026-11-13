@@ -444,8 +444,8 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 |---|---|---|
 | Mover | Eixo esquerdo ou D-Pad | Movimento em todas as direções no solo. |
 | Esquivar | Botão a definir no mapeamento final | Deslocamento curto e rápido com breve janela de invulnerabilidade e cooldown. |
-| Saltar | Botão a definir no mapeamento final | Salto livre usado para mobilidade e para evitar ameaças explicitamente compatíveis com salto. |
-| Interagir / atacar | Botão contextual (`B`) | Na Preparação, abre ações/configuração do POI ou local válido; no Assalto/Fuga, executa interações operacionais ou ataque direcional quando não houver interação válida. |
+| Interagir | Botão contextual (`B`) | Exclusivo de operações contextuais disponíveis; nunca dispara ataque quando não há interação válida. |
+| Atacar | Comando independente de `B` (botão liberado pela remoção do salto; mapeamento exato a confirmar) | Ataque físico direcional, independente da seleção de um Object Entry. |
 | Soltar itens | Comando próprio a definir | Solta simultaneamente todos os itens carregados. |
 | Confirmar | Botão sul (`A`) | Confirmação em menus. |
 | Pausar | `Start` | Abre ou fecha menu de pausa. |
@@ -457,7 +457,7 @@ O GDD original usa o padrão Microsoft de controle, em que o botão sul é `A`, 
 
 Larápios possuem pelo menos dois regimes de velocidade: **velocidade de movimentação**, usada durante navegação e investigação, e **velocidade de perseguição**, usada quando sua intenção exige perseguir um portador ou fugir com um objetivo. Esses valores pertencem à mecânica de movimento do Actor e podem ser especializados pela configuração de arquétipo e por modificadores. Não existe atributo universal de Agilidade.
 
-O **movimento-base do Player** é obrigatório desde o microciclo. **Esquiva e salto** permanecem regras de gameplay deste GDD, mas sua inclusão nos recortes será justificada pela necessidade concreta da perseguição e do level design do Armazém antes do aceite do recorte afetado. Não são pré-requisitos automáticos do microciclo nem do primeiro vertical slice.
+O **movimento-base do Player** é obrigatório desde o microciclo. **Esquiva** permanece regra de gameplay deste GDD, mas sua inclusão nos recortes dependerá da necessidade concreta da perseguição e do level design do Armazém. O **salto livre foi removido do design**; obstáculos e transposições especiais não dependem de salto.
 :::
 
 ### Esquiva
@@ -468,20 +468,12 @@ O **movimento-base do Player** é obrigatório desde o microciclo. **Esquiva e s
 A esquiva não altera permanentemente a velocidade-base e não depende de Vigor ou stamina.
 :::
 
-### Salto
+### Mobilidade sem salto
 
 :::decision
-**Decisão:** o jogador possui salto livre. O salto é uma ferramenta de mobilidade e não concede invulnerabilidade.
+**Decisão (2026-11-13):** o Player não possui salto livre. Seu movimento é no solo, com esquiva quando essa capacidade estiver disponível. Obstáculos e mudanças de nível que exijam transposição são tratados por rotas ou interações especiais configuradas no cenário, não por salto.
 
-Ameaças explicitamente compatíveis podem ser evitadas pelo estado aéreo ou pela posição física do personagem — por exemplo, obstáculos baixos, ataques rasteiros ou armadilhas de solo. Ataques que alcançam o personagem no ar continuam válidos.
-
-O salto livre pode superar geometria e pequenas diferenças físicas compatíveis. Mudanças de **nível estrutural** do cenário, como atravessar uma janela para outro nível, usam transposições/interações especiais configuradas pelo cenário em vez de depender automaticamente do salto livre.
-:::
-
-:::risk
-**Risco:** salto e diferenças de altura podem gerar problemas de leitura, colisão e navegação.
-
-**Mitigação:** prototipar cedo a leitura visual do salto e separar claramente altura física local de mudanças de nível estrutural.
+A retirada do salto libera um comando próprio para **Atacar**, independente de **Interagir** (`B`). A ligação física definitiva desse comando será confirmada no mapeamento de Input do PEGA.
 :::
 
 ### Interação
@@ -492,11 +484,11 @@ A interação considera o objeto à frente do personagem, dentro de sua área v�
 - **Preparação — posição sem POI:** `B` pode abrir opções de posicionamento de itens ou instalação de equipamentos **quando o local for válido**. A colocação não cria automaticamente um POI fixo; a reação em locais sem opção válida permanece a detalhar.
 - **Assalto Ativo e Fuga Final:** `B` executa operações permitidas pelo estado do objeto: guardar/retirar itens, recolher/soltar, destravar/abrir portas, acionar armadilha ou **rearmar somente se seu tipo permitir**. **Não se instala uma nova armadilha nem incremento por padrão** nessas fases. Quando houver opções simultâneas, o menu rápido permite escolhê-las sem pausar a missão.
 - Interagir com inimigo usa seu estado: recolher um larápio incapacitado é diferente de confrontar um ativo.
-- Sem interação válida **durante Assalto ou Fuga**, `B` executa **ataque físico direcional**, conforme orientação do Player. O alvo precisa estar na região frontal e alcance válido no momento de impacto. Alcance e tolerância são configuráveis; não há seleção automática de alvo. Acertos seguem as regras de queda de itens e Capacidade de ataque × Resistência.
+- **Atacar é um comando independente**, não um fallback de `B` quando não houver interação válida. O ataque físico é direcional, conforme a orientação do Player. O alvo precisa estar na região frontal e no alcance válido no momento do impacto. Alcance e tolerância são configuráveis; não há seleção automática de alvo nem dependência do foco de interação. A confirmação do acerto é distinta de suas consequências sobre itens e incapacitação (regras de confronto).
 - Enquanto transporta um larápio, `B` o entrega e conclui a captura na área válida da prisão; fora dela, o solta. Entrar na prisão não captura automaticamente.
 - Cada interação tem cadência base de `1` segundo; o detalhamento de seleção rápida e execução deve respeitar os tempos de gameplay e não criar Pause oculto.
 
-Quantidade de alvos atingidos por golpe e parâmetros de animação permanecem pendentes, sem alterar o ataque direcional.
+Para o Player, **Interagir** continua resolvendo a operação contextual de um Object Entry; **Atacar** é uma ação separada mesmo quando há objeto selecionado. NPCs capazes de atacar decidem agir conforme seus comportamentos/GOAP; a execução física valida o impacto. Quantidade de alvos por golpe, cadência do ataque, ligação definitiva do novo botão e parâmetros de animação permanecem a detalhar, sem alterar a direção do ataque.
 
 ### Inventário, transferência e soltura de itens
 
@@ -505,7 +497,7 @@ Quantidade de alvos atingidos por golpe e parâmetros de animação permanecem p
 
 - **Inventário físico do Actor:** itens roubáveis e objetos realmente transportados permanecem vinculados ao Actor; capacidade é configurada por sua mecânica, sem atributo universal. Cada item físico ocupa uma unidade do inventário do Actor.
 - **Segurar:** pegar um item físico o coloca no inventário do Actor se houver capacidade disponível.
-- **Soltura voluntária:** um comando próprio, distinto de interagir/atacar, solta simultaneamente todos os itens físicos carregados, sem seleção individual nem arremesso por esse comando.
+- **Soltura voluntária:** um comando próprio, distinto de Interagir e de Atacar, solta simultaneamente todos os itens físicos carregados, sem seleção individual nem arremesso por esse comando.
 - **Guardar/retirar:** em **Preparação, Assalto Ativo e Fuga Final**, o Player pode selecionar itens físicos compatíveis para depositar ou retirar por interação contextual rápida, respeitando o conteúdo e a capacidade do armazenamento. Cofres e armários mantêm funções distintas; armários não concedem bônus de proteção por padrão.
 - **Capacidade insuficiente:** somente itens selecionados, válidos e que couberem são transferidos, com resolução determinística e sem duplicação; excedentes permanecem na origem. A regra anterior de depósito **automático de todos os itens elegíveis** deixa de ser o contrato geral. Um atalho de depósito em lote poderá ser avaliado em playtest.
 - **Ataque:** um ataque válido faz o alvo derrubar **todos os itens físicos** que carrega (ver seção "Posse, desejo e inversão da perseguição").
@@ -520,7 +512,7 @@ O jogador pode pegar itens físicos do chão e do armazenamento, soltá-los no c
 :::decision
 **Decisão:** transportar um larápio é uma dificuldade baseada em restrição de ações, não em redução de velocidade.
 
-Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal. Os itens que já estavam em seu inventário permanecem lá, mas sua manipulação fica bloqueada. O larápio transportado não ocupa capacidade de inventário. O Player **não pode atacar, saltar, esquivar ou usar interações comuns**; pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
+Enquanto carrega um larápio incapacitado, o jogador mantém sua velocidade normal. Os itens que já estavam em seu inventário permanecem lá, mas sua manipulação fica bloqueada. O larápio transportado não ocupa capacidade de inventário. O Player **não pode atacar, esquivar ou usar interações comuns**; pode continuar se movendo, soltar o larápio e concluir a detenção na área apropriada.
 
 O **temporizador de recuperação** do larápio conta enquanto permanece incapacitado no chão, **é suspenso durante o transporte** e **retoma o tempo restante, sem reiniciar**, se for solto antes da prisão. Transportar não equivale a capturar: somente a **entrega contextual explícita** na área válida da prisão conclui a captura, atribui o estado **Capturado** e retira definitivamente o larápio do assalto. A entrada na área, sem interação, não conclui a captura.
 
@@ -604,7 +596,7 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 :::
 
 :::decision
-**Decisão:** movimento não depende de uma ficha universal de atributos. Velocidade pertence à mecânica de movimento do Actor e é especializada por arquétipos e modificadores. Distância de esquiva, janela de invulnerabilidade, cooldown, parâmetros de salto e demais valores necessários são configurações diretas das respectivas mecânicas.
+**Decisão:** movimento não depende de uma ficha universal de atributos. Velocidade pertence à mecânica de movimento do Actor e é especializada por arquétipos e modificadores. Distância de esquiva, janela de invulnerabilidade, cooldown e demais valores necessários são configurações diretas das respectivas mecânicas.
 :::
 
 ### Estados gerais
@@ -1165,7 +1157,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 :::
 
 :::open-question
-**Escopo funcional:** alocação de esquiva e salto segundo as necessidades da perseguição e inventário concreto do Armazém por entrega, preservando o MVP.
+**Escopo funcional:** alocação de esquiva segundo a perseguição, mapeamento definitivo do comando independente Atacar e inventário concreto do Armazém por entrega, preservando o MVP. O salto livre foi removido do design.
 :::
 
 :::open-question
@@ -1256,6 +1248,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.14.2 | 2026-11-13 | Separados os comandos Interagir (`B`) e Atacar; retirado o salto livre; preservados ataque direcional e transposições contextuais. |
 | 0.14.1 | 2026-11-03 | Registrados os nomes em inglês da gangue Os Trapalhões do Crime e de seus quatro arquétipos, com convenção de nomes para assets Unity. |
 | 0.14.0 | 2026-10-25 | Referenciada a diretriz arquitetural transversal do PEGA e sua aplicação ao GOAP. |
 | 0.13.0 | 2026-10-25 | Separados Goal, Desejo, intenção e plano; consolidados planejamento por estados hipotéticos, competência decisória, estabilidade, valor informacional e tentativas legítimas conforme decisões aprovadas e ADRs GOAP. |
