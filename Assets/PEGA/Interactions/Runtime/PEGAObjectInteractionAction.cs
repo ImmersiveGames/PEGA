@@ -112,6 +112,12 @@ namespace PEGA.Interactions.Runtime
 
         protected PegaObjectInteractionRequest CurrentRequest => _request;
 
+        internal bool IsExecutingForActor(GameObject actorRoot, long executionId) =>
+            _executionStatus == PegaObjectInteractionExecutionStatus.Running &&
+            actorRoot != null &&
+            object.ReferenceEquals(_request.ActorRoot, actorRoot) &&
+            executionId > 0 && _currentExecutionId == executionId;
+
         protected abstract bool CanExecute(
             PegaObjectInteractionRequest request,
             out string diagnostic);

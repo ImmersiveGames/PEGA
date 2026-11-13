@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using Immersive.Framework.Actors;
@@ -8,7 +9,7 @@ using PEGA.GOAP;
 using UnityEngine;
 namespace PEGA.NPC.Autonomy.Planning
 {
-    public sealed class PegaObjectEntryPossessedEffect : IGoapEffect
+    public sealed class PegaObjectEntryPossessedEffect : IGoapEffect, IGoapEffectSatisfaction
     {
         public PegaObjectEntryPossessedEffect(ActorId actorId, ObjectEntryId objectEntryId)
         {
@@ -23,6 +24,40 @@ namespace PEGA.NPC.Autonomy.Planning
 
         public ActorId ActorId { get; }
         public ObjectEntryId ObjectEntryId { get; }
+
+        public GoapTruthValue EvaluateSatisfaction(IGoapStateView state)
+        {
+            if (state is IGoapHypotheticalStateView hypothetical)
+            {
+                return IsPresent(hypothetical.ObservedEffects) || IsPresent(hypothetical.ProjectedEffects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            if (state is IGoapEffectStateView effectState)
+            {
+                return IsPresent(effectState.Effects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            return GoapTruthValue.Unknown;
+        }
+
+        private bool IsPresent(IReadOnlyList<IGoapEffect> effects)
+        {
+            for (int index = 0; index < effects.Count; index++)
+            {
+                if (effects[index] is PegaObjectEntryPossessedEffect possessed &&
+                    possessed.ActorId == ActorId &&
+                    possessed.ObjectEntryId == ObjectEntryId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     internal sealed class PegaObjectEntryInteractionRangeCondition : IGoapCondition
@@ -64,13 +99,47 @@ namespace PEGA.NPC.Autonomy.Planning
 
             Vector3 hypotheticalActorPosition = _actorPosition;
             bool hasProjectedArrival = false;
-            for (int index = 0; index < effectState.Effects.Count; index++)
+            if (state is IGoapHypotheticalStateView hypothetical &&
+                _targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition)
             {
-                if (effectState.Effects[index] is PegaNpcTargetReachedEffect reached &&
-                    reached.HasTargetPosition)
+                bool hasPositionForLatestProjectedArrival = false;
+                for (int index = 0; index < hypothetical.ProjectedEffects.Count; index++)
                 {
-                    hypotheticalActorPosition = reached.TargetPosition;
+                    if (!(hypothetical.ProjectedEffects[index] is PegaNpcTargetReachedEffect reached))
+                    {
+                        continue;
+                    }
+
                     hasProjectedArrival = true;
+                    hasPositionForLatestProjectedArrival = reached.HasTargetPosition;
+                    if (reached.HasTargetPosition)
+                    {
+                        hypotheticalActorPosition = reached.TargetPosition;
+                    }
+                }
+
+                if (hasProjectedArrival && !hasPositionForLatestProjectedArrival)
+                {
+                    const string diagnostic = "The latest projected arrival has no authoritative target position for evaluating Pick Up range.";
+                    LogRangeEvaluation(
+                        GoapTruthValue.Unknown,
+                        hypotheticalActorPosition,
+                        true,
+                        float.PositiveInfinity,
+                        diagnostic);
+                    return GoapTruthValue.Unknown;
+                }
+            }
+            else
+            {
+                for (int index = 0; index < effectState.Effects.Count; index++)
+                {
+                    if (effectState.Effects[index] is PegaNpcTargetReachedEffect reached &&
+                        reached.HasTargetPosition)
+                    {
+                        hypotheticalActorPosition = reached.TargetPosition;
+                        hasProjectedArrival = true;
+                    }
                 }
             }
 

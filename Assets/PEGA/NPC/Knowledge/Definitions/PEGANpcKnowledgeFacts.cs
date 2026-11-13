@@ -21,6 +21,17 @@ namespace PEGA.NPC.Knowledge.Definitions
                 allowsDesignerAuthoredInitialFact: false);
 
         [Preserve]
+        public static readonly PegaKnowledgeFactDefinition<byte, PegaNpcPerceivedAreaPresence> UnresolvedRadialPresence =
+            new PegaKnowledgeFactDefinition<byte, PegaNpcPerceivedAreaPresence>(
+                "pega.npc.unresolved-radial-presence",
+                "Unresolved radial presence",
+                new PegaLatestEvidenceKnowledgePolicy<PegaNpcPerceivedAreaPresence>(
+                    areEqual: ArePerceivedAreaPresenceEqual,
+                    validateValue: value => value.IsValid ? string.Empty : "Unresolved radial presence evidence is invalid."),
+                address => address == 0,
+                allowsDesignerAuthoredInitialFact: false);
+
+        [Preserve]
         public static readonly PegaKnowledgeFactDefinition<ActorId, bool> IsPlayer =
             new PegaKnowledgeFactDefinition<ActorId, bool>(
                 "pega.actor.is-player",
@@ -95,9 +106,7 @@ namespace PEGA.NPC.Knowledge.Definitions
         private static bool ArePerceivedAreaPresenceEqual(
             PegaNpcPerceivedAreaPresence left,
             PegaNpcPerceivedAreaPresence right) =>
-            left.IsPresent == right.IsPresent &&
-            AreExactlyEqual(left.ObserverPosition, right.ObserverPosition) &&
-            left.PerceivedAreaRadiusMeters == right.PerceivedAreaRadiusMeters;
+            left.IsEquivalentTo(right);
 
         private static bool AreExactlyEqual(Vector3 left, Vector3 right) =>
             left.x == right.x && left.y == right.y && left.z == right.z;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
+using Immersive.Framework.ObjectEntry;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Diagnostics;
@@ -36,14 +37,26 @@ namespace PEGA.NPC.Knowledge.Individual
         [Tooltip("Raio da área em metros.")]
         private float perceivedAreaRadiusMeters;
 
+        [SerializeField, HideInInspector]
+        private long opportunitySequence;
+
+        [SerializeField, HideInInspector]
+        private PegaNpcPerceivedAreaOpportunity[] activeOpportunities;
+
         internal PegaNpcPerceivedAreaPresence(
             bool isPresent,
             Vector3 observerPosition,
-            float perceivedAreaRadiusMeters)
+            float perceivedAreaRadiusMeters,
+            long opportunitySequence = 0,
+            PegaNpcPerceivedAreaOpportunity[] activeOpportunities = null)
         {
             this.isPresent = isPresent;
             this.observerPosition = observerPosition;
             this.perceivedAreaRadiusMeters = perceivedAreaRadiusMeters;
+            this.opportunitySequence = opportunitySequence;
+            this.activeOpportunities = activeOpportunities != null
+                ? (PegaNpcPerceivedAreaOpportunity[])activeOpportunities.Clone()
+                : Array.Empty<PegaNpcPerceivedAreaOpportunity>();
         }
 
         public bool IsPresent => isPresent;
@@ -52,11 +65,139 @@ namespace PEGA.NPC.Knowledge.Individual
 
         public float PerceivedAreaRadiusMeters => perceivedAreaRadiusMeters;
 
+        /// <summary>Internal correlation for one anonymous investigation episode; it does not identify a sensed entity.</summary>
+        internal long OpportunitySequence => opportunitySequence;
+
+        internal int ActiveOpportunityCount => activeOpportunities != null ? activeOpportunities.Length : 0;
+
+        internal PegaNpcPerceivedAreaOpportunity GetActiveOpportunityAt(int index) =>
+            activeOpportunities[index];
+
+        internal bool TryGetActiveOpportunity(
+            long sequence,
+            out PegaNpcPerceivedAreaOpportunity opportunity)
+        {
+            PegaNpcPerceivedAreaOpportunity[] values =
+                activeOpportunities ?? Array.Empty<PegaNpcPerceivedAreaOpportunity>();
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (values[index].Sequence == sequence)
+                {
+                    opportunity = values[index];
+                    return true;
+                }
+            }
+
+            opportunity = default;
+            return false;
+        }
+
+        internal bool IsEquivalentTo(PegaNpcPerceivedAreaPresence other)
+        {
+            if (IsPresent != other.IsPresent ||
+                ObserverPosition.x != other.ObserverPosition.x ||
+                ObserverPosition.y != other.ObserverPosition.y ||
+                ObserverPosition.z != other.ObserverPosition.z ||
+                PerceivedAreaRadiusMeters != other.PerceivedAreaRadiusMeters ||
+                OpportunitySequence != other.OpportunitySequence ||
+                ActiveOpportunityCount != other.ActiveOpportunityCount)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < ActiveOpportunityCount; index++)
+            {
+                if (!GetActiveOpportunityAt(index).IsEquivalentTo(other.GetActiveOpportunityAt(index)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         internal bool IsValid =>
             IsFinite(ObserverPosition) &&
             !float.IsNaN(PerceivedAreaRadiusMeters) &&
             !float.IsInfinity(PerceivedAreaRadiusMeters) &&
-            PerceivedAreaRadiusMeters > 0f;
+            PerceivedAreaRadiusMeters > 0f &&
+            OpportunitySequence >= 0 &&
+            IsActiveOpportunityListValid();
+
+        private bool IsActiveOpportunityListValid()
+        {
+            PegaNpcPerceivedAreaOpportunity[] values =
+                activeOpportunities ?? Array.Empty<PegaNpcPerceivedAreaOpportunity>();
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (!values[index].IsValid)
+                {
+                    return false;
+                }
+
+                for (int otherIndex = index + 1; otherIndex < values.Length; otherIndex++)
+                {
+                    if (values[index].Sequence == values[otherIndex].Sequence)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if (OpportunitySequence > 0 && !TryGetActiveOpportunity(OpportunitySequence, out _))
+            {
+                return false;
+            }
+
+            return IsPresent || (values.Length == 0 && OpportunitySequence == 0);
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    [Serializable]
+    internal struct PegaNpcPerceivedAreaOpportunity
+    {
+        [SerializeField, HideInInspector]
+        private long sequence;
+
+        [SerializeField, HideInInspector]
+        private Vector3 observerPosition;
+
+        [SerializeField, HideInInspector]
+        private float perceivedAreaRadiusMeters;
+
+        internal PegaNpcPerceivedAreaOpportunity(
+            long sequence,
+            Vector3 observerPosition,
+            float perceivedAreaRadiusMeters)
+        {
+            this.sequence = sequence;
+            this.observerPosition = observerPosition;
+            this.perceivedAreaRadiusMeters = perceivedAreaRadiusMeters;
+        }
+
+        internal long Sequence => sequence;
+
+        internal Vector3 ObserverPosition => observerPosition;
+
+        internal float PerceivedAreaRadiusMeters => perceivedAreaRadiusMeters;
+
+        internal bool IsValid => sequence > 0 &&
+            IsFinite(observerPosition) &&
+            perceivedAreaRadiusMeters > 0f &&
+            IsFinite(perceivedAreaRadiusMeters);
+
+        internal bool IsEquivalentTo(PegaNpcPerceivedAreaOpportunity other) =>
+            Sequence == other.Sequence &&
+            ObserverPosition.x == other.ObserverPosition.x &&
+            ObserverPosition.y == other.ObserverPosition.y &&
+            ObserverPosition.z == other.ObserverPosition.z &&
+            PerceivedAreaRadiusMeters == other.PerceivedAreaRadiusMeters;
 
         private static bool IsFinite(Vector3 value) =>
             IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
@@ -234,6 +375,30 @@ namespace PEGA.NPC.Knowledge.Individual
             return new ReadOnlyCollection<ActorId>(sorted);
         }
 
+        /// <summary>Returns Object Entry identities for which this Actor has a currently known Individual position.</summary>
+        public IReadOnlyList<ObjectEntryId> GetKnownObjectEntryIds()
+        {
+            EnsureStateInitialized();
+            IReadOnlyList<PegaKnowledgeFactSnapshot<ObjectEntryId, Vector3>> facts =
+                _factStore.GetFacts(PegaObjectEntryKnowledgeFacts.Position, Time.timeAsDouble);
+            var objectEntryIds = new HashSet<ObjectEntryId>();
+            for (int index = 0; index < facts.Count; index++)
+            {
+                PegaKnowledgeFactSnapshot<ObjectEntryId, Vector3> fact = facts[index];
+                if (fact.Fact.Scope == PegaKnowledgeScope.Individual &&
+                    fact.Fact.Status == PegaKnowledgeStatus.Known &&
+                    fact.Fact.TryGetValue(out _) &&
+                    fact.Key.AddressValue.IsValid)
+                {
+                    objectEntryIds.Add(fact.Key.AddressValue);
+                }
+            }
+
+            var sorted = new List<ObjectEntryId>(objectEntryIds);
+            sorted.Sort((left, right) => string.CompareOrdinal(left.StableText, right.StableText));
+            return new ReadOnlyCollection<ObjectEntryId>(sorted);
+        }
+
         private static void AddSubjects<TValue>(
             HashSet<ActorId> target,
             IReadOnlyList<PegaKnowledgeFactSnapshot<ActorId, TValue>> facts)
@@ -287,6 +452,9 @@ namespace PEGA.NPC.Knowledge.Individual
         public PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> GetPerceivedAreaPresence() =>
             GetFact(PegaNpcKnowledgeFacts.PerceivedAreaPresence.For(0));
 
+        public PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> GetUnresolvedRadialPresence() =>
+            GetFact(PegaNpcKnowledgeFacts.UnresolvedRadialPresence.For(0));
+
         public PegaKnowledgeFact<bool> GetCharacterVisualContact(ActorId subjectActorId)
         {
             ValidateSubjectForQuery(subjectActorId);
@@ -318,6 +486,37 @@ namespace PEGA.NPC.Knowledge.Individual
                 perceivedPresence,
                 PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
         }
+
+        public PegaKnowledgeWriteResult ObserveUnresolvedRadialPresence(
+            PegaNpcPerceivedAreaPresence perceivedPresence,
+            PegaNpcEvidenceOrigin origin,
+            double observationTimeSeconds)
+        {
+            PegaKnowledgeFactKey<byte, PegaNpcPerceivedAreaPresence> key =
+                PegaNpcKnowledgeFacts.UnresolvedRadialPresence.For(0);
+            if (!TryValidateEvidence(origin, observationTimeSeconds, out string reason))
+            {
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    reason,
+                    GetUnresolvedRadialPresence());
+            }
+
+            return ObserveFact(
+                key,
+                perceivedPresence,
+                PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
+        }
+
+        public PegaKnowledgeWriteResult InvalidateUnresolvedRadialPresence(
+            PegaNpcEvidenceOrigin origin,
+            double observationTimeSeconds) =>
+            InvalidateLegacyFact(
+                PegaNpcKnowledgeFacts.UnresolvedRadialPresence.For(0),
+                origin,
+                observationTimeSeconds,
+                GetUnresolvedRadialPresence());
 
         public PegaKnowledgeWriteResult ObserveCharacterVisualContact(
             ActorId subjectActorId,

@@ -14,6 +14,12 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
 
         public bool IsAvailableOnGround => _availableOnGround && _reservationOwner == null;
 
+        internal bool IsReserved => _reservationOwner != null;
+
+        internal bool IsReservedBy(GameObject actorRoot) =>
+            _reservationOwner != null &&
+            _reservationOwner.IsExecutingForActor(actorRoot, _reservationId);
+
         public ObjectEntryId ObjectEntryId =>
             _declaration != null && _declaration.TryGetObjectEntryId(out ObjectEntryId id) ? id : default;
 

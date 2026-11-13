@@ -288,6 +288,11 @@ namespace PEGA.GOAP
                         continue;
                     }
 
+                    if (AreAllEffectsAlreadySatisfied(candidate.ActionDefinition, node.State))
+                    {
+                        continue;
+                    }
+
                     GoapHypotheticalState nextState = node.State.Project(candidate.ActionDefinition);
                     SearchNode nextNode = new SearchNode(nextState, node, candidate);
                     if (IsConditionTrue(goal.TargetCondition, nextState))
@@ -394,6 +399,11 @@ namespace PEGA.GOAP
                         continue;
                     }
 
+                    if (AreAllEffectsAlreadySatisfied(candidate.ActionDefinition, node.State))
+                    {
+                        continue;
+                    }
+
                     if (stepEvaluator != null)
                     {
                         GoapActionStepAvailability availability = stepEvaluator.EvaluateActionStep(
@@ -471,6 +481,27 @@ namespace PEGA.GOAP
             for (int index = 0; index < action.SuccessPreconditions.Count; index++)
             {
                 if (!IsConditionTrue(action.SuccessPreconditions[index], state))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool AreAllEffectsAlreadySatisfied(
+            GoapActionDefinition action,
+            IGoapStateView state)
+        {
+            if (action.Effects.Count == 0)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < action.Effects.Count; index++)
+            {
+                if (!(action.Effects[index] is IGoapEffectSatisfaction satisfaction) ||
+                    satisfaction.EvaluateSatisfaction(state) != GoapTruthValue.True)
                 {
                     return false;
                 }

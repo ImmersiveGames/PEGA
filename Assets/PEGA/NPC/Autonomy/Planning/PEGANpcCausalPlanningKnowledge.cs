@@ -97,7 +97,7 @@ namespace PEGA.NPC.Autonomy.Planning
     }
 
     /// <summary>Generic predicted arrival at a known planning Target, independent of any Desire or Goal.</summary>
-    public sealed class PegaNpcTargetReachedEffect : IGoapEffect
+    public sealed class PegaNpcTargetReachedEffect : IGoapEffect, IGoapEffectSatisfaction
     {
         public PegaNpcTargetReachedEffect(
             PegaNpcPlanningTargetId targetId,
@@ -152,6 +152,88 @@ namespace PEGA.NPC.Autonomy.Planning
         public Immersive.Framework.Actors.GroupId KnowledgeGroupId => TargetId.KnowledgeGroupId;
 
         public Immersive.Framework.ObjectEntry.ObjectEntryId ObjectEntryId => TargetId.ObjectEntryId;
+
+        public GoapTruthValue EvaluateSatisfaction(IGoapStateView state)
+        {
+            if (state is IGoapHypotheticalStateView hypothetical)
+            {
+                PegaNpcTargetReachedEffect projectedArrival = FindLatestArrival(hypothetical.ProjectedEffects);
+                if (projectedArrival != null)
+                {
+                    return DescribesSameArrival(projectedArrival)
+                        ? GoapTruthValue.True
+                        : GoapTruthValue.False;
+                }
+
+                return ContainsMatchingObservedArrival(hypothetical.ObservedEffects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            if (state is IGoapObservedStateView observed)
+            {
+                return ContainsMatchingObservedArrival(observed.ObservedEffects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            if (state is IGoapEffectStateView effectState)
+            {
+                PegaNpcTargetReachedEffect latestArrival = FindLatestArrival(effectState.Effects);
+                return latestArrival == null
+                    ? GoapTruthValue.False
+                    : DescribesSameArrival(latestArrival)
+                        ? GoapTruthValue.True
+                        : GoapTruthValue.False;
+            }
+
+            return GoapTruthValue.Unknown;
+        }
+
+        private bool ContainsMatchingObservedArrival(IReadOnlyList<IGoapEffect> effects)
+        {
+            for (int index = 0; index < effects.Count; index++)
+            {
+                if (effects[index] is PegaNpcTargetReachedEffect arrival &&
+                    DescribesSameObservedArrival(arrival))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool DescribesSameArrival(PegaNpcTargetReachedEffect other) =>
+            other != null &&
+            TargetId == other.TargetId &&
+            TargetKind == other.TargetKind &&
+            Math.Abs(EvidenceTimeSeconds - other.EvidenceTimeSeconds) <= 0.000001d &&
+            HasTargetPosition == other.HasTargetPosition &&
+            (!HasTargetPosition || TargetPosition.Equals(other.TargetPosition));
+
+        private bool DescribesSameObservedArrival(PegaNpcTargetReachedEffect other) =>
+            other != null &&
+            TargetId == other.TargetId &&
+            TargetKind == other.TargetKind &&
+            (TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition
+                ? other.EvidenceTimeSeconds <= EvidenceTimeSeconds + 0.000001d
+                : Math.Abs(EvidenceTimeSeconds - other.EvidenceTimeSeconds) <= 0.000001d) &&
+            HasTargetPosition == other.HasTargetPosition &&
+            (!HasTargetPosition || TargetPosition.Equals(other.TargetPosition));
+
+        private static PegaNpcTargetReachedEffect FindLatestArrival(IReadOnlyList<IGoapEffect> effects)
+        {
+            for (int index = effects.Count - 1; index >= 0; index--)
+            {
+                if (effects[index] is PegaNpcTargetReachedEffect arrival)
+                {
+                    return arrival;
+                }
+            }
+
+            return null;
+        }
 
         private static bool IsFinite(Vector3 value) =>
             IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);

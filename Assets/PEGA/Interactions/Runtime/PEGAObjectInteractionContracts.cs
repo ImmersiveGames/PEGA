@@ -90,6 +90,25 @@ namespace PEGA.Interactions.Runtime
         Cancelled = 40
     }
 
+    /// <summary>Resultado tipado da validação de início de uma oportunidade de Pick Up.</summary>
+    public enum PegaObjectEntryPickUpStartStatus
+    {
+        Ready = 0,
+        TemporarilyReserved = 10,
+        NoLongerOnGround = 20,
+        AlreadyInInventory = 30,
+        InventoryFull = 40,
+        OutsideInteractionRange = 50,
+        ActionAlreadyRunning = 60,
+        ActionInactive = 70,
+        NotOfferedToNpc = 80,
+        InvalidRequest = 90,
+        InvalidAuthority = 100,
+        InvalidConfiguration = 110,
+        InvalidContract = 120,
+        StartRejected = 130
+    }
+
     public interface IPegaObjectInteractionOccurrenceAuthority
     {
         bool TryValidateCurrentOccurrence(

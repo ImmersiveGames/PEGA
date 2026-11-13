@@ -30,7 +30,9 @@ namespace PEGA.NPC.Actions.Runtime
         public static PegaNpcPlanningActionId InvestigateLastKnownCharacterPosition { get; } = new PegaNpcPlanningActionId("investigate-last-known-target-position");
         public static PegaNpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PegaNpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PegaNpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PegaNpcPlanningActionId("investigate-perceived-area-presence");
+        public static PegaNpcPlanningActionId InvestigateUnresolvedRadialPresence { get; } = new PegaNpcPlanningActionId("investigate-unresolved-radial-presence");
         public static PegaNpcPlanningActionId NavigateToKnownGroupObjectEntryPosition { get; } = new PegaNpcPlanningActionId("navigate-to-known-group-object-entry-position");
+        public static PegaNpcPlanningActionId NavigateToKnownIndividualObjectEntryPosition { get; } = new PegaNpcPlanningActionId("navigate-to-known-individual-object-entry-position");
         public static PegaNpcPlanningActionId InvestigateKnownGroupPoi { get; } = new PegaNpcPlanningActionId("investigate-known-group-poi");
         public static PegaNpcPlanningActionId PickUpKnownObjectEntry { get; } = new PegaNpcPlanningActionId("pick-up-known-object-entry");
 
@@ -59,6 +61,7 @@ namespace PEGA.NPC.Actions.Runtime
         public static PegaNpcActionEffectKind ReachLocalObservationPosition { get; } = new PegaNpcActionEffectKind("reach-local-observation-position");
         public static PegaNpcActionEffectKind ReachSafeSeparationPosition { get; } = new PegaNpcActionEffectKind("reach-safe-separation-position");
         public static PegaNpcActionEffectKind ReachKnownGroupObjectEntryPosition { get; } = new PegaNpcActionEffectKind("reach-known-group-object-entry-position");
+        public static PegaNpcActionEffectKind ReachKnownIndividualObjectEntryPosition { get; } = new PegaNpcActionEffectKind("reach-known-individual-object-entry-position");
         public static PegaNpcActionEffectKind CompleteGroupPoiInvestigation { get; } = new PegaNpcActionEffectKind("complete-group-poi-investigation");
         public static PegaNpcActionEffectKind PossessObjectEntry { get; } = new PegaNpcActionEffectKind("possess-object-entry");
 
@@ -187,6 +190,7 @@ namespace PEGA.NPC.Actions.Runtime
         public static PegaNpcPlanningTargetKind LocalObservationPosition { get; } = new PegaNpcPlanningTargetKind("local-observation-position");
         public static PegaNpcPlanningTargetKind SafeSeparationPosition { get; } = new PegaNpcPlanningTargetKind("safe-separation-position");
         public static PegaNpcPlanningTargetKind GroupObjectEntryPosition { get; } = new PegaNpcPlanningTargetKind("group-object-entry-position");
+        public static PegaNpcPlanningTargetKind IndividualObjectEntryPosition { get; } = new PegaNpcPlanningTargetKind("individual-object-entry-position");
 
         public static PegaNpcPlanningTargetKind FromStableText(string stableText) =>
             string.IsNullOrWhiteSpace(stableText) ? default : new PegaNpcPlanningTargetKind(stableText.Trim());
@@ -293,6 +297,15 @@ namespace PEGA.NPC.Actions.Runtime
         bool InterruptExecution(string diagnostic);
     }
 
+    /// <summary>Reports the remaining execution cost for a currently running Action without changing its request.</summary>
+    public interface IPegaNpcRemainingExecutionCostProvider
+    {
+        bool TryGetRemainingExecutionCostSeconds(
+            long requestId,
+            out float remainingSeconds,
+            out string diagnostic);
+    }
+
     /// <summary>
     /// Supplies causal success Preconditions and Effects for an Action/known-Target application,
     /// independently of any Desire or Goal condition.
@@ -361,6 +374,12 @@ namespace PEGA.NPC.Actions.Runtime
     public interface IPegaNpcAttemptedTargetProvider
     {
         bool ShouldRecordAttemptedTarget(PegaNpcPlanningActionCandidate candidate);
+    }
+
+    /// <summary>Optionally delays a finite opportunity's attempt until its physical Effect is confirmed.</summary>
+    public interface IPegaNpcSuccessGatedAttemptedTargetProvider : IPegaNpcAttemptedTargetProvider
+    {
+        bool ShouldDeferAttemptRecordingUntilSuccessfulEffect(PegaNpcPlanningActionCandidate candidate);
     }
 
     /// <summary>Capability opcional para atualizar o destino de uma execução sem substituí-la.</summary>

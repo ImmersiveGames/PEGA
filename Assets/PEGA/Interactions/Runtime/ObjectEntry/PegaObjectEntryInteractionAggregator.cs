@@ -86,6 +86,49 @@ namespace PEGA.Interactions.Runtime.ObjectEntry
             return true;
         }
 
+        public bool TryAssessPickUpStart(
+            PegaObjectEntryPickUpAction action,
+            PegaObjectInteractionRequest request,
+            out PegaObjectEntryPickUpStartStatus status,
+            out string diagnostic)
+        {
+            status = PegaObjectEntryPickUpStartStatus.InvalidContract;
+            diagnostic = string.Empty;
+            if (action == null || action.gameObject != gameObject || !TryValidate(request, out diagnostic))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "The Pick Up assessment requires an action and request on this exact Object Entry root."
+                    : diagnostic;
+                return false;
+            }
+
+            if (request.Participant != PegaObjectInteractionParticipant.Npc ||
+                !IsOfferedTo(action, PegaObjectInteractionParticipant.Npc))
+            {
+                status = PegaObjectEntryPickUpStartStatus.NotOfferedToNpc;
+                diagnostic = "The Object Entry does not currently offer this Pick Up action to NPCs.";
+                return false;
+            }
+
+            return action.TryAssessStart(request, out status, out diagnostic);
+        }
+
+        public bool TryStart(
+            PegaObjectEntryPickUpAction action,
+            PegaObjectInteractionRequest request,
+            out long executionId,
+            out PegaObjectEntryPickUpStartStatus status,
+            out string diagnostic)
+        {
+            executionId = 0;
+            if (!TryAssessPickUpStart(action, request, out status, out diagnostic))
+            {
+                return false;
+            }
+
+            return action.TryStart(request, out executionId, out status, out diagnostic);
+        }
+
         public bool TryStart(
             PegaObjectInteractionAction action,
             PegaObjectInteractionRequest request,

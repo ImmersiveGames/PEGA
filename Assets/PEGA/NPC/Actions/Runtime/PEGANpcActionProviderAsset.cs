@@ -1,4 +1,5 @@
 using System;
+using Immersive.Framework.Actors;
 using Immersive.Foundation.Events;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
@@ -11,6 +12,7 @@ using PEGA.NPC.Goals.Conditions;
 using PEGA.NPC.Knowledge.Core;
 using PEGA.NPC.Knowledge.Definitions;
 using PEGA.NPC.Knowledge.Group;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
@@ -20,6 +22,7 @@ namespace PEGA.NPC.Actions.Runtime
     public abstract class PegaNpcActionProviderAsset : PegaNpcActionDefinitionAsset,
         IPegaNpcActionProvider,
         IPegaNpcExecutionTargetUpdater,
+        IPegaNpcRemainingExecutionCostProvider,
         IPegaNpcCausalActionStepEvaluator,
         IPegaNpcObservedEffectCheckpointValidator
     {
@@ -41,6 +44,7 @@ namespace PEGA.NPC.Actions.Runtime
         private float _executionTargetRadiusOverrideMeters;
         private bool _hasExecutionTargetRadiusOverride;
         private double _completedAtTimeSeconds;
+        private double _executionStartedAtTimeSeconds;
         private string _diagnostic = string.Empty;
 
         [NonSerialized]
@@ -172,6 +176,76 @@ namespace PEGA.NPC.Actions.Runtime
             return true;
         }
 
+        public virtual bool TryGetRemainingExecutionCostSeconds(
+            long requestId,
+            out float remainingSeconds,
+            out string diagnostic)
+        {
+            remainingSeconds = 0f;
+            diagnostic = string.Empty;
+            if (Outcome != PegaNpcActionOutcome.Running ||
+                requestId <= 0 ||
+                requestId != _executionId)
+            {
+                diagnostic = "The requested Action execution is not the current running request.";
+                return false;
+            }
+
+            float intrinsicRemaining = IntrinsicDurationSeconds;
+            if (!IsNonNegativeFinite(intrinsicRemaining))
+            {
+                diagnostic = "The Action has no finite non-negative intrinsic duration estimate.";
+                return false;
+            }
+
+            if (Contract.RequiresNavigation)
+            {
+                if (NavigationSource == null ||
+                    !NavigationSource.IsReady ||
+                    _navigationRequestId <= 0 ||
+                    !NavigationSource.TryGetSnapshot(_navigationRequestId, out PegaNpcNavigationSnapshot snapshot) ||
+                    snapshot.Outcome != PegaNpcNavigationOutcome.Running ||
+                    !NavigationSource.TryGetRemainingRouteLengthMeters(
+                        _navigationRequestId,
+                        out float currentRemainingRouteMeters,
+                        out diagnostic) ||
+                    !IsPositiveFinite(snapshot.EffectiveSpeedMetersPerSecond))
+                {
+                    if (string.IsNullOrWhiteSpace(diagnostic))
+                    {
+                        diagnostic = "The active navigation request has no current route-distance and speed estimate.";
+                    }
+
+                    return false;
+                }
+
+                float remainingRouteMeters = currentRemainingRouteMeters;
+                remainingSeconds = remainingRouteMeters / snapshot.EffectiveSpeedMetersPerSecond +
+                    intrinsicRemaining;
+                if (!IsNonNegativeFinite(remainingSeconds))
+                {
+                    remainingSeconds = 0f;
+                    diagnostic = "The active navigation request produced a non-finite remaining cost.";
+                    return false;
+                }
+
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            double elapsedSeconds = Math.Max(0d, Time.timeAsDouble - _executionStartedAtTimeSeconds);
+            remainingSeconds = Mathf.Max(0f, intrinsicRemaining - (float)elapsedSeconds);
+            if (!IsNonNegativeFinite(remainingSeconds))
+            {
+                remainingSeconds = 0f;
+                diagnostic = "The active non-navigation Action produced a non-finite remaining cost.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         public virtual float IntrinsicDurationSeconds => 0f;
 
         public abstract bool TryCreatePlanningCandidates(
@@ -203,8 +277,8 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
-            PegaNpcTargetReachedEffect reachedEffect = target.Target.TargetId.IdentityKind ==
-                PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition
+            PegaNpcTargetReachedEffect reachedEffect = IsObjectEntryPositionIdentity(
+                target.Target.TargetId.IdentityKind)
                 ? new PegaNpcTargetReachedEffect(
                     target.Target.TargetId,
                     target.Target.Kind,
@@ -374,11 +448,14 @@ namespace PEGA.NPC.Actions.Runtime
                 if (!(state.ProjectedEffects[effectIndex] is PegaNpcTargetReachedEffect reachedEffect) ||
                     !knowledge.TryGetKnownTarget(reachedEffect.TargetId, out PegaNpcGoapKnownTarget reachedTarget) ||
                     reachedTarget.Target.Kind != reachedEffect.TargetKind ||
-                    (!reachedEffect.HasTargetPosition &&
-                     reachedTarget.Target.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition) ||
+                    (IsObjectEntryPositionIdentity(reachedTarget.Target.TargetId.IdentityKind) &&
+                     !reachedEffect.HasTargetPosition) ||
                     (reachedEffect.HasTargetPosition &&
                      !reachedTarget.Target.KnownPosition.Equals(reachedEffect.TargetPosition)) ||
-                    Math.Abs(reachedTarget.Target.EvidenceTimeSeconds - reachedEffect.EvidenceTimeSeconds) > 0.000001d)
+                    !IsEffectEvidenceTimeCompatible(
+                        reachedTarget.Target.TargetId.IdentityKind,
+                        reachedTarget.Target.EvidenceTimeSeconds,
+                        reachedEffect.EvidenceTimeSeconds))
                 {
                     diagnostic = "The projected state contains Effects that the navigation evaluator cannot resolve to a legitimate known position.";
                     return false;
@@ -426,7 +503,7 @@ namespace PEGA.NPC.Actions.Runtime
                     declaredEffect.TargetKind == observedEffect.TargetKind &&
                     (declaredEffect.HasTargetPosition
                         ? declaredEffect.TargetPosition.Equals(observedEffect.TargetPosition)
-                        : observedEffect.TargetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition) &&
+                        : !IsObjectEntryPositionIdentity(observedEffect.TargetId.IdentityKind)) &&
                     Math.Abs(declaredEffect.EvidenceTimeSeconds - plan.EvidenceTimeSeconds) <= 0.000001d)
                 {
                     observedEffects = Array.AsReadOnly<IGoapEffect>(new[] { declaredEffect });
@@ -478,13 +555,23 @@ namespace PEGA.NPC.Actions.Runtime
             return delta.magnitude <= targetRadiusMeters;
         }
 
-        public bool CanPreserveObservedEffect(IGoapEffect effect) =>
-            effect is PegaNpcTargetReachedEffect reached &&
-            reached.TargetKind == Contract.TargetKind &&
-            reached.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
-            reached.TargetId.ObjectEntryId.IsValid &&
-            reached.KnowledgeGroupId.IsValid &&
-            reached.HasTargetPosition;
+        public bool CanPreserveObservedEffect(IGoapEffect effect)
+        {
+            if (!(effect is PegaNpcTargetReachedEffect reached) ||
+                reached.TargetKind != Contract.TargetKind ||
+                !reached.TargetId.ObjectEntryId.IsValid ||
+                !reached.HasTargetPosition)
+            {
+                return false;
+            }
+
+            return Contract.TargetKind == PegaNpcPlanningTargetKind.GroupObjectEntryPosition
+                ? reached.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
+                  reached.KnowledgeGroupId.IsValid
+                : Contract.TargetKind == PegaNpcPlanningTargetKind.IndividualObjectEntryPosition &&
+                  reached.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition &&
+                  reached.TargetId.KnowledgeActorId.IsValid;
+        }
 
         public bool IsObservedEffectCheckpointValid(
             IGoapEffect effect,
@@ -493,28 +580,61 @@ namespace PEGA.NPC.Actions.Runtime
             out string diagnostic)
         {
             diagnostic = string.Empty;
-            if (!(effect is PegaNpcTargetReachedEffect reached) ||
-                !CanPreserveObservedEffect(effect) ||
-                !PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader))
+            if (!(effect is PegaNpcTargetReachedEffect reached) || !CanPreserveObservedEffect(effect))
             {
-                diagnostic = "The checkpoint is not a Group-known logical Object Entry arrival or the Group reader is unavailable.";
+                diagnostic = "The checkpoint is not a typed Object Entry arrival backed by this Action's Knowledge scope.";
                 return false;
             }
 
-            PegaActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
-                reached.KnowledgeGroupId,
-                PegaObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
-                Time.timeAsDouble);
+            Vector3 knownPosition = default;
+            double currentEvidenceTimeSeconds;
+            bool isAuthorized;
+            if (Contract.TargetKind == PegaNpcPlanningTargetKind.GroupObjectEntryPosition)
+            {
+                if (!PegaPoiGroupKnowledge.TryGetReader(knowledgeState, out PegaActorGroupKnowledgeReader reader))
+                {
+                    diagnostic = "The Group position checkpoint has no composed Group Knowledge Reader.";
+                    return false;
+                }
+
+                PegaActorGroupKnowledgeReadResult<Vector3> position = reader.ReadGroupFact(
+                    reached.KnowledgeGroupId,
+                    PegaObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
+                    Time.timeAsDouble);
+                isAuthorized = position.IsAuthorized && position.Fact.Scope == PegaKnowledgeScope.Group &&
+                               position.Fact.TryGetValue(out knownPosition) && position.Fact.HasObservationTime;
+                currentEvidenceTimeSeconds = isAuthorized ? position.Fact.ObservationTimeSeconds : 0d;
+            }
+            else
+            {
+                if (!TryGetComposedIndividualKnowledge(knowledgeState, out PegaNpcKnowledgeState individualKnowledge) ||
+                    !TryGetActorId(out ActorId actorId) || reached.TargetId.KnowledgeActorId != actorId)
+                {
+                    diagnostic = "The Individual position checkpoint is not authorized by this Actor's composed Individual Knowledge and identity.";
+                    return false;
+                }
+
+                PegaKnowledgeFact<Vector3> position = individualKnowledge.ReadFact(
+                    PegaObjectEntryKnowledgeFacts.Position.For(reached.ObjectEntryId),
+                    Time.timeAsDouble);
+                isAuthorized = position.Scope == PegaKnowledgeScope.Individual &&
+                               position.TryGetValue(out knownPosition) &&
+                               position.HasObservationTime &&
+                               position.HasOrigin(PegaNpcEvidenceOrigin.Perception);
+                currentEvidenceTimeSeconds = isAuthorized ? position.ObservationTimeSeconds : 0d;
+            }
+
             Vector3 delta = actorPosition - reached.TargetPosition;
             delta.y = 0f;
-            if (!position.IsAuthorized || position.Fact.Scope != PegaKnowledgeScope.Group ||
-                !position.Fact.TryGetValue(out Vector3 knownPosition) ||
-                !position.Fact.HasObservationTime ||
+            if (!isAuthorized ||
                 !knownPosition.Equals(reached.TargetPosition) ||
-                Math.Abs(position.Fact.ObservationTimeSeconds - reached.EvidenceTimeSeconds) > 0.000001d ||
+                !IsEffectEvidenceTimeCompatible(
+                    reached.TargetId.IdentityKind,
+                    currentEvidenceTimeSeconds,
+                    reached.EvidenceTimeSeconds) ||
                 delta.magnitude > EffectiveTargetRadiusMeters)
             {
-                diagnostic = "The Group membership, known position evidence or Actor's physical arrival checkpoint is no longer current.";
+                diagnostic = "The Knowledge authority, current position evidence or Actor's physical arrival checkpoint is no longer current.";
                 return false;
             }
 
@@ -719,6 +839,7 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             Outcome = PegaNpcActionOutcome.Running;
+            _executionStartedAtTimeSeconds = Time.timeAsDouble;
             _diagnostic = string.Empty;
             _log.Debug(
                 "NPC non-navigation Action started.",
@@ -848,6 +969,7 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             Outcome = PegaNpcActionOutcome.Running;
+            _executionStartedAtTimeSeconds = Time.timeAsDouble;
             _diagnostic = string.Empty;
             _log.Debug(
                 "NPC navigation Action started.",
@@ -865,7 +987,9 @@ namespace PEGA.NPC.Actions.Runtime
             return true;
         }
 
-        protected void RejectStart(string diagnostic)
+        protected void RejectStart(
+            string diagnostic,
+            bool expectedPreconditionInvalidation = false)
         {
             if (Outcome == PegaNpcActionOutcome.Running)
             {
@@ -876,7 +1000,8 @@ namespace PEGA.NPC.Actions.Runtime
             CompleteWithoutNavigation(
                 PegaNpcActionOutcome.Invalid,
                 Vector3.zero,
-                string.IsNullOrEmpty(diagnostic) ? "Action preconditions are not satisfied." : diagnostic);
+                string.IsNullOrEmpty(diagnostic) ? "Action preconditions are not satisfied." : diagnostic,
+                expectedPreconditionInvalidation);
         }
 
         public bool CancelExecution(string diagnostic = "Action owner cancelled execution.") =>
@@ -1050,7 +1175,8 @@ namespace PEGA.NPC.Actions.Runtime
         private void CompleteWithoutNavigation(
             PegaNpcActionOutcome outcome,
             Vector3 targetPosition,
-            string diagnostic)
+            string diagnostic,
+            bool expectedPreconditionInvalidation = false)
         {
             _diagnostic = diagnostic ?? string.Empty;
             _completedAtTimeSeconds = Time.timeAsDouble;
@@ -1059,8 +1185,8 @@ namespace PEGA.NPC.Actions.Runtime
             Outcome = outcome;
             OnExecutionTerminated(outcome, _diagnostic);
             PegaNpcActionEffectDeclaration declaredEffect = DeclaredEffect;
-            _log.Error(
-                "NPC Action could not start.",
+            LogField[] fields =
+            {
                 LogFields.Field("action", GetType().Name),
                 LogFields.Field("actorRoot", ActorRoot.name),
                 LogFields.Field("result", outcome),
@@ -1071,7 +1197,17 @@ namespace PEGA.NPC.Actions.Runtime
                 LogFields.Field("targetX", targetPosition.x),
                 LogFields.Field("targetY", targetPosition.y),
                 LogFields.Field("targetZ", targetPosition.z),
-                LogFields.Field("diagnostic", _diagnostic));
+                LogFields.Field("expectedPreconditionInvalidation", expectedPreconditionInvalidation),
+                LogFields.Field("diagnostic", _diagnostic)
+            };
+            if (outcome == PegaNpcActionOutcome.Invalid && expectedPreconditionInvalidation)
+            {
+                _log.Info("NPC Action start was rejected by a current gameplay precondition.", fields);
+            }
+            else
+            {
+                _log.Error("NPC Action could not start.", fields);
+            }
             PublishTerminalOutcome(CurrentExecution);
         }
 
@@ -1132,8 +1268,74 @@ namespace PEGA.NPC.Actions.Runtime
             _executionTargetRadiusOverrideMeters = 0f;
             _hasExecutionTargetRadiusOverride = false;
             _completedAtTimeSeconds = 0d;
+            _executionStartedAtTimeSeconds = 0d;
             _diagnostic = string.Empty;
             Outcome = PegaNpcActionOutcome.NotStarted;
+        }
+
+        private static bool IsObjectEntryPositionIdentity(PegaNpcPlanningTargetIdentityKind identityKind) =>
+            identityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+            identityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition;
+
+        private static bool IsEffectEvidenceTimeCompatible(
+            PegaNpcPlanningTargetIdentityKind identityKind,
+            double currentEvidenceTimeSeconds,
+            double effectEvidenceTimeSeconds) =>
+            identityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition
+                ? currentEvidenceTimeSeconds >= effectEvidenceTimeSeconds - 0.000001d
+                : Math.Abs(currentEvidenceTimeSeconds - effectEvidenceTimeSeconds) <= 0.000001d;
+
+        private bool TryGetComposedIndividualKnowledge(
+            IGoapKnowledgeStateView composedKnowledgeState,
+            out PegaNpcKnowledgeState knowledgeState)
+        {
+            knowledgeState = null;
+            if (composedKnowledgeState == null || composedKnowledgeState.Source != GoapStateSource.KnowledgeState)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < composedKnowledgeState.Capabilities.Count; index++)
+            {
+                if (!(composedKnowledgeState.Capabilities[index] is PegaNpcKnowledgeState candidate))
+                {
+                    continue;
+                }
+
+                if (knowledgeState != null && knowledgeState != candidate)
+                {
+                    return false;
+                }
+
+                knowledgeState = candidate;
+            }
+
+            return knowledgeState != null &&
+                   knowledgeState.gameObject == ActorRoot &&
+                   knowledgeState.Scope == PegaKnowledgeScope.Individual;
+        }
+
+        private bool TryGetActorId(out ActorId actorId)
+        {
+            actorId = default;
+            ActorDeclaration declaration = ActorRoot != null
+                ? ActorRoot.GetComponent<ActorDeclaration>()
+                : null;
+            if (declaration == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                actorId = declaration.ActorId;
+                return actorId.IsValid;
+            }
+            catch (ArgumentException)
+            {
+                actorId = default;
+                return false;
+            }
         }
 
         private static bool IsFinite(Vector3 value) =>

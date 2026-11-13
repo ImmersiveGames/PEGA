@@ -31,7 +31,8 @@ namespace PEGA.NPC.Autonomy.Planning
         InvestigationSample = 20,
         CharacterSeparationDestination = 30,
         PerceivedAreaInvestigationSample = 40,
-        GroupObjectEntryPosition = 50
+        GroupObjectEntryPosition = 50,
+        IndividualObjectEntryPosition = 60
     }
 
     public enum PegaNpcPlanPurpose
@@ -58,7 +59,7 @@ namespace PEGA.NPC.Autonomy.Planning
         private readonly string _stableDataId;
         private readonly double _contactLossObservationTimeSeconds;
         private readonly int _sampleOrdinal;
-        private readonly double _presenceObservationTimeSeconds;
+        private readonly long _perceivedAreaEpisodeId;
         private readonly ObjectEntryId _objectEntryId;
         private readonly GroupId _knowledgeGroupId;
 
@@ -68,7 +69,7 @@ namespace PEGA.NPC.Autonomy.Planning
             string stableDataId,
             double contactLossObservationTimeSeconds = 0d,
             int sampleOrdinal = 0,
-            double presenceObservationTimeSeconds = 0d,
+            long perceivedAreaEpisodeId = 0,
             ObjectEntryId objectEntryId = default,
             GroupId knowledgeGroupId = default)
         {
@@ -77,7 +78,7 @@ namespace PEGA.NPC.Autonomy.Planning
             _stableDataId = stableDataId ?? string.Empty;
             _contactLossObservationTimeSeconds = contactLossObservationTimeSeconds;
             _sampleOrdinal = sampleOrdinal;
-            _presenceObservationTimeSeconds = presenceObservationTimeSeconds;
+            _perceivedAreaEpisodeId = perceivedAreaEpisodeId;
             _objectEntryId = objectEntryId;
             _knowledgeGroupId = knowledgeGroupId;
         }
@@ -94,10 +95,12 @@ namespace PEGA.NPC.Autonomy.Planning
                 _sampleOrdinal >= 0,
             PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.IsValid,
             PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
-                IsNonNegativeFinite(_presenceObservationTimeSeconds) &&
+                _perceivedAreaEpisodeId > 0 &&
                 _sampleOrdinal >= 0,
             PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
                 _objectEntryId.IsValid && _knowledgeGroupId.IsValid,
+            PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition =>
+                _objectEntryId.IsValid && _actorId.IsValid,
             _ => false
         };
 
@@ -113,13 +116,17 @@ namespace PEGA.NPC.Autonomy.Planning
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
             PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId.StableText ?? string.Empty,
             PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample => string.Concat(
-                _presenceObservationTimeSeconds.ToString("R", CultureInfo.InvariantCulture),
+                _perceivedAreaEpisodeId.ToString(CultureInfo.InvariantCulture),
                 "|",
                 _sampleOrdinal.ToString(CultureInfo.InvariantCulture)),
             PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition => string.Concat(
                 _objectEntryId.StableText ?? string.Empty,
                 "|",
                 _knowledgeGroupId.StableText ?? string.Empty),
+            PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition => string.Concat(
+                _objectEntryId.StableText ?? string.Empty,
+                "|",
+                _actorId.StableText ?? string.Empty),
             _ => string.Empty
         };
 
@@ -127,13 +134,15 @@ namespace PEGA.NPC.Autonomy.Planning
 
         internal ActorId KnownActorId => _actorId;
 
+        internal ActorId KnowledgeActorId => _actorId;
+
         internal ActorId CharacterSeparationSubjectActorId => _actorId;
 
         internal double InvestigationLossTimeSeconds => _contactLossObservationTimeSeconds;
 
         internal int InvestigationSampleOrdinal => _sampleOrdinal;
 
-        internal double PerceivedAreaEvidenceTimeSeconds => _presenceObservationTimeSeconds;
+        internal long PerceivedAreaEpisodeId => _perceivedAreaEpisodeId;
 
         internal int PerceivedAreaSampleOrdinal => _sampleOrdinal;
 
@@ -167,16 +176,16 @@ namespace PEGA.NPC.Autonomy.Planning
                 : default;
 
         internal static PegaNpcPlanningTargetId ForPerceivedAreaInvestigationSample(
-            double presenceObservationTimeSeconds,
+            long episodeId,
             int sampleOrdinal) =>
-            IsNonNegativeFinite(presenceObservationTimeSeconds) &&
+            episodeId > 0 &&
             sampleOrdinal >= 0
                 ? new PegaNpcPlanningTargetId(
                     PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample,
                     default,
                     string.Empty,
                     sampleOrdinal: sampleOrdinal,
-                    presenceObservationTimeSeconds: presenceObservationTimeSeconds)
+                    perceivedAreaEpisodeId: episodeId)
                 : default;
 
         internal static PegaNpcPlanningTargetId ForCharacterSeparationDestination(ActorId subjectActorId) =>
@@ -199,6 +208,17 @@ namespace PEGA.NPC.Autonomy.Planning
                     knowledgeGroupId: knowledgeGroupId)
                 : default;
 
+        internal static PegaNpcPlanningTargetId ForIndividualObjectEntryPosition(
+            ObjectEntryId objectEntryId,
+            ActorId knowledgeActorId) =>
+            objectEntryId.IsValid && knowledgeActorId.IsValid
+                ? new PegaNpcPlanningTargetId(
+                    PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition,
+                    knowledgeActorId,
+                    string.Empty,
+                    objectEntryId: objectEntryId)
+                : default;
+
         public bool Equals(PegaNpcPlanningTargetId other)
         {
             if (IdentityKind != other.IdentityKind)
@@ -217,11 +237,14 @@ namespace PEGA.NPC.Autonomy.Planning
                     _sampleOrdinal == other._sampleOrdinal,
                 PegaNpcPlanningTargetIdentityKind.CharacterSeparationDestination => _actorId == other._actorId,
                 PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample =>
-                    _presenceObservationTimeSeconds.Equals(other._presenceObservationTimeSeconds) &&
+                    _perceivedAreaEpisodeId == other._perceivedAreaEpisodeId &&
                     _sampleOrdinal == other._sampleOrdinal,
                 PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition =>
                     _objectEntryId == other._objectEntryId &&
                     _knowledgeGroupId == other._knowledgeGroupId,
+                PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition =>
+                    _objectEntryId == other._objectEntryId &&
+                    _actorId == other._actorId,
                 _ => false
             };
         }
@@ -239,17 +262,18 @@ namespace PEGA.NPC.Autonomy.Planning
                 {
                     bool isPerceivedAreaSample =
                         IdentityKind == PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample;
-                    double evidenceTime = isPerceivedAreaSample
-                        ? _presenceObservationTimeSeconds
-                        : _contactLossObservationTimeSeconds;
-                    long timeBits = BitConverter.DoubleToInt64Bits(evidenceTime);
                     if (!isPerceivedAreaSample)
                     {
                         hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(_actorId.StableText ?? string.Empty);
+                        long timeBits = BitConverter.DoubleToInt64Bits(_contactLossObservationTimeSeconds);
+                        hash = (hash * 397) ^ (int)timeBits;
+                        hash = (hash * 397) ^ (int)(timeBits >> 32);
+                    }
+                    else
+                    {
+                        hash = (hash * 397) ^ _perceivedAreaEpisodeId.GetHashCode();
                     }
 
-                    hash = (hash * 397) ^ (int)timeBits;
-                    hash = (hash * 397) ^ (int)(timeBits >> 32);
                     return (hash * 397) ^ _sampleOrdinal;
                 }
 
@@ -257,6 +281,12 @@ namespace PEGA.NPC.Autonomy.Planning
                 {
                     hash = (hash * 397) ^ _objectEntryId.GetHashCode();
                     return (hash * 397) ^ _knowledgeGroupId.GetHashCode();
+                }
+
+                if (IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition)
+                {
+                    hash = (hash * 397) ^ _objectEntryId.GetHashCode();
+                    return (hash * 397) ^ _actorId.GetHashCode();
                 }
 
                 return hash ^ StringComparer.Ordinal.GetHashCode(StableOrderValue);
@@ -286,9 +316,9 @@ namespace PEGA.NPC.Autonomy.Planning
 
             if (IdentityKind == PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)
             {
-                int evidenceTimeOrder = _presenceObservationTimeSeconds.CompareTo(
-                    other._presenceObservationTimeSeconds);
-                return evidenceTimeOrder != 0 ? evidenceTimeOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
+                int opportunityOrder = _perceivedAreaEpisodeId.CompareTo(
+                    other._perceivedAreaEpisodeId);
+                return opportunityOrder != 0 ? opportunityOrder : _sampleOrdinal.CompareTo(other._sampleOrdinal);
             }
 
             if (IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
@@ -299,6 +329,16 @@ namespace PEGA.NPC.Autonomy.Planning
                 return objectEntryOrder != 0
                     ? objectEntryOrder
                     : string.CompareOrdinal(_knowledgeGroupId.StableText, other._knowledgeGroupId.StableText);
+            }
+
+            if (IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition)
+            {
+                int objectEntryOrder = string.CompareOrdinal(
+                    _objectEntryId.StableText,
+                    other._objectEntryId.StableText);
+                return objectEntryOrder != 0
+                    ? objectEntryOrder
+                    : string.CompareOrdinal(_actorId.StableText, other._actorId.StableText);
             }
 
             return string.CompareOrdinal(StableOrderValue, other.StableOrderValue);
@@ -393,6 +433,18 @@ namespace PEGA.NPC.Autonomy.Planning
             double evidenceTimeSeconds) => new PegaNpcPlanningTarget(
                 PegaNpcPlanningTargetId.ForGroupObjectEntryPosition(objectEntryId, knowledgeGroupId),
                 PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
+                PegaNpcPlanningTargetProvenance.DerivedFromKnowledge,
+                knownPosition,
+                true,
+                evidenceTimeSeconds);
+
+        internal static PegaNpcPlanningTarget FromKnownIndividualObjectEntryPosition(
+            ObjectEntryId objectEntryId,
+            ActorId knowledgeActorId,
+            Vector3 knownPosition,
+            double evidenceTimeSeconds) => new PegaNpcPlanningTarget(
+                PegaNpcPlanningTargetId.ForIndividualObjectEntryPosition(objectEntryId, knowledgeActorId),
+                PegaNpcPlanningTargetKind.IndividualObjectEntryPosition,
                 PegaNpcPlanningTargetProvenance.DerivedFromKnowledge,
                 knownPosition,
                 true,
@@ -1036,6 +1088,18 @@ namespace PEGA.NPC.Autonomy.Planning
         /// this result retains the alternatives and search statuses used by the selection decision.
         /// </summary>
         public PegaNpcCausalPlanEvaluation CausalEvaluation { get; }
+
+        internal PegaNpcPlanSelectionResult WithSelectedPlan(PegaNpcPlanSnapshot selectedPlan) =>
+            new PegaNpcPlanSelectionResult(
+                IsValid,
+                ValidationMode,
+                Context,
+                _desireEvaluations,
+                _candidatePlans,
+                true,
+                selectedPlan,
+                Diagnostic,
+                CausalEvaluation);
 
         private static IReadOnlyList<T> Copy<T>(IReadOnlyList<T> values)
         {

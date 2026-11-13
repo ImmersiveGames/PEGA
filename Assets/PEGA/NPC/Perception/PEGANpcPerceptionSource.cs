@@ -8,6 +8,8 @@ using Immersive.Framework.RuntimeContent;
 using Immersive.Logging.Records;
 using ImmersiveGames.Perception;
 using PEGA.Diagnostics;
+using PEGA.Interactions.Runtime;
+using PEGA.Interactions.Runtime.ObjectEntry;
 using PEGA.NPC.Actions.Runtime;
 using PEGA.NPC.Autonomy.Planning;
 using PEGA.NPC.Knowledge.Core;
@@ -66,13 +68,30 @@ namespace PEGA.NPC.Perception
             public ActorOccurrenceId OccurrenceId { get; }
         }
 
+        private readonly struct ResolvedCandidateIdentity
+        {
+            public ResolvedCandidateIdentity(
+                ActorId actorId,
+                ActorOccurrenceId actorOccurrenceId,
+                ObjectEntryId objectEntryId)
+            {
+                ActorId = actorId;
+                ActorOccurrenceId = actorOccurrenceId;
+                ObjectEntryId = objectEntryId;
+            }
+
+            public ActorId ActorId { get; }
+            public ActorOccurrenceId ActorOccurrenceId { get; }
+            public ObjectEntryId ObjectEntryId { get; }
+        }
+
         [Header("Gameplay Sensor Roles")]
         [SerializeField]
-        [Tooltip("Instância radial que atualiza somente presença anônima no Knowledge State.")]
+        [Tooltip("Instância radial que descobre Object Entries e mantém presença anônima apenas para candidatos ainda sem identidade reconhecida.")]
         private PerceptionSensorInstance perceivedAreaSensorInstance;
 
         [SerializeField]
-        [Tooltip("Instância visual que atualiza contato e, quando positiva, identidade e posição.")]
+        [Tooltip("Instância visual que atualiza contato e identidade de personagens; também pode observar Object Entries.")]
         private PerceptionSensorInstance visionConeSensorInstance;
 
         [Header("Lost Target")]
@@ -151,6 +170,45 @@ namespace PEGA.NPC.Perception
         [System.NonSerialized]
         private readonly Dictionary<Collider, string> _candidateRecognitionLogStates =
             new Dictionary<Collider, string>();
+
+        [System.NonSerialized]
+        private readonly Dictionary<Transform, ResolvedCandidateIdentity> _resolvedCandidateRoots =
+            new Dictionary<Transform, ResolvedCandidateIdentity>();
+
+        [System.NonSerialized]
+        private readonly Dictionary<Collider, string> _objectEntryOpportunityLogStates =
+            new Dictionary<Collider, string>();
+
+        [System.NonSerialized]
+        private string _lastMissingPhysicalColliderDetectionState;
+
+        [System.NonSerialized]
+        private readonly Dictionary<Collider, long> _radialOpportunitySequencesByCollider =
+            new Dictionary<Collider, long>();
+
+        [System.NonSerialized]
+        private readonly Dictionary<ActorOccurrenceId, long> _radialOpportunitySequencesByOccurrence =
+            new Dictionary<ActorOccurrenceId, long>();
+
+        [System.NonSerialized]
+        private readonly Dictionary<long, PegaNpcPerceivedAreaOpportunity> _radialOpportunityEpisodesBySequence =
+            new Dictionary<long, PegaNpcPerceivedAreaOpportunity>();
+
+        [System.NonSerialized]
+        private readonly HashSet<Collider> _unresolvedCollidersThisSample = new HashSet<Collider>();
+
+        [System.NonSerialized]
+        private readonly HashSet<ActorOccurrenceId> _unresolvedOccurrencesThisSample =
+            new HashSet<ActorOccurrenceId>();
+
+        [System.NonSerialized]
+        private long _nextRadialOpportunitySequence;
+
+        [System.NonSerialized]
+        private long _unboundRadialOpportunitySequence;
+
+        [System.NonSerialized]
+        private bool _hasUnboundUnresolvedCandidateThisSample;
 
         [System.NonSerialized]
         private readonly HashSet<Collider> _candidateCollidersThisSample = new HashSet<Collider>();
@@ -821,6 +879,8 @@ namespace PEGA.NPC.Perception
             bool visualWasSampled = ContainsSensorInstance(sampledSensorInstances, visionConeSensorInstance);
             bool hasRadialPositive = false;
             bool allRadialCandidatesUsable = true;
+            int unresolvedRadialCandidateCount = 0;
+            int resolvedRadialCandidateCount = 0;
             bool hasFocus = false;
             bool focusIsPlayer = false;
             float focusDistance = float.PositiveInfinity;
@@ -833,12 +893,23 @@ namespace PEGA.NPC.Perception
             var positiveActorPositions = new Dictionary<ActorId, Vector3>();
             var objectEntryRoots = new Dictionary<ObjectEntryId, GameObject>();
             var ambiguousObjectEntryIds = new HashSet<ObjectEntryId>();
+            var radiallyConfirmedObjectEntryIds = new HashSet<ObjectEntryId>();
+            var visuallyConfirmedObjectEntryIds = new HashSet<ObjectEntryId>();
+            var objectEntryEvidenceColliders = new Dictionary<ObjectEntryId, Collider>();
+            _unresolvedCollidersThisSample.Clear();
+            _unresolvedOccurrencesThisSample.Clear();
+            _hasUnboundUnresolvedCandidateThisSample = false;
+            long unresolvedRadialOpportunitySequence = 0;
+            bool hasExplicitRadialResolution = false;
 #if UNITY_EDITOR
             var candidateIdentityRecognized = new bool[acquisition.Candidates.Count];
             var candidateIdentitySummaries = new string[acquisition.Candidates.Count];
             var candidateIdentityDiagnostics = new string[acquisition.Candidates.Count];
 #endif
             _candidateCollidersThisSample.Clear();
+            int radialOnlyDetectionsWithoutCollider = 0;
+            int visualOnlyDetectionsWithoutCollider = 0;
+            int combinedDetectionsWithoutCollider = 0;
             for (int candidateIndex = 0; candidateIndex < acquisition.Candidates.Count; candidateIndex++)
             {
                 PerceptionCandidate candidate = acquisition.Candidates[candidateIndex];
@@ -889,6 +960,38 @@ namespace PEGA.NPC.Perception
                 }
 
                 ActorOccurrenceReference? externalActorReference = GetExternalActorReference(candidate);
+                NearestFrameworkDeclarations candidateDeclarations = default;
+                bool hasCandidateDeclarations = physicalCollider != null &&
+                    TryGetNearestFrameworkDeclarations(physicalCollider, out candidateDeclarations);
+                Transform candidateRoot = hasCandidateDeclarations
+                    ? candidateDeclarations.Root
+                    : null;
+                GetPreviouslyRecognizedCandidateIdentity(
+                    candidateRoot,
+                    candidateDeclarations,
+                    externalActorReference,
+                    out bool actorIdentityResolved,
+                    out bool objectEntryIdentityResolved);
+                bool candidateHasActorIdentity = externalActorReference.HasValue ||
+                    candidateDeclarations.HasValidActorDeclaration;
+                bool radialDetected = hasRadialObservation && radialObservation.IsDetected;
+                bool visualDetected = hasVisionObservation && visionObservation.IsDetected;
+                if (physicalCollider == null && (radialDetected || visualDetected))
+                {
+                    if (radialDetected && visualDetected)
+                    {
+                        combinedDetectionsWithoutCollider++;
+                    }
+                    else if (radialDetected)
+                    {
+                        radialOnlyDetectionsWithoutCollider++;
+                    }
+                    else
+                    {
+                        visualOnlyDetectionsWithoutCollider++;
+                    }
+                }
+
                 bool isPlayerCandidate = externalActorReference.HasValue &&
                                          externalActorReference.Value.PlayerSlotId.IsValid &&
                                          playerOccurrence.HasValue &&
@@ -922,25 +1025,108 @@ namespace PEGA.NPC.Perception
                     focusHasVisionObservation = hasVisionObservation;
                 }
 
-                if (physicalCollider != null &&
-                    hasRadialObservation &&
-                    radialObservation.IsDetected &&
-                    (!hasVisionObservation || !visionObservation.IsDetected))
+                ObjectEntryId objectEntryId = default;
+                GameObject objectEntryRoot = null;
+                string objectRecognitionState = "object-entry:not-detected";
+                string objectRecognitionDiagnostic = string.Empty;
+                bool objectEntryRecognized = false;
+                if (physicalCollider != null && (radialDetected || visualDetected))
                 {
-                    LogCandidateRecognition(
+                    objectEntryRecognized = TryRecognizeObjectEntry(
                         physicalCollider,
-                        "anonymous:radial-presence",
-                        string.Empty,
-                        "Radial detection establishes presence only; no positive visual recognition was produced.",
-                        expectedAnonymousRadialPresence: true);
+                        out objectEntryId,
+                        out objectEntryRoot,
+                        out objectRecognitionState,
+                        out objectRecognitionDiagnostic);
+                    objectEntryIdentityResolved |= objectEntryRecognized;
+
+                    if (objectEntryRecognized)
+                    {
+                        if (objectEntryRoots.TryGetValue(objectEntryId, out GameObject previousRoot) &&
+                            previousRoot != objectEntryRoot)
+                        {
+                            ambiguousObjectEntryIds.Add(objectEntryId);
+                        }
+                        else
+                        {
+                            objectEntryRoots[objectEntryId] = objectEntryRoot;
+                            objectEntryEvidenceColliders[objectEntryId] = physicalCollider;
+                        }
+
+                        if (radialDetected)
+                        {
+                            radiallyConfirmedObjectEntryIds.Add(objectEntryId);
+                        }
+                        if (visualDetected)
+                        {
+                            visuallyConfirmedObjectEntryIds.Add(objectEntryId);
+                        }
+
+                        RememberResolvedCandidateRoot(objectEntryRoot.transform, default, objectEntryId);
+                    }
+
+                    bool unresolvedActorOrEntity = candidateHasActorIdentity
+                        ? !actorIdentityResolved
+                        : !objectEntryIdentityResolved;
+                    if (!unresolvedActorOrEntity)
+                    {
+                        hasExplicitRadialResolution |=
+                            CloseUnresolvedRadialOpportunity(physicalCollider, externalActorReference);
+                    }
+
+#if UNITY_EDITOR
+                    if (objectEntryRecognized)
+                    {
+                        candidateIdentityRecognized[candidateIndex] = true;
+                        candidateIdentitySummaries[candidateIndex] =
+                            "Object Entry " + objectEntryId.StableText;
+                        candidateIdentityDiagnostics[candidateIndex] = string.Empty;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(objectRecognitionDiagnostic))
+                    {
+                        candidateIdentityDiagnostics[candidateIndex] = objectRecognitionDiagnostic;
+                    }
+#endif
+
+                    if (!visualDetected)
+                    {
+                        string identitySummary = objectEntryRecognized
+                            ? "Object Entry " + objectEntryId.StableText
+                            : actorIdentityResolved && externalActorReference.HasValue
+                                ? "Previously resolved Actor " + externalActorReference.Value.ActorId.StableText
+                                : string.Empty;
+                        string state = (actorIdentityResolved ? "actor:resolved;" : "actor:unresolved-by-radial;") +
+                                       objectRecognitionState;
+                        string candidateDiagnostic = JoinDiagnostics(
+                            actorIdentityResolved ? string.Empty : "Radial evidence does not resolve Actor identity.",
+                            objectRecognitionDiagnostic);
+                        LogCandidateRecognition(
+                            physicalCollider,
+                            state,
+                            identitySummary,
+                            candidateDiagnostic,
+                            radialDetected,
+                            visualDetected,
+                            expectedAnonymousRadialPresence: radialDetected && unresolvedActorOrEntity);
+                    }
                 }
 
                 if (!visualWasSampled || !hasVisionObservation)
                 {
+                    if (radialDetected && (candidateHasActorIdentity
+                            ? !actorIdentityResolved
+                            : !objectEntryIdentityResolved))
+                    {
+                        unresolvedRadialCandidateCount++;
+                        unresolvedRadialOpportunitySequence = Math.Max(
+                            unresolvedRadialOpportunitySequence,
+                            RegisterUnresolvedRadialOpportunity(physicalCollider, externalActorReference));
+                    }
+
                     continue;
                 }
 
-                if (visionObservation.IsDetected)
+                if (visualDetected)
                 {
                     ActorOccurrence actorOccurrence = default;
                     string actorRecognitionState = "actor:none";
@@ -951,7 +1137,6 @@ namespace PEGA.NPC.Perception
                         out actorOccurrence,
                         out actorRecognitionState,
                         out actorRecognitionDiagnostic);
-                    bool recognizedAnyDeclaration = actorRecognized;
                     if (actorRecognized)
                     {
                         bool duplicateOfConfiguredPlayerCandidate =
@@ -965,28 +1150,25 @@ namespace PEGA.NPC.Perception
                         }
                     }
 
-                    ObjectEntryId objectEntryId = default;
-                    GameObject objectEntryRoot = null;
-                    string objectRecognitionState = "object-entry:none";
-                    string objectRecognitionDiagnostic = string.Empty;
-                    bool objectEntryRecognized = TryRecognizeObjectEntry(
-                        physicalCollider,
-                        out objectEntryId,
-                        out objectEntryRoot,
-                        out objectRecognitionState,
-                        out objectRecognitionDiagnostic);
-                    if (objectEntryRecognized)
+                    actorIdentityResolved |= actorRecognized;
+                    bool recognizedAnyDeclaration = actorRecognized || objectEntryRecognized;
+                    if (recognizedAnyDeclaration)
                     {
-                        if (objectEntryRoots.TryGetValue(objectEntryId, out GameObject previousRoot) &&
-                            previousRoot != objectEntryRoot)
+                        if (!candidateHasActorIdentity || actorIdentityResolved)
                         {
-                            ambiguousObjectEntryIds.Add(objectEntryId);
+                            hasExplicitRadialResolution |=
+                                CloseUnresolvedRadialOpportunity(physicalCollider, externalActorReference);
                         }
-                        else
-                        {
-                            objectEntryRoots[objectEntryId] = objectEntryRoot;
-                        }
-                        recognizedAnyDeclaration = true;
+                        RememberResolvedCandidateRoot(
+                            candidateRoot != null
+                                ? candidateRoot
+                                : actorRecognized && actorOccurrence.ActorRoot != null
+                                    ? actorOccurrence.ActorRoot.transform
+                                    : objectEntryRecognized && objectEntryRoot != null
+                                        ? objectEntryRoot.transform
+                                        : null,
+                            actorRecognized ? actorOccurrence : default,
+                            objectEntryRecognized ? objectEntryId : default);
                     }
 
                     if (physicalCollider != null)
@@ -1002,6 +1184,12 @@ namespace PEGA.NPC.Perception
                                 ? "Object Entry " + objectEntryId.StableText
                                 : identitySummary + ", Object Entry " + objectEntryId.StableText;
                         }
+                        else if (objectEntryIdentityResolved && externalActorReference.HasValue)
+                        {
+                            identitySummary = string.IsNullOrEmpty(identitySummary)
+                                ? "Previously resolved Object Entry identity"
+                                : identitySummary + ", previously resolved Object Entry identity";
+                        }
                         string combinedDiagnostic = JoinDiagnostics(actorRecognitionDiagnostic, objectRecognitionDiagnostic);
                         if (!recognizedAnyDeclaration && string.IsNullOrWhiteSpace(combinedDiagnostic))
                         {
@@ -1011,7 +1199,9 @@ namespace PEGA.NPC.Perception
                             physicalCollider,
                             actorRecognitionState + ";" + objectRecognitionState,
                             identitySummary,
-                            combinedDiagnostic);
+                            combinedDiagnostic,
+                            radialDetected,
+                            visualDetected);
 #if UNITY_EDITOR
                         if (recognizedAnyDeclaration)
                         {
@@ -1067,9 +1257,42 @@ namespace PEGA.NPC.Perception
                             resolutionDiagnostic);
                     }
                 }
+
+                if (hasRadialObservation && radialObservation.IsDetected)
+                {
+                    bool unresolvedActorOrEntity = candidateHasActorIdentity
+                        ? !actorIdentityResolved
+                        : !objectEntryIdentityResolved;
+                    if (!unresolvedActorOrEntity)
+                    {
+                        resolvedRadialCandidateCount++;
+                    }
+                    else
+                    {
+                        unresolvedRadialCandidateCount++;
+                        unresolvedRadialOpportunitySequence = Math.Max(
+                            unresolvedRadialOpportunitySequence,
+                            RegisterUnresolvedRadialOpportunity(physicalCollider, externalActorReference));
+                    }
+                }
             }
 
+            LogMissingPhysicalColliderDetections(
+                radialOnlyDetectionsWithoutCollider,
+                visualOnlyDetectionsWithoutCollider,
+                combinedDetectionsWithoutCollider);
             PruneCandidateRecognitionLogStates();
+            PruneResolvedCandidateRoots();
+            PruneObjectEntryOpportunityLogStates();
+
+            bool completeRadialCoverage = radialWasSampled &&
+                HasCompleteRadialCoverage(acquisition, perceivedAreaSensorInstance) &&
+                allRadialCandidatesUsable &&
+                staleActorContacts.Count == 0;
+            if (completeRadialCoverage)
+            {
+                PruneUnresolvedRadialOpportunities();
+            }
 
             bool publishRadialPresence = false;
             bool radialPresence = hasRadialPositive;
@@ -1091,6 +1314,54 @@ namespace PEGA.NPC.Perception
             {
                 PublishAreaPresenceIfChanged(radialPresence, observationTimeSeconds);
                 LogAreaPresenceTransition(previousArea, radialPresence, observationTimeSeconds);
+            }
+
+            if (_radialOpportunityEpisodesBySequence.Count > 0 &&
+                (radialWasSampled || hasExplicitRadialResolution))
+            {
+                PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> previousUnresolvedPresence =
+                    _knowledgeState.GetUnresolvedRadialPresence();
+                PegaNpcPerceivedAreaPresence unresolvedPresence =
+                    CreateUnresolvedRadialPresenceValue();
+                PublishUnresolvedRadialPresenceIfChanged(unresolvedPresence, observationTimeSeconds);
+                LogUnresolvedRadialPresenceTransition(
+                    previousUnresolvedPresence,
+                    unresolvedPresence,
+                    observationTimeSeconds,
+                    unresolvedRadialCandidateCount,
+                    resolvedRadialCandidateCount);
+            }
+            else if (radialWasSampled && completeRadialCoverage)
+            {
+                PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> previousUnresolvedPresence =
+                    _knowledgeState.GetUnresolvedRadialPresence();
+                PegaNpcPerceivedAreaPresence noUnresolvedPresence = new PegaNpcPerceivedAreaPresence(
+                    false,
+                    Vector3.zero,
+                    _areaPresenceSensor.RadiusMeters);
+                PublishUnresolvedRadialPresenceIfChanged(noUnresolvedPresence, observationTimeSeconds);
+                LogUnresolvedRadialPresenceTransition(
+                    previousUnresolvedPresence,
+                    noUnresolvedPresence,
+                    observationTimeSeconds,
+                    unresolvedRadialCandidateCount,
+                    resolvedRadialCandidateCount);
+            }
+            else if (hasExplicitRadialResolution)
+            {
+                PegaKnowledgeWriteResult result = _knowledgeState.InvalidateUnresolvedRadialPresence(
+                    PegaNpcEvidenceOrigin.Perception,
+                    observationTimeSeconds);
+                if (result == PegaKnowledgeWriteResult.InvalidatedExplicitly)
+                {
+                    _log.Debug(
+                        "NPC perception resolved the active anonymous radial opportunity; unresolved-presence Knowledge became unknown because global radial absence is not established.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("unresolvedRadialPresence", false),
+                        LogFields.Field("unresolvedRadialCandidateCount", unresolvedRadialCandidateCount),
+                        LogFields.Field("resolvedRadialCandidateCount", resolvedRadialCandidateCount),
+                        LogFields.Field("observationTimeSeconds", observationTimeSeconds));
+                }
             }
 
             foreach (KeyValuePair<ActorId, ActorOccurrence> pair in positiveActors)
@@ -1143,25 +1414,87 @@ namespace PEGA.NPC.Perception
 
             foreach (KeyValuePair<ObjectEntryId, GameObject> pair in objectEntryRoots)
             {
-                if (ambiguousObjectEntryIds.Contains(pair.Key) || pair.Value == null)
+                bool radialDetection = radiallyConfirmedObjectEntryIds.Contains(pair.Key);
+                bool visualDetection = visuallyConfirmedObjectEntryIds.Contains(pair.Key);
+                objectEntryEvidenceColliders.TryGetValue(pair.Key, out Collider evidenceCollider);
+                if (ambiguousObjectEntryIds.Contains(pair.Key))
                 {
+                    LogObjectEntryPickUpOpportunity(
+                        evidenceCollider,
+                        pair.Key,
+                        radialDetection,
+                        visualDetection,
+                        "object-entry-occurrence-ambiguous",
+                        false,
+                        false,
+                        default,
+                        "not-published",
+                        "Multiple physical roots resolved to the same ObjectEntryId in this candidate batch.");
+                    continue;
+                }
+
+                if (pair.Value == null)
+                {
+                    LogObjectEntryPickUpOpportunity(
+                        evidenceCollider,
+                        pair.Key,
+                        radialDetection,
+                        visualDetection,
+                        "object-entry-root-unavailable",
+                        false,
+                        false,
+                        default,
+                        "not-published",
+                        "The recognized Object Entry root was unavailable before Knowledge publication.");
                     continue;
                 }
 
                 Vector3 observedPosition = pair.Value.transform.position;
                 if (!IsFinite(observedPosition))
                 {
+                    LogObjectEntryPickUpOpportunity(
+                        evidenceCollider,
+                        pair.Key,
+                        radialDetection,
+                        visualDetection,
+                        "object-entry-position-invalid",
+                        false,
+                        false,
+                        default,
+                        "not-published",
+                        "The recognized Object Entry root position is not finite.");
                     continue;
                 }
 
-                _knowledgeState.ObserveFact(
+                PegaKnowledgeEvidence objectEntryEvidence = PegaKnowledgeEvidence.From(
+                    PegaNpcEvidenceOrigin.Perception,
+                    observationTimeSeconds,
+                    this,
+                    pair.Key);
+                PegaKnowledgeWriteResult positionWriteResult = _knowledgeState.ObserveFact(
                     PegaObjectEntryKnowledgeFacts.Position.For(pair.Key),
                     observedPosition,
-                    PegaKnowledgeEvidence.From(
-                        PegaNpcEvidenceOrigin.Perception,
-                        observationTimeSeconds,
-                        this,
-                            pair.Key));
+                    objectEntryEvidence);
+
+                PegaKnowledgeFact<bool> previousAvailability = _knowledgeState.GetFact(
+                    PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(pair.Key));
+                bool hasPreviouslyPerceptionBackedOffer =
+                    previousAvailability.TryGetValue(out bool wasAvailable) &&
+                    wasAvailable &&
+                    previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.Perception);
+                if (!radialDetection && !(visualDetection && hasPreviouslyPerceptionBackedOffer))
+                {
+                    continue;
+                }
+
+                ObserveObjectEntryPickUpOffer(
+                    pair.Key,
+                    pair.Value,
+                    evidenceCollider,
+                    radialDetection,
+                    visualDetection,
+                    objectEntryEvidence,
+                    positionWriteResult);
             }
 
 #if UNITY_EDITOR
@@ -2018,7 +2351,7 @@ namespace PEGA.NPC.Perception
                 declarations.ObjectEntryDeclaration == null)
             {
                 state = "object-entry:none";
-                diagnostic = string.Empty;
+                diagnostic = "The radial or visual candidate has no nearest ObjectEntryDeclaration to recognize.";
                 return false;
             }
 
@@ -2074,6 +2407,309 @@ namespace PEGA.NPC.Perception
             diagnostic = string.Empty;
             return true;
         }
+
+        private void ObserveObjectEntryPickUpOffer(
+            ObjectEntryId objectEntryId,
+            GameObject occurrenceRoot,
+            Collider evidenceCollider,
+            bool radialDetected,
+            bool visualDetected,
+            PegaKnowledgeEvidence evidence,
+            PegaKnowledgeWriteResult positionWriteResult)
+        {
+            PegaObjectEntryInteractionAggregator aggregator = occurrenceRoot != null
+                ? occurrenceRoot.GetComponent<PegaObjectEntryInteractionAggregator>()
+                : null;
+            PegaObjectEntryPickUpAction pickUpAction = occurrenceRoot != null
+                ? occurrenceRoot.GetComponent<PegaObjectEntryPickUpAction>()
+                : null;
+            PegaObjectEntryPhysicalItem physicalItem = occurrenceRoot != null
+                ? occurrenceRoot.GetComponent<PegaObjectEntryPhysicalItem>()
+                : null;
+            PegaPickUpObjectEntryConfigurationSnapshot parameters = default;
+            string configurationDiagnostic = string.Empty;
+            bool hasConfiguration = pickUpAction != null && pickUpAction.TryGetConfiguration(
+                out parameters,
+                out configurationDiagnostic);
+            if (!hasConfiguration)
+            {
+                configurationDiagnostic = pickUpAction == null
+                    ? "No PEGA Pick Up action is composed on this Object Entry root."
+                    : configurationDiagnostic;
+            }
+
+            bool aggregatorActive = aggregator != null && aggregator.isActiveAndEnabled &&
+                                    occurrenceRoot != null && occurrenceRoot.activeInHierarchy;
+            bool actionActive = pickUpAction != null && pickUpAction.isActiveAndEnabled &&
+                                occurrenceRoot != null && occurrenceRoot.activeInHierarchy;
+            bool offeredToNpc = aggregatorActive && actionActive &&
+                                aggregator.IsOfferedTo(
+                                    pickUpAction,
+                                    PegaObjectInteractionParticipant.Npc);
+            bool offeredToPlayer = aggregatorActive && actionActive &&
+                                   aggregator.IsOfferedTo(
+                                       pickUpAction,
+                                       PegaObjectInteractionParticipant.Player);
+            bool reservationOwnedByThisActor = physicalItem != null && physicalItem.IsReserved &&
+                                                IsReservedByThisActor(physicalItem);
+
+            string offerState;
+            string diagnostic;
+            if (aggregator == null)
+            {
+                offerState = "interaction-aggregator-missing";
+                diagnostic = "The recognized Object Entry has no PEGA interaction aggregator.";
+            }
+            else if (!aggregatorActive)
+            {
+                offerState = "interaction-aggregator-inactive";
+                diagnostic = "The recognized Object Entry interaction aggregator is inactive.";
+            }
+            else if (pickUpAction == null)
+            {
+                offerState = "pick-up-action-missing";
+                diagnostic = "No PEGA Pick Up action is composed on this Object Entry root.";
+            }
+            else if (!actionActive)
+            {
+                offerState = "pick-up-action-inactive";
+                diagnostic = "The PEGA Pick Up action component is inactive.";
+            }
+            else if (!offeredToNpc)
+            {
+                offerState = offeredToPlayer
+                    ? "pick-up-offered-to-player-only"
+                    : aggregator.OfferCount == 0
+                        ? "no-authored-interaction-offers"
+                        : "pick-up-not-offered-to-npc";
+                diagnostic = offeredToPlayer
+                    ? "The Object Entry offers Pick Up to Player, not to NPC."
+                    : "The Object Entry does not offer Pick Up to NPC, or its authored offer composition is invalid.";
+            }
+            else if (!hasConfiguration)
+            {
+                offerState = "pick-up-configuration-invalid";
+                diagnostic = configurationDiagnostic;
+            }
+            else if (physicalItem == null)
+            {
+                offerState = "physical-item-component-missing";
+                diagnostic = "The recognized Object Entry has a Pick Up action but no physical-item component.";
+            }
+            else if (reservationOwnedByThisActor)
+            {
+                offerState = "pick-up-reserved-by-this-npc";
+                diagnostic = "This NPC owns the active Pick Up reservation; its current offer facts are retained for Action continuity.";
+            }
+            else if (physicalItem.IsReserved)
+            {
+                offerState = "pick-up-temporarily-reserved";
+                diagnostic = "The physical Object Entry is currently reserved by an interaction.";
+            }
+            else if (!physicalItem.IsAvailableOnGround)
+            {
+                offerState = "pick-up-no-longer-on-ground";
+                diagnostic = "The physical Object Entry is no longer available on the ground.";
+            }
+            else
+            {
+                offerState = "pick-up-offered-to-npc";
+                diagnostic = string.Empty;
+            }
+
+            bool canPublishOffer = offerState == "pick-up-offered-to-npc" ||
+                                   offerState == "pick-up-reserved-by-this-npc";
+            PegaKnowledgeFactKey<ObjectEntryId, bool> availableKey =
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId);
+            PegaKnowledgeFactKey<ObjectEntryId, PegaPickUpObjectEntryConfigurationSnapshot> parametersKey =
+                PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters.For(objectEntryId);
+            PegaKnowledgeFact<bool> previousAvailability = _knowledgeState.GetFact(availableKey);
+            PegaKnowledgeFact<PegaPickUpObjectEntryConfigurationSnapshot> previousParameters =
+                _knowledgeState.GetFact(parametersKey);
+            bool wasAlreadyAvailable = previousAvailability.TryGetValue(out bool wasAvailable) && wasAvailable;
+            bool hasActionResultPositiveAvailability =
+                previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.ActionResult) &&
+                previousAvailability.TryGetValue(out bool actionResultAvailability) &&
+                actionResultAvailability;
+            bool hadMatchingParameters = canPublishOffer &&
+                previousParameters.TryGetValue(out PegaPickUpObjectEntryConfigurationSnapshot previousSnapshot) &&
+                previousSnapshot.Equals(parameters);
+            bool hasNonPerceptionAvailabilityEvidence =
+                previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.DesignerAuthoredInitial) ||
+                hasActionResultPositiveAvailability;
+            bool hasNonPerceptionParameterEvidence =
+                previousParameters.HasOrigin(PegaNpcEvidenceOrigin.ActionResult) ||
+                previousParameters.HasOrigin(PegaNpcEvidenceOrigin.DesignerAuthoredInitial);
+            bool canRevokePerceptionOffer = wasAlreadyAvailable &&
+                previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                !hasNonPerceptionAvailabilityEvidence &&
+                !hasNonPerceptionParameterEvidence;
+            bool canWritePerceptionUnavailable = !hasNonPerceptionAvailabilityEvidence &&
+                (!wasAlreadyAvailable || previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
+                 previousAvailability.HasOrigin(PegaNpcEvidenceOrigin.ActionResult));
+            bool shouldInvalidatePerceptionParameters =
+                previousParameters.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                !hasNonPerceptionParameterEvidence;
+
+            string knowledgeUpdate;
+            string knowledgeCoherenceDiagnostic = string.Empty;
+            PegaKnowledgeWriteResult? availabilityWriteResult = null;
+            PegaKnowledgeWriteResult? parametersWriteResult = null;
+            PegaKnowledgeWriteResult? parametersInvalidationResult = null;
+            bool coherentPerceptionOffer = false;
+            bool knowledgeWriteStateVerified = false;
+            if (canPublishOffer)
+            {
+                availabilityWriteResult = _knowledgeState.ObserveFact(availableKey, true, evidence);
+                parametersWriteResult = _knowledgeState.ObserveFact(parametersKey, parameters, evidence);
+                coherentPerceptionOffer = TryReadCoherentPerceptionPickUpOffer(
+                    objectEntryId,
+                    occurrenceRoot.transform.position,
+                    parameters,
+                    evidence.ObservationTimeSeconds,
+                    out knowledgeCoherenceDiagnostic);
+                knowledgeWriteStateVerified = coherentPerceptionOffer;
+                knowledgeUpdate = coherentPerceptionOffer
+                    ? wasAlreadyAvailable && hadMatchingParameters
+                        ? "offer-refreshed"
+                        : "offer-published"
+                    : "offer-publication-not-committed";
+            }
+            else if (canWritePerceptionUnavailable)
+            {
+                availabilityWriteResult = _knowledgeState.ObserveFact(availableKey, false, evidence);
+                if (shouldInvalidatePerceptionParameters)
+                {
+                    parametersInvalidationResult = _knowledgeState.InvalidateFact(parametersKey, evidence);
+                }
+
+                knowledgeWriteStateVerified = TryReadPerceptionUnavailablePickUpFact(
+                    objectEntryId,
+                    evidence.ObservationTimeSeconds,
+                    shouldInvalidatePerceptionParameters,
+                    out knowledgeCoherenceDiagnostic);
+                knowledgeUpdate = knowledgeWriteStateVerified
+                    ? canRevokePerceptionOffer
+                        ? "offer-revoked"
+                        : wasAlreadyAvailable
+                            ? "availability-revoked-parameters-retained"
+                            : "offer-not-published"
+                    : "offer-negative-observation-not-committed";
+            }
+            else
+            {
+                knowledgeUpdate = wasAlreadyAvailable
+                    ? "offer-not-published-existing-knowledge-retained"
+                    : "offer-not-published";
+                if (hasNonPerceptionAvailabilityEvidence || hasNonPerceptionParameterEvidence)
+                {
+                    knowledgeCoherenceDiagnostic =
+                        "The current radial observation does not overwrite ActionResult or DesignerAuthoredInitial Pick Up facts.";
+                }
+            }
+
+            LogObjectEntryPickUpOpportunity(
+                evidenceCollider,
+                objectEntryId,
+                radialDetected,
+                visualDetected,
+                offerState,
+                canPublishOffer,
+                hasConfiguration,
+                canPublishOffer ? parameters : default,
+                knowledgeUpdate,
+                diagnostic,
+                positionWriteResult,
+                availabilityWriteResult,
+                parametersWriteResult,
+                parametersInvalidationResult,
+                coherentPerceptionOffer,
+                knowledgeWriteStateVerified,
+                knowledgeCoherenceDiagnostic);
+        }
+
+        private bool IsReservedByThisActor(PegaObjectEntryPhysicalItem physicalItem) =>
+            physicalItem != null && physicalItem.IsReservedBy(gameObject);
+
+        private bool TryReadCoherentPerceptionPickUpOffer(
+            ObjectEntryId objectEntryId,
+            Vector3 expectedPosition,
+            PegaPickUpObjectEntryConfigurationSnapshot expectedParameters,
+            double expectedObservationTimeSeconds,
+            out string diagnostic)
+        {
+            PegaKnowledgeFact<Vector3> position = _knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.Position.For(objectEntryId),
+                Time.timeAsDouble);
+            PegaKnowledgeFact<bool> availability = _knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
+                Time.timeAsDouble);
+            PegaKnowledgeFact<PegaPickUpObjectEntryConfigurationSnapshot> parameters = _knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters.For(objectEntryId),
+                Time.timeAsDouble);
+
+            bool isCoherent = position.Scope == PegaKnowledgeScope.Individual &&
+                position.TryGetValue(out Vector3 knownPosition) &&
+                IsFinite(knownPosition) && knownPosition.Equals(expectedPosition) &&
+                position.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                availability.Scope == PegaKnowledgeScope.Individual &&
+                availability.TryGetValue(out bool isAvailable) && isAvailable &&
+                availability.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                parameters.Scope == PegaKnowledgeScope.Individual &&
+                parameters.TryGetValue(out PegaPickUpObjectEntryConfigurationSnapshot knownParameters) &&
+                knownParameters.IsValid && knownParameters.Equals(expectedParameters) &&
+                parameters.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                HasSameObservationTime(position, availability) &&
+                HasSameObservationTime(position, parameters) &&
+                IsObservationTime(position, expectedObservationTimeSeconds);
+            diagnostic = isCoherent
+                ? string.Empty
+                : "Knowledge did not retain a current Individual Perception Position, true offer and matching planning parameters with one observation timestamp.";
+            return isCoherent;
+        }
+
+        private bool TryReadPerceptionUnavailablePickUpFact(
+            ObjectEntryId objectEntryId,
+            double expectedObservationTimeSeconds,
+            bool expectParameterInvalidation,
+            out string diagnostic)
+        {
+            PegaKnowledgeFact<bool> availability = _knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
+                Time.timeAsDouble);
+            PegaKnowledgeFact<PegaPickUpObjectEntryConfigurationSnapshot> parameters = _knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters.For(objectEntryId),
+                Time.timeAsDouble);
+            bool isCoherentNegativeObservation = availability.Scope == PegaKnowledgeScope.Individual &&
+                availability.TryGetValue(out bool isAvailable) && !isAvailable &&
+                availability.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                IsObservationTime(availability, expectedObservationTimeSeconds);
+            if (expectParameterInvalidation)
+            {
+                isCoherentNegativeObservation &= parameters.Scope == PegaKnowledgeScope.Individual &&
+                    parameters.Status == PegaKnowledgeStatus.Invalidated &&
+                    (parameters.InvalidationCauses & PegaKnowledgeInvalidationCause.Explicit) != 0 &&
+                    parameters.HasOrigin(PegaNpcEvidenceOrigin.Perception) &&
+                    IsObservationTime(parameters, expectedObservationTimeSeconds);
+            }
+
+            diagnostic = isCoherentNegativeObservation
+                ? string.Empty
+                : "Knowledge did not retain the current Perception false offer and expected planning-parameter state.";
+            return isCoherentNegativeObservation;
+        }
+
+        private static bool HasSameObservationTime<TValue>(
+            PegaKnowledgeFact<Vector3> left,
+            PegaKnowledgeFact<TValue> right) =>
+            left.HasObservationTime && right.HasObservationTime &&
+            Math.Abs(left.ObservationTimeSeconds - right.ObservationTimeSeconds) <= 0.000001d;
+
+        private static bool IsObservationTime<TValue>(
+            PegaKnowledgeFact<TValue> fact,
+            double expectedObservationTimeSeconds) =>
+            fact.HasObservationTime &&
+            Math.Abs(fact.ObservationTimeSeconds - expectedObservationTimeSeconds) <= 0.000001d;
 
         private static Collider GetPhysicalCollider(PerceptionCandidate candidate)
         {
@@ -2170,6 +2806,337 @@ namespace PEGA.NPC.Perception
             }
 
             return found;
+        }
+
+        private static bool HasCompleteRadialCoverage(
+            PerceptionCandidateAcquisition acquisition,
+            PerceptionSensorInstance sensorInstance)
+        {
+            if (!HasCompletePhysicalCoverage(acquisition, sensorInstance))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < acquisition.Sources.Count; index++)
+            {
+                PerceptionCandidateSourceResult source = acquisition.Sources[index];
+                if (source.Origin == PerceptionCandidateOrigin.External &&
+                    source.Status != PerceptionAcquisitionStatus.Complete)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void GetPreviouslyRecognizedCandidateIdentity(
+            Transform candidateRoot,
+            NearestFrameworkDeclarations declarations,
+            ActorOccurrenceReference? externalActorReference,
+            out bool actorIdentityResolved,
+            out bool objectEntryIdentityResolved)
+        {
+            actorIdentityResolved = externalActorReference.HasValue &&
+                                    IsPreviouslyRecognizedExternalActor(externalActorReference.Value);
+            objectEntryIdentityResolved = false;
+
+            if (candidateRoot == null ||
+                !_resolvedCandidateRoots.TryGetValue(
+                    candidateRoot,
+                    out ResolvedCandidateIdentity identity))
+            {
+                return;
+            }
+
+            objectEntryIdentityResolved = identity.ObjectEntryId.IsValid &&
+                declarations.HasValidObjectEntryDeclaration &&
+                declarations.ObjectEntryId == identity.ObjectEntryId;
+            if (identity.ActorId.IsValid &&
+                declarations.HasValidActorDeclaration &&
+                candidateRoot.GetComponent<ActorDeclaration>() is ActorDeclaration actorDeclaration &&
+                actorDeclaration.TryCreateDescriptor(
+                    nameof(PegaNpcPerceptionSource),
+                    out ActorDescriptor descriptor,
+                    out _) &&
+                descriptor.ActorId == identity.ActorId &&
+                _recognizedActorReferences.TryGetValue(
+                    identity.ActorId,
+                    out ActorOccurrenceReference recognizedReference) &&
+                recognizedReference.IsExactOccurrence &&
+                recognizedReference.ExpectedOccurrence == identity.ActorOccurrenceId &&
+                TryResolveExactActorOccurrence(
+                    recognizedReference,
+                    out ActorOccurrence currentOccurrence,
+                    out _,
+                    out _) &&
+                currentOccurrence.Id == identity.ActorOccurrenceId &&
+                currentOccurrence.ActorRoot.transform == candidateRoot)
+            {
+                actorIdentityResolved |= IsPerceptionBackedCharacterPositionKnown(identity.ActorId);
+            }
+
+            if (!actorIdentityResolved && !objectEntryIdentityResolved)
+            {
+                _resolvedCandidateRoots.Remove(candidateRoot);
+            }
+        }
+
+        private bool IsPreviouslyRecognizedExternalActor(ActorOccurrenceReference externalReference) =>
+            _knowledgeState != null &&
+            _recognizedActorReferences.TryGetValue(
+                externalReference.ActorId,
+                out ActorOccurrenceReference recognizedReference) &&
+            recognizedReference.IsExactOccurrence &&
+            recognizedReference.ExpectedOccurrence == externalReference.ExpectedOccurrence &&
+            IsPerceptionBackedCharacterPositionKnown(externalReference.ActorId);
+
+        private bool IsPerceptionBackedCharacterPositionKnown(ActorId actorId)
+        {
+            if (_knowledgeState == null || !actorId.IsValid)
+            {
+                return false;
+            }
+
+            PegaKnowledgeFact<Vector3> lastObservedPosition =
+                _knowledgeState.GetLastObservedCharacterPosition(actorId);
+            return lastObservedPosition.TryGetValue(out _) &&
+                   lastObservedPosition.HasOrigin(PegaNpcEvidenceOrigin.Perception);
+        }
+
+        private void RememberResolvedCandidateRoot(
+            Transform candidateRoot,
+            ActorOccurrence actorOccurrence,
+            ObjectEntryId objectEntryId)
+        {
+            if (candidateRoot == null)
+            {
+                return;
+            }
+
+            ActorId actorId = actorOccurrence.IsValid ? actorOccurrence.ActorId : default;
+            ActorOccurrenceId actorOccurrenceId = actorOccurrence.IsValid ? actorOccurrence.Id : default;
+            if (_resolvedCandidateRoots.TryGetValue(
+                    candidateRoot,
+                    out ResolvedCandidateIdentity previous))
+            {
+                if (!actorOccurrence.IsValid)
+                {
+                    actorId = previous.ActorId;
+                    actorOccurrenceId = previous.ActorOccurrenceId;
+                }
+
+                if (!objectEntryId.IsValid)
+                {
+                    objectEntryId = previous.ObjectEntryId;
+                }
+            }
+
+            _resolvedCandidateRoots[candidateRoot] = new ResolvedCandidateIdentity(
+                actorId,
+                actorOccurrenceId,
+                objectEntryId);
+        }
+
+        private long RegisterUnresolvedRadialOpportunity(
+            Collider physicalCollider,
+            ActorOccurrenceReference? externalActorReference)
+        {
+            if (externalActorReference.HasValue)
+            {
+                ActorOccurrenceId occurrenceId = externalActorReference.Value.ExpectedOccurrence;
+                _unresolvedOccurrencesThisSample.Add(occurrenceId);
+                if (!_radialOpportunitySequencesByOccurrence.TryGetValue(
+                        occurrenceId,
+                        out long sequence))
+                {
+                    sequence = AllocateRadialOpportunitySequence();
+                    _radialOpportunitySequencesByOccurrence.Add(occurrenceId, sequence);
+                    _radialOpportunityEpisodesBySequence.Add(
+                        sequence,
+                        CreateRadialOpportunityEpisode(sequence));
+                }
+
+                return sequence;
+            }
+
+            if (physicalCollider != null)
+            {
+                _unresolvedCollidersThisSample.Add(physicalCollider);
+                if (!_radialOpportunitySequencesByCollider.TryGetValue(
+                        physicalCollider,
+                        out long sequence))
+                {
+                    sequence = AllocateRadialOpportunitySequence();
+                    _radialOpportunitySequencesByCollider.Add(physicalCollider, sequence);
+                    _radialOpportunityEpisodesBySequence.Add(
+                        sequence,
+                        CreateRadialOpportunityEpisode(sequence));
+                }
+
+                return sequence;
+            }
+
+            _hasUnboundUnresolvedCandidateThisSample = true;
+            if (_unboundRadialOpportunitySequence <= 0)
+            {
+                _unboundRadialOpportunitySequence = AllocateRadialOpportunitySequence();
+                _radialOpportunityEpisodesBySequence.Add(
+                    _unboundRadialOpportunitySequence,
+                    CreateRadialOpportunityEpisode(_unboundRadialOpportunitySequence));
+            }
+
+            return _unboundRadialOpportunitySequence;
+        }
+
+        private bool CloseUnresolvedRadialOpportunity(
+            Collider physicalCollider,
+            ActorOccurrenceReference? externalActorReference)
+        {
+            bool removed = false;
+            if (externalActorReference.HasValue)
+            {
+                if (_radialOpportunitySequencesByOccurrence.TryGetValue(
+                        externalActorReference.Value.ExpectedOccurrence,
+                        out long sequence))
+                {
+                    _radialOpportunitySequencesByOccurrence.Remove(
+                        externalActorReference.Value.ExpectedOccurrence);
+                    _radialOpportunityEpisodesBySequence.Remove(sequence);
+                    removed = true;
+                }
+            }
+
+            if (physicalCollider != null)
+            {
+                if (_radialOpportunitySequencesByCollider.TryGetValue(physicalCollider, out long sequence))
+                {
+                    _radialOpportunitySequencesByCollider.Remove(physicalCollider);
+                    _radialOpportunityEpisodesBySequence.Remove(sequence);
+                    removed = true;
+                }
+            }
+
+            return removed;
+        }
+
+        private PegaNpcPerceivedAreaOpportunity CreateRadialOpportunityEpisode(long sequence) =>
+            new PegaNpcPerceivedAreaOpportunity(
+                sequence,
+                transform.position,
+                _areaPresenceSensor != null ? _areaPresenceSensor.RadiusMeters : 0f);
+
+        private PegaNpcPerceivedAreaPresence CreateUnresolvedRadialPresenceValue()
+        {
+            List<PegaNpcPerceivedAreaOpportunity> opportunities =
+                new List<PegaNpcPerceivedAreaOpportunity>(_radialOpportunityEpisodesBySequence.Values);
+            opportunities.Sort((left, right) => left.Sequence.CompareTo(right.Sequence));
+            PegaNpcPerceivedAreaOpportunity primary = opportunities[opportunities.Count - 1];
+            return new PegaNpcPerceivedAreaPresence(
+                true,
+                primary.ObserverPosition,
+                primary.PerceivedAreaRadiusMeters,
+                primary.Sequence,
+                opportunities.ToArray());
+        }
+
+        private long AllocateRadialOpportunitySequence()
+        {
+            if (_nextRadialOpportunitySequence == long.MaxValue)
+            {
+                throw new InvalidOperationException(
+                    "The Perception source exhausted its radial opportunity sequence range.");
+            }
+
+            return ++_nextRadialOpportunitySequence;
+        }
+
+        private void PruneUnresolvedRadialOpportunities()
+        {
+            List<Collider> staleColliders = null;
+            foreach (KeyValuePair<Collider, long> pair in _radialOpportunitySequencesByCollider)
+            {
+                if (pair.Key == null || !_unresolvedCollidersThisSample.Contains(pair.Key))
+                {
+                    staleColliders ??= new List<Collider>();
+                    staleColliders.Add(pair.Key);
+                }
+            }
+
+            if (staleColliders != null)
+            {
+                for (int index = 0; index < staleColliders.Count; index++)
+                {
+                    if (_radialOpportunitySequencesByCollider.TryGetValue(
+                            staleColliders[index],
+                            out long sequence))
+                    {
+                        _radialOpportunitySequencesByCollider.Remove(staleColliders[index]);
+                        _radialOpportunityEpisodesBySequence.Remove(sequence);
+                    }
+                }
+            }
+
+            List<ActorOccurrenceId> staleOccurrences = null;
+            foreach (KeyValuePair<ActorOccurrenceId, long> pair in _radialOpportunitySequencesByOccurrence)
+            {
+                if (!_unresolvedOccurrencesThisSample.Contains(pair.Key))
+                {
+                    staleOccurrences ??= new List<ActorOccurrenceId>();
+                    staleOccurrences.Add(pair.Key);
+                }
+            }
+
+            if (staleOccurrences != null)
+            {
+                for (int index = 0; index < staleOccurrences.Count; index++)
+                {
+                    if (_radialOpportunitySequencesByOccurrence.TryGetValue(
+                            staleOccurrences[index],
+                            out long sequence))
+                    {
+                        _radialOpportunitySequencesByOccurrence.Remove(staleOccurrences[index]);
+                        _radialOpportunityEpisodesBySequence.Remove(sequence);
+                    }
+                }
+            }
+
+            if (!_hasUnboundUnresolvedCandidateThisSample)
+            {
+                if (_unboundRadialOpportunitySequence > 0)
+                {
+                    _radialOpportunityEpisodesBySequence.Remove(_unboundRadialOpportunitySequence);
+                }
+                _unboundRadialOpportunitySequence = 0;
+            }
+        }
+
+        private void PruneResolvedCandidateRoots()
+        {
+            if (_resolvedCandidateRoots.Count == 0)
+            {
+                return;
+            }
+
+            List<Transform> staleRoots = null;
+            foreach (KeyValuePair<Transform, ResolvedCandidateIdentity> pair in _resolvedCandidateRoots)
+            {
+                if (pair.Key == null)
+                {
+                    staleRoots ??= new List<Transform>();
+                    staleRoots.Add(pair.Key);
+                }
+            }
+
+            if (staleRoots == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < staleRoots.Count; index++)
+            {
+                _resolvedCandidateRoots.Remove(staleRoots[index]);
+            }
         }
 
         private bool TryGetSensorObservation(
@@ -2437,11 +3404,41 @@ namespace PEGA.NPC.Perception
             return false;
         }
 
+        private void LogMissingPhysicalColliderDetections(
+            int radialOnlyCount,
+            int visualOnlyCount,
+            int combinedCount)
+        {
+            if (radialOnlyCount == 0 && visualOnlyCount == 0 && combinedCount == 0)
+            {
+                _lastMissingPhysicalColliderDetectionState = string.Empty;
+                return;
+            }
+
+            string state = string.Concat(radialOnlyCount, "|", visualOnlyCount, "|", combinedCount);
+            if (string.Equals(_lastMissingPhysicalColliderDetectionState, state, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastMissingPhysicalColliderDetectionState = state;
+            _log.Warning(
+                "NPC Perception detected candidates without physical Collider evidence; Object Entry recognition and offer publication were unavailable.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("radialOnlyCandidateCount", radialOnlyCount),
+                LogFields.Field("visualOnlyCandidateCount", visualOnlyCount),
+                LogFields.Field("radialAndVisualCandidateCount", combinedCount),
+                LogFields.Field("objectEntryRecognitionAvailable", false),
+                LogFields.Field("diagnostic", "Official Object Entry recognition requires physical Collider evidence."));
+        }
+
         private void LogCandidateRecognition(
             Collider candidate,
             string state,
             string identitySummary,
             string diagnostic,
+            bool radialDetected,
+            bool visualDetected,
             bool expectedAnonymousRadialPresence = false)
         {
             if (candidate == null)
@@ -2449,13 +3446,18 @@ namespace PEGA.NPC.Perception
                 return;
             }
 
+            string stateKey = string.Concat(
+                state,
+                "|radial=", radialDetected,
+                "|visual=", visualDetected);
             if (_candidateRecognitionLogStates.TryGetValue(candidate, out string previousState) &&
-                string.Equals(previousState, state, StringComparison.Ordinal))
+                string.Equals(previousState, stateKey, StringComparison.Ordinal))
             {
                 return;
             }
 
-            _candidateRecognitionLogStates[candidate] = state;
+            _candidateRecognitionLogStates[candidate] = stateKey;
+            string detectionChannels = DescribeDetectionChannels(radialDetected, visualDetected);
             bool recognized = state != null &&
                               (state.IndexOf("actor:resolved", StringComparison.Ordinal) >= 0 ||
                                state.IndexOf("object-entry:resolved", StringComparison.Ordinal) >= 0);
@@ -2465,6 +3467,7 @@ namespace PEGA.NPC.Perception
                     "NPC Perception evidence recognized a declared entity through an official Framework query.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("candidateColliderEntityId", candidate.GetEntityId().ToString()),
+                    LogFields.Field("detectionChannels", detectionChannels),
                     LogFields.Field("recognitionState", state),
                     LogFields.Field("officialIdentity", identitySummary),
                     LogFields.Field("diagnostic", diagnostic));
@@ -2475,6 +3478,7 @@ namespace PEGA.NPC.Perception
                     "NPC Perception observed anonymous radial presence without publishing an entity identity.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("candidateColliderEntityId", candidate.GetEntityId().ToString()),
+                    LogFields.Field("detectionChannels", detectionChannels),
                     LogFields.Field("recognitionState", state),
                     LogFields.Field("diagnostic", diagnostic));
             }
@@ -2484,9 +3488,102 @@ namespace PEGA.NPC.Perception
                     "NPC Perception evidence has no unique official identity and occurrence suitable for Knowledge publication.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("candidateColliderEntityId", candidate.GetEntityId().ToString()),
+                    LogFields.Field("detectionChannels", detectionChannels),
                     LogFields.Field("recognitionState", state),
                     LogFields.Field("diagnostic", diagnostic));
             }
+        }
+
+        private void LogObjectEntryPickUpOpportunity(
+            Collider evidenceCollider,
+            ObjectEntryId objectEntryId,
+            bool radialDetected,
+            bool visualDetected,
+            string offerState,
+            bool isAuthorizedOffer,
+            bool configurationValid,
+            PegaPickUpObjectEntryConfigurationSnapshot parameters,
+            string knowledgeUpdate,
+            string diagnostic,
+            PegaKnowledgeWriteResult? positionWriteResult = null,
+            PegaKnowledgeWriteResult? availabilityWriteResult = null,
+            PegaKnowledgeWriteResult? parametersWriteResult = null,
+            PegaKnowledgeWriteResult? parametersInvalidationResult = null,
+            bool coherentPerceptionOffer = false,
+            bool knowledgeWriteStateVerified = false,
+            string knowledgeCoherenceDiagnostic = null)
+        {
+            string detectionChannels = DescribeDetectionChannels(radialDetected, visualDetected);
+            string stateKey = string.Concat(
+                objectEntryId.StableText,
+                "|", detectionChannels,
+                "|", offerState,
+                "|", isAuthorizedOffer,
+                "|", configurationValid,
+                "|", configurationValid ? parameters.InteractionRangeMeters : -1f,
+                "|", configurationValid ? parameters.ExecutionDurationSeconds : -1f,
+                "|", knowledgeUpdate,
+                "|", coherentPerceptionOffer,
+                "|", knowledgeWriteStateVerified,
+                "|", knowledgeCoherenceDiagnostic,
+                "|", diagnostic);
+            if (evidenceCollider != null &&
+                _objectEntryOpportunityLogStates.TryGetValue(evidenceCollider, out string previousState) &&
+                string.Equals(previousState, stateKey, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (evidenceCollider != null)
+            {
+                _objectEntryOpportunityLogStates[evidenceCollider] = stateKey;
+            }
+
+            _log.Debug(
+                "NPC Perception assessed whether an Object Entry Pick Up opportunity could be published to Individual Knowledge.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("candidateColliderEntityId", evidenceCollider != null
+                    ? evidenceCollider.GetEntityId().ToString()
+                    : string.Empty),
+                LogFields.Field("objectEntryId", objectEntryId.StableText),
+                LogFields.Field("detectionChannels", detectionChannels),
+                LogFields.Field("interactionOfferState", offerState),
+                LogFields.Field("pickUpOfferAuthorizedForNpc", isAuthorizedOffer),
+                LogFields.Field("configurationValid", configurationValid),
+                LogFields.Field("runtimeEligibilityEvaluated", false),
+                LogFields.Field("knowledgeUpdate", knowledgeUpdate),
+                LogFields.Field("knowledgeOfferCoherent", coherentPerceptionOffer),
+                LogFields.Field("knowledgeWriteStateVerified", knowledgeWriteStateVerified),
+                LogFields.Field("positionWriteResult", DescribeKnowledgeWriteResult(positionWriteResult)),
+                LogFields.Field("pickUpAvailabilityWriteResult", DescribeKnowledgeWriteResult(availabilityWriteResult)),
+                LogFields.Field("planningParametersWriteResult", DescribeKnowledgeWriteResult(parametersWriteResult)),
+                LogFields.Field("planningParametersInvalidationResult", DescribeKnowledgeWriteResult(parametersInvalidationResult)),
+                LogFields.Field("interactionRangeMeters", configurationValid
+                    ? parameters.InteractionRangeMeters
+                    : -1f),
+                LogFields.Field("executionDurationSeconds", configurationValid
+                    ? parameters.ExecutionDurationSeconds
+                    : -1f),
+                LogFields.Field("knowledgeCoherenceDiagnostic", knowledgeCoherenceDiagnostic ?? string.Empty),
+                LogFields.Field("diagnostic", diagnostic ?? string.Empty));
+        }
+
+        private static string DescribeKnowledgeWriteResult(PegaKnowledgeWriteResult? result) =>
+            result.HasValue ? result.Value.ToString() : "not-attempted";
+
+        private static string DescribeDetectionChannels(bool radialDetected, bool visualDetected)
+        {
+            if (radialDetected && visualDetected)
+            {
+                return "radial+visual";
+            }
+
+            if (radialDetected)
+            {
+                return "radial";
+            }
+
+            return visualDetected ? "visual" : "none";
         }
 
         private void PruneCandidateRecognitionLogStates()
@@ -2508,6 +3605,34 @@ namespace PEGA.NPC.Perception
             for (int index = 0; index < removed.Count; index++)
             {
                 _candidateRecognitionLogStates.Remove(removed[index]);
+            }
+        }
+
+        private void PruneObjectEntryOpportunityLogStates()
+        {
+            if (_objectEntryOpportunityLogStates.Count == 0)
+            {
+                return;
+            }
+
+            List<Collider> staleCandidates = null;
+            foreach (KeyValuePair<Collider, string> pair in _objectEntryOpportunityLogStates)
+            {
+                if (pair.Key == null || !_candidateCollidersThisSample.Contains(pair.Key))
+                {
+                    staleCandidates ??= new List<Collider>();
+                    staleCandidates.Add(pair.Key);
+                }
+            }
+
+            if (staleCandidates == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < staleCandidates.Count; index++)
+            {
+                _objectEntryOpportunityLogStates.Remove(staleCandidates[index]);
             }
         }
 
@@ -2632,6 +3757,54 @@ namespace PEGA.NPC.Perception
                 LogFields.Field("observationTimeSeconds", observationTimeSeconds));
         }
 
+        private void LogUnresolvedRadialPresenceTransition(
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> previousPresence,
+            PegaNpcPerceivedAreaPresence currentPresence,
+            double observationTimeSeconds,
+            int unresolvedCandidateCount,
+            int resolvedCandidateCount)
+        {
+            bool hadPrevious = previousPresence.TryGetValue(out PegaNpcPerceivedAreaPresence previous);
+            if ((hadPrevious && previous.IsEquivalentTo(currentPresence)) ||
+                (!hadPrevious && !currentPresence.IsPresent))
+            {
+                return;
+            }
+
+            _log.Debug(
+                "NPC radial perception updated unresolved-presence Knowledge after checking identity evidence.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("unresolvedRadialPresence", currentPresence.IsPresent),
+                LogFields.Field("opportunitySequence", currentPresence.OpportunitySequence),
+                LogFields.Field("previousOpportunitySequence", hadPrevious ? previous.OpportunitySequence : 0),
+                LogFields.Field("activeOpportunityCount", currentPresence.ActiveOpportunityCount),
+                LogFields.Field("activeOpportunitySequenceIds", DescribeRadialOpportunitySequences(currentPresence)),
+                LogFields.Field("unresolvedRadialCandidateCount", unresolvedCandidateCount),
+                LogFields.Field("resolvedRadialCandidateCount", resolvedCandidateCount),
+                LogFields.Field("observerPosition", currentPresence.ObserverPosition),
+                LogFields.Field("perceivedAreaRadiusMeters", currentPresence.PerceivedAreaRadiusMeters),
+                LogFields.Field("sensorInstance", perceivedAreaSensorInstance != null
+                    ? perceivedAreaSensorInstance.name
+                    : string.Empty),
+                LogFields.Field("observationTimeSeconds", observationTimeSeconds));
+        }
+
+        private static string DescribeRadialOpportunitySequences(PegaNpcPerceivedAreaPresence presence)
+        {
+            if (presence.ActiveOpportunityCount == 0)
+            {
+                return string.Empty;
+            }
+
+            string[] sequences = new string[presence.ActiveOpportunityCount];
+            for (int index = 0; index < sequences.Length; index++)
+            {
+                sequences[index] = presence.GetActiveOpportunityAt(index).Sequence.ToString();
+            }
+
+            return string.Join(",", sequences);
+        }
+
         private static bool SameOccurrence(ActorOccurrence left, ActorOccurrence right) =>
             left.Id == right.Id && left.ActorRoot == right.ActorRoot && left.ActorId.Equals(right.ActorId);
 
@@ -2729,6 +3902,29 @@ namespace PEGA.NPC.Perception
                     isPresent,
                     isPresent ? transform.position : Vector3.zero,
                     _areaPresenceSensor.RadiusMeters),
+                PegaNpcEvidenceOrigin.Perception,
+                observationTimeSeconds);
+        }
+
+        private void PublishUnresolvedRadialPresenceIfChanged(
+            PegaNpcPerceivedAreaPresence unresolvedPresence,
+            double observationTimeSeconds)
+        {
+            PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> presence =
+                _knowledgeState.GetUnresolvedRadialPresence();
+            if (presence.TryGetValue(out PegaNpcPerceivedAreaPresence previousPresence) &&
+                previousPresence.IsEquivalentTo(unresolvedPresence))
+            {
+                return;
+            }
+
+            if (presence.Status == PegaKnowledgeStatus.Unknown && !unresolvedPresence.IsPresent)
+            {
+                return;
+            }
+
+            _knowledgeState.ObserveUnresolvedRadialPresence(
+                unresolvedPresence,
                 PegaNpcEvidenceOrigin.Perception,
                 observationTimeSeconds);
         }

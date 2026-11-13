@@ -15,18 +15,48 @@ using PEGA.NPC.Autonomy.Planning;
 using PEGA.NPC.Knowledge.Core;
 using PEGA.NPC.Knowledge.Definitions;
 using PEGA.NPC.Knowledge.Group;
+using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 namespace PEGA.NPC.Actions.Runtime
 {
+    public enum PegaNpcPickUpKnowledgeSource
+    {
+        Group = 0,
+        Individual = 10
+    }
+
     [CreateAssetMenu(
         fileName = "PickUpKnownObjectEntry",
         menuName = "PEGA/NPC/Actions/Pick Up Known Object Entry")]
     public sealed class PegaNpcPickUpKnownObjectEntryAction : PegaNpcActionProviderAsset,
-        IPegaObjectInteractionOccurrenceAuthority
+        IPegaObjectInteractionOccurrenceAuthority,
+        IPegaNpcKnowledgeChangeRelevanceProvider
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Actions";
 
+        private readonly struct RangeRejectedPickUpAttempt
+        {
+            public RangeRejectedPickUpAttempt(
+                Vector3 actorPosition,
+                Vector3 knownTargetPosition,
+                float interactionRangeMeters)
+            {
+                ActorPosition = actorPosition;
+                KnownTargetPosition = knownTargetPosition;
+                InteractionRangeMeters = interactionRangeMeters;
+            }
+
+            public Vector3 ActorPosition { get; }
+            public Vector3 KnownTargetPosition { get; }
+            public float InteractionRangeMeters { get; }
+        }
+
+        [SerializeField]
+        [Tooltip("Knowledge authority used to offer Pick Up candidates. Individual candidates require current Perception evidence from this Actor.")]
+        private PegaNpcPickUpKnowledgeSource knowledgeSource;
+
         private PegaActorGroupKnowledgeReader _groupKnowledgeReader;
+        private PegaNpcKnowledgeState _individualKnowledgeState;
         private PegaActorPhysicalInventory _inventory;
         private PegaNpcObjectInteractionMechanic _interactionMechanic;
         private ObjectEntryOccurrenceQueryBinding _occurrenceQuery;
@@ -39,6 +69,8 @@ namespace PEGA.NPC.Actions.Runtime
         private bool _interactionLifecycleActive;
         private bool _interactionStartInProgress;
         private ScopedLogger _planningLog;
+        [NonSerialized]
+        private Dictionary<PegaNpcPlanningTargetId, RangeRejectedPickUpAttempt> _rangeRejectedAttempts;
 
         protected override PegaNpcActionEffectKind ActionEffectKind =>
             PegaNpcActionEffectKind.PossessObjectEntry;
@@ -46,9 +78,51 @@ namespace PEGA.NPC.Actions.Runtime
         public override PegaNpcActionContract Contract => new PegaNpcActionContract(
             PegaNpcPlanningActionId.PickUpKnownObjectEntry,
             ActionEffectKind,
-            PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
+            UsesIndividualKnowledge
+                ? PegaNpcPlanningTargetKind.IndividualObjectEntryPosition
+                : PegaNpcPlanningTargetKind.GroupObjectEntryPosition,
             false,
             "NPC began the composed Pick Up action for a known, offered Object Entry.");
+
+        public override bool TryGetRemainingExecutionCostSeconds(
+            long requestId,
+            out float remainingSeconds,
+            out string diagnostic)
+        {
+            remainingSeconds = 0f;
+            diagnostic = string.Empty;
+            if (Outcome != PegaNpcActionOutcome.Running ||
+                requestId <= 0 || requestId != CurrentExecutionId ||
+                !_hasExecutionPlan || _executionAction == null || _objectInteractionExecutionId <= 0 ||
+                !_executionAction.TryGetExecution(
+                    _objectInteractionExecutionId,
+                    out PegaObjectInteractionExecutionStatus interactionStatus,
+                    out diagnostic) ||
+                interactionStatus != PegaObjectInteractionExecutionStatus.Running ||
+                !_executionAction.TryGetRemainingExecutionDurationSeconds(
+                    _objectInteractionExecutionId,
+                    _executionPlan.IntrinsicDurationSeconds,
+                    out remainingSeconds,
+                    out diagnostic))
+            {
+                if (string.IsNullOrWhiteSpace(diagnostic))
+                {
+                    diagnostic = "The active Pick Up request has no current shared interaction execution.";
+                }
+
+                return false;
+            }
+
+            if (float.IsNaN(remainingSeconds) || float.IsInfinity(remainingSeconds))
+            {
+                remainingSeconds = 0f;
+                diagnostic = "The active Pick Up request produced a non-finite remaining duration.";
+                return false;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
 
         protected override bool OnRuntimeInitialize(out string diagnostic)
         {
@@ -57,21 +131,35 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
+            _rangeRejectedAttempts = new Dictionary<PegaNpcPlanningTargetId, RangeRejectedPickUpAttempt>();
+
             _planningLog ??= PegaLogging.CreateScopedLogger<PegaNpcPickUpKnownObjectEntryAction>(
                 LogCategory,
                 ActorRoot.name);
 
+            if (!Enum.IsDefined(typeof(PegaNpcPickUpKnowledgeSource), knowledgeSource))
+            {
+                diagnostic = "Pick Up Knowledge source must be Group or Individual.";
+                return false;
+            }
+
             _groupKnowledgeReader = ActorRoot.GetComponent<PegaActorGroupKnowledgeReader>();
+            _individualKnowledgeState = ActorRoot.GetComponent<PegaNpcKnowledgeState>();
             _inventory = ActorRoot.GetComponent<PegaActorPhysicalInventory>();
             _interactionMechanic = ActorRoot.GetComponent<PegaNpcObjectInteractionMechanic>();
             _occurrenceQuery = RuntimeContext.ObjectEntryOccurrenceQueryBinding;
-            if (_groupKnowledgeReader == null || _groupKnowledgeReader.gameObject != ActorRoot ||
+            bool requiresGroupKnowledge = UsesGroupKnowledge;
+            bool requiresIndividualKnowledge = UsesIndividualKnowledge;
+            if ((requiresGroupKnowledge &&
+                 (_groupKnowledgeReader == null || _groupKnowledgeReader.gameObject != ActorRoot)) ||
+                (requiresIndividualKnowledge &&
+                 (_individualKnowledgeState == null || _individualKnowledgeState.gameObject != ActorRoot)) ||
                 _inventory == null || _inventory.gameObject != ActorRoot ||
                 _interactionMechanic == null || _interactionMechanic.gameObject != ActorRoot ||
                 _occurrenceQuery == null)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Action requires the Actor's composed Group Knowledge reader, inventory and interaction mechanic plus an Activity Object Entry query."
+                    ? "The Action requires its selected Knowledge authority, the Actor's inventory and interaction mechanic, and an Activity Object Entry query."
                     : diagnostic;
                 return false;
             }
@@ -117,14 +205,81 @@ namespace PEGA.NPC.Actions.Runtime
                 return true;
             }
 
-            if (!TryGetComposedReader(
-                    context.ComposedKnowledgeState,
-                    out PegaActorGroupKnowledgeReader reader,
+            if (!TryGetComposedAuthorities(
+                    context,
+                    out PegaActorGroupKnowledgeReader groupReader,
+                    out PegaNpcKnowledgeState individualKnowledgeState,
                     out diagnostic))
             {
                 return false;
             }
 
+            int availableOfferCount = 0;
+            int knownPositionCount = 0;
+            int validParameterCount = 0;
+            string firstSkippedOfferDiagnostic = string.Empty;
+            if (UsesGroupKnowledge &&
+                !TryAddGroupCandidates(
+                    groupReader,
+                    targetList,
+                    candidateList,
+                    ref availableOfferCount,
+                    ref knownPositionCount,
+                    ref validParameterCount,
+                    ref firstSkippedOfferDiagnostic,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            if (UsesIndividualKnowledge &&
+                !TryAddIndividualCandidates(
+                    individualKnowledgeState,
+                    targetList,
+                    candidateList,
+                    ref availableOfferCount,
+                    ref knownPositionCount,
+                    ref validParameterCount,
+                    ref firstSkippedOfferDiagnostic,
+                    out diagnostic))
+            {
+                return false;
+            }
+
+            if (candidateList.Count == 0 && string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
+            {
+                firstSkippedOfferDiagnostic = availableOfferCount == 0
+                    ? "The configured Knowledge authority supplied no currently true PickUpAvailable fact."
+                    : knownPositionCount == 0
+                        ? "No authorized current position was available for the offered Object Entries."
+                        : validParameterCount == 0
+                            ? "No valid authorized Pick Up planning parameters were available for the offered Object Entries."
+                            : "No Pick Up candidate could be formed from the current Knowledge offers.";
+            }
+
+            LogCandidateGeneration(
+                availableOfferCount,
+                knownPositionCount,
+                validParameterCount,
+                candidateList.Count,
+                true,
+                firstSkippedOfferDiagnostic);
+            targets = Array.AsReadOnly(targetList.ToArray());
+            candidates = Array.AsReadOnly(candidateList.ToArray());
+            return true;
+        }
+
+        private bool TryAddGroupCandidates(
+            PegaActorGroupKnowledgeReader reader,
+            List<PegaNpcPlanningTarget> targets,
+            List<PegaNpcPlanningActionCandidate> candidates,
+            ref int availableOfferCount,
+            ref int knownPositionCount,
+            ref int validParameterCount,
+            ref string firstSkippedOfferDiagnostic,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
             PegaActorGroupKnowledgeFactSetReadResult<ObjectEntryId, bool> offers = reader.ReadGroupFacts(
                 PegaObjectEntryKnowledgeFacts.PickUpAvailable,
                 Time.timeAsDouble);
@@ -136,10 +291,6 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
-            int availableOfferCount = 0;
-            int knownPositionCount = 0;
-            int validParameterCount = 0;
-            string firstSkippedOfferDiagnostic = string.Empty;
             for (int groupIndex = 0; groupIndex < offers.Groups.Count; groupIndex++)
             {
                 PegaActorGroupKnowledgeFactSetSnapshot<ObjectEntryId, bool> group = offers.Groups[groupIndex];
@@ -161,6 +312,22 @@ namespace PEGA.NPC.Actions.Runtime
 
                     availableOfferCount++;
                     ObjectEntryId objectEntryId = fact.Key.AddressValue;
+                    if (_inventory.Contains(objectEntryId))
+                    {
+                        SetFirstDiagnostic(
+                            ref firstSkippedOfferDiagnostic,
+                            $"Group Pick Up offer '{objectEntryId.StableText}' was excluded because this Actor's physical inventory already contains the Object Entry.");
+                        continue;
+                    }
+
+                    if (IsKnownLocallyUnavailable(objectEntryId))
+                    {
+                        SetFirstDiagnostic(
+                            ref firstSkippedOfferDiagnostic,
+                            $"Group Pick Up offer '{objectEntryId.StableText}' was excluded by this Actor's current Individual availability evidence.");
+                        continue;
+                    }
+
                     if (!TryReadKnownTarget(
                             reader,
                             group.GroupId,
@@ -169,11 +336,7 @@ namespace PEGA.NPC.Actions.Runtime
                             out double positionEvidenceTimeSeconds,
                             out string positionDiagnostic))
                     {
-                        if (string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
-                        {
-                            firstSkippedOfferDiagnostic = positionDiagnostic;
-                        }
-
+                        SetFirstDiagnostic(ref firstSkippedOfferDiagnostic, positionDiagnostic);
                         continue;
                     }
 
@@ -185,11 +348,7 @@ namespace PEGA.NPC.Actions.Runtime
                             out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                             out string parameterDiagnostic))
                     {
-                        if (string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
-                        {
-                            firstSkippedOfferDiagnostic = parameterDiagnostic;
-                        }
-
+                        SetFirstDiagnostic(ref firstSkippedOfferDiagnostic, parameterDiagnostic);
                         continue;
                     }
 
@@ -205,38 +364,122 @@ namespace PEGA.NPC.Actions.Runtime
                         return false;
                     }
 
-                    targetList.Add(target);
-                    candidateList.Add(new PegaNpcPlanningActionCandidate(
-                        Contract,
-                        this,
-                        target.TargetId,
-                        PegaActorMovementSpeedRegime.Movement,
-                        parameters.ExecutionDurationSeconds,
-                        parameters.InteractionRangeMeters));
+                    if (IsRangeRejectionUnchanged(
+                            target.TargetId,
+                            knownPosition,
+                            parameters.InteractionRangeMeters))
+                    {
+                        SetFirstDiagnostic(
+                            ref firstSkippedOfferDiagnostic,
+                            $"Group Pick Up offer '{objectEntryId.StableText}' was not retried because its known target and Actor positions have not changed since the prior out-of-range attempt.");
+                        continue;
+                    }
+
+                    targets.Add(target);
+                    candidates.Add(CreateCandidate(target, parameters));
                 }
             }
 
-            if (candidateList.Count == 0 && string.IsNullOrWhiteSpace(firstSkippedOfferDiagnostic))
+            return true;
+        }
+
+        private bool TryAddIndividualCandidates(
+            PegaNpcKnowledgeState knowledgeState,
+            List<PegaNpcPlanningTarget> targets,
+            List<PegaNpcPlanningActionCandidate> candidates,
+            ref int availableOfferCount,
+            ref int knownPositionCount,
+            ref int validParameterCount,
+            ref string firstSkippedOfferDiagnostic,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            if (!TryGetActorId(out ActorId actorId, out diagnostic))
             {
-                firstSkippedOfferDiagnostic = availableOfferCount == 0
-                    ? "Group Knowledge supplied no currently true PickUpAvailable fact."
-                    : knownPositionCount == 0
-                        ? "No authorized Group position was available for the offered Object Entries."
-                        : validParameterCount == 0
-                            ? "No valid authorized Pick Up planning parameters were available for the offered Object Entries."
-                            : "No Pick Up candidate could be formed from the current Group offers.";
+                return false;
             }
 
-            LogCandidateGeneration(
-                availableOfferCount,
-                knownPositionCount,
-                validParameterCount,
-                candidateList.Count,
-                true,
-                firstSkippedOfferDiagnostic);
-            targets = Array.AsReadOnly(targetList.ToArray());
-            candidates = Array.AsReadOnly(candidateList.ToArray());
+            IReadOnlyList<ObjectEntryId> objectEntryIds = knowledgeState.GetKnownObjectEntryIds();
+            for (int index = 0; index < objectEntryIds.Count; index++)
+            {
+                ObjectEntryId objectEntryId = objectEntryIds[index];
+                if (_inventory.Contains(objectEntryId))
+                {
+                    SetFirstDiagnostic(
+                        ref firstSkippedOfferDiagnostic,
+                        $"Individual Pick Up offer '{objectEntryId.StableText}' was excluded because this Actor's physical inventory already contains the Object Entry.");
+                    continue;
+                }
+
+                if (IsKnownLocallyUnavailable(objectEntryId))
+                {
+                    SetFirstDiagnostic(
+                        ref firstSkippedOfferDiagnostic,
+                        $"Individual Pick Up offer '{objectEntryId.StableText}' was excluded by this Actor's current availability evidence.");
+                    continue;
+                }
+
+                if (!TryReadKnownIndividualPickUpFacts(
+                        knowledgeState,
+                        objectEntryId,
+                        out Vector3 knownPosition,
+                        out PegaPickUpObjectEntryConfigurationSnapshot parameters,
+                        out double evidenceTimeSeconds,
+                        out string factDiagnostic))
+                {
+                    SetFirstDiagnostic(ref firstSkippedOfferDiagnostic, factDiagnostic);
+                    continue;
+                }
+
+                availableOfferCount++;
+                knownPositionCount++;
+                validParameterCount++;
+                PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromKnownIndividualObjectEntryPosition(
+                    objectEntryId,
+                    actorId,
+                    knownPosition,
+                    evidenceTimeSeconds);
+                if (!target.IsValid)
+                {
+                    diagnostic = $"Individual Knowledge returned an invalid Pick Up Target for ObjectEntryId '{objectEntryId.StableText}'.";
+                    return false;
+                }
+
+                if (IsRangeRejectionUnchanged(
+                        target.TargetId,
+                        knownPosition,
+                        parameters.InteractionRangeMeters))
+                {
+                    SetFirstDiagnostic(
+                        ref firstSkippedOfferDiagnostic,
+                        $"Individual Pick Up offer '{objectEntryId.StableText}' was not retried because its known target and Actor positions have not changed since the prior out-of-range attempt.");
+                    continue;
+                }
+
+                targets.Add(target);
+                candidates.Add(CreateCandidate(target, parameters));
+            }
+
             return true;
+        }
+
+        private PegaNpcPlanningActionCandidate CreateCandidate(
+            PegaNpcPlanningTarget target,
+            PegaPickUpObjectEntryConfigurationSnapshot parameters) =>
+            new PegaNpcPlanningActionCandidate(
+                Contract,
+                this,
+                target.TargetId,
+                PegaActorMovementSpeedRegime.Movement,
+                parameters.ExecutionDurationSeconds,
+                parameters.InteractionRangeMeters);
+
+        private static void SetFirstDiagnostic(ref string current, string diagnostic)
+        {
+            if (string.IsNullOrWhiteSpace(current) && !string.IsNullOrWhiteSpace(diagnostic))
+            {
+                current = diagnostic;
+            }
         }
 
         private void LogCandidateGeneration(
@@ -248,9 +491,10 @@ namespace PEGA.NPC.Actions.Runtime
             string diagnostic)
         {
             _planningLog?.Debug(
-                "NPC Pick Up provider evaluated its Group offers for GOAP candidates.",
+                "NPC Pick Up provider evaluated authorized Knowledge offers for GOAP candidates.",
                 LogFields.Field("actorRoot", ActorRoot != null ? ActorRoot.name : string.Empty),
                 LogFields.Field("actionId", Contract.ActionId),
+                LogFields.Field("knowledgeSource", knowledgeSource),
                 LogFields.Field("availableOfferCount", availableOfferCount),
                 LogFields.Field("knownPositionCount", knownPositionCount),
                 LogFields.Field("validParameterCount", validParameterCount),
@@ -261,14 +505,22 @@ namespace PEGA.NPC.Actions.Runtime
 
         public override bool CanOfferCandidate(
             PegaNpcPlanningActionCandidate candidate,
-            PegaNpcPlanContinuation? continuation) =>
-            !continuation.HasValue && CandidateMatchesContract(candidate) &&
-            candidate.TargetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition &&
-            candidate.TargetId.ObjectEntryId.IsValid && candidate.TargetId.KnowledgeGroupId.IsValid &&
-            _inventory != null && _inventory.HasFreeCapacity &&
-            candidate.TargetRadiusOverrideMeters.HasValue &&
-            IsNonNegativeFinite(candidate.TargetRadiusOverrideMeters.Value) &&
-            IsNonNegativeFinite(candidate.IntrinsicDurationSeconds);
+            PegaNpcPlanContinuation? continuation)
+        {
+            if (continuation.HasValue || !CandidateMatchesContract(candidate) ||
+                !IsTargetIdentityAuthorized(candidate.TargetId) ||
+                _inventory == null || !_inventory.HasFreeCapacity ||
+                _inventory.Contains(candidate.TargetId.ObjectEntryId) ||
+                IsKnownLocallyUnavailable(candidate.TargetId.ObjectEntryId) ||
+                !candidate.TargetRadiusOverrideMeters.HasValue ||
+                !IsNonNegativeFinite(candidate.TargetRadiusOverrideMeters.Value) ||
+                !IsNonNegativeFinite(candidate.IntrinsicDurationSeconds))
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public override bool IsCurrentPlanValid(
             PegaNpcPlanSnapshot plan,
@@ -283,21 +535,19 @@ namespace PEGA.NPC.Actions.Runtime
             if (continuation.HasValue || plan.Purpose != PegaNpcPlanPurpose.DesireGoal ||
                 plan.ActionId != Contract.ActionId || plan.TargetKind != Contract.TargetKind ||
                 plan.TargetProvenance != PegaNpcPlanningTargetProvenance.DerivedFromKnowledge ||
-                plan.TargetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
+                !IsTargetIdentityAuthorized(plan.TargetId) ||
                 !TryReadKnownTarget(
                     plan.TargetId,
                     out currentKnownPosition,
                     out evidenceTimeSeconds,
                     out diagnostic) ||
                 !TryReadKnownPickUpPlanningParameters(
-                    _groupKnowledgeReader,
-                    plan.TargetId.KnowledgeGroupId,
-                    plan.TargetId.ObjectEntryId,
+                    plan.TargetId,
                     out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out diagnostic) ||
                 !MatchesPlanParameters(parameters, plan) ||
                 !currentKnownPosition.Equals(plan.TargetPosition) ||
-                Math.Abs(evidenceTimeSeconds - plan.EvidenceTimeSeconds) > 0.000001d ||
+                !IsEvidenceTimeCompatible(plan.TargetId, evidenceTimeSeconds, plan.EvidenceTimeSeconds) ||
                 _inventory == null || !_inventory.HasFreeCapacity)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
@@ -326,18 +576,16 @@ namespace PEGA.NPC.Actions.Runtime
                     out double evidenceTimeSeconds,
                     out diagnostic) ||
                 !TryReadKnownPickUpPlanningParameters(
-                    _groupKnowledgeReader,
-                    candidate.TargetId.KnowledgeGroupId,
-                    candidate.TargetId.ObjectEntryId,
+                    candidate.TargetId,
                     out PegaPickUpObjectEntryConfigurationSnapshot parameters,
                     out diagnostic) ||
                 !MatchesCandidateParameters(parameters, candidate) ||
                 !position.Equals(target.Target.KnownPosition) ||
-                Math.Abs(evidenceTimeSeconds - target.Target.EvidenceTimeSeconds) > 0.000001d ||
+                !IsEvidenceTimeCompatible(candidate.TargetId, evidenceTimeSeconds, target.Target.EvidenceTimeSeconds) ||
                 !TryGetActorId(out ActorId actorId, out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The causal Pick Up candidate is not a current, membership-authorized Object Entry offer."
+                    ? "The causal Pick Up candidate is not supported by current, authorized Object Entry Knowledge."
                     : diagnostic;
                 return false;
             }
@@ -416,9 +664,15 @@ namespace PEGA.NPC.Actions.Runtime
                     out _,
                     out diagnostic))
             {
+                bool expectedPreconditionInvalidation =
+                    _inventory != null &&
+                    (_inventory.Contains(plan.TargetId.ObjectEntryId) ||
+                     !_inventory.HasFreeCapacity ||
+                     IsKnownLocallyUnavailable(plan.TargetId.ObjectEntryId));
                 RejectStart(string.IsNullOrWhiteSpace(diagnostic)
                     ? "The Pick Up Target is no longer known as available."
-                    : diagnostic);
+                    : diagnostic,
+                    expectedPreconditionInvalidation);
                 return false;
             }
 
@@ -453,7 +707,7 @@ namespace PEGA.NPC.Actions.Runtime
                     out diagnostic) ||
                 !aggregator.TryGetAvailableActions(
                     request,
-                    out IReadOnlyList<PegaObjectInteractionAction> availableActions,
+                    out _,
                     out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
@@ -464,9 +718,15 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             PegaObjectEntryPickUpAction objectEntryPickUpAction = null;
-            for (int index = 0; index < availableActions.Count; index++)
+            PegaObjectEntryPickUpAction[] composedPickUpActions =
+                occurrence.GetComponents<PegaObjectEntryPickUpAction>();
+            for (int index = 0; index < composedPickUpActions.Length; index++)
             {
-                if (!(availableActions[index] is PegaObjectEntryPickUpAction candidateAction) ||
+                PegaObjectEntryPickUpAction candidateAction = composedPickUpActions[index];
+                if (candidateAction == null ||
+                    !aggregator.IsOfferedTo(
+                        candidateAction,
+                        PegaObjectInteractionParticipant.Npc) ||
                     !candidateAction.TryGetConfiguration(
                         out PegaPickUpObjectEntryConfigurationSnapshot currentParameters,
                         out _) ||
@@ -487,7 +747,7 @@ namespace PEGA.NPC.Actions.Runtime
 
             if (objectEntryPickUpAction == null)
             {
-                diagnostic = "The selected Object Entry has no currently eligible Pick Up action matching its authorized Group Knowledge parameters.";
+                diagnostic = "The selected Object Entry has no authored NPC Pick Up action matching its authorized Knowledge parameters.";
                 RejectStart(diagnostic);
                 return false;
             }
@@ -508,16 +768,47 @@ namespace PEGA.NPC.Actions.Runtime
                     objectEntryPickUpAction,
                     request,
                     out _objectInteractionExecutionId,
+                    out PegaObjectEntryPickUpStartStatus startStatus,
                     out diagnostic))
             {
                 _interactionStartInProgress = false;
                 _interactionLifecycleActive = false;
                 _hasExecutionPlan = false;
+                bool expectedPreconditionInvalidation = IsExpectedStartStatus(startStatus);
+                if (startStatus == PegaObjectEntryPickUpStartStatus.OutsideInteractionRange)
+                {
+                    RecordRangeRejectedAttempt(plan);
+                }
+
+                if (TryGetPickUpAvailabilityEvidenceKind(startStatus, out PegaObjectEntryPickUpEvidenceKind evidenceKind))
+                {
+                    RecordPickUpAvailabilityResult(plan.TargetId.ObjectEntryId, evidenceKind);
+                }
+
+                if (expectedPreconditionInvalidation)
+                {
+                    _planningLog?.Info(
+                        "NPC Pick Up start assessment rejected the selected Object Entry by a current gameplay precondition.",
+                        LogFields.Field("actorRoot", ActorRoot.name),
+                        LogFields.Field("objectEntryId", plan.TargetId.ObjectEntryId.StableText),
+                        LogFields.Field("startStatus", startStatus),
+                        LogFields.Field("diagnostic", diagnostic));
+                }
+                else
+                {
+                    _planningLog?.Error(
+                        "NPC Pick Up start assessment failed its interaction or contract validation.",
+                        LogFields.Field("actorRoot", ActorRoot.name),
+                        LogFields.Field("objectEntryId", plan.TargetId.ObjectEntryId.StableText),
+                        LogFields.Field("startStatus", startStatus),
+                        LogFields.Field("diagnostic", diagnostic));
+                }
                 CompleteAction(
                     PegaNpcActionOutcome.Invalid,
                     string.IsNullOrWhiteSpace(diagnostic)
                         ? "The shared Pick Up action could not begin for the selected Object Entry."
-                        : diagnostic);
+                        : diagnostic,
+                    expectedPreconditionInvalidation);
                 return false;
             }
 
@@ -568,22 +859,23 @@ namespace PEGA.NPC.Actions.Runtime
                     out double evidenceTimeSeconds,
                     out diagnostic) ||
                 !TryReadKnownPickUpPlanningParameters(
-                    _groupKnowledgeReader,
-                    _executionPlan.TargetId.KnowledgeGroupId,
-                    _executionPlan.TargetId.ObjectEntryId,
+                    _executionPlan.TargetId,
                     out PegaPickUpObjectEntryConfigurationSnapshot knownParameters,
                     out diagnostic) ||
                 !MatchesPlanParameters(knownParameters, _executionPlan) ||
                 !actionConfigurationMatches ||
                 !position.Equals(_executionPlan.TargetPosition) ||
-                Math.Abs(evidenceTimeSeconds - _executionPlan.EvidenceTimeSeconds) > 0.000001d ||
+                !IsEvidenceTimeCompatible(
+                    _executionPlan.TargetId,
+                    evidenceTimeSeconds,
+                    _executionPlan.EvidenceTimeSeconds) ||
                 !_executionPlan.TargetRadiusOverrideMeters.HasValue ||
                 Vector3.Distance(
                     ActorTransform.position,
                     position) > _executionPlan.TargetRadiusOverrideMeters.Value)
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Actor left the known interaction range or the authorized Group offer changed during Pick Up."
+                    ? "The Actor left interaction range or the authorized Knowledge offer changed during Pick Up."
                     : diagnostic;
                 return false;
             }
@@ -654,7 +946,7 @@ namespace PEGA.NPC.Actions.Runtime
                 !ArePreconditionsStillValid(out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The NPC's active GOAP plan or membership-authorized Pick Up preconditions are no longer current."
+                    ? "The NPC's active GOAP plan or authorized Pick Up preconditions are no longer current."
                     : diagnostic;
                 return false;
             }
@@ -726,6 +1018,20 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             _hasPossessionEvidence = true;
+            if (!IsActionSpecificEffectObserved(out diagnostic))
+            {
+                _hasPossessionEvidence = false;
+                CompleteAction(
+                    PegaNpcActionOutcome.Invalid,
+                    string.IsNullOrWhiteSpace(diagnostic)
+                        ? "The Pick Up interaction reported success without a confirmed inventory transfer."
+                        : diagnostic);
+                return;
+            }
+
+            RecordPickUpAvailabilityResult(
+                _executionPlan.TargetId.ObjectEntryId,
+                PegaObjectEntryPickUpEvidenceKind.NoLongerOnGround);
             CompleteAction(
                 PegaNpcActionOutcome.Success,
                 "The shared Pick Up action transferred the Object Entry into the NPC's physical inventory.");
@@ -794,6 +1100,49 @@ namespace PEGA.NPC.Actions.Runtime
             return true;
         }
 
+        private bool TryReadKnownPickUpPlanningParameters(
+            PegaNpcPlanningTargetId targetId,
+            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
+            out string diagnostic)
+        {
+            parameters = default;
+            if (targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+            {
+                if (!UsesGroupKnowledge)
+                {
+                    diagnostic = "The Pick Up Action is not configured to use Group Knowledge.";
+                    return false;
+                }
+
+                return TryReadKnownPickUpPlanningParameters(
+                    _groupKnowledgeReader,
+                    targetId.KnowledgeGroupId,
+                    targetId.ObjectEntryId,
+                    out parameters,
+                    out diagnostic);
+            }
+
+            if (targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition)
+            {
+                if (!UsesIndividualKnowledge)
+                {
+                    diagnostic = "The Pick Up Action is not configured to use Individual Knowledge.";
+                    return false;
+                }
+
+                return TryReadKnownIndividualPickUpFacts(
+                    _individualKnowledgeState,
+                    targetId.ObjectEntryId,
+                    out _,
+                    out parameters,
+                    out _,
+                    out diagnostic);
+            }
+
+            diagnostic = "Pick Up planning parameters require a typed Object Entry target from an enabled Knowledge authority.";
+            return false;
+        }
+
         private static bool MatchesCandidateParameters(
             PegaPickUpObjectEntryConfigurationSnapshot parameters,
             PegaNpcPlanningActionCandidate candidate) =>
@@ -820,19 +1169,28 @@ namespace PEGA.NPC.Actions.Runtime
         {
             position = default;
             evidenceTimeSeconds = 0d;
-            if (_groupKnowledgeReader == null ||
-                targetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition ||
-                !targetId.ObjectEntryId.IsValid || !targetId.KnowledgeGroupId.IsValid)
+            if (!IsTargetIdentityAuthorized(targetId))
             {
-                diagnostic = "The Pick Up Action requires a typed ObjectEntryId and GroupId from its selected known Target.";
+                diagnostic = "The Pick Up Action requires a typed Object Entry identity from an enabled and authoritative Knowledge scope.";
                 return false;
             }
 
-            return TryReadKnownTarget(
-                _groupKnowledgeReader,
-                targetId.KnowledgeGroupId,
+            if (targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+            {
+                return TryReadKnownTarget(
+                    _groupKnowledgeReader,
+                    targetId.KnowledgeGroupId,
+                    targetId.ObjectEntryId,
+                    out position,
+                    out evidenceTimeSeconds,
+                    out diagnostic);
+            }
+
+            return TryReadKnownIndividualPickUpFacts(
+                _individualKnowledgeState,
                 targetId.ObjectEntryId,
                 out position,
+                out _,
                 out evidenceTimeSeconds,
                 out diagnostic);
         }
@@ -869,43 +1227,337 @@ namespace PEGA.NPC.Actions.Runtime
             return true;
         }
 
-        private bool TryGetComposedReader(
-            IGoapKnowledgeStateView composedKnowledgeState,
-            out PegaActorGroupKnowledgeReader reader,
+        private bool TryReadKnownIndividualPickUpFacts(
+            PegaNpcKnowledgeState knowledgeState,
+            ObjectEntryId objectEntryId,
+            out Vector3 position,
+            out PegaPickUpObjectEntryConfigurationSnapshot parameters,
+            out double evidenceTimeSeconds,
             out string diagnostic)
         {
-            reader = null;
+            position = default;
+            parameters = default;
+            evidenceTimeSeconds = 0d;
+            diagnostic = string.Empty;
+            if (knowledgeState == null || knowledgeState != _individualKnowledgeState ||
+                knowledgeState.Scope != PegaKnowledgeScope.Individual || !objectEntryId.IsValid ||
+                !TryGetActorId(out ActorId actorId, out diagnostic))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "Individual Pick Up facts require this Actor's own Knowledge State and ObjectEntryId."
+                    : diagnostic;
+                return false;
+            }
+
+            PegaKnowledgeFact<bool> pickUpAvailable = knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
+                Time.timeAsDouble);
+            PegaKnowledgeFact<Vector3> positionFact = knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.Position.For(objectEntryId),
+                Time.timeAsDouble);
+            PegaKnowledgeFact<PegaPickUpObjectEntryConfigurationSnapshot> parametersFact = knowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters.For(objectEntryId),
+                Time.timeAsDouble);
+            if (pickUpAvailable.Scope != PegaKnowledgeScope.Individual ||
+                !pickUpAvailable.TryGetValue(out bool isPickUpAvailable) || !isPickUpAvailable ||
+                !pickUpAvailable.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
+                !pickUpAvailable.HasObservationTime ||
+                positionFact.Scope != PegaKnowledgeScope.Individual ||
+                !positionFact.TryGetValue(out position) ||
+                !positionFact.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
+                !positionFact.HasObservationTime ||
+                parametersFact.Scope != PegaKnowledgeScope.Individual ||
+                !parametersFact.TryGetValue(out parameters) ||
+                !parametersFact.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
+                !parametersFact.HasObservationTime ||
+                !parameters.IsValid || parameters.ObjectEntryId != objectEntryId ||
+                Math.Abs(pickUpAvailable.ObservationTimeSeconds - positionFact.ObservationTimeSeconds) > 0.000001d ||
+                Math.Abs(parametersFact.ObservationTimeSeconds - positionFact.ObservationTimeSeconds) > 0.000001d)
+            {
+                position = default;
+                parameters = default;
+                diagnostic = $"Individual Pick Up Knowledge for '{objectEntryId.StableText}' is not a coherent, current Perception offer, position and configuration (authorityActorId='{actorId.StableText}').";
+                return false;
+            }
+
+            evidenceTimeSeconds = positionFact.ObservationTimeSeconds;
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private bool TryGetComposedAuthorities(
+            PegaNpcActionPlanningContext context,
+            out PegaActorGroupKnowledgeReader groupReader,
+            out PegaNpcKnowledgeState individualKnowledgeState,
+            out string diagnostic)
+        {
+            groupReader = null;
+            individualKnowledgeState = null;
+            IGoapKnowledgeStateView composedKnowledgeState = context.ComposedKnowledgeState;
             if (composedKnowledgeState == null || composedKnowledgeState.Source != GoapStateSource.KnowledgeState)
             {
                 diagnostic = "Pick Up candidate generation requires this NPC's explicit composed Knowledge State view.";
                 return false;
             }
 
-            for (int index = 0; index < composedKnowledgeState.Capabilities.Count; index++)
+            if (UsesGroupKnowledge)
             {
-                if (!(composedKnowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader candidate))
+                for (int index = 0; index < composedKnowledgeState.Capabilities.Count; index++)
                 {
-                    continue;
+                    if (!(composedKnowledgeState.Capabilities[index] is PegaActorGroupKnowledgeReader candidate))
+                    {
+                        continue;
+                    }
+
+                    if (groupReader != null && groupReader != candidate)
+                    {
+                        diagnostic = "More than one Group Knowledge Reader is composed for this NPC; Pick Up planning will not choose an authority implicitly.";
+                        return false;
+                    }
+
+                    groupReader = candidate;
                 }
 
-                if (reader != null && reader != candidate)
+                if (groupReader == null || groupReader != _groupKnowledgeReader)
                 {
-                    diagnostic = "More than one Group Knowledge Reader is composed for this NPC; Pick Up planning will not choose an authority implicitly.";
+                    diagnostic = "The Pick Up Action's Group Knowledge Reader is absent from this NPC's composed Knowledge State.";
+                    return false;
+                }
+            }
+
+            if (UsesIndividualKnowledge)
+            {
+                if (context.KnowledgeState == null || context.KnowledgeState != _individualKnowledgeState ||
+                    _individualKnowledgeState == null || _individualKnowledgeState.Scope != PegaKnowledgeScope.Individual)
+                {
+                    diagnostic = "Individual Pick Up planning requires this Actor's own composed Knowledge State.";
                     return false;
                 }
 
-                reader = candidate;
-            }
-
-            if (reader == null || reader != _groupKnowledgeReader)
-            {
-                diagnostic = "The Pick Up Action's Group Knowledge Reader is absent from this NPC's composed Knowledge State.";
-                return false;
+                individualKnowledgeState = _individualKnowledgeState;
             }
 
             diagnostic = string.Empty;
             return true;
         }
+
+        public bool IsRelevantKnowledgeChange(PegaKnowledgeFactChangedEvent change)
+        {
+            if (change == null || change.Scope != PegaKnowledgeScope.Individual ||
+                change.FactKey == null)
+            {
+                return false;
+            }
+
+            object definition = change.FactKey.DefinitionIdentity;
+            if (ReferenceEquals(definition, PegaObjectEntryKnowledgeFacts.PickUpAvailable))
+            {
+                return change.Evidence.Origin.Is(PegaNpcEvidenceOrigin.Perception) ||
+                       change.Evidence.Origin.Is(PegaNpcEvidenceOrigin.ActionResult);
+            }
+
+            return UsesIndividualKnowledge &&
+                   change.Evidence.Origin.Is(PegaNpcEvidenceOrigin.Perception) &&
+                   (ReferenceEquals(definition, PegaObjectEntryKnowledgeFacts.Position) ||
+                    ReferenceEquals(definition, PegaObjectEntryKnowledgeFacts.PickUpPlanningParameters));
+        }
+
+        private bool IsKnownLocallyUnavailable(ObjectEntryId objectEntryId)
+        {
+            if (_individualKnowledgeState == null || !_individualKnowledgeState.IsAvailable ||
+                !objectEntryId.IsValid)
+            {
+                return false;
+            }
+
+            PegaKnowledgeFact<bool> availability = _individualKnowledgeState.ReadFact(
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
+                Time.timeAsDouble);
+            if (availability.Scope != PegaKnowledgeScope.Individual || !availability.HasObservationTime)
+            {
+                return false;
+            }
+
+            if (availability.TryGetValue(out bool isAvailable))
+            {
+                return !isAvailable &&
+                       (availability.HasOrigin(PegaNpcEvidenceOrigin.Perception) ||
+                        availability.HasOrigin(PegaNpcEvidenceOrigin.ActionResult) ||
+                        availability.HasOrigin(PegaNpcEvidenceOrigin.DesignerAuthoredInitial));
+            }
+
+            return availability.Status == PegaKnowledgeStatus.Invalidated &&
+                   HasCurrentPickUpActionResultEvidence(availability, objectEntryId);
+        }
+
+        private static bool HasCurrentPickUpActionResultEvidence(
+            PegaKnowledgeFact<bool> availability,
+            ObjectEntryId objectEntryId)
+        {
+            for (int index = 0; index < availability.Evidence.Count; index++)
+            {
+                PegaKnowledgeEvidence evidence = availability.Evidence[index];
+                if (evidence.ObservationTimeSeconds != availability.ObservationTimeSeconds ||
+                    !evidence.Origin.Is(PegaNpcEvidenceOrigin.ActionResult) ||
+                    !(evidence.Payload is PegaObjectEntryPickUpAvailabilityEvidence payload) ||
+                    !payload.IsValid || payload.ObjectEntryId != objectEntryId)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsExpectedStartStatus(PegaObjectEntryPickUpStartStatus status) =>
+            status == PegaObjectEntryPickUpStartStatus.TemporarilyReserved ||
+            status == PegaObjectEntryPickUpStartStatus.NoLongerOnGround ||
+            status == PegaObjectEntryPickUpStartStatus.AlreadyInInventory ||
+            status == PegaObjectEntryPickUpStartStatus.InventoryFull ||
+            status == PegaObjectEntryPickUpStartStatus.OutsideInteractionRange ||
+            status == PegaObjectEntryPickUpStartStatus.ActionAlreadyRunning ||
+            status == PegaObjectEntryPickUpStartStatus.ActionInactive;
+
+        private bool IsRangeRejectionUnchanged(
+            PegaNpcPlanningTargetId targetId,
+            Vector3 knownTargetPosition,
+            float interactionRangeMeters)
+        {
+            if (_rangeRejectedAttempts == null || !_rangeRejectedAttempts.TryGetValue(
+                    targetId,
+                    out RangeRejectedPickUpAttempt previousAttempt))
+            {
+                return false;
+            }
+
+            Vector3 currentActorPosition = ActorTransform.position;
+            if (previousAttempt.ActorPosition.Equals(currentActorPosition) &&
+                previousAttempt.KnownTargetPosition.Equals(knownTargetPosition) &&
+                previousAttempt.InteractionRangeMeters == interactionRangeMeters)
+            {
+                return true;
+            }
+
+            _rangeRejectedAttempts.Remove(targetId);
+            return false;
+        }
+
+        private void RecordRangeRejectedAttempt(PegaNpcPlanSnapshot plan)
+        {
+            _rangeRejectedAttempts ??= new Dictionary<PegaNpcPlanningTargetId, RangeRejectedPickUpAttempt>();
+            _rangeRejectedAttempts[plan.TargetId] = new RangeRejectedPickUpAttempt(
+                ActorTransform.position,
+                plan.TargetPosition,
+                plan.TargetRadiusOverrideMeters.Value);
+        }
+
+        private static bool TryGetPickUpAvailabilityEvidenceKind(
+            PegaObjectEntryPickUpStartStatus status,
+            out PegaObjectEntryPickUpEvidenceKind evidenceKind)
+        {
+            switch (status)
+            {
+                case PegaObjectEntryPickUpStartStatus.NoLongerOnGround:
+                case PegaObjectEntryPickUpStartStatus.AlreadyInInventory:
+                    evidenceKind = PegaObjectEntryPickUpEvidenceKind.NoLongerOnGround;
+                    return true;
+                case PegaObjectEntryPickUpStartStatus.TemporarilyReserved:
+                case PegaObjectEntryPickUpStartStatus.ActionAlreadyRunning:
+                case PegaObjectEntryPickUpStartStatus.ActionInactive:
+                    evidenceKind = PegaObjectEntryPickUpEvidenceKind.TemporarilyUnavailable;
+                    return true;
+                default:
+                    evidenceKind = default;
+                    return false;
+            }
+        }
+
+        private void RecordPickUpAvailabilityResult(
+            ObjectEntryId objectEntryId,
+            PegaObjectEntryPickUpEvidenceKind kind)
+        {
+            if (_individualKnowledgeState == null ||
+                RuntimeContext == null ||
+                RuntimeContext.KnowledgeState != _individualKnowledgeState ||
+                !_individualKnowledgeState.IsAvailable ||
+                !objectEntryId.IsValid)
+            {
+                _planningLog?.Error(
+                    "NPC Pick Up could not record its local ActionResult availability evidence.",
+                    LogFields.Field("actorRoot", ActorRoot != null ? ActorRoot.name : string.Empty),
+                    LogFields.Field("objectEntryId", objectEntryId.StableText),
+                    LogFields.Field("evidenceKind", kind),
+                    LogFields.Field("diagnostic", "The Actor's composed Individual Knowledge authority is unavailable."));
+                return;
+            }
+
+            PegaObjectEntryPickUpAvailabilityEvidence payload =
+                new PegaObjectEntryPickUpAvailabilityEvidence(objectEntryId, kind);
+            PegaKnowledgeEvidence evidence = PegaKnowledgeEvidence.From(
+                PegaNpcEvidenceOrigin.ActionResult,
+                Time.timeAsDouble,
+                this,
+                payload);
+            PegaKnowledgeWriteResult result = _individualKnowledgeState.ObserveFact(
+                PegaObjectEntryKnowledgeFacts.PickUpAvailable.For(objectEntryId),
+                false,
+                evidence);
+            if (result == PegaKnowledgeWriteResult.RejectedInvalid)
+            {
+                _planningLog?.Error(
+                    "NPC Pick Up availability ActionResult evidence was rejected by Individual Knowledge.",
+                    LogFields.Field("actorRoot", ActorRoot.name),
+                    LogFields.Field("objectEntryId", objectEntryId.StableText),
+                    LogFields.Field("evidenceKind", kind),
+                    LogFields.Field("knowledgeWriteResult", result));
+                return;
+            }
+
+            _planningLog?.Info(
+                "NPC Pick Up recorded Actor-local availability evidence from the interaction result.",
+                LogFields.Field("actorRoot", ActorRoot.name),
+                LogFields.Field("objectEntryId", objectEntryId.StableText),
+                LogFields.Field("evidenceKind", kind),
+                LogFields.Field("knowledgeWriteResult", result));
+        }
+
+        private bool IsTargetIdentityAuthorized(PegaNpcPlanningTargetId targetId)
+        {
+            if (!targetId.ObjectEntryId.IsValid)
+            {
+                return false;
+            }
+
+            if (targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.GroupObjectEntryPosition)
+            {
+                return UsesGroupKnowledge && targetId.KnowledgeGroupId.IsValid;
+            }
+
+            return targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition &&
+                   UsesIndividualKnowledge && targetId.KnowledgeActorId.IsValid &&
+                   TryGetActorId(out ActorId actorId, out _) && targetId.KnowledgeActorId == actorId;
+        }
+
+        private bool IsEvidenceTimeCompatible(
+            PegaNpcPlanningTargetId targetId,
+            double currentEvidenceTimeSeconds,
+            double plannedEvidenceTimeSeconds)
+        {
+            if (targetId.IdentityKind == PegaNpcPlanningTargetIdentityKind.IndividualObjectEntryPosition)
+            {
+                return currentEvidenceTimeSeconds >= plannedEvidenceTimeSeconds - 0.000001d;
+            }
+
+            return Math.Abs(currentEvidenceTimeSeconds - plannedEvidenceTimeSeconds) <= 0.000001d;
+        }
+
+        private bool UsesGroupKnowledge =>
+            knowledgeSource == PegaNpcPickUpKnowledgeSource.Group;
+
+        private bool UsesIndividualKnowledge =>
+            knowledgeSource == PegaNpcPickUpKnowledgeSource.Individual;
 
         private bool TryGetActorId(out ActorId actorId, out string diagnostic)
         {

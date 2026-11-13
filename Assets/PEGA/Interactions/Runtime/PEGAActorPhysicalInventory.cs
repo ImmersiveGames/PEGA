@@ -101,6 +101,9 @@ namespace PEGA.Interactions.Runtime
             return true;
         }
 
+        internal bool TryValidateForInteraction(out string diagnostic) =>
+            TryValidateActor(out diagnostic);
+
         internal bool CanAcceptReserved(
             PegaObjectInteractionRequest request,
             PegaObjectEntryPhysicalItem item,

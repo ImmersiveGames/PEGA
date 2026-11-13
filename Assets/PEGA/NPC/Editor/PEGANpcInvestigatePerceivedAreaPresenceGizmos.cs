@@ -31,7 +31,7 @@ namespace PEGA.NPC.Editor
             }
 
             Vector3 anchor = autonomy.transform.position;
-            bool hasPresenceAnchor = TryGetPresenceAnchor(autonomy, out anchor);
+            bool hasPresenceAnchor = TryGetPresenceAnchor(autonomy, action, out anchor);
             Color previousColor = Handles.color;
             try
             {
@@ -40,7 +40,9 @@ namespace PEGA.NPC.Editor
                 Handles.Label(
                     anchor + Vector3.up * (action.MaximumVerticalDifferenceMeters + 0.1f),
                     hasPresenceAnchor
-                        ? "Busca da presença radial conhecida"
+                        ? action.UsesUnresolvedRadialEvidence
+                            ? "Busca da presença radial não resolvida"
+                            : "Busca da presença radial conhecida"
                         : "Prévia da busca radial (âncora em runtime)");
 
                 Handles.color = SampleColor;
@@ -74,6 +76,7 @@ namespace PEGA.NPC.Editor
 
         private static bool TryGetPresenceAnchor(
             PegaNpcAutonomy autonomy,
+            PegaNpcInvestigatePerceivedAreaPresenceAction action,
             out Vector3 anchor)
         {
             anchor = autonomy.transform.position;
@@ -83,8 +86,15 @@ namespace PEGA.NPC.Editor
             }
 
             PegaNpcKnowledgeState knowledgeState = autonomy.GetComponent<PegaNpcKnowledgeState>();
-            if (knowledgeState == null ||
-                !knowledgeState.GetPerceivedAreaPresence().TryGetValue(
+            if (knowledgeState == null)
+            {
+                return false;
+            }
+
+            var presenceFact = action.UsesUnresolvedRadialEvidence
+                ? knowledgeState.GetUnresolvedRadialPresence()
+                : knowledgeState.GetPerceivedAreaPresence();
+            if (!presenceFact.TryGetValue(
                     out PegaNpcPerceivedAreaPresence presence) ||
                 !presence.IsPresent)
             {
@@ -113,8 +123,9 @@ namespace PEGA.NPC.Editor
 
         private static void DrawActiveTarget(PegaNpcAutonomy autonomy)
         {
-            if (!autonomy.TryGetActionExecution(
-                    PegaNpcPlanningActionId.InvestigatePerceivedAreaPresence,
+            PegaNpcInvestigatePerceivedAreaPresenceAction action = FindDefinition(autonomy);
+            if (action == null || !autonomy.TryGetActionExecution(
+                    action.Contract.ActionId,
                     out PegaNpcActionExecutionSnapshot execution))
             {
                 return;

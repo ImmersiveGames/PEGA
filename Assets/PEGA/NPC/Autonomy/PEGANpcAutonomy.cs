@@ -264,6 +264,15 @@ namespace PEGA.NPC.Autonomy
             new HashSet<PegaNpcPlanningTargetId>();
 
         [System.NonSerialized]
+        private PegaNpcPlanningTargetId _activeAttemptedTargetId;
+
+        [System.NonSerialized]
+        private bool _hasActiveAttemptedTarget;
+
+        [System.NonSerialized]
+        private bool _activeAttemptedTargetIsSuccessGated;
+
+        [System.NonSerialized]
         private OpportunityStamp _recentTerminalOpportunity;
 
         [System.NonSerialized]
@@ -925,7 +934,7 @@ namespace PEGA.NPC.Autonomy
                 false,
                 lastKnownPositionAlreadyReached);
             _hasActivePlanContinuation = _activePlanContinuation.IsValid;
-            _attemptedInvestigationTargets.Clear();
+            ClearAttemptedLastKnownTargetSamples();
             if (!_hasActivePlanContinuation)
             {
                 _log.Error(
@@ -1000,14 +1009,59 @@ namespace PEGA.NPC.Autonomy
                 LogFields.Field("desireId", _activePlanContinuation.DesireId),
                 LogFields.Field("subjectActorId", _activePlanContinuation.SubjectActorId.StableText),
                 LogFields.Field("contactLossObservationTimeSeconds", _activePlanContinuation.ContactLossObservationTimeSeconds),
-                LogFields.Field("attemptedLocalTargetCount", _attemptedInvestigationTargets.Count),
+                LogFields.Field("attemptedLocalTargetCount", CountAttemptedTargetKind(
+                    PegaNpcPlanningTargetIdentityKind.InvestigationSample)),
+                LogFields.Field("attemptedRadialTargetCount", CountAttemptedTargetKind(
+                    PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample)),
                 LogFields.Field("reason", reason));
             _hasActivePlanContinuation = false;
             _activePlanContinuation = default;
-            _attemptedInvestigationTargets.Clear();
+            ClearAttemptedLastKnownTargetSamples();
             _latestContinuationIntent = default;
             _hasPendingContinuationIntent = false;
             _pendingEvaluationCauses &= ~EvaluationCause.LastKnownTargetContinuationIntent;
+        }
+
+        private void ClearAttemptedLastKnownTargetSamples()
+        {
+            if (_attemptedInvestigationTargets.Count == 0)
+            {
+                return;
+            }
+
+            List<PegaNpcPlanningTargetId> localTargets = null;
+            foreach (PegaNpcPlanningTargetId target in _attemptedInvestigationTargets)
+            {
+                if (target.IdentityKind == PegaNpcPlanningTargetIdentityKind.InvestigationSample)
+                {
+                    localTargets ??= new List<PegaNpcPlanningTargetId>();
+                    localTargets.Add(target);
+                }
+            }
+
+            if (localTargets == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < localTargets.Count; index++)
+            {
+                _attemptedInvestigationTargets.Remove(localTargets[index]);
+            }
+        }
+
+        private int CountAttemptedTargetKind(PegaNpcPlanningTargetIdentityKind identityKind)
+        {
+            int count = 0;
+            foreach (PegaNpcPlanningTargetId target in _attemptedInvestigationTargets)
+            {
+                if (target.IdentityKind == identityKind)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private bool TryGetCurrentTargetActorId(out ActorId actorId)
@@ -1178,14 +1232,42 @@ namespace PEGA.NPC.Autonomy
                 request,
                 lostContactIntent,
                 causes);
+            bool hasSelectedCausalAlternative = TryFindSelectedCausalAlternative(
+                selection,
+                selectedPlan,
+                out PegaNpcCausalPlanAlternative selectedCausalAlternative);
+            bool selectedCausalPlanContainsPickUp = hasSelectedCausalAlternative &&
+                CausalAlternativeContainsAction(
+                    selectedCausalAlternative,
+                    PegaNpcPlanningActionId.PickUpKnownObjectEntry);
+            int pickUpViableCausalAlternativeCount = CountCausalAlternativesContainingAction(
+                selection.CausalEvaluation,
+                PegaNpcPlanningActionId.PickUpKnownObjectEntry);
             _log.Debug(
-                "NPC GOAP evaluated viable plan candidates.",
+                "NPC GOAP ranked viable causal plan candidates before active-action stability reconciliation.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("causes", causes),
                 LogFields.Field("candidatePlanCount", selection.CandidatePlans.Count),
-                LogFields.Field("selectedDesireId", selectedPlan.DesireId),
-                LogFields.Field("selectedActionId", selectedPlan.ActionId),
-                LogFields.Field("selectedTargetId", selectedPlan.TargetId),
+                LogFields.Field("planningDecisionStage", "ranked-before-active-action-stability"),
+                LogFields.Field("rankedDesireId", selectedPlan.DesireId),
+                LogFields.Field("rankedFirstActionId", selectedPlan.ActionId),
+                LogFields.Field("rankedTargetId", selectedPlan.TargetId),
+                LogFields.Field("rankedPlanScore", selectedPlan.Score),
+                LogFields.Field("rankedFirstActionIsPickUp", selectedPlan.ActionId == PegaNpcPlanningActionId.PickUpKnownObjectEntry),
+                LogFields.Field("rankedCausalAlternativeMatched", hasSelectedCausalAlternative),
+                LogFields.Field("rankedCausalActionChain", hasSelectedCausalAlternative
+                    ? DescribeCausalActionChain(selectedCausalAlternative)
+                    : "<unmatched>"),
+                LogFields.Field("rankedCausalPlanContainsPickUp", selectedCausalPlanContainsPickUp),
+                LogFields.Field("pickUpViableCausalAlternativeCount", pickUpViableCausalAlternativeCount),
+                LogFields.Field("pickUpViableCausalAlternatives", DescribeCausalAlternativesContainingAction(
+                    selection.CausalEvaluation,
+                    PegaNpcPlanningActionId.PickUpKnownObjectEntry,
+                    selectedCausalAlternative)),
+                LogFields.Field("pickUpCausalAlternativeNotRanked",
+                    pickUpViableCausalAlternativeCount > 0 &&
+                    hasSelectedCausalAlternative &&
+                    !selectedCausalPlanContainsPickUp),
                 LogFields.Field("viablePlans", DescribeViablePlans(selection.CandidatePlans)),
                 LogFields.Field("causalSearches", DescribeCausalSearches(selection.CausalEvaluation)));
             if (_hasActivePlan)
@@ -1276,6 +1358,13 @@ namespace PEGA.NPC.Autonomy
                     return;
                 }
 
+                if (GetActionOutcome(_activePlan.ActionId) == PegaNpcActionOutcome.Running &&
+                    ShouldRetainActivePlan(selection, selectedPlan, causes))
+                {
+                    _latestSelection = selection.WithSelectedPlan(_activePlan);
+                    return;
+                }
+
                 if (!CancelActivePlanForReplacement(
                         "GOAP selected a different Action, Target evidence or Desire objective."))
                 {
@@ -1329,6 +1418,364 @@ namespace PEGA.NPC.Autonomy
 
             candidate = default;
             return false;
+        }
+
+        private bool ShouldRetainActivePlan(
+            PegaNpcPlanSelectionResult selection,
+            PegaNpcPlanSnapshot challenger,
+            EvaluationCause causes)
+        {
+            if (!_hasActivePlan ||
+                !CanPreserveActiveExecution(out _, out _))
+            {
+                return false;
+            }
+
+            if (!TryFindCurrentIncumbentPlan(selection, _activePlan, out PegaNpcPlanSnapshot incumbentPlan))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    challenger.Score,
+                    "The current causal selection no longer contains the running Action and target as a viable incumbent plan.");
+                return false;
+            }
+
+            IPegaNpcActionProvider activeAction = GetAction(_activePlan.ActionId);
+            if (activeAction == null || activeAction.Contract.ActionId != _activePlan.ActionId)
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    challenger.Score,
+                    "The active Action provider is no longer composed for the current plan.");
+                return false;
+            }
+
+            float activeActionRemainingSeconds = 0f;
+            string remainingCostDiagnostic = string.Empty;
+            bool hasRemainingCostProvider = activeAction is IPegaNpcRemainingExecutionCostProvider;
+            if (!hasRemainingCostProvider)
+            {
+                remainingCostDiagnostic = "The active Action does not expose remaining execution cost.";
+            }
+            else if (!((IPegaNpcRemainingExecutionCostProvider)activeAction).TryGetRemainingExecutionCostSeconds(
+                         _activeActionRequestId,
+                         out activeActionRemainingSeconds,
+                         out remainingCostDiagnostic))
+            {
+                hasRemainingCostProvider = false;
+            }
+
+            if (!hasRemainingCostProvider)
+            {
+                if (string.IsNullOrWhiteSpace(remainingCostDiagnostic))
+                {
+                    remainingCostDiagnostic = "The active Action remaining cost could not be measured.";
+                }
+
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    challenger.Score,
+                    remainingCostDiagnostic);
+                return false;
+            }
+
+            if (!IsNonNegativeFinite(activeActionRemainingSeconds))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    challenger.Score,
+                    "The active Action did not provide a finite non-negative remaining execution cost.");
+                return false;
+            }
+
+            if (!TryGetApplicableDesireWeight(selection, incumbentPlan.DesireId, out float activeDesireWeight))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    challenger.Score,
+                    "The current selection has no applicable effective weight for the valid active Desire.");
+                return false;
+            }
+
+            if (!TryEstimateInitialActionCost(
+                    incumbentPlan,
+                    activeAction.Contract.RequiresNavigation,
+                    out float currentIncumbentActionCostSeconds) ||
+                !IsNonNegativeFinite(incumbentPlan.EstimatedSeconds) ||
+                !TryEstimateInitialActionCost(
+                    _activePlan,
+                    activeAction.Contract.RequiresNavigation,
+                    out float initialActionCostSeconds))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    -1f,
+                    -1f,
+                    -1f,
+                    -1f,
+                    0f,
+                    challenger.Score,
+                    "The current incumbent suffix or discarded active progress has no finite first-step cost estimate.");
+                return false;
+            }
+
+            float causalRemainderSeconds = Mathf.Max(
+                0f,
+                incumbentPlan.EstimatedSeconds - currentIncumbentActionCostSeconds);
+            float incumbentRemainingPlanSeconds = activeActionRemainingSeconds + causalRemainderSeconds;
+            float interruptedProgressCostSeconds = activeAction.Contract.RequiresNavigation
+                ? 0f
+                : Mathf.Max(0f, initialActionCostSeconds - activeActionRemainingSeconds);
+            if (!IsNonNegativeFinite(incumbentRemainingPlanSeconds) ||
+                !IsNonNegativeFinite(interruptedProgressCostSeconds) ||
+                _normalContext == null ||
+                !_normalContext.TryEvaluatePlanScore(
+                    activeDesireWeight,
+                    incumbentRemainingPlanSeconds,
+                    out _,
+                    out float incumbentRemainingScore))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    causalRemainderSeconds,
+                    incumbentRemainingPlanSeconds,
+                    interruptedProgressCostSeconds,
+                    -1f,
+                    0f,
+                    challenger.Score,
+                    "The active remaining plan could not be rescored with the configured plan-selection policy.");
+                return false;
+            }
+
+            if (!TryGetApplicableDesireWeight(selection, challenger.DesireId, out float challengerDesireWeight))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    causalRemainderSeconds,
+                    incumbentRemainingPlanSeconds,
+                    interruptedProgressCostSeconds,
+                    -1f,
+                    incumbentRemainingScore,
+                    challenger.Score,
+                    "The selected challenger has no applicable effective Desire weight for interruption-cost comparison.");
+                return false;
+            }
+
+            float challengerAdjustedSeconds = challenger.EstimatedSeconds + interruptedProgressCostSeconds;
+            if (!IsNonNegativeFinite(challengerAdjustedSeconds) ||
+                !_normalContext.TryEvaluatePlanScore(
+                    challengerDesireWeight,
+                    challengerAdjustedSeconds,
+                    out _,
+                    out float challengerAdjustedScore))
+            {
+                LogActivePlanStabilityDecision(
+                    causes,
+                    challenger,
+                    "challenger-proceeds",
+                    false,
+                    activeActionRemainingSeconds,
+                    causalRemainderSeconds,
+                    incumbentRemainingPlanSeconds,
+                    interruptedProgressCostSeconds,
+                    challengerAdjustedSeconds,
+                    incumbentRemainingScore,
+                    challenger.Score,
+                    "The challenger could not be rescored after including the measured cost of discarded active Action progress.");
+                return false;
+            }
+
+            bool retain = incumbentRemainingScore >= challengerAdjustedScore;
+            LogActivePlanStabilityDecision(
+                causes,
+                challenger,
+                retain ? "retained" : "replaced",
+                true,
+                activeActionRemainingSeconds,
+                causalRemainderSeconds,
+                incumbentRemainingPlanSeconds,
+                interruptedProgressCostSeconds,
+                challengerAdjustedSeconds,
+                incumbentRemainingScore,
+                challengerAdjustedScore,
+                retain
+                    ? "The challenger does not score above the valid incumbent after remaining cost and discarded active progress are included."
+                    : "The challenger scores above the valid incumbent after remaining cost and discarded active progress are included.");
+            return retain;
+        }
+
+        private static bool TryFindCurrentIncumbentPlan(
+            PegaNpcPlanSelectionResult selection,
+            PegaNpcPlanSnapshot activePlan,
+            out PegaNpcPlanSnapshot incumbentPlan)
+        {
+            if (selection != null && selection.IsValid)
+            {
+                for (int index = 0; index < selection.CandidatePlans.Count; index++)
+                {
+                    PegaNpcPlanSnapshot candidate = selection.CandidatePlans[index];
+                    if (candidate.ActionId == activePlan.ActionId &&
+                        candidate.TargetId == activePlan.TargetId &&
+                        candidate.Purpose == activePlan.Purpose &&
+                        candidate.PredictedEffect == activePlan.PredictedEffect &&
+                        string.Equals(candidate.DesireId, activePlan.DesireId, StringComparison.Ordinal))
+                    {
+                        incumbentPlan = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            incumbentPlan = default;
+            return false;
+        }
+
+        private bool TryGetApplicableDesireWeight(
+            PegaNpcPlanSelectionResult selection,
+            string desireId,
+            out float effectiveWeight)
+        {
+            effectiveWeight = 0f;
+            if (selection == null || !selection.IsValid || string.IsNullOrWhiteSpace(desireId))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < selection.DesireEvaluations.Count; index++)
+            {
+                PegaNpcDesirePlanEvaluation evaluation = selection.DesireEvaluations[index];
+                if (string.Equals(evaluation.DesireId, desireId, StringComparison.Ordinal) &&
+                    evaluation.IsApplicable &&
+                    IsPositiveFinite(evaluation.EffectiveWeight))
+                {
+                    effectiveWeight = evaluation.EffectiveWeight;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryEstimateInitialActionCost(
+            PegaNpcPlanSnapshot plan,
+            bool requiresNavigation,
+            out float estimatedSeconds)
+        {
+            estimatedSeconds = 0f;
+            if (!IsNonNegativeFinite(plan.IntrinsicDurationSeconds))
+            {
+                return false;
+            }
+
+            if (!requiresNavigation)
+            {
+                estimatedSeconds = plan.IntrinsicDurationSeconds;
+                return true;
+            }
+
+            if (!IsNonNegativeFinite(plan.RouteLengthMeters) ||
+                !IsPositiveFinite(plan.EffectiveSpeedMetersPerSecond))
+            {
+                return false;
+            }
+
+            estimatedSeconds = plan.RouteLengthMeters / plan.EffectiveSpeedMetersPerSecond +
+                plan.IntrinsicDurationSeconds;
+            return IsNonNegativeFinite(estimatedSeconds);
+        }
+
+        private void LogActivePlanStabilityDecision(
+            EvaluationCause causes,
+            PegaNpcPlanSnapshot challenger,
+            string decision,
+            bool costAvailable,
+            float activeActionRemainingSeconds,
+            float causalRemainderSeconds,
+            float incumbentRemainingPlanSeconds,
+            float interruptedProgressCostSeconds,
+            float challengerAdjustedSeconds,
+            float incumbentRemainingScore,
+            float challengerScore,
+            string reason)
+        {
+            _log.Debug(
+                "NPC evaluated whether a valid running Action should yield to a competing GOAP plan.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("causes", causes),
+                LogFields.Field("decision", decision),
+                LogFields.Field("costAvailable", costAvailable),
+                LogFields.Field("requestId", _activeActionRequestId),
+                LogFields.Field("incumbentDesireId", _activePlan.DesireId),
+                LogFields.Field("incumbentActionId", _activePlan.ActionId),
+                LogFields.Field("incumbentTargetId", _activePlan.TargetId),
+                LogFields.Field("challengerDesireId", challenger.DesireId),
+                LogFields.Field("challengerActionId", challenger.ActionId),
+                LogFields.Field("challengerTargetId", challenger.TargetId),
+                LogFields.Field("activeActionRemainingSeconds", activeActionRemainingSeconds),
+                LogFields.Field("causalRemainderSeconds", causalRemainderSeconds),
+                LogFields.Field("incumbentRemainingPlanSeconds", incumbentRemainingPlanSeconds),
+                LogFields.Field("interruptedProgressCostSeconds", interruptedProgressCostSeconds),
+                LogFields.Field("challengerAdjustedSeconds", challengerAdjustedSeconds),
+                LogFields.Field("incumbentRemainingScore", incumbentRemainingScore),
+                LogFields.Field("challengerScore", challengerScore),
+                LogFields.Field("reason", reason));
         }
 
         private OpportunityStamp CreateOpportunityStamp(
@@ -1647,6 +2094,10 @@ namespace PEGA.NPC.Autonomy
                     out double positionEvidenceTimeSeconds))
             {
                 IPegaNpcActionProvider preservedAction = GetAction(_activePlan.ActionId);
+                if (selection != null && selection.IsValid)
+                {
+                    _latestSelection = selection.WithSelectedPlan(_activePlan);
+                }
                 _log.Debug(
                     "NPC preserved its running Action because its current Desire, legitimate Knowledge evidence and execution remain valid despite no replacement plan being selectable.",
                     LogFields.Field("actorRoot", gameObject.name),
@@ -1883,9 +2334,18 @@ namespace PEGA.NPC.Autonomy
             IPegaNpcActionProvider action = candidate.Action ?? GetAction(plan.ActionId);
             bool recordAttemptedTarget = action is IPegaNpcAttemptedTargetProvider attemptedTargetProvider &&
                 attemptedTargetProvider.ShouldRecordAttemptedTarget(candidate);
+            bool deferAttemptUntilSuccessfulEffect = recordAttemptedTarget &&
+                action is IPegaNpcSuccessGatedAttemptedTargetProvider successGatedProvider &&
+                successGatedProvider.ShouldDeferAttemptRecordingUntilSuccessfulEffect(candidate);
             if (recordAttemptedTarget)
             {
-                _attemptedInvestigationTargets.Add(plan.TargetId);
+                _activeAttemptedTargetId = plan.TargetId;
+                _hasActiveAttemptedTarget = true;
+                _activeAttemptedTargetIsSuccessGated = deferAttemptUntilSuccessfulEffect;
+                if (!deferAttemptUntilSuccessfulEffect)
+                {
+                    _attemptedInvestigationTargets.Add(plan.TargetId);
+                }
             }
 
             _log.Debug(
@@ -1908,7 +2368,12 @@ namespace PEGA.NPC.Autonomy
                 LogFields.Field("costPreference", plan.CostPreference),
                 LogFields.Field("score", plan.Score),
                 LogFields.Field("opportunityKind", opportunity.Kind),
-                LogFields.Field("opportunityTimeSeconds", opportunity.ObservationTimeSeconds));
+                LogFields.Field("opportunityTimeSeconds", opportunity.ObservationTimeSeconds),
+                LogFields.Field("attemptRecording", !recordAttemptedTarget
+                    ? "not-applicable"
+                    : deferAttemptUntilSuccessfulEffect
+                        ? "after-successful-physical-effect"
+                        : "when-action-starts"));
 
             bool objectiveChanged = plan.Purpose != PegaNpcPlanPurpose.PlanContinuationStep &&
                 (!_hasLoggedObjective ||
@@ -2146,6 +2611,7 @@ namespace PEGA.NPC.Autonomy
                     return;
                 }
 
+                RecordAttemptedTargetProgress(completedPlan, execution);
                 observedEffectMatched = true;
                 IReadOnlyList<IGoapEffect> observedCausalEffects = Array.Empty<IGoapEffect>();
                 string causalEffectDiagnostic = "The selected Action has no causal observed-effect provider.";
@@ -2331,10 +2797,59 @@ namespace PEGA.NPC.Autonomy
 
         private void ClearActivePlan()
         {
+            if (_hasActiveAttemptedTarget)
+            {
+                _activeAttemptedTargetId = default;
+                _hasActiveAttemptedTarget = false;
+                _activeAttemptedTargetIsSuccessGated = false;
+            }
+
             _hasActivePlan = false;
             _activePlan = default;
             _activeActionRequestId = 0;
             _activePlanOpportunity = default;
+        }
+
+        private void RecordAttemptedTargetProgress(
+            PegaNpcPlanSnapshot completedPlan,
+            PegaNpcActionExecutionSnapshot execution)
+        {
+            if (!_hasActiveAttemptedTarget ||
+                execution.Outcome != PegaNpcActionOutcome.Success ||
+                !execution.EffectObserved ||
+                _activeAttemptedTargetId != completedPlan.TargetId)
+            {
+                return;
+            }
+
+            _attemptedInvestigationTargets.Add(_activeAttemptedTargetId);
+            bool isAnonymousRadialOpportunity = completedPlan.TargetId.IdentityKind ==
+                PegaNpcPlanningTargetIdentityKind.PerceivedAreaInvestigationSample &&
+                GetAction(completedPlan.ActionId) is PegaNpcInvestigatePerceivedAreaPresenceAction radialAction &&
+                radialAction.UsesUnresolvedRadialEvidence;
+            bool remainsUnresolved = false;
+            if (isAnonymousRadialOpportunity)
+            {
+                PegaKnowledgeFact<PegaNpcPerceivedAreaPresence> unresolvedPresence =
+                    _knowledgeState.GetUnresolvedRadialPresence();
+                remainsUnresolved = unresolvedPresence.TryGetValue(
+                        out PegaNpcPerceivedAreaPresence currentPresence) &&
+                    currentPresence.IsPresent;
+            }
+            _log.Debug(
+                "NPC completed a physical investigation sample; radial knowledge remains separate from the arrival Effect.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("requestId", execution.RequestId),
+                LogFields.Field("actionId", completedPlan.ActionId),
+                LogFields.Field("targetId", completedPlan.TargetId),
+                LogFields.Field("isAnonymousRadialOpportunity", isAnonymousRadialOpportunity),
+                LogFields.Field("anonymousRadialPresenceRemainsUnresolved", remainsUnresolved),
+                LogFields.Field("opportunitySequence", isAnonymousRadialOpportunity
+                    ? completedPlan.TargetId.PerceivedAreaEpisodeId
+                    : 0));
+            _activeAttemptedTargetId = default;
+            _hasActiveAttemptedTarget = false;
+            _activeAttemptedTargetIsSuccessGated = false;
         }
 
         private void QueueEvaluation(
@@ -2494,6 +3009,12 @@ namespace PEGA.NPC.Autonomy
             return delta.magnitude;
         }
 
+        private static bool IsNonNegativeFinite(float value) =>
+            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private static bool IsPositiveFinite(float value) =>
+            value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+
         private static string JoinDesireIds(PegaNpcDesireSatisfactionUpdate satisfaction)
         {
             if (satisfaction == null || satisfaction.UpdatedCount == 0)
@@ -2635,6 +3156,178 @@ namespace PEGA.NPC.Autonomy
             }
 
             return builder.ToString();
+        }
+
+        private static int CountCausalAlternativesContainingAction(
+            PegaNpcCausalPlanEvaluation evaluation,
+            PegaNpcPlanningActionId actionId)
+        {
+            if (evaluation == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int index = 0; index < evaluation.Alternatives.Count; index++)
+            {
+                if (CausalAlternativeContainsAction(evaluation.Alternatives[index], actionId))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool CausalAlternativeContainsAction(
+            PegaNpcCausalPlanAlternative alternative,
+            PegaNpcPlanningActionId actionId)
+        {
+            if (alternative == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < alternative.ActionSteps.Count; index++)
+            {
+                if (alternative.ActionSteps[index].ActionId == actionId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string DescribeCausalAlternativesContainingAction(
+            PegaNpcCausalPlanEvaluation evaluation,
+            PegaNpcPlanningActionId actionId,
+            PegaNpcCausalPlanAlternative selectedAlternative)
+        {
+            if (evaluation == null || evaluation.Alternatives.Count == 0)
+            {
+                return "<none>";
+            }
+
+            const int maximumEntries = 12;
+            int matchingCount = 0;
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < evaluation.Alternatives.Count; index++)
+            {
+                PegaNpcCausalPlanAlternative alternative = evaluation.Alternatives[index];
+                if (!CausalAlternativeContainsAction(alternative, actionId))
+                {
+                    continue;
+                }
+
+                matchingCount++;
+                if (matchingCount > maximumEntries)
+                {
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.Append(" | ");
+                }
+
+                builder.Append(alternative.DesireId)
+                    .Append('@')
+                    .Append(alternative.Target.TargetId)
+                    .Append(" actions=")
+                    .Append(DescribeCausalActionChain(alternative))
+                    .Append(" score=")
+                    .Append(alternative.Score.ToString("0.###"))
+                    .Append(object.ReferenceEquals(alternative, selectedAlternative)
+                        ? " ranked=true"
+                        : " ranked=false");
+            }
+
+            if (matchingCount == 0)
+            {
+                return "<none>";
+            }
+
+            if (matchingCount > maximumEntries)
+            {
+                builder.Append(" | … +").Append(matchingCount - maximumEntries).Append(" alternatives");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string DescribeCausalActionChain(PegaNpcCausalPlanAlternative alternative)
+        {
+            if (alternative == null || alternative.ActionSteps.Count == 0)
+            {
+                return "<empty>";
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < alternative.ActionSteps.Count; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(" -> ");
+                }
+
+                PegaNpcPlanningActionCandidate step = alternative.ActionSteps[index];
+                builder.Append(step.ActionId.StableText)
+                    .Append('@')
+                    .Append(step.TargetId);
+            }
+
+            return builder.ToString();
+        }
+
+        private static bool TryFindSelectedCausalAlternative(
+            PegaNpcPlanSelectionResult selection,
+            PegaNpcPlanSnapshot selectedPlan,
+            out PegaNpcCausalPlanAlternative selectedAlternative)
+        {
+            selectedAlternative = null;
+            PegaNpcCausalPlanEvaluation evaluation = selection != null
+                ? selection.CausalEvaluation
+                : null;
+            if (evaluation == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < evaluation.Alternatives.Count; index++)
+            {
+                PegaNpcCausalPlanAlternative alternative = evaluation.Alternatives[index];
+                if (alternative.ActionSteps.Count != alternative.Plan.Steps.Count ||
+                    alternative.ActionSteps.Count == 0)
+                {
+                    continue;
+                }
+
+                PegaNpcPlanningActionCandidate firstAction = alternative.ActionSteps[0];
+                if (firstAction.Action == null ||
+                    firstAction.TargetId != alternative.Target.TargetId ||
+                    firstAction.RequiredTargetKind != alternative.Target.Kind)
+                {
+                    continue;
+                }
+
+                if (alternative.DesireId == selectedPlan.DesireId &&
+                    alternative.Target.TargetId == selectedPlan.TargetId &&
+                    alternative.Target.Kind == selectedPlan.TargetKind &&
+                    alternative.Target.Provenance == selectedPlan.TargetProvenance &&
+                    alternative.Target.KnownPosition.Equals(selectedPlan.TargetPosition) &&
+                    Math.Abs(alternative.Target.EvidenceTimeSeconds - selectedPlan.EvidenceTimeSeconds) <= 0.000001d &&
+                    firstAction.ActionId == selectedPlan.ActionId &&
+                    firstAction.PredictedEffect == selectedPlan.PredictedEffect &&
+                    Math.Abs(alternative.EstimatedSeconds - selectedPlan.EstimatedSeconds) <= 0.0001f &&
+                    Math.Abs(alternative.Score - selectedPlan.Score) <= 0.0001f)
+                {
+                    selectedAlternative = alternative;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string DescribeCausalSearches(PegaNpcCausalPlanEvaluation evaluation)

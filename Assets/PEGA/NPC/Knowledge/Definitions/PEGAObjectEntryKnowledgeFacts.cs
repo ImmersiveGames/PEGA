@@ -5,6 +5,32 @@ using UnityEngine;
 using UnityEngine.Scripting;
 namespace PEGA.NPC.Knowledge.Definitions
 {
+    public enum PegaObjectEntryPickUpEvidenceKind
+    {
+        TemporarilyUnavailable = 10,
+        NoLongerOnGround = 20
+    }
+
+    /// <summary>Typed local evidence produced by a legitimate Pick Up interaction attempt.</summary>
+    public readonly struct PegaObjectEntryPickUpAvailabilityEvidence
+    {
+        public PegaObjectEntryPickUpAvailabilityEvidence(
+            ObjectEntryId objectEntryId,
+            PegaObjectEntryPickUpEvidenceKind kind)
+        {
+            ObjectEntryId = objectEntryId;
+            Kind = kind;
+        }
+
+        public ObjectEntryId ObjectEntryId { get; }
+
+        public PegaObjectEntryPickUpEvidenceKind Kind { get; }
+
+        public bool IsValid => ObjectEntryId.IsValid &&
+            (Kind == PegaObjectEntryPickUpEvidenceKind.TemporarilyUnavailable ||
+             Kind == PegaObjectEntryPickUpEvidenceKind.NoLongerOnGround);
+    }
+
     /// <summary>Canonical properties addressed by the Framework's logical ObjectEntry identity.</summary>
     [Preserve]
     public static class PegaObjectEntryKnowledgeFacts

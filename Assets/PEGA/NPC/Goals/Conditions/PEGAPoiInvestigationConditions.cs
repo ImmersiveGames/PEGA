@@ -11,7 +11,7 @@ using UnityEngine;
 namespace PEGA.NPC.Goals.Conditions
 {
     /// <summary>Effect published only after the investigation fact was accepted and read back from Group Knowledge.</summary>
-    public sealed class PegaPoiInvestigationCompletedEffect : IGoapEffect
+    public sealed class PegaPoiInvestigationCompletedEffect : IGoapEffect, IGoapEffectSatisfaction
     {
         public PegaPoiInvestigationCompletedEffect(ObjectEntryId objectEntryId, GroupId groupId)
         {
@@ -27,6 +27,40 @@ namespace PEGA.NPC.Goals.Conditions
         public ObjectEntryId ObjectEntryId { get; }
 
         public GroupId GroupId { get; }
+
+        public GoapTruthValue EvaluateSatisfaction(IGoapStateView state)
+        {
+            if (state is IGoapHypotheticalStateView hypothetical)
+            {
+                return IsPresent(hypothetical.ObservedEffects) || IsPresent(hypothetical.ProjectedEffects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            if (state is IGoapEffectStateView effectState)
+            {
+                return IsPresent(effectState.Effects)
+                    ? GoapTruthValue.True
+                    : GoapTruthValue.False;
+            }
+
+            return GoapTruthValue.Unknown;
+        }
+
+        private bool IsPresent(IReadOnlyList<IGoapEffect> effects)
+        {
+            for (int index = 0; index < effects.Count; index++)
+            {
+                if (effects[index] is PegaPoiInvestigationCompletedEffect completed &&
+                    completed.ObjectEntryId == ObjectEntryId &&
+                    completed.GroupId == GroupId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     internal sealed class PegaPoiInvestigationCanStartCondition : IGoapCondition

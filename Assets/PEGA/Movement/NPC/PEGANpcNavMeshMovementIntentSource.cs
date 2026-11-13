@@ -725,6 +725,47 @@ namespace PEGA.Movement.NPC
             return true;
         }
 
+        public bool TryGetRemainingRouteLengthMeters(
+            long requestId,
+            out float remainingRouteLengthMeters,
+            out string diagnostic)
+        {
+            remainingRouteLengthMeters = 0f;
+            if (!TryGetSnapshot(requestId, out PegaNpcNavigationSnapshot snapshot) ||
+                snapshot.Outcome != PegaNpcNavigationOutcome.Running ||
+                !_hasActiveRequest || _agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+            {
+                diagnostic = "The active navigation request has no current NavMesh execution authority.";
+                return false;
+            }
+
+            if (_canCompleteWithoutPath)
+            {
+                diagnostic = string.Empty;
+                return true;
+            }
+
+            if (snapshot.PathPending || !snapshot.HasPath ||
+                snapshot.PathStatus != NavMeshPathStatus.PathComplete)
+            {
+                diagnostic = "The active navigation request has no fully resolved current NavMesh path.";
+                return false;
+            }
+
+            float currentRemainingDistance = _agent.remainingDistance;
+            if (float.IsNaN(currentRemainingDistance) ||
+                float.IsInfinity(currentRemainingDistance) ||
+                currentRemainingDistance < 0f)
+            {
+                diagnostic = "NavMeshAgent did not provide a finite remaining path distance.";
+                return false;
+            }
+
+            remainingRouteLengthMeters = currentRemainingDistance;
+            diagnostic = string.Empty;
+            return true;
+        }
+
         public void FinishRequest(
             long requestId,
             PegaNpcNavigationOutcome outcome,

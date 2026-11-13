@@ -11,6 +11,15 @@ namespace PEGA.GOAP
     {
     }
 
+    /// <summary>
+    /// Optional proof that an Effect is already satisfied by the current state. Unknown or unsupported state
+    /// views must not be treated as proof that an Action can be skipped.
+    /// </summary>
+    public interface IGoapEffectSatisfaction
+    {
+        GoapTruthValue EvaluateSatisfaction(IGoapStateView state);
+    }
+
     /// <summary>Descreve o estado-alvo de um Goal sem prescrever Actions para alcançá-lo.</summary>
     public sealed class GoapGoal
     {

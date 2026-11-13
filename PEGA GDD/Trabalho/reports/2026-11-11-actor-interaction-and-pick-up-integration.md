@@ -40,3 +40,11 @@ A API é **Experimental**. O Framework registra o contrato em [Public API](../..
 A revisão estática conferiu os nomes e namespaces nas declarações e referências PEGA, os GUIDs dos `.meta` movidos, as referências de scripts/Actions nos prefabs e na cena, os IDs dos dois Object Entries, os parâmetros da Action e a capacidade serializada nos prefabs.
 
 O usuário informou que a nova composição especializada Player/NPC funciona no Unity. Esse relato cobre a composição da interação. A verificação desta consolidação é estática: não houve importação, compilação, Play Mode ou execução de testes pelo Codex nesta etapa, e a execução de Pick Up não é declarada como validada por esse relato.
+
+## Ciclo oportunista de Pick Up e retomada dos POIs — 12 de novembro de 2026
+
+O quinto demonstrador usa a percepção radial para conhecer objetos reconhecíveis e suas ofertas autorizadas, mantendo a decisão de executá-las no GOAP. O Desire de Pick Up tem `completionLimit = -1`, de modo que uma satisfação anterior não esgota oportunidades independentes. A disponibilidade física continua pertencendo à interação e ao inventário; objetos já coletados deixam de ser candidatos executáveis segundo os resultados observados e as evidências locais de Knowledge. A investigação dos POIs permanece uma alternativa normal na seleção conjunta.
+
+O usuário validou no Unity que o NPC coletou dois objetos diferentes, deixou de planejar novas coletas para os objetos já coletados, retomou a investigação dos POIs e continuou comparando oportunidades válidas de Pick Up e investigação. A concorrência entre NPCs foi tratada como indisponibilidade normal, sem evento `ERROR`. Este é um relato de validação funcional do usuário, não uma reprodução independente pelo Codex.
+
+A revisão estática desta entrega remove a diretiva `using System` duplicada em `PEGANpcPickUpKnownObjectEntryAction.cs` (CS0105) e confere a preservação de `completionLimit = -1`. Não houve compilação, importação ou Play Mode executados pelo Codex; essas verificações não são inferidas do relato funcional acima.

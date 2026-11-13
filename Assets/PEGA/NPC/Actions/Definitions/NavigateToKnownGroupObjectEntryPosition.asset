@@ -11,5 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 32a9d12f0f384d54bc1c3691158f7a2c, type: 3}
   m_Name: NavigateToKnownGroupObjectEntryPosition
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcNavigateToKnownGroupObjectEntryPositionAction
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcNavigateToKnownObjectEntryPositionAction
   arrivalToleranceMeters: 1.25
