@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: LoggingConfig
   m_EditorClassIdentifier: Immersive.Logging.Unity::Immersive.Logging.Unity.LoggingConfigAsset
   globalEnabled: 1
-  defaultMinimumLevel: 3
-  honorLogLevelAttributes: 1
+  defaultMinimumLevel: 5
+  honorLogLevelAttributes: 0
   includeTimestamp: 0
   useRichText: 0
   includeExceptionDetails: 1
@@ -24,51 +24,55 @@ MonoBehaviour:
   warnRepeatedSameFrame: 0
   namespaceRules:
   - ruleId: pega_sensor_and_player_perception
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.Perception
     minimumLevel: 5
   - ruleId: pega_npc_autonomy_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.NPC.Autonomy
     minimumLevel: 5
   - ruleId: pega_npc_actions_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.NPC.Actions
     minimumLevel: 5
   - ruleId: pega_npc_desires_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.NPC.Desires
     minimumLevel: 5
   - ruleId: pega_object_interaction_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.ObjectInteraction
     minimumLevel: 2
   - ruleId: pega_knowledge_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.Knowledge
     minimumLevel: 5
   - ruleId: pega_actor_groups_debug
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.ActorGroups
     minimumLevel: 5
   - ruleId: pega_npc_navigation
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.NPC.Navigation
     minimumLevel: 5
   - ruleId: pega_npc_target_continuation
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.NPC.TargetContinuation
     minimumLevel: 5
   - ruleId: pega_player_object_entry_discovery
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.PlayerObjectDiscovery
     minimumLevel: 1
   - ruleId: pega_player_object_selection
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.PlayerObjectSelection
     minimumLevel: 0
   - ruleId: pega_player_interaction_intent
-    enabled: 1
+    enabled: 0
     namespacePrefix: PEGA.Gameplay.PlayerInteractionIntent
     minimumLevel: 1
+  - ruleId: pega_attack_event_sequence
+    enabled: 1
+    namespacePrefix: PEGA.Gameplay.Attack.Events
+    minimumLevel: 2
   typeRules: []

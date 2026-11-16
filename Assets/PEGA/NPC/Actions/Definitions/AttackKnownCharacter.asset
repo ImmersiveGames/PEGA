@@ -1,0 +1,14 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70444db0fc87f21ede71fc0cc0a7c40b, type: 3}
+  m_Name: AttackKnownCharacter
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Actions.Runtime.PegaNpcAttackKnownCharacterAction

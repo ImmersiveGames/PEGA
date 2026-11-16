@@ -8,7 +8,8 @@ namespace PEGA.NPC.Autonomy.Planning
         ActiveActionInvalid = 40,
         ActiveActionInterrupted = 50,
         ActiveActionEffectCompleted = 60,
-        ActiveActionTargetChanged = 70
+        ActiveActionTargetChanged = 70,
+        ActiveActionCompletedWithoutEffect = 80
     }
 
     public readonly struct PegaNpcPlanChangeAssessment
@@ -59,10 +60,7 @@ namespace PEGA.NPC.Autonomy.Planning
                 return NoChange();
             }
 
-            if (execution.Outcome != PegaNpcActionOutcome.Success &&
-                execution.Outcome != PegaNpcActionOutcome.Invalid &&
-                execution.Outcome != PegaNpcActionOutcome.Interrupted &&
-                execution.Outcome != PegaNpcActionOutcome.Cancelled)
+            if (!execution.Outcome.IsTerminal())
             {
                 return NoChange();
             }
@@ -70,6 +68,12 @@ namespace PEGA.NPC.Autonomy.Planning
             if (execution.Outcome == PegaNpcActionOutcome.Cancelled)
             {
                 return NoChange();
+            }
+
+            if (execution.Outcome == PegaNpcActionOutcome.CompletedWithoutEffect)
+            {
+                return new PegaNpcPlanChangeAssessment(
+                    PegaNpcPlanChangeReason.ActiveActionCompletedWithoutEffect);
             }
 
             if (execution.DeclaredEffect.IsTargetResolved &&

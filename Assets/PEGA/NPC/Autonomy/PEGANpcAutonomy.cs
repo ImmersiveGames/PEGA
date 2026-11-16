@@ -31,6 +31,7 @@ namespace PEGA.NPC.Autonomy
     public sealed class PegaNpcAutonomy : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
+        private const string AttackEventLogCategory = "PEGA.Gameplay.Attack.Events.GOAP";
         [SerializeField]
         [Tooltip("Shared Desire Profile used by this NPC. Changes to the Profile affect every NPC that references it.")]
         private PegaNpcDesireProfile desireProfile;
@@ -155,6 +156,7 @@ namespace PEGA.NPC.Autonomy
 
         [System.NonSerialized]
         private ScopedLogger _log;
+        private ScopedLogger _attackEventLog;
 
         [System.NonSerialized]
         private bool _bootstrapPending;
@@ -2375,6 +2377,21 @@ namespace PEGA.NPC.Autonomy
                         ? "after-successful-physical-effect"
                         : "when-action-starts"));
 
+            if (plan.ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+            {
+                LogAttackGoapEvent(
+                    "NPC GOAP selected the Attack Known Character Action for execution.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("causes", causes),
+                    LogFields.Field("desireId", plan.DesireId),
+                    LogFields.Field("actionId", plan.ActionId),
+                    LogFields.Field("targetId", plan.TargetId),
+                    LogFields.Field("targetPosition", plan.TargetPosition),
+                    LogFields.Field("planPurpose", plan.Purpose),
+                    LogFields.Field("predictedEffect", plan.PredictedEffect),
+                    LogFields.Field("score", plan.Score));
+            }
+
             bool objectiveChanged = plan.Purpose != PegaNpcPlanPurpose.PlanContinuationStep &&
                 (!_hasLoggedObjective ||
                  !string.Equals(_lastLoggedDesireId, plan.DesireId, StringComparison.Ordinal) ||
@@ -2400,6 +2417,21 @@ namespace PEGA.NPC.Autonomy
                     PegaNpcActionExecutionSnapshot execution = action != null
                         ? action.CurrentExecution
                         : default;
+                    if (plan.ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+                    {
+                        LogAttackGoapEvent(
+                            "NPC GOAP could not start the selected Attack Known Character Action.",
+                            LogFields.Field("actorRoot", gameObject.name),
+                            LogFields.Field("desireId", plan.DesireId),
+                            LogFields.Field("actionId", plan.ActionId),
+                            LogFields.Field("targetId", plan.TargetId),
+                            LogFields.Field("requestId", execution.RequestId > 0
+                                ? execution.RequestId.ToString()
+                                : "none"),
+                            LogFields.Field("actionOutcome", execution.Outcome),
+                            LogFields.Field("diagnostic", startDiagnostic));
+                    }
+
                     _log.Error(
                         "NPC selected a valid GOAP plan, but no terminal Action result was delivered for the rejected start.",
                         LogFields.Field("actorRoot", gameObject.name),
@@ -2418,6 +2450,21 @@ namespace PEGA.NPC.Autonomy
                 _recentTerminalPlan = default;
                 _hasRecentTerminalOpportunity = false;
                 _recentTerminalOpportunity = default;
+
+                if (plan.ActionId == PegaNpcPlanningActionId.AttackKnownCharacter &&
+                    _activeActionRequestId > 0 &&
+                    action.CurrentExecution.Outcome == PegaNpcActionOutcome.Running)
+                {
+                    LogAttackGoapEvent(
+                        "NPC GOAP started executing the Attack Known Character Action.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("requestId", _activeActionRequestId),
+                        LogFields.Field("desireId", plan.DesireId),
+                        LogFields.Field("actionId", plan.ActionId),
+                        LogFields.Field("targetId", plan.TargetId),
+                        LogFields.Field("targetPosition", plan.TargetPosition),
+                        LogFields.Field("actionOutcome", action.CurrentExecution.Outcome));
+                }
             }
 
             if (objectiveChanged && _hasActivePlan)
@@ -2477,10 +2524,7 @@ namespace PEGA.NPC.Autonomy
                 return;
             }
 
-            if (execution.Outcome != PegaNpcActionOutcome.Success &&
-                execution.Outcome != PegaNpcActionOutcome.Invalid &&
-                execution.Outcome != PegaNpcActionOutcome.Interrupted &&
-                execution.Outcome != PegaNpcActionOutcome.Cancelled)
+            if (!execution.Outcome.IsTerminal())
             {
                 _log.Warning(
                     "NPC received a non-terminal Action snapshot for its active plan; no Effect or Desire satisfaction was applied.",
@@ -2509,6 +2553,22 @@ namespace PEGA.NPC.Autonomy
             }
 
             PegaNpcPlanSnapshot completedPlan = _activePlan;
+            if (completedPlan.ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+            {
+                LogAttackGoapEvent(
+                    "NPC GOAP Attack Known Character Action reached a terminal outcome.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestId", execution.RequestId),
+                    LogFields.Field("desireId", completedPlan.DesireId),
+                    LogFields.Field("actionId", completedPlan.ActionId),
+                    LogFields.Field("targetId", completedPlan.TargetId),
+                    LogFields.Field("actionOutcome", execution.Outcome),
+                    LogFields.Field("declaredEffect", execution.DeclaredEffect.Kind),
+                    LogFields.Field("effectObserved", execution.EffectObserved),
+                    LogFields.Field("diagnostic", execution.Diagnostic),
+                    LogFields.Field("completedAtTimeSeconds", terminalEvent.CompletedAtTimeSeconds));
+            }
+
             bool approachBelongsToLostContactOpportunity = _hasActivePlanContinuation &&
                 completedPlan.ActionId == _continuationAction.Contract.ActionId &&
                 completedPlan.TargetId ==
@@ -2701,6 +2761,7 @@ namespace PEGA.NPC.Autonomy
                 bool terminalResultRequiresReevaluation = relevance.RequiresReevaluation ||
                     execution.Outcome == PegaNpcActionOutcome.Invalid ||
                     execution.Outcome == PegaNpcActionOutcome.Interrupted ||
+                    execution.Outcome == PegaNpcActionOutcome.CompletedWithoutEffect ||
                     observedEffectMatched;
                 if (terminalResultRequiresReevaluation && isActiveAndEnabled)
                 {
@@ -3379,6 +3440,14 @@ namespace PEGA.NPC.Autonomy
             }
 
             return builder.ToString();
+        }
+
+        private void LogAttackGoapEvent(string message, params LogField[] fields)
+        {
+            _attackEventLog ??= PegaLogging.CreateScopedLogger<PegaNpcAutonomy>(
+                AttackEventLogCategory,
+                gameObject.name);
+            _attackEventLog.Info(message, fields);
         }
 
         private void EnsureLoggerInitialized()

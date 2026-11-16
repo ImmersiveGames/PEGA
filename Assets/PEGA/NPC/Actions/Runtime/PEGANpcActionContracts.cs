@@ -14,9 +14,25 @@ namespace PEGA.NPC.Actions.Runtime
         NotStarted = 0,
         Running = 10,
         Success = 20,
+        CompletedWithoutEffect = 25,
         Invalid = 30,
         Interrupted = 40,
         Cancelled = 50
+    }
+
+    public static class PegaNpcActionOutcomeExtensions
+    {
+        public static bool IsTerminal(this PegaNpcActionOutcome outcome) => outcome switch
+        {
+            PegaNpcActionOutcome.NotStarted => false,
+            PegaNpcActionOutcome.Running => false,
+            PegaNpcActionOutcome.Success => true,
+            PegaNpcActionOutcome.CompletedWithoutEffect => true,
+            PegaNpcActionOutcome.Invalid => true,
+            PegaNpcActionOutcome.Interrupted => true,
+            PegaNpcActionOutcome.Cancelled => true,
+            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Unknown NPC Action outcome.")
+        };
     }
 
     /// <summary>Stable, open-ended identity for an Action offered to the local GOAP planner.</summary>
@@ -27,6 +43,7 @@ namespace PEGA.NPC.Actions.Runtime
         private PegaNpcPlanningActionId(string stableText) => _stableText = stableText;
 
         public static PegaNpcPlanningActionId ApproachKnownCharacter { get; } = new PegaNpcPlanningActionId("approach-known-target");
+        public static PegaNpcPlanningActionId AttackKnownCharacter { get; } = new PegaNpcPlanningActionId("attack-known-target");
         public static PegaNpcPlanningActionId InvestigateLastKnownCharacterPosition { get; } = new PegaNpcPlanningActionId("investigate-last-known-target-position");
         public static PegaNpcPlanningActionId MaintainSafeSeparationFromKnownCharacter { get; } = new PegaNpcPlanningActionId("maintain-safe-separation-from-known-character");
         public static PegaNpcPlanningActionId InvestigatePerceivedAreaPresence { get; } = new PegaNpcPlanningActionId("investigate-perceived-area-presence");
@@ -58,6 +75,7 @@ namespace PEGA.NPC.Actions.Runtime
         private PegaNpcActionEffectKind(string stableText) => _stableText = stableText;
 
         public static PegaNpcActionEffectKind ApproachKnownCharacterPosition { get; } = new PegaNpcActionEffectKind("approach-known-target-position");
+        public static PegaNpcActionEffectKind AttackKnownCharacterImpact { get; } = new PegaNpcActionEffectKind("attack-known-target-impact");
         public static PegaNpcActionEffectKind ReachLocalObservationPosition { get; } = new PegaNpcActionEffectKind("reach-local-observation-position");
         public static PegaNpcActionEffectKind ReachSafeSeparationPosition { get; } = new PegaNpcActionEffectKind("reach-safe-separation-position");
         public static PegaNpcActionEffectKind ReachKnownGroupObjectEntryPosition { get; } = new PegaNpcActionEffectKind("reach-known-group-object-entry-position");

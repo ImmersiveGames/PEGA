@@ -28,6 +28,8 @@ GameObject:
   - component: {fileID: 114000024}
   - component: {fileID: 114000025}
   - component: {fileID: 114000026}
+  - component: {fileID: 114000027}
+  - component: {fileID: 114000028}
   m_Layer: 9
   m_Name: PEGA_NPCActorRuntimeBase
   m_TagString: Untagged
@@ -196,6 +198,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ad5268d800724814951dbaf601e30980, type: 2}
   - {fileID: 11400000, guid: 9a115c7654944511b9699b485ce79ae8, type: 2}
   - {fileID: 11400000, guid: 9642c5dd661c40b4a22a376a41bcecdd, type: 2}
+  - {fileID: 11400000, guid: d923c7b93e672c9c5bfc2106b86361ce, type: 2}
   causalSearchCandidateEvaluationBudget: 128
 --- !u!114 &114000002
 MonoBehaviour:
@@ -515,3 +518,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5020a68af1ac42e299a04a3ccf00b2a6, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Interactions.Runtime.Actor.PegaNpcObjectInteractionMechanic
+--- !u!114 &114000027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b364d713372145d981808a3118f00de, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Attacks.Runtime.PegaActorAttackMechanic
+  playerIntentSource: {fileID: 0}
+  attackReachMeters: 1.25
+  frontToleranceDegrees: 55
+  showRegionWhenUnselected: 0
+--- !u!114 &114000028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cde8d611b0733024e6bba2968dd1670e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorAttackResultPresenter
+  resultVisibilitySeconds: 1.5

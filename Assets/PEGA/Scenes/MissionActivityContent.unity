@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 442300476}
   - component: {fileID: 442300475}
+  - component: {fileID: 442300477}
   m_Layer: 0
   m_Name: Object Entry Recognition Access
   m_TagString: Untagged
@@ -163,6 +164,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &442300477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442300474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de045063a42c4e8e843635c0879da4b7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceQueryBinding
 --- !u!1 &651366912
 GameObject:
   m_ObjectHideFlags: 0
@@ -240,7 +253,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -660,6 +673,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PegaMissionPlayerObjectEntryRecognitionAccess
   recognitionQuery: {fileID: 442300475}
+  actorOccurrenceRecognitionQuery: {fileID: 442300477}
   playerActorReference: {fileID: 2500000206}
 --- !u!1001 &2500000300
 PrefabInstance:
@@ -675,7 +689,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -1419,7 +1433,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1439,7 +1453,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: availableBehaviors.Array.size
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[4]'
@@ -1449,6 +1463,10 @@ PrefabInstance:
       propertyPath: 'availableBehaviors.Array.data[5]'
       value: 
       objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[6]'
+      value:
+      objectReference: {fileID: 11400000, guid: d923c7b93e672c9c5bfc2106b86361ce, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: objectEntryOccurrenceQueryBinding
       value: 
@@ -1523,7 +1541,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1547,7 +1565,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: availableBehaviors.Array.size
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[4]'
@@ -1557,6 +1575,10 @@ PrefabInstance:
       propertyPath: 'availableBehaviors.Array.data[5]'
       value: 
       objectReference: {fileID: 11400000, guid: e4dbed8869b74e549745506b7703ab51, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[6]'
+      value:
+      objectReference: {fileID: 11400000, guid: d923c7b93e672c9c5bfc2106b86361ce, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: objectEntryOccurrenceQueryBinding
       value: 
@@ -1631,7 +1653,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1655,7 +1677,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: availableBehaviors.Array.size
-      value: 8
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: 'availableBehaviors.Array.data[3]'
@@ -1677,6 +1699,10 @@ PrefabInstance:
       propertyPath: 'availableBehaviors.Array.data[7]'
       value: 
       objectReference: {fileID: 11400000, guid: 4399f4df6dbf456a8c817789d787d88e, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[8]'
+      value:
+      objectReference: {fileID: 11400000, guid: d923c7b93e672c9c5bfc2106b86361ce, type: 2}
     - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: objectEntryOccurrenceQueryBinding
       value: 
@@ -2438,7 +2464,7 @@ Transform:
   m_GameObject: {fileID: 950000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 27, y: 0.263, z: 16.2}
+  m_LocalPosition: {x: -4.75, y: 0.25, z: 11.96}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -25,6 +25,9 @@ GameObject:
   - component: {fileID: 114000012}
   - component: {fileID: 114000013}
   - component: {fileID: 114000014}
+  - component: {fileID: 114000015}
+  - component: {fileID: 114000016}
+  - component: {fileID: 114000017}
   m_Layer: 8
   m_Name: PEGA_PlayerActorRuntimeHost
   m_TagString: Untagged
@@ -307,6 +310,48 @@ MonoBehaviour:
   playerIntentSource: {fileID: 114000012}
   playerSelectionSource: {fileID: 114000008}
   playerDiscoverySource: {fileID: 114000007}
+--- !u!114 &114000015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1e68c500d8027a6efc417321afa782f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Attacks.Runtime.Player.PegaPlayerAttackIntentSource
+  attackAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+--- !u!114 &114000016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b364d713372145d981808a3118f00de, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Attacks.Runtime.PegaActorAttackMechanic
+  playerIntentSource: {fileID: 114000015}
+  attackReachMeters: 1.25
+  frontToleranceDegrees: 55
+  showRegionWhenUnselected: 0
+--- !u!114 &114000017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cde8d611b0733024e6bba2968dd1670e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorAttackResultPresenter
+  resultVisibilitySeconds: 1.5
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0
