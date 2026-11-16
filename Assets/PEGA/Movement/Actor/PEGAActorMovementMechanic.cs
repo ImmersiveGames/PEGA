@@ -1,5 +1,6 @@
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using PEGA.Actors.Runtime;
 using PEGA.Diagnostics;
 using UnityEngine;
 namespace PEGA.Movement.Actor
@@ -172,6 +173,7 @@ namespace PEGA.Movement.Actor
         private IPegaPlanarMovementIntentSource _intentSource;
         private MonoBehaviour _intentSourceBehaviour;
         private CharacterController _characterController;
+        private PegaActorIncapacitationMechanic _incapacitationMechanic;
         private Vector3 _moveDirection;
         private float _moveMagnitude;
         private Vector3 _currentVelocity;
@@ -183,6 +185,8 @@ namespace PEGA.Movement.Actor
         private float _lastLoggedMagnitude;
         private bool _hasObservedPhysicalMotion;
         private bool _lastObservedPhysicalMotion;
+        private Vector3 _knockbackVelocity;
+        private float _knockbackRemainingSeconds;
 
         public Vector3 CurrentPlanarVelocity => _currentVelocity;
 
@@ -230,6 +234,7 @@ namespace PEGA.Movement.Actor
             _intentSourceBehaviour = intentSource;
             _intentSource = intentSource as IPegaPlanarMovementIntentSource;
             _characterController = GetComponent<CharacterController>();
+            _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
             _isConfigured = ValidateConfiguration();
             if (!_isConfigured)
             {
@@ -265,6 +270,17 @@ namespace PEGA.Movement.Actor
                 return;
             }
 
+            if (TryMoveKnockback(Time.deltaTime))
+            {
+                return;
+            }
+
+            if (_incapacitationMechanic != null && _incapacitationMechanic.IsIncapacitated)
+            {
+                StopPlanarMovement(Time.deltaTime);
+                return;
+            }
+
             if (!_intentSourceBehaviour.isActiveAndEnabled ||
                 !_intentSource.TryGetIntent(Time.deltaTime, out PegaPlanarMovementIntent intent))
             {
@@ -295,6 +311,79 @@ namespace PEGA.Movement.Actor
             MoveActor(Time.deltaTime, movementSpeed);
             LogIntentState(intent, true);
             LogPhysicalMotionState();
+        }
+
+        public bool TryApplyKnockback(
+            Vector3 planarDirection,
+            float distanceMeters,
+            float durationSeconds,
+            out string diagnostic)
+        {
+            diagnostic = string.Empty;
+            planarDirection.y = 0f;
+            if (!_isConfigured || !isActiveAndEnabled ||
+                !IsFinite(planarDirection.x) || !IsFinite(planarDirection.y) ||
+                !IsFinite(planarDirection.z) || planarDirection.sqrMagnitude <= 0.000001f ||
+                !IsPositiveFinite(distanceMeters) || !IsPositiveFinite(durationSeconds))
+            {
+                diagnostic = "The shared movement mechanic requires an active Actor, finite planar direction and positive finite knockback distance and duration.";
+                return false;
+            }
+
+            _knockbackVelocity = planarDirection.normalized * (distanceMeters / durationSeconds);
+            _knockbackRemainingSeconds = durationSeconds;
+            diagnostic = string.Empty;
+            return true;
+        }
+
+        private bool TryMoveKnockback(float deltaTime)
+        {
+            if (_knockbackRemainingSeconds <= 0f || deltaTime <= 0f)
+            {
+                return false;
+            }
+
+            float movementTime = Mathf.Min(deltaTime, _knockbackRemainingSeconds);
+            Vector3 previousPosition = transform.position;
+            _characterController.Move(_knockbackVelocity * movementTime);
+            Vector3 actualDisplacement = transform.position - previousPosition;
+            actualDisplacement.y = 0f;
+            _currentVelocity = actualDisplacement / deltaTime;
+            _knockbackRemainingSeconds = Mathf.Max(0f, _knockbackRemainingSeconds - movementTime);
+            if (_knockbackRemainingSeconds <= 0f)
+            {
+                _knockbackVelocity = Vector3.zero;
+            }
+
+            if (_intentSource is IPegaPlanarMovementFeedbackSink feedbackSink)
+            {
+                feedbackSink.OnMovementExecuted(
+                    previousPosition,
+                    transform.position,
+                    _currentVelocity,
+                    deltaTime);
+            }
+
+            LogPhysicalMotionState();
+            return true;
+        }
+
+        private void StopPlanarMovement(float deltaTime)
+        {
+            Vector3 previousPosition = transform.position;
+            _moveDirection = Vector3.zero;
+            _moveMagnitude = 0f;
+            _currentVelocity = Vector3.zero;
+            LogIntentState(PegaPlanarMovementIntent.Zero, false);
+            LogPhysicalMotionState();
+            if (_intentSource is IPegaPlanarMovementFeedbackSink feedbackSink && deltaTime > 0f)
+            {
+                feedbackSink.OnMovementExecuted(
+                    previousPosition,
+                    previousPosition,
+                    Vector3.zero,
+                    deltaTime);
+            }
         }
 
         private void MoveActor(float deltaTime, float movementSpeed)

@@ -1,4 +1,5 @@
 using Immersive.Framework.Actors;
+using PEGA.Actors.Runtime;
 using Immersive.Framework.ObjectEntry;
 using UnityEngine;
 namespace PEGA.Interactions.Runtime
@@ -180,6 +181,14 @@ namespace PEGA.Interactions.Runtime
             catch (System.ArgumentException exception)
             {
                 diagnostic = exception.Message;
+                return false;
+            }
+
+            PegaActorIncapacitationMechanic incapacitationMechanic =
+                ActorRoot.GetComponent<PegaActorIncapacitationMechanic>();
+            if (incapacitationMechanic != null && incapacitationMechanic.IsIncapacitated)
+            {
+                diagnostic = "The Actor is incapacitated and cannot execute Object Entry interactions until recovery.";
                 return false;
             }
 

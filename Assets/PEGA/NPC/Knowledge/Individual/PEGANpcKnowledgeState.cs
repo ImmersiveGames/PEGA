@@ -238,6 +238,9 @@ namespace PEGA.NPC.Knowledge.Individual
         private double _nextInitialKnowledgeRetryTimeSeconds;
 
         [NonSerialized]
+        private long _characterIncapacitationObservationSequence;
+
+        [NonSerialized]
         private ScopedLogger _log;
 
         [NonSerialized]
@@ -368,6 +371,9 @@ namespace PEGA.NPC.Knowledge.Individual
                 _factStore.GetFacts(PegaNpcKnowledgeFacts.CharacterVisualContact, Time.timeAsDouble));
             AddSubjects(
                 subjectIds,
+                _factStore.GetFacts(PegaNpcKnowledgeFacts.CharacterIncapacitated, Time.timeAsDouble));
+            AddSubjects(
+                subjectIds,
                 _factStore.GetFacts(PegaNpcKnowledgeFacts.LastObservedCharacterPosition, Time.timeAsDouble));
 
             var sorted = new List<ActorId>(subjectIds);
@@ -461,6 +467,13 @@ namespace PEGA.NPC.Knowledge.Individual
             return GetFact(PegaNpcKnowledgeFacts.CharacterVisualContact.For(subjectActorId));
         }
 
+        public PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> GetCharacterIncapacitated(
+            ActorId subjectActorId)
+        {
+            ValidateSubjectForQuery(subjectActorId);
+            return GetFact(PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId));
+        }
+
         public PegaKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId)
         {
             ValidateSubjectForQuery(subjectActorId);
@@ -543,6 +556,44 @@ namespace PEGA.NPC.Knowledge.Individual
             return ObserveFact(
                 PegaNpcKnowledgeFacts.CharacterVisualContact.For(subjectActorId),
                 hasVisualContact,
+                PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
+        }
+
+        public PegaKnowledgeWriteResult ObserveCharacterIncapacitated(
+            ActorId subjectActorId,
+            ActorOccurrenceId actorOccurrenceId,
+            bool isIncapacitated,
+            PegaNpcEvidenceOrigin origin,
+            double observationTimeSeconds)
+        {
+            if (!subjectActorId.IsValid || !actorOccurrenceId.IsValid)
+            {
+                var key = PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId);
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    "subject ActorId or Actor occurrence is invalid",
+                    PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation>.Unknown(
+                        PegaKnowledgeScope.Individual));
+            }
+
+            if (!TryValidateEvidence(origin, observationTimeSeconds, out string reason))
+            {
+                var key = PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId);
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    reason,
+                    GetCharacterIncapacitated(subjectActorId));
+            }
+
+            var observation = new PegaNpcCharacterIncapacitationObservation(
+                actorOccurrenceId,
+                isIncapacitated,
+                ++_characterIncapacitationObservationSequence);
+            return ObserveFact(
+                PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId),
+                observation,
                 PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
         }
 

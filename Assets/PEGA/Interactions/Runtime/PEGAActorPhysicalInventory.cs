@@ -168,6 +168,65 @@ namespace PEGA.Interactions.Runtime
             return true;
         }
 
+        internal bool DropAllItems(
+            Vector3 planarDirection,
+            out int droppedItemCount,
+            out string diagnostic)
+        {
+            droppedItemCount = 0;
+            diagnostic = string.Empty;
+            if (!TryValidateActor(out diagnostic))
+            {
+                return false;
+            }
+
+            planarDirection.y = 0f;
+            if (planarDirection.sqrMagnitude <= 0.000001f ||
+                !IsFinite(planarDirection))
+            {
+                diagnostic = "Dropping physical inventory requires a finite non-zero planar direction.";
+                return false;
+            }
+
+            planarDirection.Normalize();
+            Vector3 lateralDirection = Vector3.Cross(Vector3.up, planarDirection).normalized;
+            CharacterController characterController = GetComponent<CharacterController>();
+            float actorPlanarRadiusMeters = characterController != null
+                ? Mathf.Max(characterController.bounds.extents.x, characterController.bounds.extents.z)
+                : 0f;
+            const float releaseClearanceMeters = 0.15f;
+            float accumulatedItemSpacingMeters = 0f;
+            for (int index = _items.Count - 1; index >= 0; index--)
+            {
+                PegaObjectEntryPhysicalItem item = _items[index];
+                if (item == null)
+                {
+                    _items.RemoveAt(index);
+                    continue;
+                }
+
+                float itemPlanarRadiusMeters = item.PossessedPlanarRadiusMeters;
+                float lateralOffsetMeters = actorPlanarRadiusMeters +
+                    itemPlanarRadiusMeters +
+                    releaseClearanceMeters +
+                    accumulatedItemSpacingMeters;
+                Vector3 dropPosition = transform.position + lateralDirection * lateralOffsetMeters;
+                if (!item.TryReleasePossession(dropPosition))
+                {
+                    diagnostic = "A physical inventory item did not accept its release transaction.";
+                    return false;
+                }
+
+                _items.RemoveAt(index);
+                droppedItemCount++;
+                accumulatedItemSpacingMeters +=
+                    itemPlanarRadiusMeters * 2f + releaseClearanceMeters;
+            }
+
+            diagnostic = string.Empty;
+            return true;
+        }
+
         private void PruneDestroyedItems()
         {
             for (int index = _items.Count - 1; index >= 0; index--)

@@ -37,16 +37,58 @@ namespace PEGA.Attacks.Runtime
 
     public readonly struct PegaActorAttackContact
     {
-        internal PegaActorAttackContact(ActorOccurrence occurrence)
+        internal PegaActorAttackContact(
+            ActorOccurrence occurrence,
+            PegaActorImpactResolution impactResolution)
         {
             ActorId = occurrence.ActorId;
             OccurrenceId = occurrence.Id;
             ActorRoot = occurrence.ActorRoot;
+            ImpactResolution = impactResolution;
         }
 
         public ActorId ActorId { get; }
         public ActorOccurrenceId OccurrenceId { get; }
         public GameObject ActorRoot { get; }
+        public PegaActorImpactResolution ImpactResolution { get; }
+    }
+
+    public enum PegaActorImpactOutcome
+    {
+        Unavailable = 0,
+        RemainedActive = 10,
+        Incapacitated = 20,
+        AlreadyIncapacitated = 30
+    }
+
+    public readonly struct PegaActorImpactResolution
+    {
+        internal PegaActorImpactResolution(
+            PegaActorImpactOutcome outcome,
+            float attackCapacity,
+            float resistance,
+            int droppedItemCount,
+            bool knockbackApplied,
+            string diagnostic)
+        {
+            Outcome = outcome;
+            AttackCapacity = attackCapacity;
+            Resistance = resistance;
+            DroppedItemCount = droppedItemCount;
+            KnockbackApplied = knockbackApplied;
+            Diagnostic = diagnostic ?? string.Empty;
+        }
+
+        public PegaActorImpactOutcome Outcome { get; }
+        public float AttackCapacity { get; }
+        public float Resistance { get; }
+        public int DroppedItemCount { get; }
+        public bool KnockbackApplied { get; }
+        public string Diagnostic { get; }
+        public bool IsIncapacitated =>
+            Outcome == PegaActorImpactOutcome.Incapacitated ||
+            Outcome == PegaActorImpactOutcome.AlreadyIncapacitated;
+        public bool BecameIncapacitated => Outcome == PegaActorImpactOutcome.Incapacitated;
     }
 
     public readonly struct PegaActorAttackResolution

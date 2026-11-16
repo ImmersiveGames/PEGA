@@ -68,8 +68,52 @@ namespace PEGA.Presentation.Actor
                 PegaActorAttackResultKind.Unavailable => "SEM CONSULTA DE ACTOR",
                 _ => "RESULTADO INVÁLIDO"
             };
-            _visibleResult = $"ATAQUE #{result.AttemptId} · {status}";
+            _visibleResult = $"ATAQUE #{result.AttemptId} · {status}{DescribeImpact(result)}";
             _visibleUntilTimeSeconds = result.ResolvedAtTimeSeconds + resultVisibilitySeconds;
+        }
+
+        private static string DescribeImpact(PegaActorAttackResolution resolution)
+        {
+            if (!resolution.IsHit)
+            {
+                return string.Empty;
+            }
+
+            int incapacitatedCount = 0;
+            int activeCount = 0;
+            int alreadyIncapacitatedCount = 0;
+            int droppedItemCount = 0;
+            for (int index = 0; index < resolution.Contacts.Count; index++)
+            {
+                PegaActorImpactResolution impact = resolution.Contacts[index].ImpactResolution;
+                droppedItemCount += impact.DroppedItemCount;
+                switch (impact.Outcome)
+                {
+                    case PegaActorImpactOutcome.Incapacitated:
+                        incapacitatedCount++;
+                        break;
+                    case PegaActorImpactOutcome.RemainedActive:
+                        activeCount++;
+                        break;
+                    case PegaActorImpactOutcome.AlreadyIncapacitated:
+                        alreadyIncapacitatedCount++;
+                        break;
+                }
+            }
+
+            if (incapacitatedCount > 0)
+            {
+                return $" · CAIU {incapacitatedCount}, ITENS CAÍRAM {droppedItemCount}";
+            }
+
+            if (activeCount > 0)
+            {
+                return $" · ATIVO {activeCount}, ITENS CAÍRAM {droppedItemCount}";
+            }
+
+            return alreadyIncapacitatedCount > 0
+                ? $" · JÁ CAÍDO {alreadyIncapacitatedCount}, ITENS CAÍRAM {droppedItemCount}"
+                : " · IMPACTO SEM RECEPTOR";
         }
 
 #if UNITY_EDITOR

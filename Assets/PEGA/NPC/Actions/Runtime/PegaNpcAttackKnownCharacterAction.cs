@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Immersive.Foundation.Events;
 using Immersive.Framework.Actors;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
@@ -9,6 +10,7 @@ using PEGA.GOAP;
 using PEGA.Movement.Actor;
 using PEGA.NPC.Autonomy.Planning;
 using PEGA.NPC.Knowledge.Core;
+using PEGA.NPC.Knowledge.Definitions;
 using PEGA.NPC.Knowledge.Individual;
 using UnityEngine;
 
@@ -17,7 +19,8 @@ namespace PEGA.NPC.Actions.Runtime
     [CreateAssetMenu(
         fileName = "AttackKnownCharacter",
         menuName = "PEGA/NPC/Combat/Attack Known Character")]
-    public sealed class PegaNpcAttackKnownCharacterAction : PegaNpcActionProviderAsset
+    public sealed class PegaNpcAttackKnownCharacterAction : PegaNpcActionProviderAsset,
+        IPegaNpcKnowledgeChangeRelevanceProvider
     {
         private const string AttackEventLogCategory = "PEGA.Gameplay.Attack.Events.GOAP";
 
@@ -177,6 +180,19 @@ namespace PEGA.NPC.Actions.Runtime
             _attackMechanic != null &&
             Mathf.Abs(candidate.TargetRadiusOverrideMeters.Value - _attackMechanic.AttackReachMeters) <= 0.0001f;
 
+        public bool IsRelevantKnowledgeChange(PegaKnowledgeFactChangedEvent change)
+        {
+            if (change == null || !change.HasValueOrStatusChanged ||
+                _targetReference == null ||
+                !_targetReference.TryGetCurrent(out ActorOccurrenceResolution resolution) ||
+                !resolution.Succeeded)
+            {
+                return false;
+            }
+
+            return change.IsFor(
+                PegaNpcKnowledgeFacts.CharacterIncapacitated.For(resolution.Occurrence.ActorId));
+        }
 
         public override bool IsCurrentPlanValid(
             PegaNpcPlanSnapshot plan,
@@ -378,6 +394,11 @@ namespace PEGA.NPC.Actions.Runtime
                 return;
             }
 
+            if (_resolution.IsHit)
+            {
+                ObserveTargetIncapacitationResult();
+            }
+
             CompleteAction(
                 _resolution.IsHit
                     ? PegaNpcActionOutcome.Success
@@ -435,11 +456,61 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
+            PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> incapacitationFact =
+                knowledgeReadView.GetKnownCharacterIncapacitation(targetActorId);
+            if (incapacitationFact.TryGetValue(
+                    out PegaNpcCharacterIncapacitationObservation observation) &&
+                observation.ActorOccurrenceId == currentOccurrence.Id &&
+                observation.IsIncapacitated)
+            {
+                diagnostic = "The current perception-backed target is known to be incapacitated and cannot be attacked.";
+                return false;
+            }
+
             evidenceTimeSeconds = positionFact.ObservationTimeSeconds;
             diagnostic = string.Empty;
             return true;
         }
 
+        private void ObserveTargetIncapacitationResult()
+        {
+            if (_executionEffect == null)
+            {
+                return;
+            }
+
+            ActorId expectedTargetId = _executionEffect.TargetId.KnownActorId;
+            for (int index = 0; index < _resolution.Contacts.Count; index++)
+            {
+                PegaActorAttackContact contact = _resolution.Contacts[index];
+                if (contact.ActorId != expectedTargetId ||
+                    contact.OccurrenceId != _executionEffect.TargetOccurrenceId ||
+                    contact.ImpactResolution.Outcome == PegaActorImpactOutcome.Unavailable)
+                {
+                    continue;
+                }
+
+                bool targetIncapacitated = contact.ImpactResolution.IsIncapacitated;
+                _knowledgeState.ObserveCharacterIncapacitated(
+                    contact.ActorId,
+                    contact.OccurrenceId,
+                    targetIncapacitated,
+                    PegaNpcEvidenceOrigin.ActionResult,
+                    _resolution.ResolvedAtTimeSeconds);
+                _attackEventLog ??= PegaLogging.CreateScopedLogger<PegaNpcAttackKnownCharacterAction>(
+                    AttackEventLogCategory,
+                    ActorRoot != null ? ActorRoot.name : name);
+                _attackEventLog.Info(
+                    "NPC Attack GOAP Action recorded the exact target's incapacitation result from its confirmed impact.",
+                    LogFields.Field("actorRoot", ActorRoot != null ? ActorRoot.name : string.Empty),
+                    LogFields.Field("targetActorId", contact.ActorId.StableText),
+                    LogFields.Field("targetActorOccurrenceId", contact.OccurrenceId.ToString()),
+                    LogFields.Field("targetIncapacitated", targetIncapacitated),
+                    LogFields.Field("impactOutcome", contact.ImpactResolution.Outcome),
+                    LogFields.Field("observationTimeSeconds", _resolution.ResolvedAtTimeSeconds));
+                return;
+            }
+        }
 
         private bool TryGetCurrentTargetOccurrence(
             ActorId expectedActorId,

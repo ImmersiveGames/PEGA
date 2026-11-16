@@ -1,6 +1,8 @@
+using System;
 using Immersive.Foundation.Events;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using PEGA.Actors.Runtime;
 using PEGA.Attacks.Runtime;
 using PEGA.Diagnostics;
 using PEGA.Movement.Actor;
@@ -26,6 +28,7 @@ namespace PEGA.Presentation.Actor
         private static readonly int TurnPlaybackSpeedParameter = Animator.StringToHash("TurnPlaybackSpeed");
         private static readonly int TurnStateTag = Animator.StringToHash("Turn");
         private static readonly int AttackStateTag = Animator.StringToHash("Attack");
+        private static readonly int FallStateTag = Animator.StringToHash("Fall");
 
         [Header("Animation Set")]
         [SerializeField]
@@ -36,6 +39,15 @@ namespace PEGA.Presentation.Actor
         [SerializeField]
         [Tooltip("Nome do parâmetro Trigger do Animator que inicia a animação de ataque deste Actor.")]
         private string attackTriggerParameterName = "Attack";
+
+        [Header("Incapacitation Presentation")]
+        [SerializeField]
+        [Tooltip("Nome do parâmetro Trigger do Animator que inicia a animação de queda deste Actor.")]
+        private string fallTriggerParameterName = "Fall";
+
+        [SerializeField]
+        [Tooltip("Nome do parâmetro Trigger do Animator que retoma a animação de locomoção após a recuperação.")]
+        private string recoverTriggerParameterName = "Recover";
 
         [Header("Locomotion Presentation")]
         [SerializeField, Min(0.01f)]
@@ -61,10 +73,18 @@ namespace PEGA.Presentation.Actor
 
         private PegaActorPresentationSignals _signals;
         private PegaActorAttackMechanic _attackMechanic;
+        private PegaActorIncapacitationMechanic _incapacitationMechanic;
         private IEventBinding _attackAttemptBinding;
+        private IEventBinding _incapacitationBinding;
         private Animator _animator;
         private int _attackTriggerParameter;
+        private int _fallTriggerParameter;
+        private int _recoverTriggerParameter;
         private bool _hasValidAttackTrigger;
+        private bool _hasValidIncapacitationTriggers;
+        private bool _hasPresentedIncapacitationState;
+        private bool _lastPresentedIncapacitated;
+        private bool _fallPresentationPending;
         private int _consumedTurnSequence;
         private bool _turnTriggerPending;
         private bool _turnPlaybackPending;
@@ -84,14 +104,24 @@ namespace PEGA.Presentation.Actor
         {
             _signals = GetComponentInParent<PegaActorPresentationSignals>();
             _attackMechanic = GetComponentInParent<PegaActorAttackMechanic>();
+            _incapacitationMechanic = GetComponentInParent<PegaActorIncapacitationMechanic>();
             _animator = null;
             _hasValidAttackTrigger = false;
+            _hasValidIncapacitationTriggers = false;
+            _hasPresentedIncapacitationState = false;
+            _fallPresentationPending = false;
             _reportedMissingAnimator = false;
             _configurationFailed = false;
 
             if (animationSet == null)
             {
                 FailConfiguration($"{nameof(PegaActorAnimationSetPresenter)} requires an animation set controller.");
+                return;
+            }
+
+            if (_incapacitationMechanic != null && !HasDistinctIncapacitationTriggerNames())
+            {
+                FailConfiguration("Fall and Recover Animator triggers must be non-empty and distinct from each other, Attack and Turn.");
                 return;
             }
 
@@ -122,6 +152,12 @@ namespace PEGA.Presentation.Actor
             {
                 _attackAttemptBinding = _attackMechanic.SubscribeToAttempts(OnAttackAttempted);
             }
+
+            if (_incapacitationMechanic != null)
+            {
+                _incapacitationBinding = _incapacitationMechanic.SubscribeToIncapacitationChanges(
+                    OnIncapacitationChanged);
+            }
         }
 
         private void OnDisable()
@@ -131,9 +167,17 @@ namespace PEGA.Presentation.Actor
                 _attackMechanic.UnsubscribeFromAttempts(_attackAttemptBinding);
             }
 
+            if (_incapacitationMechanic != null && _incapacitationBinding != null)
+            {
+                _incapacitationMechanic.UnsubscribeFromIncapacitationChanges(_incapacitationBinding);
+            }
+
             _attackAttemptBinding = null;
+            _incapacitationBinding = null;
             _attackMechanic = null;
+            _incapacitationMechanic = null;
             _hasValidAttackTrigger = false;
+            _hasValidIncapacitationTriggers = false;
         }
 
         /// <summary>0 = parado, 1 = andar, 2 = correr; linear entre os pontos calibrados.</summary>
@@ -158,6 +202,57 @@ namespace PEGA.Presentation.Actor
 
             if ((_animator == null || !_animator.isActiveAndEnabled) && !TryBindAnimator())
             {
+                return;
+            }
+
+            bool isIncapacitated =
+                _incapacitationMechanic != null && _incapacitationMechanic.IsIncapacitated;
+            if (_incapacitationMechanic != null && !_hasPresentedIncapacitationState)
+            {
+                if (isIncapacitated)
+                {
+                    PresentIncapacitationState(true);
+                }
+                else if (IsFallStateActiveOrEntering())
+                {
+                    PresentIncapacitationState(false);
+                }
+                else
+                {
+                    _lastPresentedIncapacitated = false;
+                    _hasPresentedIncapacitationState = true;
+                }
+            }
+            else if (_incapacitationMechanic != null &&
+                _lastPresentedIncapacitated != isIncapacitated)
+            {
+                PresentIncapacitationState(isIncapacitated);
+            }
+
+            if (isIncapacitated)
+            {
+                if (_fallPresentationPending && _hasValidIncapacitationTriggers)
+                {
+                    if (IsFallStateActiveOrEntering())
+                    {
+                        _fallPresentationPending = false;
+                    }
+                    else
+                    {
+                        _animator.ResetTrigger(_fallTriggerParameter);
+                        _animator.SetTrigger(_fallTriggerParameter);
+                    }
+                }
+
+                _animator.SetFloat(
+                    LocomotionParameter,
+                    0f,
+                    locomotionDampTimeSeconds,
+                    Time.deltaTime);
+                _animator.ResetTrigger(TurnParameter);
+                _turnTriggerPending = false;
+                _turnPlaybackPending = false;
+                _consumedTurnSequence = _signals.TurnRequestSequence;
                 return;
             }
 
@@ -191,7 +286,6 @@ namespace PEGA.Presentation.Actor
             }
         }
 
-
         private void OnAttackAttempted(PegaActorAttackAttemptedEvent attempted)
         {
             if (!isActiveAndEnabled || _configurationFailed || _attackMechanic == null)
@@ -217,6 +311,105 @@ namespace PEGA.Presentation.Actor
 
             _animator.ResetTrigger(_attackTriggerParameter);
             _animator.SetTrigger(_attackTriggerParameter);
+        }
+
+        private void OnIncapacitationChanged(PegaActorIncapacitationChangedEvent changed)
+        {
+            if (!isActiveAndEnabled || _configurationFailed || changed == null ||
+                _signals == null || changed.ActorRoot != _signals.gameObject)
+            {
+                return;
+            }
+
+            PresentIncapacitationState(changed.IsIncapacitated);
+        }
+
+        private void PresentIncapacitationState(bool isIncapacitated)
+        {
+            if (_hasPresentedIncapacitationState &&
+                _lastPresentedIncapacitated == isIncapacitated)
+            {
+                return;
+            }
+
+            if ((_animator == null || !_animator.isActiveAndEnabled) && !TryBindAnimator())
+            {
+                return;
+            }
+
+            if (!_hasValidIncapacitationTriggers)
+            {
+                _lastPresentedIncapacitated = isIncapacitated;
+                _hasPresentedIncapacitationState = true;
+                return;
+            }
+
+            if (isIncapacitated)
+            {
+                if (_hasValidAttackTrigger)
+                {
+                    _animator.ResetTrigger(_attackTriggerParameter);
+                }
+                _animator.ResetTrigger(TurnParameter);
+                _animator.ResetTrigger(_recoverTriggerParameter);
+                _turnTriggerPending = false;
+                _turnPlaybackPending = false;
+                _consumedTurnSequence = _signals.TurnRequestSequence;
+                if (IsFallStateActiveOrEntering())
+                {
+                    _lastPresentedIncapacitated = true;
+                    _hasPresentedIncapacitationState = true;
+                    return;
+                }
+
+                _animator.ResetTrigger(_fallTriggerParameter);
+                _animator.SetTrigger(_fallTriggerParameter);
+                _fallPresentationPending = true;
+            }
+            else
+            {
+                if (_hasValidAttackTrigger)
+                {
+                    _animator.ResetTrigger(_attackTriggerParameter);
+                }
+                _animator.ResetTrigger(TurnParameter);
+                _animator.ResetTrigger(_fallTriggerParameter);
+                _turnTriggerPending = false;
+                _turnPlaybackPending = false;
+                _consumedTurnSequence = _signals.TurnRequestSequence;
+                _fallPresentationPending = false;
+                _animator.ResetTrigger(_recoverTriggerParameter);
+                _animator.SetTrigger(_recoverTriggerParameter);
+            }
+
+            _lastPresentedIncapacitated = isIncapacitated;
+            _hasPresentedIncapacitationState = true;
+        }
+
+        private bool HasDistinctIncapacitationTriggerNames()
+        {
+            if (string.IsNullOrWhiteSpace(fallTriggerParameterName) ||
+                string.IsNullOrWhiteSpace(recoverTriggerParameterName) ||
+                string.Equals(fallTriggerParameterName, recoverTriggerParameterName, StringComparison.Ordinal) ||
+                string.Equals(fallTriggerParameterName, "Turn", StringComparison.Ordinal) ||
+                string.Equals(recoverTriggerParameterName, "Turn", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return string.IsNullOrWhiteSpace(attackTriggerParameterName) ||
+                (!string.Equals(fallTriggerParameterName, attackTriggerParameterName, StringComparison.Ordinal) &&
+                 !string.Equals(recoverTriggerParameterName, attackTriggerParameterName, StringComparison.Ordinal));
+        }
+
+        private bool IsFallStateActiveOrEntering()
+        {
+            if (_animator.IsInTransition(0))
+            {
+                return _animator.GetNextAnimatorStateInfo(0).tagHash == FallStateTag;
+            }
+
+            return _animator.GetCurrentAnimatorStateInfo(0).tagHash == FallStateTag;
         }
 
         private bool IsAttackStateActiveOrEntering()
@@ -323,7 +516,36 @@ namespace PEGA.Presentation.Actor
                     LogFields.Field("attackTriggerParameterName", attackTriggerParameterName));
             }
 
+            _fallTriggerParameter = string.IsNullOrWhiteSpace(fallTriggerParameterName)
+                ? 0
+                : Animator.StringToHash(fallTriggerParameterName);
+            _recoverTriggerParameter = string.IsNullOrWhiteSpace(recoverTriggerParameterName)
+                ? 0
+                : Animator.StringToHash(recoverTriggerParameterName);
+            _hasValidIncapacitationTriggers =
+                _fallTriggerParameter != 0 &&
+                _recoverTriggerParameter != 0 &&
+                _fallTriggerParameter != _recoverTriggerParameter &&
+                _fallTriggerParameter != TurnParameter &&
+                _recoverTriggerParameter != TurnParameter &&
+                (!_hasValidAttackTrigger ||
+                 (_fallTriggerParameter != _attackTriggerParameter &&
+                  _recoverTriggerParameter != _attackTriggerParameter)) &&
+                HasParameter(candidate, _fallTriggerParameter, AnimatorControllerParameterType.Trigger) &&
+                HasParameter(candidate, _recoverTriggerParameter, AnimatorControllerParameterType.Trigger);
+            if (_incapacitationMechanic != null && !_hasValidIncapacitationTriggers)
+            {
+                _log.Error(
+                    "Actor incapacitation animation triggers are not configured; the gameplay state and control restrictions remain active.",
+                    LogFields.Field("actorRoot", _signals.gameObject.name),
+                    LogFields.Field("animationSet", animationSet.name),
+                    LogFields.Field("fallTriggerParameterName", fallTriggerParameterName),
+                    LogFields.Field("recoverTriggerParameterName", recoverTriggerParameterName));
+            }
+
             _animator = candidate;
+            _hasPresentedIncapacitationState = false;
+            _fallPresentationPending = false;
             _reportedMissingAnimator = false;
             _turnTriggerPending = false;
             _consumedTurnSequence = _signals.TurnRequestSequence;

@@ -28,6 +28,8 @@ GameObject:
   - component: {fileID: 114000015}
   - component: {fileID: 114000016}
   - component: {fileID: 114000017}
+  - component: {fileID: 114000018}
+  - component: {fileID: 114000019}
   m_Layer: 8
   m_Name: PEGA_PlayerActorRuntimeHost
   m_TagString: Untagged
@@ -336,6 +338,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Attacks.Runtime.PegaActorAttackMechanic
   playerIntentSource: {fileID: 114000015}
+  attackCapacity: 1
   attackReachMeters: 1.25
   frontToleranceDegrees: 55
   showRegionWhenUnselected: 0
@@ -352,6 +355,34 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorAttackResultPresenter
   resultVisibilitySeconds: 1.5
+--- !u!114 &114000018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe6a022814534b029596fed5bcb26cd3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Attacks.Runtime.PegaActorImpactReceiverMechanic
+  resistance: 1
+  knockbackDistanceMeters: 1
+  knockbackDurationSeconds: 0.25
+--- !u!114 &114000019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9c1eccdea8d4ce78e2c4f4f69151cc8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Actors.Runtime.PegaActorIncapacitationMechanic
+  recoveryDurationSeconds: 5
 --- !u!1 &100000001
 GameObject:
   m_ObjectHideFlags: 0

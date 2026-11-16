@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using PEGA.NPC.Knowledge.Core;
 using PEGA.NPC.Knowledge.Individual;
@@ -5,6 +7,23 @@ using UnityEngine;
 using UnityEngine.Scripting;
 namespace PEGA.NPC.Knowledge.Definitions
 {
+    public readonly struct PegaNpcCharacterIncapacitationObservation
+    {
+        public PegaNpcCharacterIncapacitationObservation(
+            ActorOccurrenceId actorOccurrenceId,
+            bool isIncapacitated,
+            long observationSequence)
+        {
+            ActorOccurrenceId = actorOccurrenceId;
+            IsIncapacitated = isIncapacitated;
+            ObservationSequence = observationSequence;
+        }
+
+        public ActorOccurrenceId ActorOccurrenceId { get; }
+        public bool IsIncapacitated { get; }
+        public long ObservationSequence { get; }
+    }
+
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>
     [Preserve]
     internal static class PegaNpcKnowledgeFacts
@@ -50,6 +69,15 @@ namespace PEGA.NPC.Knowledge.Definitions
                 allowsDesignerAuthoredInitialFact: false);
 
         [Preserve]
+        public static readonly PegaKnowledgeFactDefinition<ActorId, PegaNpcCharacterIncapacitationObservation> CharacterIncapacitated =
+            new PegaKnowledgeFactDefinition<ActorId, PegaNpcCharacterIncapacitationObservation>(
+                "pega.actor.character-incapacitated",
+                "Character incapacitated",
+                new PegaNpcCharacterIncapacitationKnowledgePolicy(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: false);
+
+        [Preserve]
         public static readonly PegaKnowledgeFactDefinition<ActorId, Vector3> LastObservedCharacterPosition =
             new PegaKnowledgeFactDefinition<ActorId, Vector3>(
                 "pega.actor.last-observed-character-position",
@@ -83,6 +111,132 @@ namespace PEGA.NPC.Knowledge.Definitions
             (change.IsFor(IsPlayer.For(subjectActorId)) ||
              change.IsFor(CharacterVisualContact.For(subjectActorId)) ||
              change.IsFor(LastObservedCharacterPosition.For(subjectActorId)));
+
+        private sealed class PegaNpcCharacterIncapacitationKnowledgePolicy :
+            IPegaKnowledgeFactPolicy<PegaNpcCharacterIncapacitationObservation>
+        {
+            private readonly PegaLatestEvidenceKnowledgePolicy<PegaNpcCharacterIncapacitationObservation>
+                _latestEvidencePolicy = new PegaLatestEvidenceKnowledgePolicy<
+                    PegaNpcCharacterIncapacitationObservation>(
+                    areEqual: AreSameObservedState,
+                    validateValue: value =>
+                        value.ActorOccurrenceId.IsValid && value.ObservationSequence > 0
+                            ? string.Empty
+                            : "Incapacitation evidence requires a valid occurrence and observation sequence.");
+
+            public PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation> Observe(
+                PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> current,
+                PegaNpcCharacterIncapacitationObservation value,
+                PegaKnowledgeEvidence evidence,
+                PegaKnowledgeScope scope)
+            {
+                if (!value.ActorOccurrenceId.IsValid || value.ObservationSequence <= 0)
+                {
+                    return new PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation>(
+                        PegaKnowledgeWriteResult.RejectedInvalid,
+                        current,
+                        false);
+                }
+
+                if (!current.HasObservationTime ||
+                    evidence.ObservationTimeSeconds != current.ObservationTimeSeconds)
+                {
+                    return _latestEvidencePolicy.Observe(current, value, evidence, scope);
+                }
+
+                long currentSequence = GetCurrentObservationSequence(current);
+                if (value.ObservationSequence < currentSequence)
+                {
+                    return new PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation>(
+                        PegaKnowledgeWriteResult.IgnoredStale,
+                        current,
+                        false);
+                }
+
+                if (value.ObservationSequence == currentSequence)
+                {
+                    return _latestEvidencePolicy.Observe(current, value, evidence, scope);
+                }
+
+                return ReplaceAtSameTime(current, value, evidence, scope);
+            }
+
+            public PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation> Invalidate(
+                PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> current,
+                PegaKnowledgeEvidence evidence,
+                PegaKnowledgeScope scope) =>
+                _latestEvidencePolicy.Invalidate(current, evidence, scope);
+
+            public PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> EvaluateValidity(
+                PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> current,
+                double queryTimeSeconds,
+                PegaKnowledgeScope scope) =>
+                _latestEvidencePolicy.EvaluateValidity(current, queryTimeSeconds, scope);
+
+            private static PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation> ReplaceAtSameTime(
+                PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> current,
+                PegaNpcCharacterIncapacitationObservation value,
+                PegaKnowledgeEvidence evidence,
+                PegaKnowledgeScope scope)
+            {
+                bool logicalStateChanged =
+                    !current.TryGetValue(out PegaNpcCharacterIncapacitationObservation previous) ||
+                    !AreSameObservedState(previous, value);
+                var evidenceItems = logicalStateChanged
+                    ? new List<PegaKnowledgeEvidence>()
+                    : new List<PegaKnowledgeEvidence>(current.Evidence);
+                bool evidenceAlreadyPresent = false;
+                for (int index = 0; index < evidenceItems.Count; index++)
+                {
+                    PegaKnowledgeEvidence existing = evidenceItems[index];
+                    if (existing.Origin.Equals(evidence.Origin) &&
+                        ReferenceEquals(existing.Source, evidence.Source) &&
+                        Equals(existing.Payload, evidence.Payload) &&
+                        existing.ObservationTimeSeconds == evidence.ObservationTimeSeconds)
+                    {
+                        evidenceAlreadyPresent = true;
+                        break;
+                    }
+                }
+
+                if (!evidenceAlreadyPresent)
+                {
+                    evidenceItems.Add(evidence);
+                }
+
+                var updated = PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation>.Create(
+                    PegaKnowledgeStatus.Known,
+                    true,
+                    evidence.ObservationTimeSeconds,
+                    evidenceItems,
+                    PegaKnowledgeInvalidationCause.None,
+                    value,
+                    value,
+                    true,
+                    scope);
+                return new PegaKnowledgeFactUpdate<PegaNpcCharacterIncapacitationObservation>(
+                    PegaKnowledgeWriteResult.Replaced,
+                    updated,
+                    logicalStateChanged);
+            }
+
+            private static long GetCurrentObservationSequence(
+                PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> fact)
+            {
+                if (fact.TryGetValue(out PegaNpcCharacterIncapacitationObservation value))
+                {
+                    return value.ObservationSequence;
+                }
+
+                return fact.HasCandidate ? fact.Candidate.ObservationSequence : 0L;
+            }
+
+            private static bool AreSameObservedState(
+                PegaNpcCharacterIncapacitationObservation left,
+                PegaNpcCharacterIncapacitationObservation right) =>
+                left.ActorOccurrenceId == right.ActorOccurrenceId &&
+                left.IsIncapacitated == right.IsIncapacitated;
+        }
 
         public static bool HasPerceptionBackedPlayerFact(PegaKnowledgeFact<bool> fact) =>
             fact.TryGetValue(out bool isPlayer) &&

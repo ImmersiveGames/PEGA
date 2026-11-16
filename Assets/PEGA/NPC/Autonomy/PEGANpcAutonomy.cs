@@ -7,6 +7,7 @@ using Immersive.Framework.ObjectEntry;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Diagnostics;
+using PEGA.Actors.Runtime;
 using PEGA.GOAP;
 using PEGA.Movement.NPC;
 using PEGA.NPC.Actions.Runtime;
@@ -28,6 +29,7 @@ namespace PEGA.NPC.Autonomy
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/NPC/Autonomy")]
     [RequireComponent(typeof(PegaNpcKnowledgeState))]
+    [RequireComponent(typeof(PegaActorIncapacitationMechanic))]
     public sealed class PegaNpcAutonomy : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
@@ -55,6 +57,12 @@ namespace PEGA.NPC.Autonomy
 
         [System.NonSerialized]
         private PegaNpcKnowledgeState _knowledgeState;
+
+        [System.NonSerialized]
+        private PegaActorIncapacitationMechanic _incapacitationMechanic;
+
+        [System.NonSerialized]
+        private bool _isSuppressedByIncapacitation;
 
         [System.NonSerialized]
         private IGoapKnowledgeStateView _goapKnowledgeStateView;
@@ -455,6 +463,35 @@ namespace PEGA.NPC.Autonomy
 
         private void LateUpdate()
         {
+            if (_incapacitationMechanic != null && _incapacitationMechanic.IsIncapacitated)
+            {
+                if (!_isSuppressedByIncapacitation)
+                {
+                    _isSuppressedByIncapacitation = true;
+                    CancelActivePlanForLifecycle(
+                        "NPC Actor was incapacitated by an attack; its active physical Action was released until recovery.");
+                    _activePlanContinuation = default;
+                    _hasActivePlanContinuation = false;
+                    LogAttackGoapEvent(
+                        "NPC GOAP execution paused while its Actor is incapacitated.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("recoveryRemainingSeconds", _incapacitationMechanic.RecoveryRemainingSeconds));
+                }
+
+                _bootstrapPending = false;
+                ClearQueuedEvaluation();
+                return;
+            }
+
+            if (_isSuppressedByIncapacitation)
+            {
+                _isSuppressedByIncapacitation = false;
+                QueueEvaluation(EvaluationCause.AutonomyLifecycle);
+                LogAttackGoapEvent(
+                    "NPC GOAP execution resumed after Actor recovery.",
+                    LogFields.Field("actorRoot", gameObject.name));
+            }
+
             for (int index = 0; index < _actionRuntimeInstances.Count; index++)
             {
                 _actionRuntimeInstances[index].TickRuntime();
@@ -511,15 +548,16 @@ namespace PEGA.NPC.Autonomy
                 terminalRequestId);
         }
 
-
         private bool TryInitialize(out string diagnostic)
         {
             diagnostic = string.Empty;
             _knowledgeState = GetComponent<PegaNpcKnowledgeState>();
+            _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
             _desireState ??= new PegaNpcDesireState(gameObject.name);
-            if (_knowledgeState == null)
+            if (_knowledgeState == null || _incapacitationMechanic == null ||
+                !_incapacitationMechanic.IsAvailable)
             {
-                diagnostic = "Knowledge State must exist on the NPC root.";
+                diagnostic = "Knowledge State and a configured Actor incapacitation state must exist on the NPC root.";
                 return false;
             }
 
@@ -2345,7 +2383,7 @@ namespace PEGA.NPC.Autonomy
             return true;
         }
 
-        private void CancelActivePlanForLifecycle()
+        private void CancelActivePlanForLifecycle(string diagnostic = null)
         {
             if (!_hasActivePlan)
             {
@@ -2366,7 +2404,9 @@ namespace PEGA.NPC.Autonomy
             try
             {
                 cancelled = action.CancelExecution(
-                    "NPC autonomy was disabled; the active physical Action was released until the next lifecycle evaluation.");
+                    string.IsNullOrWhiteSpace(diagnostic)
+                        ? "NPC autonomy was disabled; the active physical Action was released until the next lifecycle evaluation."
+                        : diagnostic);
             }
             finally
             {
@@ -2379,16 +2419,16 @@ namespace PEGA.NPC.Autonomy
             }
 
             _log.Debug(
-                "NPC autonomy released its active Action for a later lifecycle evaluation.",
+                "NPC autonomy released its active Action for a later lifecycle or Actor-state evaluation.",
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("requestId", pausedRequestId),
+                LogFields.Field("diagnostic", diagnostic ?? string.Empty),
                 LogFields.Field("actionId", pausedPlan.ActionId),
                 LogFields.Field("actionOutcome", action.Outcome),
                 LogFields.Field("cancelled", cancelled),
                 LogFields.Field("pursuitContinuationPreserved", _hasActivePlanContinuation));
             ClearLoggedObjective();
         }
-
 
         private void StartSelectedPlan(
             PegaNpcPlanSelectionResult selection,

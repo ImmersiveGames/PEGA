@@ -7,6 +7,7 @@ using Immersive.Framework.ObjectEntry;
 using Immersive.Framework.RuntimeContent;
 using Immersive.Logging.Records;
 using ImmersiveGames.Perception;
+using PEGA.Actors.Runtime;
 using PEGA.Diagnostics;
 using PEGA.Interactions.Runtime;
 using PEGA.Interactions.Runtime.ObjectEntry;
@@ -3681,6 +3682,26 @@ namespace PEGA.NPC.Perception
                 else
                 {
                     PublishTargetContactIfChanged(occurrence.ActorId, true, observationTimeSeconds);
+                }
+                PegaActorIncapacitationMechanic incapacitationMechanic =
+                    occurrence.ActorRoot.GetComponent<PegaActorIncapacitationMechanic>();
+                if (incapacitationMechanic != null && incapacitationMechanic.IsAvailable)
+                {
+                    PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> previousIncapacitation =
+                        _knowledgeState.GetCharacterIncapacitated(occurrence.ActorId);
+                    bool currentIncapacitation = incapacitationMechanic.IsIncapacitated;
+                    if (!previousIncapacitation.TryGetValue(
+                            out PegaNpcCharacterIncapacitationObservation knownIncapacitation) ||
+                        knownIncapacitation.ActorOccurrenceId != occurrence.Id ||
+                        knownIncapacitation.IsIncapacitated != currentIncapacitation)
+                    {
+                        _knowledgeState.ObserveCharacterIncapacitated(
+                            occurrence.ActorId,
+                            occurrence.Id,
+                            currentIncapacitation,
+                            PegaNpcEvidenceOrigin.Perception,
+                            observationTimeSeconds);
+                    }
                 }
                 if (occurrence.HasPlayerSlot)
                 {
