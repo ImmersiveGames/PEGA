@@ -15,8 +15,8 @@ MonoBehaviour:
   desireDefinition: {fileID: 11400000, guid: 9d641bef49ec3d3734dce85108893573, type: 2}
   applicabilityCondition: {fileID: 0}
   enabledForContext: 1
-  baseWeight: 1
+  baseWeight: 5
   satisfactionGain: 1
   maximumSatisfaction: 1
-  weightReductionFromSatisfaction: 1
+  weightReductionFromSatisfaction: 0
   completionLimit: -1

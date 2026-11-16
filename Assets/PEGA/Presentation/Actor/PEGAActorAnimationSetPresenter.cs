@@ -1,5 +1,7 @@
+using Immersive.Foundation.Events;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
+using PEGA.Attacks.Runtime;
 using PEGA.Diagnostics;
 using PEGA.Movement.Actor;
 using UnityEngine;
@@ -23,11 +25,17 @@ namespace PEGA.Presentation.Actor
         private static readonly int TurnParameter = Animator.StringToHash("Turn");
         private static readonly int TurnPlaybackSpeedParameter = Animator.StringToHash("TurnPlaybackSpeed");
         private static readonly int TurnStateTag = Animator.StringToHash("Turn");
+        private static readonly int AttackStateTag = Animator.StringToHash("Attack");
 
         [Header("Animation Set")]
         [SerializeField]
         [Tooltip("Controlador base do PEGA ou um Animator Override Controller dele com os clipes deste personagem.")]
         private RuntimeAnimatorController animationSet;
+
+        [Header("Attack Presentation")]
+        [SerializeField]
+        [Tooltip("Nome do parâmetro Trigger do Animator que inicia a animação de ataque deste Actor.")]
+        private string attackTriggerParameterName = "Attack";
 
         [Header("Locomotion Presentation")]
         [SerializeField, Min(0.01f)]
@@ -52,7 +60,11 @@ namespace PEGA.Presentation.Actor
         private float maximumTurnPlaybackSpeed = 5f;
 
         private PegaActorPresentationSignals _signals;
+        private PegaActorAttackMechanic _attackMechanic;
+        private IEventBinding _attackAttemptBinding;
         private Animator _animator;
+        private int _attackTriggerParameter;
+        private bool _hasValidAttackTrigger;
         private int _consumedTurnSequence;
         private bool _turnTriggerPending;
         private bool _turnPlaybackPending;
@@ -71,7 +83,9 @@ namespace PEGA.Presentation.Actor
         private void OnEnable()
         {
             _signals = GetComponentInParent<PegaActorPresentationSignals>();
+            _attackMechanic = GetComponentInParent<PegaActorAttackMechanic>();
             _animator = null;
+            _hasValidAttackTrigger = false;
             _reportedMissingAnimator = false;
             _configurationFailed = false;
 
@@ -103,6 +117,23 @@ namespace PEGA.Presentation.Actor
 
             _consumedTurnSequence = _signals.TurnRequestSequence;
             TryBindAnimator();
+
+            if (_attackMechanic != null)
+            {
+                _attackAttemptBinding = _attackMechanic.SubscribeToAttempts(OnAttackAttempted);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_attackMechanic != null && _attackAttemptBinding != null)
+            {
+                _attackMechanic.UnsubscribeFromAttempts(_attackAttemptBinding);
+            }
+
+            _attackAttemptBinding = null;
+            _attackMechanic = null;
+            _hasValidAttackTrigger = false;
         }
 
         /// <summary>0 = parado, 1 = andar, 2 = correr; linear entre os pontos calibrados.</summary>
@@ -158,6 +189,45 @@ namespace PEGA.Presentation.Actor
                 _turnTriggerPending = true;
                 _turnPlaybackPending = true;
             }
+        }
+
+
+        private void OnAttackAttempted(PegaActorAttackAttemptedEvent attempted)
+        {
+            if (!isActiveAndEnabled || _configurationFailed || _attackMechanic == null)
+            {
+                return;
+            }
+
+            if ((_animator == null || !_animator.isActiveAndEnabled) && !TryBindAnimator())
+            {
+                return;
+            }
+
+            if (!_hasValidAttackTrigger)
+            {
+                return;
+            }
+
+            if (IsAttackStateActiveOrEntering())
+            {
+                _animator.ResetTrigger(_attackTriggerParameter);
+                return;
+            }
+
+            _animator.ResetTrigger(_attackTriggerParameter);
+            _animator.SetTrigger(_attackTriggerParameter);
+        }
+
+        private bool IsAttackStateActiveOrEntering()
+        {
+            if (_animator.GetCurrentAnimatorStateInfo(0).tagHash == AttackStateTag)
+            {
+                return true;
+            }
+
+            return _animator.IsInTransition(0) &&
+                _animator.GetNextAnimatorStateInfo(0).tagHash == AttackStateTag;
         }
 
         /// <summary>
@@ -235,6 +305,22 @@ namespace PEGA.Presentation.Actor
             {
                 FailConfiguration($"{nameof(PegaActorAnimationSetPresenter)} requires Animator parameters 'Locomotion' (Float), 'TurnAngle' (Float), 'Turn' (Trigger) and 'TurnPlaybackSpeed' (Float).");
                 return false;
+            }
+
+            _attackTriggerParameter = string.IsNullOrWhiteSpace(attackTriggerParameterName)
+                ? 0
+                : Animator.StringToHash(attackTriggerParameterName);
+            _hasValidAttackTrigger = _attackMechanic == null ||
+                (_attackTriggerParameter != 0 &&
+                 _attackTriggerParameter != TurnParameter &&
+                 HasParameter(candidate, _attackTriggerParameter, AnimatorControllerParameterType.Trigger));
+            if (_attackMechanic != null && !_hasValidAttackTrigger)
+            {
+                _log.Error(
+                    "Actor attack animation is not configured; locomotion presentation remains active.",
+                    LogFields.Field("actorRoot", _signals.gameObject.name),
+                    LogFields.Field("animationSet", animationSet.name),
+                    LogFields.Field("attackTriggerParameterName", attackTriggerParameterName));
             }
 
             _animator = candidate;

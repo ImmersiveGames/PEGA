@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.Presentation.Actor.PegaActorAnimationSetPresenter
   animationSet: {fileID: 9100000, guid: 29e26c9557c74eb58e791ed59c6365fe, type: 2}
+  attackTriggerParameterName: Attack
   walkSpeedMetersPerSecond: 1.2
   runSpeedMetersPerSecond: 2.25
   locomotionDampTimeSeconds: 0.1

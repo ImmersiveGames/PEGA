@@ -330,6 +330,13 @@ namespace PEGA.NPC.Autonomy
             EnsureLoggerInitialized();
             if (!TryInitialize(out string diagnostic))
             {
+                LogAttackGoapDiagnostic(
+                    "NPC Attack GOAP runtime initialization failed.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
+                    LogFields.Field("configuredActionCount", availableBehaviors != null ? availableBehaviors.Length : 0),
+                    LogFields.Field("attackActionConfigured", HasConfiguredAttackAction()),
+                    LogFields.Field("diagnostic", diagnostic));
                 _log.Error(
                     "NPC autonomy could not initialize its Normal-context GOAP inputs.",
                     LogFields.Field("actorRoot", gameObject.name),
@@ -337,6 +344,17 @@ namespace PEGA.NPC.Autonomy
                 enabled = false;
                 return;
             }
+
+            LogAttackGoapDiagnostic(
+                "NPC Attack GOAP runtime initialized.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
+                LogFields.Field("normalDesireIds", DescribeNormalDesireIds()),
+                LogFields.Field("configuredActionCount", availableBehaviors != null ? availableBehaviors.Length : 0),
+                LogFields.Field("registeredActionCount", _actionProviders.Count),
+                LogFields.Field("attackActionConfigured", HasConfiguredAttackAction()),
+                LogFields.Field("attackActionRegistered", GetAction(PegaNpcPlanningActionId.AttackKnownCharacter) != null),
+                LogFields.Field("targetObservationSourceReady", _targetObservationSource != null));
 
             _knowledgeChangeBinding ??= _knowledgeState.SubscribeToKnowledgeChanges(OnKnowledgeChanged);
             if (_targetObservationSource != null && _planReevaluationBinding == null)
@@ -492,6 +510,7 @@ namespace PEGA.NPC.Autonomy
                 hasContinuationIntent ? continuationIntent : (PegaNpcLastKnownTargetContinuationIntent?)null,
                 terminalRequestId);
         }
+
 
         private bool TryInitialize(out string diagnostic)
         {
@@ -1153,6 +1172,13 @@ namespace PEGA.NPC.Autonomy
                     out PegaNpcPlanSelectionResult selection,
                     out string diagnostic))
             {
+                LogAttackGoapDiagnostic(
+                    "NPC Attack GOAP reevaluation could not build a live selection.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("causes", causes),
+                    LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
+                    LogFields.Field("targetActorId", targetActorId.IsValid ? targetActorId.StableText : "none"),
+                    LogFields.Field("diagnostic", diagnostic));
                 _log.Warning(
                     "NPC GOAP reevaluation had no valid live target/action input.",
                     LogFields.Field("actorRoot", gameObject.name),
@@ -1192,6 +1218,18 @@ namespace PEGA.NPC.Autonomy
             if (!selection.IsValid ||
                 !selection.HasSelectedPlan)
             {
+                LogAttackGoapDiagnostic(
+                    "NPC Attack GOAP reevaluation produced no selected plan.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("causes", causes),
+                    LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
+                    LogFields.Field("targetActorId", targetActorId.IsValid ? targetActorId.StableText : "none"),
+                    LogFields.Field("attackActionCandidateCount", CountAttackCandidates(candidates)),
+                    LogFields.Field("candidatePlanCount", selection.CandidatePlans.Count),
+                    LogFields.Field("attackPlanCount", CountAttackPlans(selection.CandidatePlans)),
+                    LogFields.Field("viablePlans", DescribeViablePlans(selection.CandidatePlans)),
+                    LogFields.Field("causalSearches", DescribeCausalSearches(selection.CausalEvaluation)),
+                    LogFields.Field("diagnostic", selection.Diagnostic));
                 HandleNoSelectedPlan(
                     selection,
                     causes,
@@ -1202,8 +1240,34 @@ namespace PEGA.NPC.Autonomy
             }
 
             PegaNpcPlanSnapshot selectedPlan = selection.SelectedPlan;
+            if (selectedPlan.ActionId != PegaNpcPlanningActionId.AttackKnownCharacter)
+            {
+                LogAttackGoapDiagnostic(
+                    "NPC Attack GOAP evaluated a plan but selected a different first Action.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
+                    LogFields.Field("selectedDesireId", selectedPlan.DesireId),
+                    LogFields.Field("selectedActionId", selectedPlan.ActionId),
+                    LogFields.Field("selectedTargetId", selectedPlan.TargetId),
+                    LogFields.Field("attackActionCandidateCount", CountAttackCandidates(candidates)),
+                    LogFields.Field("candidatePlanCount", selection.CandidatePlans.Count),
+                    LogFields.Field("attackPlanCount", CountAttackPlans(selection.CandidatePlans)),
+                    LogFields.Field("viablePlans", DescribeViablePlans(selection.CandidatePlans)));
+            }
+
             if (!TryFindCandidate(candidates, selectedPlan, out PegaNpcPlanningActionCandidate candidate))
             {
+                if (selectedPlan.ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+                {
+                    LogAttackGoapDiagnostic(
+                        "NPC Attack GOAP selected Attack Known Character without a matching live candidate.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("desireId", selectedPlan.DesireId),
+                        LogFields.Field("actionId", selectedPlan.ActionId),
+                        LogFields.Field("targetId", selectedPlan.TargetId),
+                        LogFields.Field("candidateCount", candidates.Count));
+                }
+
                 HandleNoSelectedPlan(
                     selection,
                     causes,
@@ -2324,6 +2388,7 @@ namespace PEGA.NPC.Autonomy
                 LogFields.Field("pursuitContinuationPreserved", _hasActivePlanContinuation));
             ClearLoggedObjective();
         }
+
 
         private void StartSelectedPlan(
             PegaNpcPlanSelectionResult selection,
@@ -3448,6 +3513,90 @@ namespace PEGA.NPC.Autonomy
                 AttackEventLogCategory,
                 gameObject.name);
             _attackEventLog.Info(message, fields);
+        }
+
+        private void LogAttackGoapDiagnostic(string message, params LogField[] fields)
+        {
+            _attackEventLog ??= PegaLogging.CreateScopedLogger<PegaNpcAutonomy>(
+                AttackEventLogCategory,
+                gameObject.name);
+            _attackEventLog.Debug(message, fields);
+        }
+
+        private bool HasConfiguredAttackAction()
+        {
+            if (availableBehaviors == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < availableBehaviors.Length; index++)
+            {
+                if (availableBehaviors[index] is PegaNpcAttackKnownCharacterAction)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string DescribeNormalDesireIds()
+        {
+            if (_normalContext == null)
+            {
+                return string.Empty;
+            }
+
+            IReadOnlyList<PegaNpcDesireConfiguration> desires = _normalContext.Desires;
+            string[] desireIds = new string[desires.Count];
+            for (int index = 0; index < desires.Count; index++)
+            {
+                PegaNpcDesireDefinition definition = desires[index] != null
+                    ? desires[index].Definition
+                    : null;
+                desireIds[index] = definition != null ? definition.DesireId : "<missing>";
+            }
+
+            return string.Join(",", desireIds);
+        }
+
+        private static int CountAttackCandidates(IReadOnlyList<PegaNpcPlanningActionCandidate> candidates)
+        {
+            if (candidates == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                if (candidates[index].ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountAttackPlans(IReadOnlyList<PegaNpcPlanSnapshot> plans)
+        {
+            if (plans == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int index = 0; index < plans.Count; index++)
+            {
+                if (plans[index].ActionId == PegaNpcPlanningActionId.AttackKnownCharacter)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private void EnsureLoggerInitialized()
