@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Immersive.Foundation.Events;
 using PEGA.Attacks.Runtime;
 using UnityEngine;
@@ -82,6 +83,7 @@ namespace PEGA.Presentation.Actor
             int incapacitatedCount = 0;
             int activeCount = 0;
             int alreadyIncapacitatedCount = 0;
+            int protectedCount = 0;
             int droppedItemCount = 0;
             for (int index = 0; index < resolution.Contacts.Count; index++)
             {
@@ -98,21 +100,40 @@ namespace PEGA.Presentation.Actor
                     case PegaActorImpactOutcome.AlreadyIncapacitated:
                         alreadyIncapacitatedCount++;
                         break;
+                    case PegaActorImpactOutcome.Protected:
+                        protectedCount++;
+                        break;
                 }
             }
 
+            var descriptions = new List<string>();
             if (incapacitatedCount > 0)
             {
-                return $" · CAIU {incapacitatedCount}, ITENS CAÍRAM {droppedItemCount}";
+                descriptions.Add($"CAIU {incapacitatedCount}");
             }
 
             if (activeCount > 0)
             {
-                return $" · ATIVO {activeCount}, ITENS CAÍRAM {droppedItemCount}";
+                descriptions.Add($"ATIVO {activeCount}");
             }
 
-            return alreadyIncapacitatedCount > 0
-                ? $" · JÁ CAÍDO {alreadyIncapacitatedCount}, ITENS CAÍRAM {droppedItemCount}"
+            if (alreadyIncapacitatedCount > 0)
+            {
+                descriptions.Add($"JÁ CAÍDO {alreadyIncapacitatedCount}");
+            }
+
+            if (protectedCount > 0)
+            {
+                descriptions.Add($"PROTEGIDO {protectedCount}");
+            }
+
+            if (incapacitatedCount > 0 || activeCount > 0 || alreadyIncapacitatedCount > 0)
+            {
+                descriptions.Add($"ITENS CAÍRAM {droppedItemCount}");
+            }
+
+            return descriptions.Count > 0
+                ? $" · {string.Join(", ", descriptions)}"
                 : " · IMPACTO SEM RECEPTOR";
         }
 
@@ -125,11 +146,13 @@ namespace PEGA.Presentation.Actor
                 return;
             }
 
-            GUI.color = _visibleResult.Contains("ACERTOU")
-                ? Color.green
-                : _visibleResult.Contains("ERROU")
-                    ? Color.red
-                    : Color.white;
+            GUI.color = _visibleResult.Contains("PROTEGIDO")
+                ? new Color(1f, 0.75f, 0.2f)
+                : _visibleResult.Contains("ACERTOU")
+                    ? Color.green
+                    : _visibleResult.Contains("ERROU")
+                        ? Color.red
+                        : Color.white;
             GUI.Label(
                 new Rect(16f, 16f, 420f, 28f),
                 $"{gameObject.name} · {_visibleResult}");

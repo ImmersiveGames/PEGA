@@ -25,6 +25,7 @@ namespace PEGA.NPC.Perception
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PegaNpcKnowledgeState))]
+    [RequireComponent(typeof(PegaActorParticipationState))]
     [RequireComponent(typeof(PerceptionSensorSet))]
     [RequireComponent(typeof(ActorOccurrenceQueryBinding))]
     [RequireComponent(typeof(ObjectEntryOccurrenceQueryBinding))]
@@ -59,14 +60,19 @@ namespace PEGA.NPC.Perception
 
         private readonly struct StaleActorContact
         {
-            public StaleActorContact(ActorId actorId, ActorOccurrenceId occurrenceId)
+            public StaleActorContact(
+                ActorId actorId,
+                ActorOccurrenceId occurrenceId,
+                bool noLongerParticipating)
             {
                 ActorId = actorId;
                 OccurrenceId = occurrenceId;
+                NoLongerParticipating = noLongerParticipating;
             }
 
             public ActorId ActorId { get; }
             public ActorOccurrenceId OccurrenceId { get; }
+            public bool NoLongerParticipating { get; }
         }
 
         private readonly struct ResolvedCandidateIdentity
@@ -112,6 +118,9 @@ namespace PEGA.NPC.Perception
 
         [System.NonSerialized]
         private ActorOccurrenceReferenceBinding _actorReference;
+
+        [System.NonSerialized]
+        private PegaActorParticipationState _participationState;
 
         [System.NonSerialized]
         private ActorDeclaration _actorDeclaration;
@@ -562,6 +571,7 @@ namespace PEGA.NPC.Perception
                 gameObject.name);
 
             _actorReference = GetComponent<ActorOccurrenceReferenceBinding>();
+            _participationState = GetComponent<PegaActorParticipationState>();
             _actorDeclaration = GetComponent<ActorDeclaration>();
             _actorOccurrenceQuery = GetComponent<ActorOccurrenceQueryBinding>();
             _actorOccurrenceRecognitionQuery = _actorOccurrenceQuery as IActorOccurrenceRecognitionQuery;
@@ -584,7 +594,7 @@ namespace PEGA.NPC.Perception
 
         private void LateUpdate()
         {
-            if (!_isConfigured)
+            if (DisableIfCaptured() || !_isConfigured)
             {
                 return;
             }
@@ -605,7 +615,7 @@ namespace PEGA.NPC.Perception
 
         private void OnEnable()
         {
-            if (!_isConfigured)
+            if (DisableIfCaptured() || !_isConfigured)
             {
                 return;
             }
@@ -632,6 +642,17 @@ namespace PEGA.NPC.Perception
             StopLostContactReevaluationRoutine();
             _perceptionSensorSet?.UnregisterSamplingDriver(this);
             SetGizmoUnavailable();
+        }
+
+        private bool DisableIfCaptured()
+        {
+            if (_participationState == null || !_participationState.IsCaptured)
+            {
+                return false;
+            }
+
+            enabled = false;
+            return true;
         }
 
         /// <summary>Assina pedidos de reavaliação relacionados ao alvo observado por este NPC.</summary>
@@ -698,6 +719,12 @@ namespace PEGA.NPC.Perception
         private bool TryValidateConfiguration(out string diagnostic)
         {
             diagnostic = string.Empty;
+            if (_participationState == null)
+            {
+                diagnostic = $"{nameof(PegaActorParticipationState)} is missing from the NPC root.";
+                return false;
+            }
+
             if (_actorDeclaration == null)
             {
                 diagnostic = $"{nameof(ActorDeclaration)} is missing from the NPC root.";
@@ -1407,7 +1434,8 @@ namespace PEGA.NPC.Perception
                     InvalidateStaleActorContact(
                         stale.ActorId,
                         stale.OccurrenceId,
-                        observationTimeSeconds);
+                        observationTimeSeconds,
+                        stale.NoLongerParticipating);
                 }
 
                 RemoveStaleActorReference(stale);
@@ -2011,6 +2039,18 @@ namespace PEGA.NPC.Perception
                     continue;
                 }
 
+                PegaActorParticipationState participationState =
+                    currentOccurrence.ActorRoot.GetComponent<PegaActorParticipationState>();
+                if (participationState != null && !participationState.IsParticipating)
+                {
+                    AddStaleActorContact(
+                        staleActorContacts,
+                        pair.Key,
+                        pair.Value.ExpectedOccurrence,
+                        noLongerParticipating: true);
+                    continue;
+                }
+
                 Vector3 currentPosition = GetActorCandidatePosition(currentOccurrence);
                 if (!IsFinite(currentPosition) || !AddExternalActorCandidate(
                         currentOccurrence,
@@ -2193,7 +2233,8 @@ namespace PEGA.NPC.Perception
         private void InvalidateStaleActorContact(
             ActorId actorId,
             ActorOccurrenceId staleOccurrenceId,
-            double observationTimeSeconds)
+            double observationTimeSeconds,
+            bool noLongerParticipating)
         {
             PegaKnowledgeFact<bool> contact = _knowledgeState.GetCharacterVisualContact(actorId);
             if (contact.Status == PegaKnowledgeStatus.Unknown ||
@@ -2212,7 +2253,9 @@ namespace PEGA.NPC.Perception
             if (result == PegaKnowledgeWriteResult.InvalidatedExplicitly)
             {
                 _log.Debug(
-                    "NPC invalidated visual contact for an Actor whose exact Framework occurrence became stale; last known position is preserved.",
+                    noLongerParticipating
+                        ? "NPC invalidated visual contact after the exact Actor occurrence left gameplay participation; last known position is preserved."
+                        : "NPC invalidated visual contact for an Actor whose exact Framework occurrence became stale; last known position is preserved.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("subjectActorId", actorId.StableText),
                     LogFields.Field("staleActorOccurrenceId", staleOccurrenceId.ToString()),
@@ -2236,8 +2279,20 @@ namespace PEGA.NPC.Perception
 
         private bool IsEligiblePhysicalCandidate(Collider candidate)
         {
-            return TryGetNearestFrameworkDeclarations(candidate, out NearestFrameworkDeclarations declarations) &&
-                   declarations.HasAnyValidDeclaration;
+            if (!TryGetNearestFrameworkDeclarations(candidate, out NearestFrameworkDeclarations declarations) ||
+                !declarations.HasAnyValidDeclaration)
+            {
+                return false;
+            }
+
+            if (!declarations.HasValidActorDeclaration)
+            {
+                return true;
+            }
+
+            PegaActorParticipationState participationState =
+                declarations.Root.GetComponent<PegaActorParticipationState>();
+            return participationState == null || participationState.IsParticipating;
         }
 
         private static bool TryGetNearestFrameworkDeclarations(
@@ -3702,6 +3757,27 @@ namespace PEGA.NPC.Perception
                             PegaNpcEvidenceOrigin.Perception,
                             observationTimeSeconds);
                     }
+
+                    PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> previousAttackProtection =
+                        _knowledgeState.GetCharacterAttackProtected(occurrence.ActorId);
+                    bool currentAttackProtection = incapacitationMechanic.IsAttackProtected;
+                    double currentAttackProtectionEndsAtTimeSeconds = currentAttackProtection
+                        ? incapacitationMechanic.AttackProtectionEndsAtTimeSeconds
+                        : 0d;
+                    if (!previousAttackProtection.TryGetValue(
+                            out PegaNpcCharacterAttackProtectionObservation knownAttackProtection) ||
+                        knownAttackProtection.ActorOccurrenceId != occurrence.Id ||
+                        knownAttackProtection.IsProtected != currentAttackProtection ||
+                        knownAttackProtection.ProtectionEndsAtTimeSeconds != currentAttackProtectionEndsAtTimeSeconds)
+                    {
+                        _knowledgeState.ObserveCharacterAttackProtected(
+                            occurrence.ActorId,
+                            occurrence.Id,
+                            currentAttackProtection,
+                            currentAttackProtectionEndsAtTimeSeconds,
+                            PegaNpcEvidenceOrigin.Perception,
+                            observationTimeSeconds);
+                    }
                 }
                 if (occurrence.HasPlayerSlot)
                 {
@@ -3839,7 +3915,8 @@ namespace PEGA.NPC.Perception
         private static void AddStaleActorContact(
             ICollection<StaleActorContact> staleContacts,
             ActorId actorId,
-            ActorOccurrenceId occurrenceId)
+            ActorOccurrenceId occurrenceId,
+            bool noLongerParticipating = false)
         {
             foreach (StaleActorContact current in staleContacts)
             {
@@ -3849,7 +3926,7 @@ namespace PEGA.NPC.Perception
                 }
             }
 
-            staleContacts.Add(new StaleActorContact(actorId, occurrenceId));
+            staleContacts.Add(new StaleActorContact(actorId, occurrenceId, noLongerParticipating));
         }
 
         private void RemoveStaleActorReference(StaleActorContact staleContact)
@@ -4174,6 +4251,11 @@ namespace PEGA.NPC.Perception
         {
             yield return new WaitForSeconds(delaySeconds);
             _lostContactReevaluationRoutine = null;
+
+            if (_participationState != null && _participationState.IsCaptured)
+            {
+                yield break;
+            }
 
             if (!_isConfigured ||
                 !_hasLostContactEpisode ||

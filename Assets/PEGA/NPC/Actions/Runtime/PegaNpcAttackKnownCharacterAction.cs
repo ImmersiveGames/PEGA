@@ -139,16 +139,6 @@ namespace PEGA.NPC.Actions.Runtime
                 return string.IsNullOrWhiteSpace(diagnostic);
             }
 
-            if (!_attackMechanic.IsPositionInAttackRegion(knownPosition))
-            {
-                LogCandidateStatus(
-                    context,
-                    "unavailable",
-                    "The known target position is outside the Actor's physical attack region.",
-                    knownPosition);
-                return true;
-            }
-
             PegaNpcPlanningTarget target = PegaNpcPlanningTarget.FromKnownActorPosition(
                 context.TargetActorId,
                 knownPosition,
@@ -165,7 +155,7 @@ namespace PEGA.NPC.Actions.Runtime
             LogCandidateStatus(
                 context,
                 "offered",
-                "The current target is perception-backed and inside the physical attack region.",
+                "The current target is perception-backed; GOAP can evaluate a direct attack or an attack after approach.",
                 knownPosition);
             return true;
         }
@@ -180,6 +170,95 @@ namespace PEGA.NPC.Actions.Runtime
             _attackMechanic != null &&
             Mathf.Abs(candidate.TargetRadiusOverrideMeters.Value - _attackMechanic.AttackReachMeters) <= 0.0001f;
 
+        public override PegaNpcCausalStepEvaluationStatus EvaluateCausalStep(
+            PegaNpcPlanningActionCandidate candidate,
+            IGoapHypotheticalStateView stateBeforeStep,
+            PegaNpcCausalPlanningKnowledge knowledge,
+            out PegaNpcNavigationRouteEstimate routeEstimate,
+            out float estimatedSeconds,
+            out string diagnostic)
+        {
+            routeEstimate = PegaNpcNavigationRouteEstimate.NotRequired;
+            estimatedSeconds = 0f;
+            diagnostic = string.Empty;
+            if (!object.ReferenceEquals(candidate.Action, this) ||
+                !CandidateMatchesContract(candidate) ||
+                candidate.TargetId.IdentityKind != PegaNpcPlanningTargetIdentityKind.Actor)
+            {
+                diagnostic = "The causal Attack step does not match this Action provider and known Actor target.";
+                return PegaNpcCausalStepEvaluationStatus.Unavailable;
+            }
+
+            if (stateBeforeStep == null ||
+                stateBeforeStep.Source != GoapStateSource.HypotheticalState ||
+                knowledge == null ||
+                !knowledge.TryGetKnownTarget(candidate.TargetId, out PegaNpcGoapKnownTarget knownTarget) ||
+                knownTarget == null ||
+                knownTarget.Target.TargetId != candidate.TargetId ||
+                knownTarget.Target.Kind != candidate.RequiredTargetKind ||
+                !knownTarget.Target.HasEvidenceTime ||
+                _attackMechanic == null)
+            {
+                diagnostic = "The causal Attack step has no current hypothetical state or evidence-backed Actor target.";
+                return PegaNpcCausalStepEvaluationStatus.Unknown;
+            }
+
+            PegaNpcPlanningTarget target = knownTarget.Target;
+            if (!TryGetKnownTargetEvidence(
+                    target.TargetId.KnownActorId,
+                    _knowledgeReadView,
+                    out Vector3 knownPosition,
+                    out double evidenceTimeSeconds,
+                    out diagnostic) ||
+                Math.Abs(evidenceTimeSeconds - target.EvidenceTimeSeconds) > 0.000001d ||
+                !knownPosition.Equals(target.KnownPosition) ||
+                !TryGetCurrentTargetOccurrence(
+                    target.TargetId.KnownActorId,
+                    out _,
+                    out diagnostic))
+            {
+                diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                    ? "The causal Attack target no longer matches current perception evidence and the official Actor occurrence."
+                    : diagnostic;
+                return PegaNpcCausalStepEvaluationStatus.Unknown;
+            }
+
+            estimatedSeconds = IntrinsicDurationSeconds;
+            if (float.IsNaN(estimatedSeconds) || float.IsInfinity(estimatedSeconds) || estimatedSeconds < 0f)
+            {
+                diagnostic = "The Attack Action duration is not finite and non-negative.";
+                return PegaNpcCausalStepEvaluationStatus.Unknown;
+            }
+
+            if (stateBeforeStep.ProjectedEffects.Count == 0)
+            {
+                if (_attackMechanic.IsPositionInAttackRegion(knownPosition))
+                {
+                    return PegaNpcCausalStepEvaluationStatus.Available;
+                }
+
+                diagnostic = "The target is outside the current physical attack region and no matching approach has been projected.";
+                return PegaNpcCausalStepEvaluationStatus.Unavailable;
+            }
+
+            PegaNpcTargetReachedEffect targetReached = new PegaNpcTargetReachedEffect(
+                target.TargetId,
+                target.Kind,
+                target.EvidenceTimeSeconds);
+            GoapTruthValue targetReachedInProjectedState = targetReached.EvaluateSatisfaction(stateBeforeStep);
+            if (targetReachedInProjectedState == GoapTruthValue.True)
+            {
+                return PegaNpcCausalStepEvaluationStatus.Available;
+            }
+
+            diagnostic = targetReachedInProjectedState == GoapTruthValue.False
+                ? "The projected state does not contain arrival at this exact known Actor target."
+                : "The projected state cannot establish arrival at this exact known Actor target.";
+            return targetReachedInProjectedState == GoapTruthValue.False
+                ? PegaNpcCausalStepEvaluationStatus.Unavailable
+                : PegaNpcCausalStepEvaluationStatus.Unknown;
+        }
+
         public bool IsRelevantKnowledgeChange(PegaKnowledgeFactChangedEvent change)
         {
             if (change == null || !change.HasValueOrStatusChanged ||
@@ -191,7 +270,13 @@ namespace PEGA.NPC.Actions.Runtime
             }
 
             return change.IsFor(
-                PegaNpcKnowledgeFacts.CharacterIncapacitated.For(resolution.Occurrence.ActorId));
+                       PegaNpcKnowledgeFacts.CharacterIncapacitated.For(resolution.Occurrence.ActorId)) ||
+                   change.IsFor(
+                       PegaNpcKnowledgeFacts.CharacterAttackProtected.For(resolution.Occurrence.ActorId)) ||
+                   change.IsFor(
+                       PegaNpcKnowledgeFacts.CharacterVisualContact.For(resolution.Occurrence.ActorId)) ||
+                   change.IsFor(
+                       PegaNpcKnowledgeFacts.LastObservedCharacterPosition.For(resolution.Occurrence.ActorId));
         }
 
         public override bool IsCurrentPlanValid(
@@ -248,17 +333,19 @@ namespace PEGA.NPC.Actions.Runtime
                 !TryGetKnownTargetEvidence(
                     target.Target.TargetId.KnownActorId,
                     _knowledgeReadView,
-                    out _,
-                    out _,
+                    out Vector3 currentKnownPosition,
+                    out double currentEvidenceTimeSeconds,
                     out diagnostic) ||
-                !_attackMechanic.IsPositionInAttackRegion(target.Target.KnownPosition) ||
+                !target.Target.HasEvidenceTime ||
+                Math.Abs(currentEvidenceTimeSeconds - target.Target.EvidenceTimeSeconds) > 0.000001d ||
+                !currentKnownPosition.Equals(target.Target.KnownPosition) ||
                 !TryGetCurrentTargetOccurrence(
                     target.Target.TargetId.KnownActorId,
                     out ActorOccurrence occurrence,
                     out diagnostic))
             {
                 diagnostic = string.IsNullOrWhiteSpace(diagnostic)
-                    ? "The Attack candidate is not a current in-region application to this known Actor Target."
+                    ? "The Attack candidate is not a current application to this evidence-backed Actor Target."
                     : diagnostic;
                 return false;
             }
@@ -329,10 +416,14 @@ namespace PEGA.NPC.Actions.Runtime
                 observedEffect.ActualDistanceToTargetMeters > observedEffect.TargetRadiusMeters ||
                 !_resolution.IsHit ||
                 _executionEffect == null ||
-                !ContainsExactTarget(_resolution.Contacts, _executionEffect.TargetOccurrenceId) ||
+                !TryGetExactTargetContact(out PegaActorAttackContact targetContact) ||
+                targetContact.ImpactResolution.Outcome == PegaActorImpactOutcome.Protected ||
                 !ContainsDeclaredEffect(plan, _executionEffect))
             {
-                diagnostic = "No confirmed physical hit matches the active GOAP target occurrence and declared impact effect.";
+                diagnostic = TryGetExactTargetContact(out PegaActorAttackContact protectedTargetContact) &&
+                    protectedTargetContact.ImpactResolution.Outcome == PegaActorImpactOutcome.Protected
+                    ? "The physical contact was confirmed, but post-recovery protection prevented the declared impact effect."
+                    : "No confirmed physical hit matches the active GOAP target occurrence and declared impact effect.";
                 return false;
             }
 
@@ -399,21 +490,32 @@ namespace PEGA.NPC.Actions.Runtime
                 ObserveTargetIncapacitationResult();
             }
 
+            bool exactTargetWasHit = TryGetExactTargetContact(out PegaActorAttackContact targetContact);
+            bool impactEffectApplied = exactTargetWasHit &&
+                targetContact.ImpactResolution.Outcome != PegaActorImpactOutcome.Protected &&
+                targetContact.ImpactResolution.Outcome != PegaActorImpactOutcome.Unavailable;
+            string completionDiagnostic = exactTargetWasHit &&
+                targetContact.ImpactResolution.Outcome == PegaActorImpactOutcome.Protected
+                ? targetContact.ImpactResolution.Diagnostic
+                : _resolution.Diagnostic;
+
             CompleteAction(
-                _resolution.IsHit
+                impactEffectApplied
                     ? PegaNpcActionOutcome.Success
                     : PegaNpcActionOutcome.CompletedWithoutEffect,
-                _resolution.Diagnostic);
+                completionDiagnostic);
         }
 
         protected override bool IsActionSpecificEffectObserved(out string diagnostic)
         {
             bool matched = _resolution.IsHit &&
                 _executionEffect != null &&
-                ContainsExactTarget(_resolution.Contacts, _executionEffect.TargetOccurrenceId);
+                TryGetExactTargetContact(out PegaActorAttackContact contact) &&
+                contact.ImpactResolution.Outcome != PegaActorImpactOutcome.Protected &&
+                contact.ImpactResolution.Outcome != PegaActorImpactOutcome.Unavailable;
             diagnostic = matched
                 ? string.Empty
-                : "The selected Actor occurrence was not physically confirmed inside the attack region at impact.";
+                : "The selected Actor occurrence did not receive an applicable impact inside the attack region.";
             return matched;
         }
 
@@ -467,6 +569,18 @@ namespace PEGA.NPC.Actions.Runtime
                 return false;
             }
 
+            PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> attackProtectionFact =
+                knowledgeReadView.GetKnownCharacterAttackProtection(targetActorId);
+            if (attackProtectionFact.TryGetValue(
+                    out PegaNpcCharacterAttackProtectionObservation protectionObservation) &&
+                protectionObservation.ActorOccurrenceId == currentOccurrence.Id &&
+                protectionObservation.IsProtected &&
+                Time.timeAsDouble < protectionObservation.ProtectionEndsAtTimeSeconds)
+            {
+                diagnostic = "The current perception-backed target is inside its post-recovery attack protection window.";
+                return false;
+            }
+
             evidenceTimeSeconds = positionFact.ObservationTimeSeconds;
             diagnostic = string.Empty;
             return true;
@@ -497,15 +611,28 @@ namespace PEGA.NPC.Actions.Runtime
                     targetIncapacitated,
                     PegaNpcEvidenceOrigin.ActionResult,
                     _resolution.ResolvedAtTimeSeconds);
+                bool targetAttackProtected = contact.ImpactResolution.Outcome == PegaActorImpactOutcome.Protected;
+                _knowledgeState.ObserveCharacterAttackProtected(
+                    contact.ActorId,
+                    contact.OccurrenceId,
+                    targetAttackProtected,
+                    targetAttackProtected
+                        ? contact.ImpactResolution.AttackProtectionEndsAtTimeSeconds
+                        : 0d,
+                    PegaNpcEvidenceOrigin.ActionResult,
+                    _resolution.ResolvedAtTimeSeconds);
                 _attackEventLog ??= PegaLogging.CreateScopedLogger<PegaNpcAttackKnownCharacterAction>(
                     AttackEventLogCategory,
                     ActorRoot != null ? ActorRoot.name : name);
                 _attackEventLog.Info(
-                    "NPC Attack GOAP Action recorded the exact target's incapacitation result from its confirmed impact.",
+                    "NPC Attack GOAP Action recorded the exact target's recovery and incapacitation state from its confirmed impact.",
                     LogFields.Field("actorRoot", ActorRoot != null ? ActorRoot.name : string.Empty),
                     LogFields.Field("targetActorId", contact.ActorId.StableText),
                     LogFields.Field("targetActorOccurrenceId", contact.OccurrenceId.ToString()),
                     LogFields.Field("targetIncapacitated", targetIncapacitated),
+                    LogFields.Field("targetAttackProtected", targetAttackProtected),
+                    LogFields.Field("attackProtectionEndsAtTimeSeconds",
+                        contact.ImpactResolution.AttackProtectionEndsAtTimeSeconds),
                     LogFields.Field("impactOutcome", contact.ImpactResolution.Outcome),
                     LogFields.Field("observationTimeSeconds", _resolution.ResolvedAtTimeSeconds));
                 return;
@@ -602,14 +729,21 @@ namespace PEGA.NPC.Actions.Runtime
             return false;
         }
 
-        private static bool ContainsExactTarget(
-            IReadOnlyList<PegaActorAttackContact> contacts,
-            ActorOccurrenceId occurrenceId)
+        private bool TryGetExactTargetContact(out PegaActorAttackContact targetContact)
         {
-            for (int index = 0; index < contacts.Count; index++)
+            targetContact = default;
+            if (_executionEffect == null)
             {
-                if (contacts[index].OccurrenceId.Equals(occurrenceId))
+                return false;
+            }
+
+            for (int index = 0; index < _resolution.Contacts.Count; index++)
+            {
+                PegaActorAttackContact contact = _resolution.Contacts[index];
+                if (contact.ActorId == _executionEffect.TargetId.KnownActorId &&
+                    contact.OccurrenceId == _executionEffect.TargetOccurrenceId)
                 {
+                    targetContact = contact;
                     return true;
                 }
             }

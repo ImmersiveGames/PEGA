@@ -30,6 +30,7 @@ namespace PEGA.NPC.Autonomy
     [AddComponentMenu("PEGA/NPC/Autonomy")]
     [RequireComponent(typeof(PegaNpcKnowledgeState))]
     [RequireComponent(typeof(PegaActorIncapacitationMechanic))]
+    [RequireComponent(typeof(PegaActorParticipationState))]
     public sealed class PegaNpcAutonomy : MonoBehaviour
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
@@ -62,7 +63,13 @@ namespace PEGA.NPC.Autonomy
         private PegaActorIncapacitationMechanic _incapacitationMechanic;
 
         [System.NonSerialized]
+        private PegaActorParticipationState _participationState;
+
+        [System.NonSerialized]
         private bool _isSuppressedByIncapacitation;
+
+        [System.NonSerialized]
+        private bool _isSuppressedByCapture;
 
         [System.NonSerialized]
         private IGoapKnowledgeStateView _goapKnowledgeStateView;
@@ -288,6 +295,11 @@ namespace PEGA.NPC.Autonomy
         [System.NonSerialized]
         private bool _hasRecentTerminalOpportunity;
 
+        [System.NonSerialized]
+        private readonly Dictionary<PegaNpcPlanningActionId, Dictionary<ActorId, double>>
+            _latestRelevantKnowledgeOpportunityTimes =
+                new Dictionary<PegaNpcPlanningActionId, Dictionary<ActorId, double>>();
+
         private readonly struct OpportunityStamp
         {
             public OpportunityStamp(int kind, ActorId actorId, double observationTimeSeconds)
@@ -335,6 +347,13 @@ namespace PEGA.NPC.Autonomy
 
         private void OnEnable()
         {
+            _participationState ??= GetComponent<PegaActorParticipationState>();
+            if (_participationState != null && _participationState.IsCaptured)
+            {
+                enabled = false;
+                return;
+            }
+
             EnsureLoggerInitialized();
             if (!TryInitialize(out string diagnostic))
             {
@@ -463,6 +482,26 @@ namespace PEGA.NPC.Autonomy
 
         private void LateUpdate()
         {
+            if (_participationState == null || !_participationState.IsParticipating)
+            {
+                if (!_isSuppressedByCapture)
+                {
+                    _isSuppressedByCapture = true;
+                    CancelActivePlanForLifecycle(
+                        "NPC Actor left gameplay participation; its physical Action and GOAP planning were stopped permanently.");
+                    _activePlanContinuation = default;
+                    _hasActivePlanContinuation = false;
+                    LogAttackGoapEvent(
+                        "NPC GOAP execution stopped after the Actor left gameplay participation.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("actorCaptured", _participationState != null && _participationState.IsCaptured));
+                }
+
+                _bootstrapPending = false;
+                ClearQueuedEvaluation();
+                return;
+            }
+
             if (_incapacitationMechanic != null && _incapacitationMechanic.IsIncapacitated)
             {
                 if (!_isSuppressedByIncapacitation)
@@ -553,11 +592,12 @@ namespace PEGA.NPC.Autonomy
             diagnostic = string.Empty;
             _knowledgeState = GetComponent<PegaNpcKnowledgeState>();
             _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
+            _participationState = GetComponent<PegaActorParticipationState>();
             _desireState ??= new PegaNpcDesireState(gameObject.name);
-            if (_knowledgeState == null || _incapacitationMechanic == null ||
+            if (_knowledgeState == null || _incapacitationMechanic == null || _participationState == null ||
                 !_incapacitationMechanic.IsAvailable)
             {
-                diagnostic = "Knowledge State and a configured Actor incapacitation state must exist on the NPC root.";
+                diagnostic = "Knowledge State, incapacitation state and gameplay participation state must exist and be available on the NPC root.";
                 return false;
             }
 
@@ -827,11 +867,20 @@ namespace PEGA.NPC.Autonomy
             bool isRelevantToAnyProvider = false;
             for (int index = 0; index < _actionProviders.Count; index++)
             {
-                if (_actionProviders[index] is IPegaNpcKnowledgeChangeRelevanceProvider relevanceProvider &&
+                IPegaNpcActionProvider provider = _actionProviders[index];
+                if (provider is IPegaNpcKnowledgeChangeRelevanceProvider relevanceProvider &&
                     relevanceProvider.IsRelevantKnowledgeChange(change))
                 {
                     isRelevantToAnyProvider = true;
-                    break;
+                    if (PegaNpcKnowledgeFacts.TryGetCharacterSubject(
+                            change,
+                            out ActorId relevantSubjectActorId))
+                    {
+                        RecordRelevantKnowledgeOpportunity(
+                            provider.Contract.ActionId,
+                            relevantSubjectActorId,
+                            change.Evidence.ObservationTimeSeconds);
+                    }
                 }
             }
 
@@ -1911,6 +1960,34 @@ namespace PEGA.NPC.Autonomy
                 return new OpportunityStamp(kind, request.TargetActorId, request.ObservationTimeSeconds);
             }
 
+            if (TryGetLatestRelevantKnowledgeOpportunity(
+                    selectedPlan.ActionId,
+                    actorId,
+                    out double relevantKnowledgeTimeSeconds))
+            {
+                if (_hasRecentTerminalPlan &&
+                    AreEquivalentTerminalPlans(_recentTerminalPlan, selectedPlan) &&
+                    _hasRecentTerminalOpportunity &&
+                    _recentTerminalOpportunity.ActorId == actorId &&
+                    relevantKnowledgeTimeSeconds <=
+                    _recentTerminalOpportunity.ObservationTimeSeconds + 0.000001d)
+                {
+                    return _recentTerminalOpportunity;
+                }
+
+                return new OpportunityStamp(3, actorId, relevantKnowledgeTimeSeconds);
+            }
+
+            if (_hasRecentTerminalPlan &&
+                AreEquivalentTerminalPlans(_recentTerminalPlan, selectedPlan) &&
+                _hasRecentTerminalOpportunity &&
+                _recentTerminalOpportunity.ActorId == actorId &&
+                selectedPlan.EvidenceTimeSeconds <=
+                _recentTerminalOpportunity.ObservationTimeSeconds + 0.000001d)
+            {
+                return _recentTerminalOpportunity;
+            }
+
             if ((causes & EvaluationCause.ActionTerminalOutcome) != 0 &&
                 (causes & EvaluationCause.RelevantKnowledgeChange) == 0 &&
                 _hasRecentTerminalOpportunity)
@@ -1919,6 +1996,46 @@ namespace PEGA.NPC.Autonomy
             }
 
             return new OpportunityStamp(3, actorId, selectedPlan.EvidenceTimeSeconds);
+        }
+
+        private void RecordRelevantKnowledgeOpportunity(
+            PegaNpcPlanningActionId actionId,
+            ActorId subjectActorId,
+            double observationTimeSeconds)
+        {
+            if (!actionId.IsValid || !subjectActorId.IsValid ||
+                double.IsNaN(observationTimeSeconds) ||
+                double.IsInfinity(observationTimeSeconds) ||
+                observationTimeSeconds < 0d)
+            {
+                return;
+            }
+
+            if (!_latestRelevantKnowledgeOpportunityTimes.TryGetValue(
+                    actionId,
+                    out Dictionary<ActorId, double> opportunitiesByActor))
+            {
+                opportunitiesByActor = new Dictionary<ActorId, double>();
+                _latestRelevantKnowledgeOpportunityTimes.Add(actionId, opportunitiesByActor);
+            }
+
+            if (!opportunitiesByActor.TryGetValue(subjectActorId, out double currentTimeSeconds) ||
+                observationTimeSeconds > currentTimeSeconds + 0.000001d)
+            {
+                opportunitiesByActor[subjectActorId] = observationTimeSeconds;
+            }
+        }
+
+        private bool TryGetLatestRelevantKnowledgeOpportunity(
+            PegaNpcPlanningActionId actionId,
+            ActorId subjectActorId,
+            out double observationTimeSeconds)
+        {
+            observationTimeSeconds = 0d;
+            return _latestRelevantKnowledgeOpportunityTimes.TryGetValue(
+                       actionId,
+                       out Dictionary<ActorId, double> opportunitiesByActor) &&
+                   opportunitiesByActor.TryGetValue(subjectActorId, out observationTimeSeconds);
         }
 
         private bool IsEffectAlreadySatisfiedAtCurrentPosition(PegaNpcPlanSnapshot plan)

@@ -33,6 +33,10 @@ namespace PEGA.NPC.Autonomy.Planning
         public PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> GetKnownCharacterIncapacitation(
             ActorId subjectActorId) =>
             _individualKnowledge.GetCharacterIncapacitated(subjectActorId);
+
+        public PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> GetKnownCharacterAttackProtection(
+            ActorId subjectActorId) =>
+            _individualKnowledge.GetCharacterAttackProtected(subjectActorId);
     }
     /// <summary>
     /// Read-only GOAP view over one NPC's existing Knowledge State. Facts retain their status and evidence
@@ -88,6 +92,10 @@ namespace PEGA.NPC.Autonomy.Planning
         public PegaKnowledgeFact<PegaNpcCharacterIncapacitationObservation> GetCharacterIncapacitated(
             ActorId subjectActorId) =>
             _knowledgeState.GetCharacterIncapacitated(subjectActorId);
+
+        public PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> GetCharacterAttackProtected(
+            ActorId subjectActorId) =>
+            _knowledgeState.GetCharacterAttackProtected(subjectActorId);
 
         public PegaKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId) =>
             _knowledgeState.GetLastObservedCharacterPosition(subjectActorId);

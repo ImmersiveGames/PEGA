@@ -1,8 +1,8 @@
 # PEGA — Planejamento de produção do vertical slice e da Demo
 
 **Status:** backlog derivado do escopo aprovado e da estratégia vigente em ADR PP-37
-**Versão:** 0.8.1
-**Atualização:** 2026-11-13
+**Versão:** 0.8.2
+**Atualização:** 2026-11-17
 **Escopo:** capacidades de gameplay do vertical slice e evolução posterior da Demo
 
 Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra a diretriz arquitetural transversal do PEGA e decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
@@ -45,7 +45,7 @@ Depois da perseguição central satisfatória, desenvolver os demais resultados 
 
 - [ ] **VS · Interação contextual do Player (prova mínima concluída)** — seleção e Pick Up contextual pelo comando Interagir (`B`), sem fallback para ataque. Seleção avançada é posterior. Rastreabilidade: [#37 — interação contextual](https://trello.com/c/wWbleLBj), concluído; [#108 — seleção avançada](https://trello.com/c/OnzrYJ1j).
 - [ ] **VS · Itens, posse e transferência** — disponibilidade, portador, posse exclusiva, coleta, soltura, roubo, recuperação e depósito sem duplicação/perda; capacidade configurável por Actor. Rastreabilidade: [#38 — posse e soltura](https://trello.com/c/dCc2lbu7), [#70 — investigação/roubo](https://trello.com/c/hFYlIZ5l) e [#83 — depósito em cofre](https://trello.com/c/687JSVZ0).
-- [ ] **VS · Confronto (ordem do próximo incremento)** — primeiro disponibilizar **Atacar** como comando independente de Interagir, sem salto, com ataque direcional e acerto físico observável para Player e NPCs agressivos quando aplicável. Depois ligar consequências do impacto: queda de itens, nocaute e captura automática na prova mínima, preservando separação entre eventos e o combate completo do GDD para evolução posterior. Rastreabilidade: [#93 — confronto mínimo](https://trello.com/c/BbLpynTw).
+- [ ] **VS · Confronto (ordem do próximo incremento)** — primeiro disponibilizar **Atacar** como comando independente de Interagir, sem salto, com ataque direcional e acerto físico observável para Player e NPCs agressivos quando aplicável. Depois ligar consequências do impacto: queda de itens, nocaute e captura automática na prova mínima, preservando separação entre eventos e o combate completo do GDD para evolução posterior. **Polimento posterior, sem bloquear a validação funcional:** tornar a queda dos itens mais expressiva, lançando-os para cima e distribuindo-os ao redor do Actor, inspirada visualmente na perda dos rings do Sonic; preservar identidade e posse física, sem duplicação ou perda. Rastreabilidade: [#93 — confronto mínimo](https://trello.com/c/BbLpynTw).
 - [ ] **VS · Recuperação e captura** — recuperação temporizada, transporte e captura efetiva por entrega na prisão; manter as restrições de ação, posse e inventário previstas no GDD. Rastreabilidade: [#42 — recuperação](https://trello.com/c/BJUgV7EY) e [#39 — captura](https://trello.com/c/Trj9hyl6).
 - [ ] **VS · Esquiva e obstáculos especiais** — incluir esquiva/transposições contextuais conforme necessidade do recorte sustentada pelo GDD; não reintroduzir salto livre. Rastreabilidade: [#35 — esquiva](https://trello.com/c/ePIM6alK).
 - [ ] **VS · Preparação e invasão** — configurar duração, escolha de cofre, Spawn Seguro e receitas/relógios de invasão segundo GDD/MVP, sem misturar relógios ou declarar pronto/skip fora das regras aprovadas.
@@ -91,6 +91,7 @@ Depois da perseguição central satisfatória, desenvolver os demais resultados 
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.8.2 | 2026-11-17 | Registrado como polimento futuro não bloqueante o efeito mais expressivo de queda e dispersão dos itens no #93. |
 | 0.8.0 | 2026-10-25 | Reconciliado o #106 concluído, registrada a integração causal como work package GOAP da Etapa 5 e atualizado o foco vigente conforme os cards concluídos do PP-37, sem reordenar as demais frentes. |
 | 0.7.0 | 2026-10-25 | Registrado o núcleo causal mínimo do GOAP como fundação técnica própria, separada de #70; atualizadas as referências dos work packages GOAP para #91/#95. |
 | 0.6.0 | 2026-10-16 | Reordenada a produção para satisfazer Player e NPCs, preparar ambiente conjunto, compor a perseguição central e depois expandir gameplay; preservado todo o escopo final do MVP. |

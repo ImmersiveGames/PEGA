@@ -96,6 +96,7 @@ namespace PEGA.Movement.Actor
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(PegaActorParticipationState))]
         [AddComponentMenu("PEGA/Movement/Actor/Movement Mechanic")]
     public sealed class PegaActorMovementMechanic : MonoBehaviour
     {
@@ -174,6 +175,7 @@ namespace PEGA.Movement.Actor
         private MonoBehaviour _intentSourceBehaviour;
         private CharacterController _characterController;
         private PegaActorIncapacitationMechanic _incapacitationMechanic;
+        private PegaActorParticipationState _participationState;
         private Vector3 _moveDirection;
         private float _moveMagnitude;
         private Vector3 _currentVelocity;
@@ -235,6 +237,7 @@ namespace PEGA.Movement.Actor
             _intentSource = intentSource as IPegaPlanarMovementIntentSource;
             _characterController = GetComponent<CharacterController>();
             _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
+            _participationState = GetComponent<PegaActorParticipationState>();
             _isConfigured = ValidateConfiguration();
             if (!_isConfigured)
             {
@@ -265,7 +268,7 @@ namespace PEGA.Movement.Actor
 
         private void Update()
         {
-            if (!_isConfigured)
+            if (!_isConfigured || _participationState == null || !_participationState.IsParticipating)
             {
                 return;
             }
@@ -321,7 +324,8 @@ namespace PEGA.Movement.Actor
         {
             diagnostic = string.Empty;
             planarDirection.y = 0f;
-            if (!_isConfigured || !isActiveAndEnabled ||
+            if (!_isConfigured || !isActiveAndEnabled || _participationState == null ||
+                !_participationState.IsParticipating ||
                 !IsFinite(planarDirection.x) || !IsFinite(planarDirection.y) ||
                 !IsFinite(planarDirection.z) || planarDirection.sqrMagnitude <= 0.000001f ||
                 !IsPositiveFinite(distanceMeters) || !IsPositiveFinite(durationSeconds))
@@ -539,6 +543,14 @@ namespace PEGA.Movement.Actor
 
         private bool ValidateConfiguration()
         {
+            if (_participationState == null)
+            {
+                _log.Error(
+                    $"{nameof(PegaActorMovementMechanic)} requires {nameof(PegaActorParticipationState)} on the Actor root.",
+                    LogFields.Field("actorRoot", gameObject.name));
+                return false;
+            }
+
             if (intentSource == null)
             {
                 _log.Error(

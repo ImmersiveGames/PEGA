@@ -253,7 +253,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -338,6 +338,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6100000101}
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6100000106}
   m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
 --- !u!1 &1059446698
 GameObject:
@@ -689,7 +692,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: drawGizmosWhenUnselected
@@ -789,6 +792,9 @@ Transform:
   - {fileID: 2500000425}
   - {fileID: 2500000427}
   - {fileID: 2500000428}
+  - {fileID: 880000000000000101}
+  - {fileID: 880000000000000102}
+  - {fileID: 880000000000000103}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2500000402
@@ -1433,7 +1439,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1541,7 +1547,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1653,7 +1659,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
       propertyPath: actorId
@@ -1958,6 +1964,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
   authorityStates:
   - {fileID: 2500000426}
+--- !u!114 &6100000106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6100000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7212695c4d2c465696b0ff38a905bf71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Capture.Runtime.PegaNpcCaptureProofPolicy
+  captureWhenIncapacitatedWithoutItems: 1
 --- !u!1 &900000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -3203,6 +3222,502 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9100000000000001300}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &880000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2500000401}
+    m_Modifications:
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_Name
+      value: Larapio NPC - Complete Confrontation
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: actorId
+      value: pega.mission.larapio.complete-confrontation
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: displayName
+      value: Larapio completo - Confronto
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value:
+      objectReference: {fileID: 11400000, guid: 684abaa3111e465e8db36836e6bcd088, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: causalSearchCandidateEvaluationBudget
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: globalKnowledgeState
+      value:
+      objectReference: {fileID: 3500000003}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.size
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[5]'
+      value:
+      objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[6]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4b43b5ae7e724e93ba5872e8d1714ff2, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[7]'
+      value:
+      objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[8]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4399f4df6dbf456a8c817789d787d88e, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[9]'
+      value:
+      objectReference: {fileID: 11400000, guid: e4dbed8869b74e549745506b7703ab51, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: objectEntryOccurrenceQueryBinding
+      value:
+      objectReference: {fileID: 442300475}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: groupProfiles.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[0]'
+      value:
+      objectReference: {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[1]'
+      value:
+      objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.data[0].definitionId
+      value: pega.actor.last-observed-character-position
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.data[0].value.vector3Value.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.data[0].value.vector3Value.z
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.data[0].address.actorIdentitySource
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000301}
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000401}
+  m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!1001 &880000000000000002
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2500000401}
+    m_Modifications:
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_Name
+      value: Larapio NPC - Complete Self-Preservation
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: actorId
+      value: pega.mission.larapio.complete-self-preservation
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: displayName
+      value: Larapio completo - Autopreservação
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value:
+      objectReference: {fileID: 11400000, guid: 53aa65e8a4ab4a898855456772c38d67, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: causalSearchCandidateEvaluationBudget
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: globalKnowledgeState
+      value:
+      objectReference: {fileID: 3500000003}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.size
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[5]'
+      value:
+      objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[6]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4b43b5ae7e724e93ba5872e8d1714ff2, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[7]'
+      value:
+      objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[8]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4399f4df6dbf456a8c817789d787d88e, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[9]'
+      value:
+      objectReference: {fileID: 11400000, guid: e4dbed8869b74e549745506b7703ab51, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: objectEntryOccurrenceQueryBinding
+      value:
+      objectReference: {fileID: 442300475}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: groupProfiles.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[0]'
+      value:
+      objectReference: {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[1]'
+      value:
+      objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000302}
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000402}
+  m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!1001 &880000000000000003
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2500000401}
+    m_Modifications:
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_Name
+      value: Larapio NPC - Complete Opportunistic
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: actorId
+      value: pega.mission.larapio.complete-opportunistic
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: displayName
+      value: Larapio completo - Coleta oportunista
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000006, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: drawGizmosWhenUnselected
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: desireProfile
+      value:
+      objectReference: {fileID: 11400000, guid: 1146bb217cd745c79a86b08da1698f9a, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: causalSearchCandidateEvaluationBudget
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: globalKnowledgeState
+      value:
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: availableBehaviors.Array.size
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[5]'
+      value:
+      objectReference: {fileID: 11400000, guid: 32491764d5594b48adc394663a3a6502, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[6]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4b43b5ae7e724e93ba5872e8d1714ff2, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[7]'
+      value:
+      objectReference: {fileID: 11400000, guid: b3900e9c30b640d5b318159350dd4cd1, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[8]'
+      value:
+      objectReference: {fileID: 11400000, guid: 4399f4df6dbf456a8c817789d787d88e, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'availableBehaviors.Array.data[9]'
+      value:
+      objectReference: {fileID: 11400000, guid: e4dbed8869b74e549745506b7703ab51, type: 2}
+    - target: {fileID: 114000010, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: objectEntryOccurrenceQueryBinding
+      value:
+      objectReference: {fileID: 442300475}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: groupProfiles.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[0]'
+      value:
+      objectReference: {fileID: 11400000, guid: 687bff7f733a4fc29ac00e12b44aef60, type: 2}
+    - target: {fileID: 114000013, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: 'groupProfiles.Array.data[1]'
+      value:
+      objectReference: {fileID: 11400000, guid: 3779cf2dab06404e8cd914a9262bc383, type: 2}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 27.86
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765785676748957259, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      propertyPath: initialKnowledge.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000303}
+    - targetCorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 880000000000000403}
+  m_SourcePrefab: {fileID: 100100000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+--- !u!4 &880000000000000101 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000102 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000002}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000103 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 400000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000003}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &880000000000000201 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &880000000000000202 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000002}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &880000000000000203 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000000, guid: dc8debf43157402cb928951971def5a1, type: 3}
+  m_PrefabInstance: {fileID: 880000000000000003}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &880000000000000301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
+  authorityStates:
+  - {fileID: 2500000426}
+--- !u!114 &880000000000000302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
+  authorityStates:
+  - {fileID: 2500000426}
+--- !u!114 &880000000000000303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20a767db9a2748528d78a5f2a31cfa6a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Knowledge.Group.PegaActorGroupKnowledgeReader
+  authorityStates:
+  - {fileID: 2500000426}
+--- !u!114 &880000000000000401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7212695c4d2c465696b0ff38a905bf71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Capture.Runtime.PegaNpcCaptureProofPolicy
+  captureWhenIncapacitatedWithoutItems: 1
+--- !u!114 &880000000000000402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7212695c4d2c465696b0ff38a905bf71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Capture.Runtime.PegaNpcCaptureProofPolicy
+  captureWhenIncapacitatedWithoutItems: 1
+--- !u!114 &880000000000000403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7212695c4d2c465696b0ff38a905bf71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Capture.Runtime.PegaNpcCaptureProofPolicy
+  captureWhenIncapacitatedWithoutItems: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

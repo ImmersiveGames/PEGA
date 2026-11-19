@@ -13,6 +13,8 @@
 
 - [Análise macro de objetivos](Analises/pega-gdd-activity-analysis.md) — síntese derivada do GDD/MVP; não é roadmap.
 - [Especificações comportamentais](Analises/pega-objective-specifications.md) — contratos derivados para revisão; não substituem GDD, MVP ou ADR.
+- [Matriz de evidências e pareceres sobre a arquitetura GOAP](Analises/2026-11-18-goap-matriz-e-pareceres.md) — registro de trabalho para esclarecer definições e comparar três pareceres; não aprova arquitetura nem altera fontes normativas.
+- [Revisão da arquitetura GOAP](Analises/pega-goap-architecture-review.md) — análise técnica complementar, com escopo e revisão próprios.
 - [Guia prático de GOAP](Guias/PEGA-GOAP-guia-pratico.md) — superfície experimental de autoria no Unity.
 - [Nota de implementação de Perception](Trabalho/notas/PEGA-Perception-implementacao-2026-10-26.md) — registro datado do caminho técnico observado.
 - [Registro conceitual histórico do GOAP](ADRs/Historico/PEGA-GOAP-registro-de-decisoes-conceituais-2026-10-25.md) — origem dos acordos depois formalizados nos ADRs.

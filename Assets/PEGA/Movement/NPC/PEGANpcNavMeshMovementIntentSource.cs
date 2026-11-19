@@ -396,15 +396,22 @@ namespace PEGA.Movement.NPC
             NavMeshPath path = new NavMeshPath();
             bool pathFound = NavMesh.CalculatePath(sourcePosition, targetPosition, filter, path);
             float routeLengthMeters = CalculatePathLength(path.corners);
+            PegaNpcPlanningRouteStatus routeStatus = path.status switch
+            {
+                NavMeshPathStatus.PathComplete => PegaNpcPlanningRouteStatus.Complete,
+                NavMeshPathStatus.PathPartial => PegaNpcPlanningRouteStatus.Unreachable,
+                NavMeshPathStatus.PathInvalid => PegaNpcPlanningRouteStatus.Invalid,
+                _ => PegaNpcPlanningRouteStatus.Unknown
+            };
             if (!pathFound || path.status != NavMeshPathStatus.PathComplete ||
                 path.corners == null || path.corners.Length < 2 ||
                 !IsNonNegativeFinite(routeLengthMeters))
             {
                 diagnostic = $"NavMesh route from the projected position is not complete ({path.status}).";
                 estimate = new PegaNpcNavigationRouteEstimate(
-                    path.status == NavMeshPathStatus.PathPartial
-                        ? PegaNpcPlanningRouteStatus.Unreachable
-                        : PegaNpcPlanningRouteStatus.Unknown,
+                    routeStatus == PegaNpcPlanningRouteStatus.Complete
+                        ? PegaNpcPlanningRouteStatus.Invalid
+                        : routeStatus,
                     routeLengthMeters,
                     effectiveSpeed,
                     _agent.agentTypeID,

@@ -13,6 +13,7 @@ namespace PEGA.Attacks.Runtime
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(PegaActorIncapacitationMechanic))]
+    [RequireComponent(typeof(PegaActorParticipationState))]
     [AddComponentMenu("PEGA/Combat/Actor/Attack Mechanic")]
     public sealed class PegaActorAttackMechanic : MonoBehaviour
     {
@@ -43,6 +44,7 @@ namespace PEGA.Attacks.Runtime
 
         private CharacterController _characterController;
         private PegaActorIncapacitationMechanic _incapacitationMechanic;
+        private PegaActorParticipationState _participationState;
         private IPegaActorAttackIntentSource _playerIntentSource;
         private ActorOccurrenceQueryBinding _localOccurrenceQuery;
         private IActorOccurrenceRecognitionQuery _localRecognitionQuery;
@@ -66,6 +68,7 @@ namespace PEGA.Attacks.Runtime
                 gameObject.name);
             _characterController = GetComponent<CharacterController>();
             _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
+            _participationState = GetComponent<PegaActorParticipationState>();
             _localOccurrenceQuery = GetComponent<ActorOccurrenceQueryBinding>();
             _localRecognitionQuery = _localOccurrenceQuery as IActorOccurrenceRecognitionQuery;
 
@@ -200,7 +203,8 @@ namespace PEGA.Attacks.Runtime
 
         public bool IsPositionInAttackRegion(Vector3 knownTargetPosition)
         {
-            if (!_isConfigured || !IsFinite(knownTargetPosition))
+            if (!_isConfigured || _participationState == null || !_participationState.IsParticipating ||
+                !IsFinite(knownTargetPosition))
             {
                 return false;
             }
@@ -232,7 +236,8 @@ namespace PEGA.Attacks.Runtime
             out PegaActorAttackResolution resolution)
         {
             resolution = default;
-            if (!intent.IsRequested || !_isConfigured || !isActiveAndEnabled)
+            if (!intent.IsRequested || !_isConfigured || !isActiveAndEnabled ||
+                _participationState == null || !_participationState.IsParticipating)
             {
                 return false;
             }
@@ -339,6 +344,14 @@ namespace PEGA.Attacks.Runtime
                     continue;
                 }
 
+                PegaActorParticipationState targetParticipation =
+                    occurrence.ActorRoot.GetComponent<PegaActorParticipationState>();
+                if (targetParticipation != null && !targetParticipation.IsParticipating)
+                {
+                    lastRejection = "The recognized Actor occurrence has ended gameplay participation.";
+                    continue;
+                }
+
                 if (intent.RequestedTargetOccurrenceId.HasValue &&
                     !occurrence.Id.Equals(intent.RequestedTargetOccurrenceId.Value))
                 {
@@ -374,8 +387,10 @@ namespace PEGA.Attacks.Runtime
                         occurrence.ActorRoot.GetComponent<PegaActorImpactReceiverMechanic>();
                     PegaActorImpactResolution impactResolution = targetReceiver != null
                         ? targetReceiver.ReceiveAttackImpact(
+                            gameObject,
                             aggressorActorId,
                             aggressorOccurrenceId,
+                            occurrence,
                             contactDelta,
                             attackCapacity)
                         : default;
@@ -406,14 +421,39 @@ namespace PEGA.Attacks.Runtime
                 diagnostic,
                 Time.timeAsDouble);
             PublishResolution(resolution);
+            PublishResolvedImpacts(aggressorActorId, aggressorOccurrenceId, resolution.Contacts);
             return true;
+        }
+
+        private static void PublishResolvedImpacts(
+            ActorId aggressorActorId,
+            ActorOccurrenceId aggressorOccurrenceId,
+            IReadOnlyList<PegaActorAttackContact> contacts)
+        {
+            for (int index = 0; index < contacts.Count; index++)
+            {
+                PegaActorAttackContact contact = contacts[index];
+                if (contact.ImpactResolution.Outcome == PegaActorImpactOutcome.Unavailable ||
+                    contact.ActorRoot == null)
+                {
+                    continue;
+                }
+
+                PegaActorImpactReceiverMechanic targetReceiver =
+                    contact.ActorRoot.GetComponent<PegaActorImpactReceiverMechanic>();
+                targetReceiver?.PublishResolvedAttackImpact(
+                    aggressorActorId,
+                    aggressorOccurrenceId,
+                    contact.Occurrence,
+                    contact.ImpactResolution);
+            }
         }
 
         private bool ValidateConfiguration()
         {
             if (_characterController == null ||
                 _incapacitationMechanic == null ||
-                !_incapacitationMechanic.IsAvailable ||
+                _participationState == null ||
                 !IsPositiveFinite(attackCapacity) ||
                 !IsPositiveFinite(attackReachMeters) ||
                 !IsFinite(frontToleranceDegrees) ||
@@ -421,10 +461,11 @@ namespace PEGA.Attacks.Runtime
                 frontToleranceDegrees > 90f)
             {
                 _log.Error(
-                    "Actor attack mechanic requires a configured incapacitation state, positive attack capacity and reach and a front tolerance in [1, 90] degrees.",
+                    "Actor attack mechanic requires an incapacitation state component, positive attack capacity and reach and a front tolerance in [1, 90] degrees.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("characterControllerAvailable", _characterController != null),
                     LogFields.Field("incapacitationMechanicAvailable", _incapacitationMechanic != null),
+                    LogFields.Field("participationStateAvailable", _participationState != null),
                     LogFields.Field("attackCapacity", attackCapacity),
                     LogFields.Field("attackReachMeters", attackReachMeters),
                     LogFields.Field("frontToleranceDegrees", frontToleranceDegrees));
@@ -569,7 +610,7 @@ namespace PEGA.Attacks.Runtime
             {
                 PegaActorAttackContact contact = contacts[index];
                 PegaActorImpactResolution impact = contact.ImpactResolution;
-                outcomes[index] = $"{contact.ActorId}:{impact.Outcome}[capacity={impact.AttackCapacity},resistance={impact.Resistance},itemsDropped={impact.DroppedItemCount}]";
+                outcomes[index] = $"{contact.ActorId}:{impact.Outcome}[capacity={impact.AttackCapacity},resistance={impact.Resistance},itemsBefore={impact.CarriedItemCountBeforeImpact?.ToString() ?? "unknown"},itemsDropped={impact.DroppedItemCount}]";
             }
 
             return string.Join(",", outcomes);

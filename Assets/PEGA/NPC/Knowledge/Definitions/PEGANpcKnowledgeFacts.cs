@@ -24,6 +24,26 @@ namespace PEGA.NPC.Knowledge.Definitions
         public long ObservationSequence { get; }
     }
 
+    public readonly struct PegaNpcCharacterAttackProtectionObservation
+    {
+        public PegaNpcCharacterAttackProtectionObservation(
+            ActorOccurrenceId actorOccurrenceId,
+            bool isProtected,
+            double protectionEndsAtTimeSeconds,
+            long observationSequence)
+        {
+            ActorOccurrenceId = actorOccurrenceId;
+            IsProtected = isProtected;
+            ProtectionEndsAtTimeSeconds = protectionEndsAtTimeSeconds;
+            ObservationSequence = observationSequence;
+        }
+
+        public ActorOccurrenceId ActorOccurrenceId { get; }
+        public bool IsProtected { get; }
+        public double ProtectionEndsAtTimeSeconds { get; }
+        public long ObservationSequence { get; }
+    }
+
     /// <summary>Definitions for the current NPC facts; these are adapters over the shared fact mechanism.</summary>
     [Preserve]
     internal static class PegaNpcKnowledgeFacts
@@ -74,6 +94,25 @@ namespace PEGA.NPC.Knowledge.Definitions
                 "pega.actor.character-incapacitated",
                 "Character incapacitated",
                 new PegaNpcCharacterIncapacitationKnowledgePolicy(),
+                address => address.IsValid,
+                allowsDesignerAuthoredInitialFact: false);
+
+        [Preserve]
+        public static readonly PegaKnowledgeFactDefinition<ActorId, PegaNpcCharacterAttackProtectionObservation> CharacterAttackProtected =
+            new PegaKnowledgeFactDefinition<ActorId, PegaNpcCharacterAttackProtectionObservation>(
+                "pega.actor.character-attack-protected",
+                "Character attack protected",
+                new PegaLatestEvidenceKnowledgePolicy<PegaNpcCharacterAttackProtectionObservation>(
+                    areEqual: AreSameObservedAttackProtection,
+                    validateValue: value =>
+                        !value.ActorOccurrenceId.IsValid || value.ObservationSequence <= 0 ||
+                        value.IsProtected &&
+                        (double.IsNaN(value.ProtectionEndsAtTimeSeconds) ||
+                         double.IsInfinity(value.ProtectionEndsAtTimeSeconds) ||
+                         value.ProtectionEndsAtTimeSeconds <= 0d) ||
+                        !value.IsProtected && value.ProtectionEndsAtTimeSeconds != 0d
+                            ? "Attack protection evidence requires a valid occurrence, sequence and deadline."
+                            : string.Empty),
                 address => address.IsValid,
                 allowsDesignerAuthoredInitialFact: false);
 
@@ -264,6 +303,13 @@ namespace PEGA.NPC.Knowledge.Definitions
 
         private static bool AreExactlyEqual(Vector3 left, Vector3 right) =>
             left.x == right.x && left.y == right.y && left.z == right.z;
+
+        private static bool AreSameObservedAttackProtection(
+            PegaNpcCharacterAttackProtectionObservation left,
+            PegaNpcCharacterAttackProtectionObservation right) =>
+            left.ActorOccurrenceId == right.ActorOccurrenceId &&
+            left.IsProtected == right.IsProtected &&
+            left.ProtectionEndsAtTimeSeconds == right.ProtectionEndsAtTimeSeconds;
 
         private static bool IsFinite(Vector3 value) =>
             IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);

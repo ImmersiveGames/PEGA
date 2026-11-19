@@ -11,6 +11,7 @@ namespace PEGA.Actors.Runtime
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ActorDeclaration))]
+    [RequireComponent(typeof(PegaActorParticipationState))]
     [AddComponentMenu("PEGA/Actors/Incapacitation")]
     public sealed class PegaActorIncapacitationMechanic : MonoBehaviour
     {
@@ -20,25 +21,47 @@ namespace PEGA.Actors.Runtime
         [Tooltip("Time this Actor remains incapacitated before recovering. The initial value is a calibration default; tune it for the mission.")]
         private float recoveryDurationSeconds = 5f;
 
+        [SerializeField, Min(0f), InspectorName("Post-Recovery Attack Protection (s)")]
+        [Tooltip("Time after recovery when this Actor can move and act but ignores attack impacts. Set to 0 to disable the protection window.")]
+        private float postRecoveryAttackProtectionSeconds = 0.8f;
+
         private ActorDeclaration _actorDeclaration;
+        private PegaActorParticipationState _participationState;
         private ScopedLogger _log;
         private EventBus<PegaActorIncapacitationChangedEvent> _stateEvents;
         private Coroutine _recoveryCoroutine;
+        private Coroutine _recoveryProtectionCoroutine;
         private double _recoveryDeadlineTimeSeconds;
+        private double _recoveryProtectionDeadlineTimeSeconds;
         private long _recoverySequence;
+        private long _recoveryProtectionSequence;
         private bool _isIncapacitated;
+        private bool _isAttackProtected;
         private bool _isConfigured;
         private bool _hasAwakened;
 
         public float RecoveryDurationSeconds => recoveryDurationSeconds;
 
+        public float PostRecoveryAttackProtectionSeconds => postRecoveryAttackProtectionSeconds;
+
         public bool IsIncapacitated => _isIncapacitated;
 
-        public bool IsAvailable => isActiveAndEnabled && (!_hasAwakened || _isConfigured);
+        public bool IsAttackProtected =>
+            _isAttackProtected && Time.timeAsDouble < _recoveryProtectionDeadlineTimeSeconds;
+
+        public bool IsAvailable => isActiveAndEnabled && (!_hasAwakened || _isConfigured) &&
+                                   (_participationState == null || _participationState.IsParticipating);
 
         public float RecoveryRemainingSeconds => _isIncapacitated
             ? (float)Math.Max(0d, _recoveryDeadlineTimeSeconds - Time.timeAsDouble)
             : 0f;
+
+        public float AttackProtectionRemainingSeconds => IsAttackProtected
+            ? (float)Math.Max(0d, _recoveryProtectionDeadlineTimeSeconds - Time.timeAsDouble)
+            : 0f;
+
+        public double AttackProtectionEndsAtTimeSeconds =>
+            IsAttackProtected ? _recoveryProtectionDeadlineTimeSeconds : 0d;
 
         private void Awake()
         {
@@ -47,6 +70,7 @@ namespace PEGA.Actors.Runtime
                 LogCategory,
                 gameObject.name);
             _actorDeclaration = GetComponent<ActorDeclaration>();
+            _participationState = GetComponent<PegaActorParticipationState>();
             _isConfigured = ValidateConfiguration();
             if (!_isConfigured)
             {
@@ -57,14 +81,25 @@ namespace PEGA.Actors.Runtime
             _log.Debug(
                 "Actor incapacitation state initialized.",
                 LogFields.Field("actorRoot", gameObject.name),
-                LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds));
+                LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds),
+                LogFields.Field("postRecoveryAttackProtectionSeconds", postRecoveryAttackProtectionSeconds));
         }
 
         private void OnEnable()
         {
-            if (_isConfigured && _isIncapacitated)
+            if (!_isConfigured || _participationState == null || !_participationState.IsParticipating)
+            {
+                return;
+            }
+
+            if (_isIncapacitated)
             {
                 StartRecoveryTimer(Math.Max(0d, _recoveryDeadlineTimeSeconds - Time.timeAsDouble));
+            }
+            else if (_isAttackProtected)
+            {
+                StartRecoveryProtectionTimer(
+                    Math.Max(0d, _recoveryProtectionDeadlineTimeSeconds - Time.timeAsDouble));
             }
         }
 
@@ -74,6 +109,12 @@ namespace PEGA.Actors.Runtime
             {
                 StopCoroutine(_recoveryCoroutine);
                 _recoveryCoroutine = null;
+            }
+
+            if (_recoveryProtectionCoroutine != null)
+            {
+                StopCoroutine(_recoveryProtectionCoroutine);
+                _recoveryProtectionCoroutine = null;
             }
         }
 
@@ -122,11 +163,19 @@ namespace PEGA.Actors.Runtime
                 return false;
             }
 
+            if (IsAttackProtected)
+            {
+                diagnostic = "The Actor is inside its post-recovery attack protection window.";
+                return false;
+            }
+
+            CancelExpiredRecoveryProtection();
+
             _isIncapacitated = true;
             _recoverySequence++;
             _recoveryDeadlineTimeSeconds = Time.timeAsDouble + recoveryDurationSeconds;
             StartRecoveryTimer(recoveryDurationSeconds);
-            PublishIncapacitationChanged(causedByActorId, true);
+            PublishIncapacitationChanged(causedByActorId);
             _log.Info(
                 "Actor became incapacitated after a confirmed attack impact.",
                 LogFields.Field("actorId", GetActorIdForLog().StableText),
@@ -139,7 +188,8 @@ namespace PEGA.Actors.Runtime
 
         private void StartRecoveryTimer(double remainingSeconds)
         {
-            if (!_isIncapacitated || _recoveryCoroutine != null || !isActiveAndEnabled)
+            if (!_isIncapacitated || _recoveryCoroutine != null || !isActiveAndEnabled ||
+                _participationState == null || !_participationState.IsParticipating)
             {
                 return;
             }
@@ -168,25 +218,105 @@ namespace PEGA.Actors.Runtime
                 return;
             }
 
+            if (_participationState == null || !_participationState.IsParticipating)
+            {
+                _recoveryCoroutine = null;
+                return;
+            }
+
             _recoveryCoroutine = null;
             _isIncapacitated = false;
             double recoveredAtTimeSeconds = Time.timeAsDouble;
-            PublishIncapacitationChanged(default, false);
+            _isAttackProtected = postRecoveryAttackProtectionSeconds > 0f;
+            _recoveryProtectionSequence++;
+            _recoveryProtectionDeadlineTimeSeconds = _isAttackProtected
+                ? recoveredAtTimeSeconds + postRecoveryAttackProtectionSeconds
+                : 0d;
+            if (_isAttackProtected)
+            {
+                StartRecoveryProtectionTimer(postRecoveryAttackProtectionSeconds);
+            }
+
+            PublishIncapacitationChanged(default);
             _log.Info(
                 "Actor recovered from incapacitation.",
                 LogFields.Field("actorId", GetActorIdForLog().StableText),
                 LogFields.Field("actorRoot", gameObject.name),
                 LogFields.Field("recoveredAtTimeSeconds", recoveredAtTimeSeconds),
-                LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds));
+                LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds),
+                LogFields.Field("attackProtected", _isAttackProtected),
+                LogFields.Field("attackProtectionDurationSeconds", postRecoveryAttackProtectionSeconds),
+                LogFields.Field("attackProtectionEndsAtTimeSeconds", AttackProtectionEndsAtTimeSeconds));
         }
 
-        private void PublishIncapacitationChanged(ActorId causedByActorId, bool isIncapacitated)
+        private void StartRecoveryProtectionTimer(double remainingSeconds)
+        {
+            if (!_isAttackProtected || _recoveryProtectionCoroutine != null || !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (remainingSeconds <= 0d)
+            {
+                CompleteRecoveryProtection(_recoveryProtectionSequence);
+                return;
+            }
+
+            _recoveryProtectionCoroutine = StartCoroutine(EndRecoveryProtectionAfterDelay(
+                (float)remainingSeconds,
+                _recoveryProtectionSequence));
+        }
+
+        private IEnumerator EndRecoveryProtectionAfterDelay(float remainingSeconds, long protectionSequence)
+        {
+            yield return new WaitForSeconds(remainingSeconds);
+            CompleteRecoveryProtection(protectionSequence);
+        }
+
+        private void CompleteRecoveryProtection(long protectionSequence)
+        {
+            if (protectionSequence != _recoveryProtectionSequence || !_isAttackProtected)
+            {
+                return;
+            }
+
+            _recoveryProtectionCoroutine = null;
+            _isAttackProtected = false;
+            _recoveryProtectionDeadlineTimeSeconds = 0d;
+            PublishIncapacitationChanged(default);
+            _log.Info(
+                "Actor post-recovery attack protection ended.",
+                LogFields.Field("actorId", GetActorIdForLog().StableText),
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("protectionEndedAtTimeSeconds", Time.timeAsDouble));
+        }
+
+        private void CancelExpiredRecoveryProtection()
+        {
+            if (!_isAttackProtected)
+            {
+                return;
+            }
+
+            _isAttackProtected = false;
+            _recoveryProtectionDeadlineTimeSeconds = 0d;
+            _recoveryProtectionSequence++;
+            if (_recoveryProtectionCoroutine != null)
+            {
+                StopCoroutine(_recoveryProtectionCoroutine);
+                _recoveryProtectionCoroutine = null;
+            }
+        }
+
+        private void PublishIncapacitationChanged(ActorId causedByActorId)
         {
             _stateEvents ??= new EventBus<PegaActorIncapacitationChangedEvent>();
             _stateEvents.Publish(new PegaActorIncapacitationChangedEvent(
                 gameObject,
                 _actorDeclaration.ActorId,
-                isIncapacitated,
+                _isIncapacitated,
+                IsAttackProtected,
+                AttackProtectionEndsAtTimeSeconds,
                 causedByActorId,
                 Time.timeAsDouble));
         }
@@ -206,13 +336,17 @@ namespace PEGA.Actors.Runtime
         private bool ValidateConfiguration()
         {
             if (_actorDeclaration == null ||
-                !IsPositiveFinite(recoveryDurationSeconds))
+                _participationState == null ||
+                !IsPositiveFinite(recoveryDurationSeconds) ||
+                !IsNonNegativeFinite(postRecoveryAttackProtectionSeconds))
             {
                 _log.Error(
-                    "Actor incapacitation mechanic requires an Actor declaration and a positive finite recovery duration.",
+                    "Actor incapacitation mechanic requires an Actor declaration, a positive finite recovery duration and a non-negative finite post-recovery attack protection duration.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("actorDeclarationAvailable", _actorDeclaration != null),
-                    LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds));
+                    LogFields.Field("participationStateAvailable", _participationState != null),
+                    LogFields.Field("recoveryDurationSeconds", recoveryDurationSeconds),
+                    LogFields.Field("postRecoveryAttackProtectionSeconds", postRecoveryAttackProtectionSeconds));
                 return false;
             }
 
@@ -246,5 +380,8 @@ namespace PEGA.Actors.Runtime
 
         private static bool IsPositiveFinite(float value) =>
             value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private static bool IsNonNegativeFinite(float value) =>
+            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

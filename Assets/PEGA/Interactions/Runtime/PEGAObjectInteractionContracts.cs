@@ -186,6 +186,14 @@ namespace PEGA.Interactions.Runtime
 
             PegaActorIncapacitationMechanic incapacitationMechanic =
                 ActorRoot.GetComponent<PegaActorIncapacitationMechanic>();
+            PegaActorParticipationState participationState =
+                ActorRoot.GetComponent<PegaActorParticipationState>();
+            if (participationState != null && !participationState.IsParticipating)
+            {
+                diagnostic = "The Actor has left gameplay participation and cannot execute Object Entry interactions.";
+                return false;
+            }
+
             if (incapacitationMechanic != null && incapacitationMechanic.IsIncapacitated)
             {
                 diagnostic = "The Actor is incapacitated and cannot execute Object Entry interactions until recovery.";

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Immersive.Framework.Actors;
 using Immersive.Framework.ObjectEntry;
 using PEGA.Interactions.Runtime.ObjectEntry;
+using PEGA.Actors.Runtime;
 using UnityEngine;
 namespace PEGA.Interactions.Runtime
 {
@@ -103,6 +104,19 @@ namespace PEGA.Interactions.Runtime
 
         internal bool TryValidateForInteraction(out string diagnostic) =>
             TryValidateActor(out diagnostic);
+
+        internal bool TryGetCarriedItemCountForImpact(out int count, out string diagnostic)
+        {
+            count = 0;
+            if (!TryValidateActor(out diagnostic))
+            {
+                return false;
+            }
+
+            count = Count;
+            diagnostic = string.Empty;
+            return true;
+        }
 
         internal bool CanAcceptReserved(
             PegaObjectInteractionRequest request,
@@ -242,7 +256,9 @@ namespace PEGA.Interactions.Runtime
         {
             diagnostic = string.Empty;
             ActorDeclaration declaration = GetComponent<ActorDeclaration>();
+            PegaActorParticipationState participationState = GetComponent<PegaActorParticipationState>();
             if (!isActiveAndEnabled || !gameObject.activeInHierarchy || declaration == null || capacity < 1 ||
+                participationState != null && !participationState.IsParticipating ||
                 !IsFinite(carriedItemAnchorOffset) || !IsPositiveFinite(carriedItemSpacingMeters))
             {
                 diagnostic = "The Actor requires an active Framework identity and a valid physical inventory configuration.";

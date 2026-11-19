@@ -41,12 +41,14 @@ namespace PEGA.Attacks.Runtime
             ActorOccurrence occurrence,
             PegaActorImpactResolution impactResolution)
         {
+            Occurrence = occurrence;
             ActorId = occurrence.ActorId;
             OccurrenceId = occurrence.Id;
             ActorRoot = occurrence.ActorRoot;
             ImpactResolution = impactResolution;
         }
 
+        public ActorOccurrence Occurrence { get; }
         public ActorId ActorId { get; }
         public ActorOccurrenceId OccurrenceId { get; }
         public GameObject ActorRoot { get; }
@@ -58,7 +60,8 @@ namespace PEGA.Attacks.Runtime
         Unavailable = 0,
         RemainedActive = 10,
         Incapacitated = 20,
-        AlreadyIncapacitated = 30
+        AlreadyIncapacitated = 30,
+        Protected = 40
     }
 
     public readonly struct PegaActorImpactResolution
@@ -68,27 +71,56 @@ namespace PEGA.Attacks.Runtime
             float attackCapacity,
             float resistance,
             int droppedItemCount,
+            int? carriedItemCountBeforeImpact,
             bool knockbackApplied,
-            string diagnostic)
+            string diagnostic,
+            double attackProtectionEndsAtTimeSeconds = 0d)
         {
             Outcome = outcome;
             AttackCapacity = attackCapacity;
             Resistance = resistance;
             DroppedItemCount = droppedItemCount;
+            CarriedItemCountBeforeImpact = carriedItemCountBeforeImpact;
             KnockbackApplied = knockbackApplied;
             Diagnostic = diagnostic ?? string.Empty;
+            AttackProtectionEndsAtTimeSeconds = attackProtectionEndsAtTimeSeconds;
         }
 
         public PegaActorImpactOutcome Outcome { get; }
         public float AttackCapacity { get; }
         public float Resistance { get; }
         public int DroppedItemCount { get; }
+        public int? CarriedItemCountBeforeImpact { get; }
         public bool KnockbackApplied { get; }
         public string Diagnostic { get; }
+        public double AttackProtectionEndsAtTimeSeconds { get; }
         public bool IsIncapacitated =>
             Outcome == PegaActorImpactOutcome.Incapacitated ||
             Outcome == PegaActorImpactOutcome.AlreadyIncapacitated;
         public bool BecameIncapacitated => Outcome == PegaActorImpactOutcome.Incapacitated;
+    }
+
+    public sealed class PegaActorImpactResolvedEvent : IEvent
+    {
+        internal PegaActorImpactResolvedEvent(
+            ActorId aggressorActorId,
+            ActorOccurrenceId aggressorOccurrenceId,
+            ActorOccurrence targetOccurrence,
+            PegaActorImpactResolution resolution)
+        {
+            AggressorActorId = aggressorActorId;
+            AggressorOccurrenceId = aggressorOccurrenceId;
+            TargetOccurrence = targetOccurrence;
+            Resolution = resolution;
+        }
+
+        public ActorId AggressorActorId { get; }
+        public ActorOccurrenceId AggressorOccurrenceId { get; }
+        public ActorOccurrence TargetOccurrence { get; }
+        public GameObject TargetActorRoot => TargetOccurrence.ActorRoot;
+        public ActorId TargetActorId => TargetOccurrence.ActorId;
+        public ActorOccurrenceId TargetOccurrenceId => TargetOccurrence.Id;
+        public PegaActorImpactResolution Resolution { get; }
     }
 
     public readonly struct PegaActorAttackResolution

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Immersive.Foundation.Events;
@@ -18,7 +19,8 @@ namespace PEGA.NPC.Knowledge.Individual
         None = 0,
         Perception = 1,
         ActionResult = 2,
-        DesignerAuthoredInitial = 3
+        DesignerAuthoredInitial = 3,
+        ObservationExpiry = 4
     }
 
     /// <summary>Evidência radial ancorada à posição conhecida do observador, nunca à posição oculta do alvo.</summary>
@@ -213,6 +215,18 @@ namespace PEGA.NPC.Knowledge.Individual
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
         private const double InitialKnowledgeRetryIntervalSeconds = 0.1d;
 
+        private sealed class CharacterAttackProtectionExpirySchedule
+        {
+            public CharacterAttackProtectionExpirySchedule(
+                PegaNpcCharacterAttackProtectionObservation observation)
+            {
+                Observation = observation;
+            }
+
+            public PegaNpcCharacterAttackProtectionObservation Observation { get; }
+            public Coroutine Routine { get; set; }
+        }
+
         [SerializeField, Tooltip("Conhecimentos iniciais deste NPC. Cada linha usa uma definição canônica e entra no Knowledge State Individual.")]
         private List<PegaKnowledgeFactAuthoringEntry> initialKnowledge = new List<PegaKnowledgeFactAuthoringEntry>();
 
@@ -239,6 +253,14 @@ namespace PEGA.NPC.Knowledge.Individual
 
         [NonSerialized]
         private long _characterIncapacitationObservationSequence;
+
+        [NonSerialized]
+        private long _characterAttackProtectionObservationSequence;
+
+        [NonSerialized]
+        private readonly Dictionary<ActorId, CharacterAttackProtectionExpirySchedule>
+            _characterAttackProtectionExpirySchedules =
+                new Dictionary<ActorId, CharacterAttackProtectionExpirySchedule>();
 
         [NonSerialized]
         private ScopedLogger _log;
@@ -287,6 +309,16 @@ namespace PEGA.NPC.Knowledge.Individual
             ApplyPendingInitialKnowledge();
         }
 
+        private void OnEnable()
+        {
+            ResumeCharacterAttackProtectionExpiries();
+        }
+
+        private void OnDisable()
+        {
+            StopCharacterAttackProtectionExpiryCoroutines();
+        }
+
         /// <summary>Assina mudanças confirmadas deste NPC para qualquer definição de fato.</summary>
         /// <remarks>
         /// A entrega é síncrona. Uma observação pode confirmar mais de um fato; consumidores devem agrupar
@@ -325,6 +357,7 @@ namespace PEGA.NPC.Knowledge.Individual
 
         private void OnDestroy()
         {
+            StopCharacterAttackProtectionExpiryCoroutines(clearSchedules: true);
             if (_actorBinding != null)
             {
                 _actorBinding.Changed -= OnActorBindingChanged;
@@ -372,6 +405,9 @@ namespace PEGA.NPC.Knowledge.Individual
             AddSubjects(
                 subjectIds,
                 _factStore.GetFacts(PegaNpcKnowledgeFacts.CharacterIncapacitated, Time.timeAsDouble));
+            AddSubjects(
+                subjectIds,
+                _factStore.GetFacts(PegaNpcKnowledgeFacts.CharacterAttackProtected, Time.timeAsDouble));
             AddSubjects(
                 subjectIds,
                 _factStore.GetFacts(PegaNpcKnowledgeFacts.LastObservedCharacterPosition, Time.timeAsDouble));
@@ -472,6 +508,13 @@ namespace PEGA.NPC.Knowledge.Individual
         {
             ValidateSubjectForQuery(subjectActorId);
             return GetFact(PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId));
+        }
+
+        public PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> GetCharacterAttackProtected(
+            ActorId subjectActorId)
+        {
+            ValidateSubjectForQuery(subjectActorId);
+            return GetFact(PegaNpcKnowledgeFacts.CharacterAttackProtected.For(subjectActorId));
         }
 
         public PegaKnowledgeFact<Vector3> GetLastObservedCharacterPosition(ActorId subjectActorId)
@@ -595,6 +638,73 @@ namespace PEGA.NPC.Knowledge.Individual
                 PegaNpcKnowledgeFacts.CharacterIncapacitated.For(subjectActorId),
                 observation,
                 PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
+        }
+
+        public PegaKnowledgeWriteResult ObserveCharacterAttackProtected(
+            ActorId subjectActorId,
+            ActorOccurrenceId actorOccurrenceId,
+            bool isProtected,
+            double protectionEndsAtTimeSeconds,
+            PegaNpcEvidenceOrigin origin,
+            double observationTimeSeconds)
+        {
+            PegaKnowledgeFactKey<ActorId, PegaNpcCharacterAttackProtectionObservation> key =
+                PegaNpcKnowledgeFacts.CharacterAttackProtected.For(subjectActorId);
+            if (!subjectActorId.IsValid || !actorOccurrenceId.IsValid)
+            {
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    "subject ActorId or Actor occurrence is invalid",
+                    PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation>.Unknown(
+                        PegaKnowledgeScope.Individual));
+            }
+
+            bool validProtectionDeadline = isProtected
+                ? !double.IsNaN(protectionEndsAtTimeSeconds) &&
+                  !double.IsInfinity(protectionEndsAtTimeSeconds) &&
+                  protectionEndsAtTimeSeconds > observationTimeSeconds
+                : protectionEndsAtTimeSeconds == 0d;
+            if (!validProtectionDeadline)
+            {
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    "attack protection evidence has an invalid or expired deadline",
+                    GetCharacterAttackProtected(subjectActorId));
+            }
+
+            if (!TryValidateEvidence(origin, observationTimeSeconds, out string reason))
+            {
+                return RejectEvidence(
+                    key,
+                    PegaKnowledgeEvidence.From(origin, observationTimeSeconds),
+                    reason,
+                    GetCharacterAttackProtected(subjectActorId));
+            }
+
+            var observation = new PegaNpcCharacterAttackProtectionObservation(
+                actorOccurrenceId,
+                isProtected,
+                protectionEndsAtTimeSeconds,
+                ++_characterAttackProtectionObservationSequence);
+            PegaKnowledgeWriteResult result = ObserveFact(
+                key,
+                observation,
+                PegaKnowledgeEvidence.From(origin, observationTimeSeconds));
+            PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> current =
+                GetCharacterAttackProtected(subjectActorId);
+            if (current.TryGetValue(out PegaNpcCharacterAttackProtectionObservation stored) &&
+                stored.IsProtected)
+            {
+                ScheduleCharacterAttackProtectionExpiry(subjectActorId, stored);
+            }
+            else
+            {
+                CancelCharacterAttackProtectionExpiry(subjectActorId);
+            }
+
+            return result;
         }
 
         public PegaKnowledgeWriteResult ObserveCharacterPosition(
@@ -765,6 +875,150 @@ namespace PEGA.NPC.Knowledge.Individual
         private void OnFactChanged(PegaKnowledgeFactChangedEvent change)
         {
             _knowledgeChangeEvents?.Publish(change);
+        }
+
+        private void ScheduleCharacterAttackProtectionExpiry(
+            ActorId subjectActorId,
+            PegaNpcCharacterAttackProtectionObservation observation)
+        {
+            CancelCharacterAttackProtectionExpiry(subjectActorId);
+            if (!observation.IsProtected)
+            {
+                return;
+            }
+
+            double remainingSeconds = observation.ProtectionEndsAtTimeSeconds - Time.timeAsDouble;
+            if (remainingSeconds <= 0d)
+            {
+                ExpireCharacterAttackProtection(subjectActorId, observation);
+                return;
+            }
+
+            var schedule = new CharacterAttackProtectionExpirySchedule(observation);
+            _characterAttackProtectionExpirySchedules.Add(subjectActorId, schedule);
+            schedule.Routine = StartCoroutine(ExpireCharacterAttackProtectionAfterDelay(
+                subjectActorId,
+                schedule));
+        }
+
+        private IEnumerator ExpireCharacterAttackProtectionAfterDelay(
+            ActorId subjectActorId,
+            CharacterAttackProtectionExpirySchedule schedule)
+        {
+            while (Time.timeAsDouble < schedule.Observation.ProtectionEndsAtTimeSeconds)
+            {
+                double remainingSeconds =
+                    schedule.Observation.ProtectionEndsAtTimeSeconds - Time.timeAsDouble;
+                yield return new WaitForSeconds((float)remainingSeconds);
+            }
+
+            if (!_characterAttackProtectionExpirySchedules.TryGetValue(
+                    subjectActorId,
+                    out CharacterAttackProtectionExpirySchedule currentSchedule) ||
+                !ReferenceEquals(currentSchedule, schedule))
+            {
+                yield break;
+            }
+
+            _characterAttackProtectionExpirySchedules.Remove(subjectActorId);
+            ExpireCharacterAttackProtection(subjectActorId, schedule.Observation);
+        }
+
+        private void ExpireCharacterAttackProtection(
+            ActorId subjectActorId,
+            PegaNpcCharacterAttackProtectionObservation expectedObservation)
+        {
+            PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> currentFact =
+                GetCharacterAttackProtected(subjectActorId);
+            if (!currentFact.TryGetValue(out PegaNpcCharacterAttackProtectionObservation current) ||
+                current.ActorOccurrenceId != expectedObservation.ActorOccurrenceId ||
+                current.ObservationSequence != expectedObservation.ObservationSequence ||
+                !current.IsProtected ||
+                Time.timeAsDouble < current.ProtectionEndsAtTimeSeconds)
+            {
+                return;
+            }
+
+            InvalidateFact(
+                PegaNpcKnowledgeFacts.CharacterAttackProtected.For(subjectActorId),
+                PegaKnowledgeEvidence.From(
+                    PegaNpcEvidenceOrigin.ObservationExpiry,
+                    Time.timeAsDouble,
+                    this,
+                    current));
+        }
+
+        private void ResumeCharacterAttackProtectionExpiries()
+        {
+            if (_characterAttackProtectionExpirySchedules.Count == 0)
+            {
+                return;
+            }
+
+            var subjectActorIds = new List<ActorId>(_characterAttackProtectionExpirySchedules.Keys);
+            for (int index = 0; index < subjectActorIds.Count; index++)
+            {
+                ActorId subjectActorId = subjectActorIds[index];
+                if (!_characterAttackProtectionExpirySchedules.TryGetValue(
+                        subjectActorId,
+                        out CharacterAttackProtectionExpirySchedule schedule))
+                {
+                    continue;
+                }
+
+                if (schedule.Routine != null)
+                {
+                    continue;
+                }
+
+                PegaKnowledgeFact<PegaNpcCharacterAttackProtectionObservation> currentFact =
+                    GetCharacterAttackProtected(subjectActorId);
+                if (!currentFact.TryGetValue(out PegaNpcCharacterAttackProtectionObservation current) ||
+                    current.ActorOccurrenceId != schedule.Observation.ActorOccurrenceId ||
+                    current.ObservationSequence != schedule.Observation.ObservationSequence ||
+                    !current.IsProtected)
+                {
+                    _characterAttackProtectionExpirySchedules.Remove(subjectActorId);
+                    continue;
+                }
+
+                ScheduleCharacterAttackProtectionExpiry(subjectActorId, current);
+            }
+        }
+
+        private void CancelCharacterAttackProtectionExpiry(ActorId subjectActorId)
+        {
+            if (!_characterAttackProtectionExpirySchedules.TryGetValue(
+                    subjectActorId,
+                    out CharacterAttackProtectionExpirySchedule schedule))
+            {
+                return;
+            }
+
+            if (schedule.Routine != null)
+            {
+                StopCoroutine(schedule.Routine);
+            }
+
+            _characterAttackProtectionExpirySchedules.Remove(subjectActorId);
+        }
+
+        private void StopCharacterAttackProtectionExpiryCoroutines(bool clearSchedules = false)
+        {
+            foreach (KeyValuePair<ActorId, CharacterAttackProtectionExpirySchedule> entry in
+                     _characterAttackProtectionExpirySchedules)
+            {
+                if (entry.Value.Routine != null)
+                {
+                    StopCoroutine(entry.Value.Routine);
+                    entry.Value.Routine = null;
+                }
+            }
+
+            if (clearSchedules)
+            {
+                _characterAttackProtectionExpirySchedules.Clear();
+            }
         }
 
         private void LogSubscriberFailure(

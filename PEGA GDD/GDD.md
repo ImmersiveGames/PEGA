@@ -605,7 +605,8 @@ A Resistência deve possuir feedback visual legível — barra, segmentos, ícon
 |---|---|
 | Normal | Personagem livre para se mover e agir. |
 | Carregando | Personagem segura item ou outro personagem. |
-| Caído / Incapacitado | Larápio temporariamente incapaz de agir após ser neutralizado. Seu temporizador conta enquanto está no chão, pausa durante o transporte e retoma o tempo restante quando solto antes da prisão; ainda não está capturado. |
+| Caído / Incapacitado | Actor temporariamente incapaz de se mover, atacar e interagir após ser neutralizado. O temporizador de cada Actor conta enquanto está no chão; para larápios, pausa durante o transporte e retoma o tempo restante quando solto antes da prisão. Ainda não está capturado. |
+| Protegido após recuperação | Actor que já recuperou movimento, ataque e interação, mas ignora impactos de ataque durante uma janela temporária após se levantar. |
 | Em transporte | Larápio incapacitado sob custódia de um jogador, com recuperação suspensa, a caminho da sala de detenção; ainda não está capturado. |
 | Detido / Capturado | Larápio entregue à sala de detenção. Sua captura está concluída e ele deixa definitivamente o assalto. |
 | Escapou | Larápio que deixou o cenário por uma rota de fuga. Ele deixa definitivamente o assalto sem ser capturado. |
@@ -766,10 +767,11 @@ Global define o alcance da leitura, não a origem do fato: somente fontes e even
 ### Posse, desejo e inversão da perseguição
 
 :::decision
-**Decisão:** todo ataque válido contra um ator carregando itens faz **todos** esses itens caírem, independentemente de o ataque conseguir incapacitá-lo.
+**Decisão:** todo ataque válido contra um ator carregando itens faz **todos** esses itens caírem, independentemente de o ataque conseguir incapacitá-lo, exceto durante a janela de proteção após a recuperação.
 
 - Se Capacidade de ataque >= Resistência atual, o alvo larga os itens e fica incapacitado.
 - Se Capacidade de ataque < Resistência atual, o alvo larga os itens, mas permanece ativo. O ataque não causa desgaste acumulativo de Resistência.
+- Ao terminar a incapacitação, Player e NPC entram em proteção contra novos impactos por 0,8 s como valor inicial configurável na mecânica compartilhada do Actor. Durante a janela, movimento, ataque e interação estão disponíveis, mas impactos não derrubam itens, não aplicam knockback e não causam nova incapacitação. Depois dela, volta a valer a regra normal de ataque.
 :::
 
 Um larápio pode perceber que o jogador carrega **algum item** sem identificar imediatamente seu conteúdo. Quando o objetivo principal é exposto e identificado, essa informação torna-se global.
@@ -843,7 +845,7 @@ O princípio permanece: **consegue ou não consegue; se consegue, existe um cust
 
 ### Habilidades especiais
 
-A **incapacitação do Player** por habilidades inimigas (como Terror e Uppercut, quando previstas no conteúdo de uma entrega) exige um contrato comportamental **comum** de controle, duração, recuperação, posse e interação com dois Players. Esse contrato deve ser especificado antes da primeira habilidade implementada que o exigir; não se antecipa essa mecânica ao microciclo. A seleção de habilidades dos quatro arquétipos dos Trapalhões da Demo deve verificar essa dependência. Enquanto não especificado, não presumir efeitos ou duração para o Player.
+Player e NPC usam o mesmo modelo de incapacitação e recuperação, com estado e temporizador independentes por Actor. Enquanto caído, o Player não pode se mover, atacar ou interagir; itens caem pela regra geral de impacto. Ao se levantar, recupera os comandos e recebe a janela configurável de 0,8 s de proteção contra impactos. Um Player não pode ser transportado nem capturado por um larápio. A interação de outro Player com um Player caído no cooperativo continua pendente.
 
 :::decision
 **Decisão:** habilidades especiais não dependem de um recurso universal `Especial SP`. Cada habilidade pertence ao repertório reutilizável do jogo; sua disponibilidade e exclusividade decorrem da configuração de arquétipos. Não há uma arquitetura paralela obrigatória para Boss Skills. A habilidade é acionada por condições explícitas de gameplay.
@@ -1153,7 +1155,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 :::
 
 :::open-question
-**Incapacitação do Player:** regras compartilhadas de estado, recuperação, controles e posse antes da primeira habilidade dependente.
+**Cooperativo e incapacitação:** responsabilidades do segundo Player e interação entre dois Players enquanto um deles está incapacitado; o estado e a recuperação individuais já estão definidos acima.
 :::
 
 :::open-question
@@ -1248,6 +1250,7 @@ Pendências abaixo não revogam regras já aprovadas. Seu detalhamento deve ante
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 0.14.3 | 2026-11-16 | Definida proteção configurável de 0,8 s após recuperação para Player e NPC; controles voltam antes do fim da proteção e impactos não produzem consequências durante a janela. |
 | 0.14.2 | 2026-11-13 | Separados os comandos Interagir (`B`) e Atacar; retirado o salto livre; preservados ataque direcional e transposições contextuais. |
 | 0.14.1 | 2026-11-03 | Registrados os nomes em inglês da gangue Os Trapalhões do Crime e de seus quatro arquétipos, com convenção de nomes para assets Unity. |
 | 0.14.0 | 2026-10-25 | Referenciada a diretriz arquitetural transversal do PEGA e sua aplicação ao GOAP. |
