@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Immersive.Framework.ActivityFlow;
 using Immersive.Framework.Actors;
+using Immersive.Framework.RouteLifecycle;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
 using PEGA.Diagnostics;
@@ -13,19 +14,19 @@ using UnityEngine;
 namespace PEGA.NPC.Knowledge.Global
 {
     /// <summary>
-    /// Global Knowledge authority owned by one Activity content contribution. It exposes typed writes and a
-    /// read-only GOAP capability; its store exists only while that owner is active.
+    /// Global Knowledge owned by the Route or Activity contribution on this content root.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("PEGA/Knowledge/Global Knowledge State")]
     public sealed class PegaGlobalKnowledgeState : MonoBehaviour,
         IPegaKnowledgeFactReader,
         IPegaKnowledgeFactWriter,
-        IActivityContentLifecycleReceiver
+        IActivityContentLifecycleReceiver,
+        IRouteContentLifecycleReceiver
     {
         private const string LogCategory = "PEGA.Gameplay.Knowledge";
 
-        [SerializeField, Tooltip("Fatos iniciais da Activity. Cada linha usa o catálogo canônico e é publicada somente na authority Global deste owner.")]
+        [SerializeField, Tooltip("Fatos iniciais publicados na entrada da contribuição de Route ou Activity deste objeto.")]
         private List<PegaKnowledgeFactAuthoringEntry> initialKnowledge =
             new List<PegaKnowledgeFactAuthoringEntry>();
 
@@ -33,10 +34,10 @@ namespace PEGA.NPC.Knowledge.Global
         private PegaKnowledgeFactStore _factStore;
 
         [NonSerialized]
-        private ActivityContentContribution _contribution;
+        private Component _activeContribution;
 
         [NonSerialized]
-        private Immersive.Framework.Authoring.ActivityAsset _activeActivity;
+        private UnityEngine.Object _activeOwner;
 
         [NonSerialized]
         private PegaKnowledgeFactAuthoringEntry[] _initialKnowledgeSnapshot;
@@ -55,11 +56,15 @@ namespace PEGA.NPC.Knowledge.Global
 
         public PegaKnowledgeScope Scope => PegaKnowledgeScope.Global;
 
-        public bool IsAvailable => _factStore != null && _activeActivity != null;
+        public bool IsAvailable => _factStore != null && _activeOwner != null && _activeContribution != null;
+
+        public bool IsOwnedByRoute(RouteContentContribution contribution) =>
+            IsAvailable && contribution != null && _activeContribution == contribution &&
+            ReferenceEquals(_activeOwner, contribution.Route);
 
         void IActivityContentLifecycleReceiver.OnActivityContentEntered(ActivityContentLifecycleContext context)
         {
-            if (!IsOwnedContribution(context))
+            if (!IsOwnContribution(context.ContentRoot, context.Contribution))
             {
                 return;
             }
@@ -74,38 +79,79 @@ namespace PEGA.NPC.Knowledge.Global
                 return;
             }
 
-            if (IsAvailable && ReferenceEquals(_activeActivity, context.Activity))
+            EnterOwner(context.Activity, context.Contribution, context.ActivityName);
+        }
+
+        void IRouteContentLifecycleReceiver.OnRouteContentEntered(RouteContentLifecycleContext context)
+        {
+            if (!IsOwnContribution(context.ContentRoot, context.Binding))
+            {
+                return;
+            }
+
+            EnsureLoggerInitialized();
+            if (context.Route == null || !context.Route.HasValidRouteId || context.Binding.Route != context.Route)
+            {
+                _log.Error("Global Knowledge requires its exact, valid Route content owner.",
+                    LogFields.Field("contentRoot", gameObject.name));
+                return;
+            }
+
+            EnterOwner(context.Route, context.Binding, context.RouteName);
+        }
+
+        private void EnterOwner(UnityEngine.Object owner, Component contribution, string ownerName)
+        {
+            if (GetComponent<ActivityContentContribution>() != null && GetComponent<RouteContentContribution>() != null)
+            {
+                _log.Error("Global Knowledge requires a single Route or Activity contribution on its content root.",
+                    LogFields.Field("contentRoot", gameObject.name));
+                return;
+            }
+
+            if (IsAvailable && ReferenceEquals(_activeOwner, owner) && _activeContribution == contribution)
             {
                 return;
             }
 
             ClearStore();
             _factStore = new PegaKnowledgeFactStore(PegaKnowledgeScope.Global);
-            _activeActivity = context.Activity;
+            _activeContribution = contribution;
+            _activeOwner = owner;
             _initialKnowledgeSnapshot = initialKnowledge != null
                 ? initialKnowledge.ToArray()
                 : Array.Empty<PegaKnowledgeFactAuthoringEntry>();
             _actorBinding = GetComponent<ActorOccurrenceReferenceBinding>();
             _initialKnowledgeObservationTimeSeconds = Time.timeAsDouble;
             _log.Info(
-                "Activity-owned Global Knowledge became available.",
-                LogFields.Field("activity", context.Activity.ActivityName),
+                "Global Knowledge became available.",
+                LogFields.Field("owner", ownerName),
                 LogFields.Field("contentRoot", gameObject.name));
             ApplyInitialKnowledge();
         }
 
         void IActivityContentLifecycleReceiver.OnActivityContentExited(ActivityContentLifecycleContext context)
         {
-            if (!IsOwnedContribution(context) || !IsAvailable ||
-                !ReferenceEquals(_activeActivity, context.Activity))
+            ExitOwner(context.ContentRoot, context.Contribution, context.Activity, context.ActivityName);
+        }
+
+        void IRouteContentLifecycleReceiver.OnRouteContentExited(RouteContentLifecycleContext context)
+        {
+            ExitOwner(context.ContentRoot, context.Binding, context.Route, context.RouteName);
+        }
+
+        private void ExitOwner(GameObject root, Component contribution, UnityEngine.Object owner, string ownerName)
+        {
+            if (root != gameObject || !IsAvailable || _activeContribution != contribution ||
+                !ReferenceEquals(_activeOwner, owner))
             {
                 return;
             }
 
             EnsureLoggerInitialized();
             _log.Info(
-                "Activity-owned Global Knowledge was cleared.",
-                LogFields.Field("activity", context.Activity.ActivityName),
+                "Global Knowledge was cleared.",
+                LogFields.Field("owner", ownerName),
                 LogFields.Field("contentRoot", gameObject.name));
             ClearStore();
         }
@@ -160,28 +206,15 @@ namespace PEGA.NPC.Knowledge.Global
             ClearStore();
         }
 
-        private bool IsOwnedContribution(ActivityContentLifecycleContext context)
-        {
-            if (context.ContentRoot != gameObject || context.Contribution == null ||
-                context.Contribution.gameObject != gameObject)
-            {
-                return false;
-            }
-
-            if (_contribution == null)
-            {
-                _contribution = GetComponent<ActivityContentContribution>();
-            }
-
-            return _contribution != null && context.Contribution == _contribution;
-        }
+        private bool IsOwnContribution<T>(GameObject root, T contribution) where T : Component =>
+            root == gameObject && contribution != null && GetComponent<T>() == contribution;
 
         private PegaKnowledgeFactStore RequireActiveStore()
         {
             if (!IsAvailable)
             {
                 throw new InvalidOperationException(
-                    "Global Knowledge can be written only while its Activity content contribution is active.");
+                    "Global Knowledge can be written only while its content contribution is active.");
             }
 
             return _factStore;
@@ -260,7 +293,8 @@ namespace PEGA.NPC.Knowledge.Global
         {
             _factStore?.Clear();
             _factStore = null;
-            _activeActivity = null;
+            _activeOwner = null;
+            _activeContribution = null;
             _initialKnowledgeSnapshot = null;
             _actorBinding = null;
             _initialKnowledgeObservationTimeSeconds = 0d;
@@ -289,7 +323,7 @@ namespace PEGA.NPC.Knowledge.Global
 
                 if (status == PegaKnowledgeFactInitialAuthoringStatus.Pending)
                 {
-                    diagnostic = "The selected Actor identity is not resolved during this Activity owner entry; use a resolved ActorDeclaration or an available binding.";
+                    diagnostic = "The selected Actor identity is not resolved during owner entry; use a resolved ActorDeclaration or an available binding.";
                 }
 
                 if ((status != PegaKnowledgeFactInitialAuthoringStatus.Applied ||
@@ -305,7 +339,7 @@ namespace PEGA.NPC.Knowledge.Global
                     EnsureLoggerInitialized();
                     _log.Error(
                         "Designer-authored initial Global Knowledge was rejected.",
-                        LogFields.Field("activity", _activeActivity != null ? _activeActivity.ActivityName : "unavailable"),
+                        LogFields.Field("owner", _activeOwner.name),
                         LogFields.Field("entryIndex", index),
                         LogFields.Field("factDefinitionId", entry.DefinitionId),
                         LogFields.Field("writeResult", result),
