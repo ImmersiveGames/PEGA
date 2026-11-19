@@ -52,9 +52,9 @@ namespace PEGA.GameFlow
         private void PickUpRelic()
         {
             if (!Application.isPlaying) return;
-            if (!mission.IsAssaultReady)
+            if (!mission.IsAssaultOperational)
             {
-                _log.Warning("Pick Up requires the Assault Activity to be ready.");
+                _log.Warning("Pick Up requires an operational Assault after Player control is available.");
                 return;
             }
 
@@ -69,9 +69,9 @@ namespace PEGA.GameFlow
         private void ConfirmDiscovery()
         {
             if (!Application.isPlaying) return;
-            if (_confirmation.HasValue || !mission.IsAssaultReady)
+            if (_confirmation.HasValue || !mission.IsAssaultOperational)
             {
-                _log.Warning("The first controlled confirmation requires ready Assault and a new discovery.");
+                _log.Warning("The first controlled confirmation requires operational Assault and a new discovery.");
                 return;
             }
 

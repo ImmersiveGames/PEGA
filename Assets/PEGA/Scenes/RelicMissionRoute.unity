@@ -137,6 +137,9 @@ GameObject:
   - component: {fileID: 108}
   - component: {fileID: 109}
   - component: {fileID: 110}
+  - component: {fileID: 111}
+  - component: {fileID: 112}
+  - component: {fileID: 113}
   m_Layer: 0
   m_Name: Relic Mission
   m_TagString: Untagged
@@ -158,6 +161,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 201}
+  - {fileID: 301}
   - {fileID: 940000000000000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -188,12 +192,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3621a98a801647bd905e68522058af13, type: 3}
   m_Name:
   m_EditorClassIdentifier:
+  preparation: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
   assault: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
   dispute: {fileID: 11400000, guid: 61e0fe7c16235145b1c14e53ec0e8c8b, type: 2}
+  requestAssault: {fileID: 111}
   requestDispute: {fileID: 104}
   readiness: {fileID: 105}
+  playerSessionObserver: {fileID: 112}
+  actorOccurrenceQuery: {fileID: 109}
   generalKnowledge: {fileID: 106}
-  assaultSeconds: 300--- !u!114 &104
+  preparationSeconds: 30
+  assaultSeconds: 300
+--- !u!114 &104
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -287,6 +297,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d6b6cb5d42f4a51a9ef783229af13a0, type: 3}
   m_Name:
   m_EditorClassIdentifier:
+--- !u!114 &111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88595ccde21347ea987cfbba6c100c2c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  targetActivity: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
+  reason: Preparation elapsed
+--- !u!114 &112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44d40c4cca356b446bf782279981c9dc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  scope: 10
+--- !u!114 &113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fb6c4f4ae7f41bb8576199228954343, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  mission: {fileID: 103}
+  npc: {fileID: 200}
+  entryPoint: {fileID: 301}
+--- !u!1 &300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 301}
+  m_Layer: 0
+  m_Name: Assault NPC Entry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &301
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 101}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &200
 GameObject:
   m_ObjectHideFlags: 0
@@ -309,7 +392,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &201
 Transform:
   m_ObjectHideFlags: 0

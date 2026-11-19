@@ -17,7 +17,7 @@ MonoBehaviour:
   primaryScenePath: Assets/PEGA/Scenes/RelicMissionRoute.unity
   primarySceneName: RelicMissionRoute
   routeContentProfile: {fileID: 11400000, guid: 8ed846cf7f945c31b2a92d806acc24af, type: 2}
-  startupActivity: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
+  startupActivity: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
   playerSpatialEntryPolicy: 0
   transitionGateMode: 30
-  description: Continuity of the relic mission across Assault and Dispute.
+  description: Route execution for Preparation, Assault and Dispute.

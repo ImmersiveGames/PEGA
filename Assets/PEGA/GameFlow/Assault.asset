@@ -15,12 +15,12 @@ MonoBehaviour:
   activityId: fdb602e0658e5b7d86817292fec68894
   activityName: Assault
   description: Assault stage of the relic mission.
-  playerParticipationProjectionMode: 0
-  playerParticipationZeroParticipantPolicy: 0
+  playerParticipationProjectionMode: 10
+  playerParticipationZeroParticipantPolicy: 10
   playerParticipationExplicitSlotProfiles: []
-  playerParticipationRequirementLevel: 0
+  playerParticipationRequirementLevel: 40
   activityContentProfile: {fileID: 11400000, guid: 4c58f60db7a65449894bbabf24811587, type: 2}
   playerRelocationPolicy: 0
-  activityEntryReadinessPolicy: 0
+  activityEntryReadinessPolicy: 20
   visualTransitionMode: 0
-  transitionGateMode: 10
+  transitionGateMode: 30

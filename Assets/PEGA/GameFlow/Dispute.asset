@@ -15,12 +15,12 @@ MonoBehaviour:
   activityId: c2fbcca7f1ff5bc1bd01e144c3cc4264
   activityName: Dispute
   description: Dispute stage of the relic mission.
-  playerParticipationProjectionMode: 0
-  playerParticipationZeroParticipantPolicy: 0
+  playerParticipationProjectionMode: 10
+  playerParticipationZeroParticipantPolicy: 10
   playerParticipationExplicitSlotProfiles: []
-  playerParticipationRequirementLevel: 0
+  playerParticipationRequirementLevel: 40
   activityContentProfile: {fileID: 11400000, guid: 77d8dd5761045b2ebfe1c7eff5d60d36, type: 2}
   playerRelocationPolicy: 0
   activityEntryReadinessPolicy: 20
   visualTransitionMode: 0
-  transitionGateMode: 10
+  transitionGateMode: 30

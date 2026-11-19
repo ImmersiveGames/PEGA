@@ -32,5 +32,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/PEGA/Scenes/DisputeContent.unity
     guid: bc448dbb3a4757c2af455d9bff8b52f6
+  - enabled: 1
+    path: Assets/PEGA/Scenes/PreparationContent.unity
+    guid: 2d9d9385f65b411e86aac9f53502533e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
