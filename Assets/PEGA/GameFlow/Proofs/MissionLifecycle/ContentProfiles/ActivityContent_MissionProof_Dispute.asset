@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49994376dc9c4f14a401c2a75aa2be55, type: 3}
-  m_Name: PreparationContent
+  m_Name: ActivityContent_MissionProof_Dispute
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
-  profileId: pega.relic-mission.preparation
+  profileId: pega.relic-mission.dispute
   scenes:
-  - contentId: pega.relic-mission.preparation.scene
-    scenePath: Assets/PEGA/Scenes/PreparationContent.unity
-    sceneName: PreparationContent
+  - contentId: pega.relic-mission.dispute.scene
+    scenePath: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_DisputeContent.unity
+    sceneName: MissionProof_DisputeContent
     requiredness: 10
     loadMode: 0
     releasePolicy: 0
-  description: Preparation stage content.
+  description: Activity content profile for Dispute in the temporary mission proof. The scene owns this Activity content.

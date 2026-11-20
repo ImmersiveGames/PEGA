@@ -8,7 +8,7 @@ namespace PEGA.Diagnostics
 {
     public sealed class PegaNavMeshTopologyProbeWindow : EditorWindow
     {
-        private const string TargetScenePath = "Assets/PEGA/Scenes/MissionRoute.unity";
+        private const string TargetScenePath = "Assets/PEGA/Scenes/Proofs/MissionLifecycle/Routes/MissionProof_EntryRoute.unity";
         private const int MaxDisplayedWalkableCells = 5000;
 
         [SerializeField] private float sampleSpacing = 0.5f;
@@ -46,7 +46,7 @@ namespace PEGA.Diagnostics
             EditorGUILayout.LabelField("Cena ativa", string.IsNullOrEmpty(activeScene.path) ? activeScene.name : activeScene.path);
             if (!string.Equals(activeScene.path, TargetScenePath, StringComparison.OrdinalIgnoreCase))
             {
-                EditorGUILayout.HelpBox("Abra e torne ativa a cena MissionRoute para analisar o blockout do armazém.", MessageType.Warning);
+                EditorGUILayout.HelpBox("Abra e torne ativa a cena Mission Proof Entry Route para analisar o blockout do armazém.", MessageType.Warning);
             }
 
             sampleSpacing = EditorGUILayout.Slider("Resolução da amostra (m)", sampleSpacing, 0.25f, 2f);
@@ -136,7 +136,7 @@ namespace PEGA.Diagnostics
             Scene activeScene = SceneManager.GetActiveScene();
             if (!string.Equals(activeScene.path, TargetScenePath, StringComparison.OrdinalIgnoreCase))
             {
-                _diagnostic = "A análise está limitada a Assets/PEGA/Scenes/MissionRoute.unity.";
+                _diagnostic = "A análise está limitada a Assets/PEGA/Scenes/Proofs/MissionLifecycle/Routes/MissionProof_EntryRoute.unity.";
                 return;
             }
 

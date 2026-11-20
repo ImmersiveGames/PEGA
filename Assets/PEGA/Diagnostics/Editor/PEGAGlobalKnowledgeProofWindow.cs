@@ -16,7 +16,7 @@ namespace PEGA.Diagnostics
     /// <summary>Runs a small, explicit Global Knowledge write/read proof without invoking Actions or planning.</summary>
     public sealed class PegaGlobalKnowledgeProofWindow : EditorWindow
     {
-        private const string MissionContentScenePath = "Assets/PEGA/Scenes/MissionActivityContent.unity";
+        private const string MissionContentScenePath = "Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_EntryActivityContent.unity";
         private const string ProofSource = "PEGA Global Knowledge proof";
 
         private enum ProofEvidenceOrigin
@@ -58,7 +58,7 @@ namespace PEGA.Diagnostics
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Detectar Mission carregada"))
+                if (GUILayout.Button("Detectar Mission Proof Entry carregada"))
                 {
                     ResolveMissionSetup();
                 }
@@ -90,7 +90,7 @@ namespace PEGA.Diagnostics
             Scene missionScene = FindLoadedMissionScene();
             if (!missionScene.IsValid())
             {
-                SetResult("Abra a cena de conteúdo da Mission e entre no Play Mode para compor a Activity.", MessageType.Warning);
+                SetResult("Abra a cena Mission Proof Entry Activity Content e entre no Play Mode para compor a Activity.", MessageType.Warning);
                 return;
             }
 
@@ -99,7 +99,7 @@ namespace PEGA.Diagnostics
             PegaNpcAutonomy[] autonomies = FindInScene<PegaNpcAutonomy>(missionScene);
             if (authorities.Length != 1)
             {
-                SetResult($"Esperada uma autoridade Global na Mission; encontradas: {authorities.Length}.", MessageType.Error);
+                SetResult($"Esperada uma autoridade Global na Mission Proof Entry; encontradas: {authorities.Length}.", MessageType.Error);
                 return;
             }
 
@@ -147,7 +147,7 @@ namespace PEGA.Diagnostics
             if (globalAuthority == null || !globalAuthority.IsAvailable ||
                 firstConsumer == null || secondConsumer == null || groupAccess == null)
             {
-                SetResult("Detecte a Mission carregada e aguarde a entrada da Activity antes de executar a prova.", MessageType.Warning);
+                SetResult("Detecte a Mission Proof Entry carregada e aguarde a entrada da Activity antes de executar a prova.", MessageType.Warning);
                 return;
             }
 

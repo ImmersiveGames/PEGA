@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6d702c1ba364e70ad76a85eb5f1b842, type: 3}
-  m_Name: MissionActivity
+  m_Name: Activity_MissionProof_Entry
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityAsset
   activityId: 31d3e84dd12747bdb4d3b06fb2f64adb
-  activityName: Mission
-  description: Mission Activity. Preparation, Assault and Escape are future internal mission phases.
+  activityName: Mission Proof - Entry Activity
+  description: Temporary startup Activity used by the Route-entry proof before it requests the multi-Activity mission proof.
   playerParticipationProjectionMode: 20
   playerParticipationZeroParticipantPolicy: 0
   playerParticipationExplicitSlotProfiles:

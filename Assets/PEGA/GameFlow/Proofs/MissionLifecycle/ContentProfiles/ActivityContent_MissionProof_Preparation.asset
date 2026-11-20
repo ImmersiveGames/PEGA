@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49994376dc9c4f14a401c2a75aa2be55, type: 3}
-  m_Name: AssaultContent
+  m_Name: ActivityContent_MissionProof_Preparation
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
-  profileId: pega.relic-mission.assault
+  profileId: pega.relic-mission.preparation
   scenes:
-  - contentId: pega.relic-mission.assault.scene
-    scenePath: Assets/PEGA/Scenes/AssaultContent.unity
-    sceneName: AssaultContent
+  - contentId: pega.relic-mission.preparation.scene
+    scenePath: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_PreparationContent.unity
+    sceneName: MissionProof_PreparationContent
     requiredness: 10
     loadMode: 0
     releasePolicy: 0
-  description: Assault stage content.
+  description: Preparation Activity profile for the temporary proof. Its scene contains the Preparation stage marker.

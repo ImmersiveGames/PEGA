@@ -17,7 +17,7 @@ namespace PEGA.Diagnostics
     /// <summary>Verifies Group Knowledge sharing and isolation without Actions or GOAP planning.</summary>
     public sealed class PegaGroupKnowledgeProofWindow : EditorWindow
     {
-        private const string MissionContentScenePath = "Assets/PEGA/Scenes/MissionActivityContent.unity";
+        private const string MissionContentScenePath = "Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_EntryActivityContent.unity";
         private const string ProofSource = "PEGA Group Knowledge proof";
 
         private enum ProofEvidenceOrigin
@@ -43,7 +43,7 @@ namespace PEGA.Diagnostics
         {
             EditorGUILayout.LabelField("PEGA · Actor Group Knowledge Proof", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Inicie um novo Play Mode com a Mission carregada. A prova usa os três larápios e os dois Actor Groups confirmados pelo Framework. Ela não executa Actions nem consulta o planner.",
+                "Inicie um novo Play Mode com a cena Mission Proof Entry Activity Content carregada. A prova usa os três larápios e os dois Actor Groups confirmados pelo Framework. Ela não executa Actions nem consulta o planner.",
                 MessageType.Info);
 
             groupKnowledge = (PegaActorGroupKnowledgeState)EditorGUILayout.ObjectField(
@@ -55,7 +55,7 @@ namespace PEGA.Diagnostics
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Detectar Mission carregada"))
+                if (GUILayout.Button("Detectar Mission Proof Entry carregada"))
                 {
                     ResolveMissionSetup();
                 }
@@ -87,7 +87,7 @@ namespace PEGA.Diagnostics
             Scene missionScene = FindLoadedMissionScene();
             if (!missionScene.IsValid())
             {
-                SetResult("Abra a cena de conteúdo da Mission e entre em Play Mode.", MessageType.Warning);
+                SetResult("Abra a cena Mission Proof Entry Activity Content e entre em Play Mode.", MessageType.Warning);
                 return;
             }
 
@@ -116,13 +116,13 @@ namespace PEGA.Diagnostics
             if (!EditorApplication.isPlaying || groupKnowledge == null || globalKnowledge == null ||
                 groupAccess == null || readers == null || readers.Length != 3)
             {
-                SetResult("Detecte a Mission enquanto ela está em Play Mode antes de executar a prova.", MessageType.Error);
+                SetResult("Detecte a Mission Proof Entry enquanto ela está em Play Mode antes de executar a prova.", MessageType.Error);
                 return;
             }
 
             if (!groupKnowledge.IsAvailable || !globalKnowledge.IsAvailable || !groupAccess.IsAccessAvailable)
             {
-                SetResult("A Activity ainda não disponibilizou as authorities e o binding oficial da Mission.", MessageType.Error);
+                SetResult("A Activity ainda não disponibilizou as authorities e o binding oficial da Mission Proof Entry.", MessageType.Error);
                 return;
             }
 
@@ -445,7 +445,7 @@ namespace PEGA.Diagnostics
                 }
                 else
                 {
-                    issue = "A Mission precisa conter exatamente dois membros no primeiro Group e um no segundo.";
+                    issue = "A Mission Proof Entry precisa conter exatamente dois membros no primeiro Group e um no segundo.";
                     return false;
                 }
             }

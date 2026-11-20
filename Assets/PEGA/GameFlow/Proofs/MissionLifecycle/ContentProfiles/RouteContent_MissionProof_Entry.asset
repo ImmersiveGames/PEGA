@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd969b54c69d4c4293022f4fa1b2432a, type: 3}
-  m_Name: PEGA_RouteContent
+  m_Name: RouteContent_MissionProof_Entry
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.RouteContentProfileAsset
   profileId: pega.mission.route-content
   additionalScenes: []
-  description: Mission Route uses its Primary Scene; no additional Route content is needed yet.
+  description: Temporary Mission Proof Entry Route profile. Uses its Primary Scene without additional Route scenes.

@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49994376dc9c4f14a401c2a75aa2be55, type: 3}
-  m_Name: Mission_ActivityContent
+  m_Name: ActivityContent_MissionProof_Assault
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
-  profileId: pega.mission.activity-content
+  profileId: pega.relic-mission.assault
   scenes:
-  - contentId: pega.mission.diagnostic
-    scenePath: Assets/PEGA/Scenes/MissionActivityContent.unity
-    sceneName: MissionActivityContent
-    requiredness: 0
+  - contentId: pega.relic-mission.assault.scene
+    scenePath: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_AssaultContent.unity
+    sceneName: MissionProof_AssaultContent
+    requiredness: 10
     loadMode: 0
     releasePolicy: 0
-  description: Owns Mission Activity diagnostics and the Larapio NPC demonstrator through Activity Content scene lifetime.
+  description: Activity content profile for Assault in the temporary mission proof. The scene owns this Activity content.
