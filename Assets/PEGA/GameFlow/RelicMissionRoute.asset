@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a35fe899a80d2d64dac72e8bfe3079df, type: 3}
+  m_Name: RelicMissionRoute
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.RouteAsset
+  routeId: bf47fa2efd315513a6a4d536bafd8424
+  routeName: Relic Mission
+  primaryScenePath: Assets/PEGA/Scenes/RelicMissionRoute.unity
+  primarySceneName: RelicMissionRoute
+  routeContentProfile: {fileID: 11400000, guid: 8ed846cf7f945c31b2a92d806acc24af, type: 2}
+  startupActivity: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
+  playerSpatialEntryPolicy: 0
+  transitionGateMode: 30
+  description: Route execution for Preparation, Assault and Dispute.

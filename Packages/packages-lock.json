@@ -24,7 +24,7 @@
       "hash": "86b5e17d69ffa72b302f323628ec494362702f42"
     },
     "com.immersive.framework": {
-      "version": "file:C:/Projetos/ImmersivePackages/com.immersive.framework",
+      "version": "file:D:/Projetos/ImmersivePackages/com.immersive.framework",
       "depth": 0,
       "source": "local",
       "dependencies": {
