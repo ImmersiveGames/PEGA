@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6d702c1ba364e70ad76a85eb5f1b842, type: 3}
+  m_Name: Entry
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityAsset
+  activityId: 4d2fdc4d70c0449dbfc30af3a9b3e323
+  activityName: Entry
+  description: Provisions the mission Player before the Preparation Activity.
+  playerParticipationProjectionMode: 20
+  playerParticipationZeroParticipantPolicy: 0
+  playerParticipationExplicitSlotProfiles:
+  - {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  playerParticipationRequirementLevel: 40
+  activityContentProfile: {fileID: 11400000, guid: 2dc0166ca0c8474fb0ce1612c42b3206, type: 2}
+  playerRelocationPolicy: 0
+  activityEntryReadinessPolicy: 0
+  visualTransitionMode: 0
+  transitionGateMode: 10

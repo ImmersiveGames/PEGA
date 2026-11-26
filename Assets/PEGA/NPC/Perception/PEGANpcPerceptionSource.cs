@@ -1004,7 +1004,8 @@ namespace PEGA.NPC.Perception
                     candidateDeclarations.HasValidActorDeclaration;
                 bool radialDetected = hasRadialObservation && radialObservation.IsDetected;
                 bool visualDetected = hasVisionObservation && visionObservation.IsDetected;
-                if (physicalCollider == null && (radialDetected || visualDetected))
+                if (!externalActorReference.HasValue && physicalCollider == null &&
+                    (radialDetected || visualDetected))
                 {
                     if (radialDetected && visualDetected)
                     {

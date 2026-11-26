@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6d702c1ba364e70ad76a85eb5f1b842, type: 3}
-  m_Name: Activity_MissionProof_ResultPlaceholder
+  m_Name: Results
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityAsset
-  activityId: 837df8f7682d44eead0d1f0c8c15e76b
-  activityName: Mission Proof - Result Placeholder
-  description: Placeholder Result Activity retained with the temporary mission proof assets.
-  playerParticipationProjectionMode: 0
-  playerParticipationZeroParticipantPolicy: 0
+  activityId: c86f1b4456ae4c3981a080c65410e5b7
+  activityName: Results
+  description: Mission outcome phase; result content will be added when its presentation is defined.
+  playerParticipationProjectionMode: 10
+  playerParticipationZeroParticipantPolicy: 10
   playerParticipationExplicitSlotProfiles: []
-  playerParticipationRequirementLevel: 0
-  activityContentProfile: {fileID: 11400000, guid: a4000000000000000000000000000001, type: 2}
+  playerParticipationRequirementLevel: 40
+  activityContentProfile: {fileID: 11400000, guid: 12e23f7496824f91800529740ad782a7, type: 2}
   playerRelocationPolicy: 0
-  activityEntryReadinessPolicy: 0
+  activityEntryReadinessPolicy: 20
   visualTransitionMode: 0
-  transitionGateMode: 10
+  transitionGateMode: 30
