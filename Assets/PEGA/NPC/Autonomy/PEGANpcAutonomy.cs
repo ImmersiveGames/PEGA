@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Immersive.Foundation.Events;
@@ -35,8 +36,8 @@ namespace PEGA.NPC.Autonomy
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
         private const string AttackEventLogCategory = "PEGA.Gameplay.Attack.Events.GOAP";
-        private const string NormalContextGoapInputsUnavailableDiagnostic =
-            "Knowledge State, incapacitation state and gameplay participation state must exist and be available on the NPC root.";
+        private const string NormalContextGoapInputsUnavailableDiagnosticPrefix =
+            "Normal-context GOAP input unavailable: ";
         [SerializeField]
         [Tooltip("Shared Desire Profile used by this NPC. Changes to the Profile affect every NPC that references it.")]
         private PegaNpcDesireProfile desireProfile;
@@ -120,6 +121,9 @@ namespace PEGA.NPC.Autonomy
 
         [System.NonSerialized]
         private bool _actionRuntimesInitialized;
+
+        [System.NonSerialized]
+        private Coroutine _pendingInitialization;
 
         public int ActionDefinitionCount => availableBehaviors != null ? availableBehaviors.Length : 0;
 
@@ -356,6 +360,32 @@ namespace PEGA.NPC.Autonomy
                 return;
             }
 
+            _pendingInitialization = StartCoroutine(InitializeAfterSiblingComponentsEnable());
+        }
+
+        private IEnumerator InitializeAfterSiblingComponentsEnable()
+        {
+            // IsAvailable uses Behaviour.isActiveAndEnabled, which stays false until
+            // the sibling component's own OnEnable callback has run.
+            yield return null;
+            _pendingInitialization = null;
+            if (!isActiveAndEnabled)
+            {
+                yield break;
+            }
+
+            InitializeRuntime();
+        }
+
+        private void InitializeRuntime()
+        {
+            _participationState ??= GetComponent<PegaActorParticipationState>();
+            if (_participationState != null && _participationState.IsCaptured)
+            {
+                enabled = false;
+                return;
+            }
+
             EnsureLoggerInitialized();
             if (!TryInitialize(out string diagnostic))
             {
@@ -365,8 +395,22 @@ namespace PEGA.NPC.Autonomy
                     LogFields.Field("desireProfile", desireProfile != null ? desireProfile.name : "<missing>"),
                     LogFields.Field("configuredActionCount", availableBehaviors != null ? availableBehaviors.Length : 0),
                     LogFields.Field("attackActionConfigured", HasConfiguredAttackAction()),
+                    LogFields.Field("knowledgeStatePresent", _knowledgeState != null),
+                    LogFields.Field("incapacitationMechanicPresent", _incapacitationMechanic != null),
+                    LogFields.Field(
+                        "incapacitationMechanicActiveAndEnabled",
+                        _incapacitationMechanic != null && _incapacitationMechanic.isActiveAndEnabled),
+                    LogFields.Field(
+                        "incapacitationMechanicAvailable",
+                        _incapacitationMechanic != null && _incapacitationMechanic.IsAvailable),
+                    LogFields.Field("participationStatePresent", _participationState != null),
+                    LogFields.Field(
+                        "participationStateParticipating",
+                        _participationState != null && _participationState.IsParticipating),
                     LogFields.Field("diagnostic", diagnostic));
-                if (diagnostic == NormalContextGoapInputsUnavailableDiagnostic)
+                if (diagnostic.StartsWith(
+                        NormalContextGoapInputsUnavailableDiagnosticPrefix,
+                        StringComparison.Ordinal))
                 {
                     _log.Warning(
                         "NPC autonomy was disabled because its Normal-context GOAP inputs are unavailable.",
@@ -447,6 +491,12 @@ namespace PEGA.NPC.Autonomy
 
         private void OnDisable()
         {
+            if (_pendingInitialization != null)
+            {
+                StopCoroutine(_pendingInitialization);
+                _pendingInitialization = null;
+            }
+
             _bootstrapPending = false;
             // Event buses do PEGA não fazem replay; a fila preserva reavaliações pendentes durante a pausa.
             CancelActivePlanForLifecycle();
@@ -606,10 +656,31 @@ namespace PEGA.NPC.Autonomy
             _incapacitationMechanic = GetComponent<PegaActorIncapacitationMechanic>();
             _participationState = GetComponent<PegaActorParticipationState>();
             _desireState ??= new PegaNpcDesireState(gameObject.name);
-            if (_knowledgeState == null || _incapacitationMechanic == null || _participationState == null ||
-                !_incapacitationMechanic.IsAvailable)
+            if (_knowledgeState == null)
             {
-                diagnostic = NormalContextGoapInputsUnavailableDiagnostic;
+                diagnostic = NormalContextGoapInputsUnavailableDiagnosticPrefix +
+                             "PegaNpcKnowledgeState is missing from the NPC root.";
+                return false;
+            }
+
+            if (_incapacitationMechanic == null)
+            {
+                diagnostic = NormalContextGoapInputsUnavailableDiagnosticPrefix +
+                             "PegaActorIncapacitationMechanic is missing from the NPC root.";
+                return false;
+            }
+
+            if (_participationState == null)
+            {
+                diagnostic = NormalContextGoapInputsUnavailableDiagnosticPrefix +
+                             "PegaActorParticipationState is missing from the NPC root.";
+                return false;
+            }
+
+            if (!_incapacitationMechanic.IsAvailable)
+            {
+                diagnostic = NormalContextGoapInputsUnavailableDiagnosticPrefix +
+                             "PegaActorIncapacitationMechanic is present but IsAvailable is false.";
                 return false;
             }
 

@@ -130,6 +130,8 @@ GameObject:
   - component: {fileID: 442300476}
   - component: {fileID: 442300475}
   - component: {fileID: 442300477}
+  - component: {fileID: 2500000206}
+  - component: {fileID: 2500000207}
   m_Layer: 0
   m_Name: Object Entry Recognition Access
   m_TagString: Untagged
@@ -566,118 +568,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1341495666}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &2500000200
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2500000201}
-  - component: {fileID: 2500000202}
-  - component: {fileID: 2500000204}
-  - component: {fileID: 2500000205}
-  - component: {fileID: 2500000206}
-  - component: {fileID: 2500000207}
-  m_Layer: 0
-  m_Name: PEGA Mission Player Admission
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2500000201
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2500000202
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f37a6125514e4491a7174d4372fc4c22, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.RouteLifecycle.RouteContentContribution
-  route: {fileID: 11400000, guid: c20b4a412fc0530ba729f596cc1c7623, type: 2}
-  localContentId: pega.mission.initial-player-join
-  requiredness: 10
---- !u!114 &2500000204
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b9a5ffbb42643c3ab9ba6af6c43198d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.PlayerParticipation.PlayerSessionJoinTrigger
-  scope: 20
-  reason: pega.mission.initial-player-join
-  controlScheme: 
---- !u!114 &2500000205
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9c2502b9b7f40f3bd093c32e90b6bcf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  joinTrigger: {fileID: 2500000204}
---- !u!114 &2500000206
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
-  selectionMode: 10
-  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
-  actorDeclaration: {fileID: 0}
-  useSessionOwner: 0
-  routeOwner: {fileID: 0}
-  activityOwner: {fileID: 0}
---- !u!114 &2500000207
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2500000200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dce2a13ff4344d4bb1cb5fbf14fbd42e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PegaMissionPlayerObjectEntryRecognitionAccess
-  recognitionQuery: {fileID: 442300475}
-  actorOccurrenceRecognitionQuery: {fileID: 442300477}
-  playerActorReference: {fileID: 2500000206}
 --- !u!1001 &2500000300
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3718,11 +3608,43 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PEGA.NPC.Capture.Runtime.PegaNpcCaptureProofPolicy
   captureWhenIncapacitatedWithoutItems: 1
+--- !u!114 &2500000206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442300474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a0224480aa4b5b9073f9f6dd101417, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Actors.ActorOccurrenceReferenceBinding
+  selectionMode: 10
+  playerSlot: {fileID: 11400000, guid: 636fd57187a348cfb4743e610cb30e48, type: 2}
+  actorDeclaration: {fileID: 0}
+  useSessionOwner: 0
+  routeOwner: {fileID: 0}
+  activityOwner: {fileID: 0}
+--- !u!114 &2500000207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442300474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dce2a13ff4344d4bb1cb5fbf14fbd42e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PEGA.Player.PegaMissionPlayerObjectEntryRecognitionAccess
+  recognitionQuery: {fileID: 442300475}
+  actorOccurrenceRecognitionQuery: {fileID: 442300477}
+  playerActorReference: {fileID: 2500000206}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2500000201}
   - {fileID: 2500000401}
   - {fileID: 3500000001}
   - {fileID: 442300476}

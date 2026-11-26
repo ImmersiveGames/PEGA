@@ -1,5 +1,6 @@
 using System.Collections;
 using Immersive.Framework.ActivityFlow;
+using Immersive.Framework.GameFlow;
 using Immersive.Framework.PlayerParticipation;
 using Immersive.Logging.Loggers;
 using Immersive.Logging.Records;
@@ -17,6 +18,9 @@ namespace PEGA.Player
 
         [SerializeField]
         private PlayerSessionJoinTrigger joinTrigger;
+
+        [SerializeField]
+        private ActivityRequestTrigger requestPreparation;
 
         private Coroutine _pendingRequest;
         private bool _requestClaimedForEntry;
@@ -85,7 +89,7 @@ namespace PEGA.Player
 
             if (admitted)
             {
-                _log.Debug(
+                _log.Info(
                     "PEGA E04 Mission Join was admitted.",
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("code", outcome.Code),
@@ -98,7 +102,26 @@ namespace PEGA.Player
                     LogFields.Field("actorRoot", gameObject.name),
                     LogFields.Field("code", outcome.Code),
                     LogFields.Field("admissionState", outcome.AdmissionState));
+                yield break;
             }
+
+            if (requestPreparation == null ||
+                requestPreparation.gameObject.scene != gameObject.scene ||
+                requestPreparation.TargetActivity == null)
+            {
+                _log.Error(
+                    "PEGA E04 cannot request Preparation: ActivityRequestTrigger must be in the Entry scene and have a target Activity.",
+                    LogFields.Field("actorRoot", gameObject.name),
+                    LogFields.Field("requestReason", RequestReason));
+                yield break;
+            }
+
+            _log.Info(
+                "PEGA E04 requesting the Preparation Activity after Player Join admission.",
+                LogFields.Field("actorRoot", gameObject.name),
+                LogFields.Field("targetActivity", requestPreparation.TargetActivity.name),
+                LogFields.Field("requestReason", RequestReason));
+            requestPreparation.RequestActivity();
         }
 
         private void EnsureLoggerInitialized()
