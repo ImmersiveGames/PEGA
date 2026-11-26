@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  activity: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
+  activity: {fileID: 11400000, guid: 183ace0406cb4fafb4d32022be5988f8, type: 2}
   localContentId: pega.relic-mission.preparation
   requiredness: 10
 --- !u!1660057539 &9223372036854775807

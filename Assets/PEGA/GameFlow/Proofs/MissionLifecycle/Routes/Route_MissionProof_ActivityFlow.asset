@@ -16,8 +16,8 @@ MonoBehaviour:
   routeName: Mission Proof - Activity Flow
   primaryScenePath: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Routes/MissionProof_ActivityFlowRoute.unity
   primarySceneName: MissionProof_ActivityFlowRoute
-  routeContentProfile: {fileID: 11400000, guid: 8ed846cf7f945c31b2a92d806acc24af, type: 2}
-  startupActivity: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
+  routeContentProfile: {fileID: 11400000, guid: dadcce30b5abdba488a5174de582fab5, type: 2}
+  startupActivity: {fileID: 11400000, guid: 183ace0406cb4fafb4d32022be5988f8, type: 2}
   playerSpatialEntryPolicy: 0
   transitionGateMode: 30
   description: Temporary Route for validating Activity entry and lifecycle transitions across Preparation, Assault and Dispute.

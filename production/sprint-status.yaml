@@ -1,0 +1,23 @@
+# PEGA local Production register consumed by $help.
+# This is not a timeboxed sprint and is independent of Trello's operational fields.
+sprint: null
+goal: "Track local story status and acceptance evidence for PEGA Production."
+start: null
+end: null
+generated: "2026-11-24"
+updated: "2026-11-24"
+
+stories:
+  - id: "vertical-slice-001"
+    name: "Posse exclusiva, aquisição e soltura de itens"
+    file: "production/epics/vertical-slice/story-001-possession-transfer.md"
+    status: in-progress
+    owner: ""
+    blocker: ""
+
+  - id: "vertical-slice-002"
+    name: "Primeiro incremento do confronto: Atacar e identificar impacto"
+    file: "production/epics/vertical-slice/story-002-confrontation-attack.md"
+    status: in-progress
+    owner: ""
+    blocker: ""

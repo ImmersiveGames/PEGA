@@ -4291,7 +4291,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28610c31d6664544a0ad2415cd5fbf04, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  targetRoute: {fileID: 11400000, guid: c20b4a412fc0530ba729f596cc1c7623, type: 2}
+  targetRoute: {fileID: 11400000, guid: 56325a898d59b9c48b237878c8bf82d0, type: 2}
   reason: Launch the isolated relic mission
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

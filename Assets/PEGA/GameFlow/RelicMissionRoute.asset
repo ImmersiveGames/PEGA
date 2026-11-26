@@ -20,4 +20,4 @@ MonoBehaviour:
   startupActivity: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
   playerSpatialEntryPolicy: 0
   transitionGateMode: 30
-  description: Route execution for Preparation, Assault and Dispute.
+  description: The consolidated legacy mission content is Route-owned; later Activity stages will be authored incrementally.

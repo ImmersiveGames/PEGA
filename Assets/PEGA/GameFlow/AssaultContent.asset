@@ -13,11 +13,5 @@ MonoBehaviour:
   m_Name: AssaultContent
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
   profileId: pega.relic-mission.assault
-  scenes:
-  - contentId: pega.relic-mission.assault.scene
-    scenePath: Assets/PEGA/Scenes/AssaultContent.unity
-    sceneName: AssaultContent
-    requiredness: 10
-    loadMode: 0
-    releasePolicy: 0
-  description: Assault stage content.
+  scenes: []
+  description: Activity-local scene content will be added with this Activity in the incremental lifecycle; shared mission content remains Route-owned.

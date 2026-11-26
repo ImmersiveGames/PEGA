@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  activity: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
+  activity: {fileID: 11400000, guid: 0728fe675e7ca5c41904d8b3c5d49125, type: 2}
   localContentId: pega.relic-mission.assault
   requiredness: 10
 --- !u!1660057539 &9223372036854775807

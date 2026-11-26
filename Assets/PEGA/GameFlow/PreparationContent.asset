@@ -13,11 +13,5 @@ MonoBehaviour:
   m_Name: PreparationContent
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
   profileId: pega.relic-mission.preparation
-  scenes:
-  - contentId: pega.relic-mission.preparation.scene
-    scenePath: Assets/PEGA/Scenes/PreparationContent.unity
-    sceneName: PreparationContent
-    requiredness: 10
-    loadMode: 0
-    releasePolicy: 0
-  description: Preparation stage content.
+  scenes: []
+  description: Activity-local scene content will be added with this Activity in the incremental lifecycle; shared mission content remains Route-owned.

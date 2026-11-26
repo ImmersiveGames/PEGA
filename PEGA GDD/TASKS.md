@@ -1,8 +1,8 @@
 # PEGA — Planejamento de produção do vertical slice e da Demo
 
 **Status:** backlog derivado do escopo aprovado e da estratégia vigente em ADR PP-37
-**Versão:** 0.8.2
-**Atualização:** 2026-11-17
+**Versão:** 0.8.3
+**Atualização:** 2026-11-24
 **Escopo:** capacidades de gameplay do vertical slice e evolução posterior da Demo
 
 Este backlog operacionaliza o [MVP.md](MVP.md). O [GDD.md](GDD.md) permanece normativo para regras e comportamento; o MVP define escopo e aceitação; o [ADR-PREPRODUCAO.md](ADR-PREPRODUCAO.md) registra a diretriz arquitetural transversal do PEGA e decisões de produção; este arquivo organiza trabalho executável. Nenhuma tarefa acrescenta ou remove regra de jogo.
@@ -28,7 +28,7 @@ O Immersive Framework é infraestrutura adotada pelo PEGA. Usar contratos/capaci
 - [ ] **VS · Locomoção e comportamento autônomo com GOAP real** — evoluir movimento/velocidade de acordo com a mecânica do Actor e o GDD; usar conhecimento legítimo, percepção, Actions, Desejos e replanejamento na medida necessária para larápios reagirem, fugirem e lidarem com perda/readquisição de alvo sem informação oculta, sequência roteirizada ou FSM substituta. Rastreabilidade dos work packages: [#63 Actions](https://trello.com/c/KAbJVyUl), [#64 Desejos](https://trello.com/c/iWwXiDee), [#68 Knowledge State](https://trello.com/c/WzynxvkM), [#69 percepção](https://trello.com/c/KQmXJWoa), [#95 replanejamento por eventos](https://trello.com/c/EvzWIaW8) e [#91 autonomia para perseguição](https://trello.com/c/UQxoJAWb). #66 e #71 só entram se os casos de contingência/conflito do GDD os exigirem.
 - A suficiência do NPC é avaliada no comportamento autônomo pertinente à perseguição, não pela conclusão de roubo, inventário ou combate. O GDD permite fuga sem loot e define o comportamento após perda de um alvo; isso permite desenvolver essa capacidade antes da expansão por itens.
 - [ ] **VS · Investigação, POIs e roubo GOAP** — desenvolver busca por oportunidade, investigação ativa, descoberta legítima e roubo com Actions executáveis depois da composição central, sem abandonar o GOAP real nem simplificar as regras do GDD. Rastreabilidade: [#70 — investigação](https://trello.com/c/hFYlIZ5l), extensões do [#63](https://trello.com/c/KAbJVyUl) e aceitação expandida do [#91](https://trello.com/c/UQxoJAWb).
-- [ ] **VS-14 · Fuga Final e relógios** — manter GOAP ativo e aplicar contextos/receitas temporais conforme GDD/MVP quando o gameplay expandido e o vertical slice forem compostos. Rastreabilidade: [#73 — temporizadores e resultado](https://trello.com/c/pyQ3yyzf); contextos globais/satisfação de Desejos em [#65](https://trello.com/c/oziocz9k) e [#67](https://trello.com/c/1vUPA1IG).
+- [ ] **VS-14 · Fuga Final e relógios (Activity Grande Fuga)** — manter GOAP ativo e aplicar contextos/receitas temporais conforme GDD/MVP quando o gameplay expandido e o vertical slice forem compostos. Rastreabilidade: [#73 — temporizadores e resultado](https://trello.com/c/pyQ3yyzf); contextos globais/satisfação de Desejos em [#65](https://trello.com/c/oziocz9k) e [#67](https://trello.com/c/1vUPA1IG).
 
 ## 3. Ambiente de teste conjunto
 
@@ -50,7 +50,7 @@ Depois da perseguição central satisfatória, desenvolver os demais resultados 
 - [ ] **VS · Esquiva e obstáculos especiais** — incluir esquiva/transposições contextuais conforme necessidade do recorte sustentada pelo GDD; não reintroduzir salto livre. Rastreabilidade: [#35 — esquiva](https://trello.com/c/ePIM6alK).
 - [ ] **VS · Preparação e invasão** — configurar duração, escolha de cofre, Spawn Seguro e receitas/relógios de invasão segundo GDD/MVP, sem misturar relógios ou declarar pronto/skip fora das regras aprovadas.
 - [ ] **VS · GOAP de roubo, proteção e recuperação** — integrar investigação/descoberta de item, ações de roubo, replanejamento por informação válida, posse, confronto e recuperação conforme GDD; se o Player obtiver o item antes, o larápio só altera sua decisão depois de informação legítima. Não substituir o GOAP por roteiro.
-- [ ] **VS · Encerramento completo** — compor Preparação, invasão, Assalto, Fuga Final, estados Capturado/Escapou/Não escapou, resolução de itens e Result Activity conforme GDD/MVP; preservar os dados necessários antes de descarregar conteúdo de gameplay.
+- [ ] **VS · Encerramento completo** — compor uma única Mission Route com as Activities **Preparação → Assalto → Disputa pela Relíquia → Grande Fuga → Resultados**. Tratar o encontro/descoberta da Relíquia como marco do Assalto que conduz à Activity Disputa; a Fuga Final do GDD corresponde à Activity Grande Fuga. Cobrir invasão, estados Capturado/Escapou/Não escapou, resolução de itens e Result Activity conforme GDD/MVP; consolidar os dados antes de liberar conteúdo de gameplay. Game Over pertence a outra Route quando exigido pela progressão.
 - [ ] **VS · Feedback funcional e sinais mínimos** — comunicar os estados e timers necessários para observar o gameplay expandido; apresentação/animação finais não bloqueiam comportamento funcional.
 - [ ] **VS-16 · Aceitação integrada do vertical slice** — validar manualmente no Unity os cenários solo exigidos pelo MVP após as capacidades correspondentes estarem prontas. Registrar versão, evidência e limitações reais; não repetir testes internos genéricos do Framework.
 

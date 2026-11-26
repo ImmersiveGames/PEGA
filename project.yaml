@@ -1,0 +1,13 @@
+schema_version: 1
+
+project:
+  name: PEGA
+  stage: Production
+
+modes:
+  rigor: standard
+
+engine:
+  name: Unity
+  version: "6000.6.10f1"
+  language: "C#"

@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b946bb8df6944fdb886d3433c93d6b4, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  activity: {fileID: 11400000, guid: 61e0fe7c16235145b1c14e53ec0e8c8b, type: 2}
+  activity: {fileID: 11400000, guid: 78989f6a41f98ce40bc83c3f1702098a, type: 2}
   localContentId: pega.relic-mission.dispute
   requiredness: 10
 --- !u!114 &103

@@ -13,11 +13,5 @@ MonoBehaviour:
   m_Name: DisputeContent
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.ActivityContentProfileAsset
   profileId: pega.relic-mission.dispute
-  scenes:
-  - contentId: pega.relic-mission.dispute.scene
-    scenePath: Assets/PEGA/Scenes/DisputeContent.unity
-    sceneName: DisputeContent
-    requiredness: 10
-    loadMode: 0
-    releasePolicy: 0
-  description: Dispute stage content.
+  scenes: []
+  description: Activity-local scene content will be added with this Activity in the incremental lifecycle; shared mission content remains Route-owned.

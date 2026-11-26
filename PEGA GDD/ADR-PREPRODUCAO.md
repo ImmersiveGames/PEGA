@@ -271,9 +271,9 @@ Este adendo consolida a auditoria estática de Route, Activity e preservação d
 
 ### Decisões de composição e ownership
 
-- **Manter uma única Mission Activity** para as fases internas Preparação, Assalto Ativo e Fuga Final, com a Result Activity separada dentro da Mission Route. Esta decisão, já estabelecida no adendo v2, é reafirmada com base na continuidade exigida pelo assalto: Actors, cenário, objetos, conhecimento, posse, relógios e GOAP pertencem à mesma ocorrência de gameplay no desenho do PEGA. As fases não devem provocar transições de Activity sem uma necessidade arquitetural concreta.
-- A escolha por uma Activity única é de adequação ao gameplay do PEGA; não é limitação do Framework. Activities independentes são tecnicamente viáveis, mas cada troca estabelece novo contexto Activity e traz fronteiras adicionais de lifecycle, admission, readiness e bindings. O modelo híbrido continua possível se uma etapa futura exigir contexto, apresentação ou lifecycle realmente independente.
-- A **Mission Route é a fronteira candidata de lifecycle** para o estado compartilhado de uma ocorrência da missão. O Framework controla o lifecycle da Route; o PEGA continua responsável por criar, manter consistente e encerrar o estado de gameplay. Route Content, serviços de escopo Route e dados associados à ocorrência são possibilidades a avaliar na implementação, não uma decisão fechada de ownership físico ou mecanismo. Route não gerencia nem preserva automaticamente o estado de gameplay.
+- **Decisão original de 2026-10-10, substituída pela revisão aprovada em 2026-11-24:** manter uma única Mission Activity para as fases internas Preparação, Assalto Ativo e Fuga Final, com a Result Activity separada dentro da Mission Route. A justificativa histórica era a continuidade exigida pelo assalto: Actors, cenário, objetos, conhecimento, posse, relógios e GOAP pertencem à mesma ocorrência de gameplay.
+- **Racional histórico da decisão original:** Activities independentes eram tecnicamente viáveis, mas cada troca estabelecia novo contexto Activity e trazia fronteiras adicionais de lifecycle, admission, readiness e bindings. Esse custo permanece relevante para a composição, porém não justifica agrupar etapas que agora foram definidas como Activities distintas.
+- **Fronteira de ownership formalizada pela revisão:** uma ocorrência da Mission Route representa uma execução da missão. O Framework controla o lifecycle da Route e identifica a Activity comprometida; o PEGA cria, mantém consistente e encerra o estado de gameplay compartilhado. Route Content pode manter o mundo e estado que precisam sobreviver às trocas, mas a Route não preserva estado automaticamente.
 
 ### Contratos do Framework comprovados na versão resolvida
 
@@ -289,6 +289,18 @@ Esses pontos descrevem o contrato e a implementação inspecionados no `.6`; nã
 Ao terminar a Fuga Final, o PEGA deve resolver os estados finais de larápios e itens e **consolidar os dados necessários ao cálculo do resultado antes de liberar o conteúdo de gameplay requerido por esse cálculo**. A Result Activity consome dados já consolidados e não depende de Actors ou cenas de gameplay que possam ter sido descarregados na transição.
 
 Formato do resultado, owners concretos dos dados e mecanismo explícito de transferência para Result permanecem para a implementação do encerramento no VS-15. Este registro não escolhe uma solução técnica nem cria tarefa nova; mantém a cadeia do entregável VS-15 existente. A confirmação FOUND-01 de transição Mission → Result comprova somente o fluxo observado naquela composição, não este contrato de dados ou um encerramento de missão já implementado.
+
+### Revisão aprovada — uma Route com Activities sequenciais (2026-11-24)
+
+A revisão aprovada pelo usuário adota a composição descrita na [especificação de lifecycle de 2026-11-18](Trabalho/specs/2026-11-18-mission-route-gameplay-lifecycle.md): uma única Mission Route contém a sequência **Preparação → Assalto → Disputa pela Relíquia → Grande Fuga → Resultados**. A etapa Resultados é uma Activity da mesma Route; Game Over pertence a outra Route quando as regras de progressão o exigirem.
+
+“Encontro da Relíquia” nomeia o marco de descoberta durante o Assalto; a etapa de Activity correspondente é **Disputa pela Relíquia**. A Fuga Final descrita no GDD continua sendo a regra/contexto de gameplay executada na Activity **Grande Fuga**. Essa decomposição não cria uma FSM paralela nem infere destinos pelos nomes dos assets: as Activities e seus destinos são referências explícitas, e a Activity comprometida pelo Framework é a etapa vigente.
+
+A Route mantém a continuidade do mundo e do estado compartilhado da ocorrência da missão entre Activities; conteúdo exclusivo de uma etapa pertence à Activity correspondente. Antes de liberar conteúdo de gameplay para Resultados, o PEGA consolida o resultado que aquela Activity consumirá. As regras e aceites de gameplay continuam sob GDD/MVP; esta revisão altera a composição arquitetural, não o escopo do MVP nem a prioridade PP-37. O GOAP permanece sob suas decisões e tarefas existentes e não é reaberto por esta revisão.
+
+A decisão não fecha o formato do payload consolidado, o owner serializável do resultado nem a persistência da progressão entre Routes. Esses pontos permanecem no escopo do VS-15 descrito acima.
+
+Esta decisão formaliza a composição; a especificação de 2026-11-18 permanece como referência detalhada para transições, relógios e critérios do corte. Suas afirmações de contrato específicas ao Framework 1.2.0 devem ser verificadas novamente contra a versão resolvida pelo consumidor quando a implementação depender delas.
 
 ## 11. PP-36 — Evolução por capacidades antes da composição integrada (2026-10-16; decisão histórica)
 

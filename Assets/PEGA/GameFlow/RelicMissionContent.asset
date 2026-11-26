@@ -13,5 +13,9 @@ MonoBehaviour:
   m_Name: RelicMissionContent
   m_EditorClassIdentifier: Immersive.Framework.Runtime::Immersive.Framework.Authoring.RouteContentProfileAsset
   profileId: pega.relic-mission.route
-  additionalScenes: []
-  description: The primary scene owns the NPC and relic.
+  additionalScenes:
+  - contentId: pega.relic-mission.world.scene
+    scenePath: Assets/PEGA/Scenes/MissionRoute.unity
+    sceneName: MissionRoute
+    requiredness: 10
+  description: Adds the legacy MissionRoute world as Route-owned content; the primary scene keeps the consolidated mission composition.

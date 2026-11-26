@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f37a6125514e4491a7174d4372fc4c22, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  route: {fileID: 11400000, guid: c20b4a412fc0530ba729f596cc1c7623, type: 2}
+  route: {fileID: 11400000, guid: 56325a898d59b9c48b237878c8bf82d0, type: 2}
   localContentId: pega.relic-mission.world
   requiredness: 10
 --- !u!114 &103
@@ -192,9 +192,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3621a98a801647bd905e68522058af13, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  preparation: {fileID: 11400000, guid: ec162cdb1bf84fe2857687c085a57563, type: 2}
-  assault: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
-  dispute: {fileID: 11400000, guid: 61e0fe7c16235145b1c14e53ec0e8c8b, type: 2}
+  preparation: {fileID: 11400000, guid: 183ace0406cb4fafb4d32022be5988f8, type: 2}
+  assault: {fileID: 11400000, guid: 0728fe675e7ca5c41904d8b3c5d49125, type: 2}
+  dispute: {fileID: 11400000, guid: 78989f6a41f98ce40bc83c3f1702098a, type: 2}
   requestAssault: {fileID: 111}
   requestDispute: {fileID: 104}
   readiness: {fileID: 105}
@@ -215,7 +215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88595ccde21347ea987cfbba6c100c2c, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  targetActivity: {fileID: 11400000, guid: 61e0fe7c16235145b1c14e53ec0e8c8b, type: 2}
+  targetActivity: {fileID: 11400000, guid: 78989f6a41f98ce40bc83c3f1702098a, type: 2}
   reason: Relic discovery
 --- !u!114 &105
 MonoBehaviour:
@@ -309,7 +309,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88595ccde21347ea987cfbba6c100c2c, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  targetActivity: {fileID: 11400000, guid: 1b6a8ce8f06c50fea1804dc65640d24f, type: 2}
+  targetActivity: {fileID: 11400000, guid: 0728fe675e7ca5c41904d8b3c5d49125, type: 2}
   reason: Preparation elapsed
 --- !u!114 &112
 MonoBehaviour:

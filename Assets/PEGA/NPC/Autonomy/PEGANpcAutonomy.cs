@@ -35,6 +35,8 @@ namespace PEGA.NPC.Autonomy
     {
         private const string LogCategory = "PEGA.Gameplay.NPC.Autonomy";
         private const string AttackEventLogCategory = "PEGA.Gameplay.Attack.Events.GOAP";
+        private const string NormalContextGoapInputsUnavailableDiagnostic =
+            "Knowledge State, incapacitation state and gameplay participation state must exist and be available on the NPC root.";
         [SerializeField]
         [Tooltip("Shared Desire Profile used by this NPC. Changes to the Profile affect every NPC that references it.")]
         private PegaNpcDesireProfile desireProfile;
@@ -364,10 +366,20 @@ namespace PEGA.NPC.Autonomy
                     LogFields.Field("configuredActionCount", availableBehaviors != null ? availableBehaviors.Length : 0),
                     LogFields.Field("attackActionConfigured", HasConfiguredAttackAction()),
                     LogFields.Field("diagnostic", diagnostic));
-                _log.Error(
-                    "NPC autonomy could not initialize its Normal-context GOAP inputs.",
-                    LogFields.Field("actorRoot", gameObject.name),
-                    LogFields.Field("diagnostic", diagnostic));
+                if (diagnostic == NormalContextGoapInputsUnavailableDiagnostic)
+                {
+                    _log.Warning(
+                        "NPC autonomy was disabled because its Normal-context GOAP inputs are unavailable.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("diagnostic", diagnostic));
+                }
+                else
+                {
+                    _log.Error(
+                        "NPC autonomy could not initialize its Normal-context GOAP inputs.",
+                        LogFields.Field("actorRoot", gameObject.name),
+                        LogFields.Field("diagnostic", diagnostic));
+                }
                 enabled = false;
                 return;
             }
@@ -597,7 +609,7 @@ namespace PEGA.NPC.Autonomy
             if (_knowledgeState == null || _incapacitationMechanic == null || _participationState == null ||
                 !_incapacitationMechanic.IsAvailable)
             {
-                diagnostic = "Knowledge State, incapacitation state and gameplay participation state must exist and be available on the NPC root.";
+                diagnostic = NormalContextGoapInputsUnavailableDiagnostic;
                 return false;
             }
 
