@@ -12,28 +12,16 @@ EditorBuildSettings:
     path: Assets/FrameworkValidation/Scenes/FrameworkValidationPersistentScene.unity
     guid: cc8ab7bf9a0ea5245846792185627a14
   - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Routes/MissionProof_EntryRoute.unity
+    path: Assets/PEGA/Scenes/MissionRoute.unity
     guid: b0000000000000000000000000000001
   - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_EntryActivityContent.unity
+    path: Assets/PEGA/Scenes/MissionActivityContent.unity
     guid: b0000000000000000000000000000002
   - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_ResultPlaceholderContent.unity
+    path: Assets/PEGA/Scenes/ResultActivityContent.unity
     guid: b0000000000000000000000000000003
   - enabled: 1
     path: Assets/PEGA/Scenes/PersistentContent.unity
     guid: b0000000000000000000000000000004
-  - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Routes/MissionProof_ActivityFlowRoute.unity
-    guid: 2ef19dd1be7055cc899b076cbea9e51d
-  - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_AssaultContent.unity
-    guid: e974897120d557ce88e33a889fdf148a
-  - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_DisputeContent.unity
-    guid: bc448dbb3a4757c2af455d9bff8b52f6
-  - enabled: 1
-    path: Assets/PEGA/Scenes/Proofs/MissionLifecycle/Activities/MissionProof_PreparationContent.unity
-    guid: 2d9d9385f65b411e86aac9f53502533e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

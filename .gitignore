@@ -74,3 +74,9 @@ crashlytics-build.properties
 .vscode/
 
 .idea/
+
+PEGA.slnx
+
+ProjectSettings/
+
+Packages/
