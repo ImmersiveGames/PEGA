@@ -448,7 +448,10 @@ namespace PEGA.Movement.NPC
             // A única autoridade de posição e orientação é a mecânica PEGA.
             _agent.updatePosition = false;
             _agent.updateRotation = false;
-            _agent.isStopped = true;
+            if (_agent.isOnNavMesh)
+            {
+                _agent.isStopped = true;
+            }
 
             _log.Debug(
                 "NPC NavMesh route provider configured for externally executed movement.",
