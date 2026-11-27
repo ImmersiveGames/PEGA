@@ -17,11 +17,11 @@
       "url": "https://package.openupm.com"
     },
     "com.immersive.foundation": {
-      "version": "https://github.com/ImmersiveGames/com.immersive.foundation.git",
+      "version": "0.3.0",
       "depth": 0,
-      "source": "git",
+      "source": "registry",
       "dependencies": {},
-      "hash": "86b5e17d69ffa72b302f323628ec494362702f42"
+      "url": "https://package.openupm.com"
     },
     "com.immersive.framework": {
       "version": "file:D:/Projetos/ImmersivePackages/com.immersive.framework",
@@ -58,7 +58,7 @@
       "hash": "66c0ae7d977466ec98abed1bb9703c9ec2bf6266"
     },
     "com.unity.ai.navigation": {
-      "version": "2.0.16",
+      "version": "2.0.17",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -112,7 +112,7 @@
       "dependencies": {}
     },
     "com.unity.ide.rider": {
-      "version": "3.1.0",
+      "version": "3.1.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
